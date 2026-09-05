@@ -182,12 +182,18 @@ export function indexWorkspace(
         .all(workspaceId) as unknown as Array<{ id: number }>
       for (const row of [...viaSymbol, ...viaFile]) affected.add(row.id)
     }
-    // Previously unresolved or ambiguous references may resolve now that new
-    // definitions exist, so they are always re-examined.
-    for (const row of db.prepare(
-      `SELECT DISTINCT src_file AS id FROM edges
-        WHERE workspace_id = ? AND src_file IS NOT NULL AND (resolved = 0 OR ambiguous = 1)`)
-      .all(workspaceId) as unknown as Array<{ id: number }>) affected.add(row.id)
+    // Which symbol NAMES this generation adds or removes. Re-examining every
+    // file that merely holds an unresolved edge sounds safe, but on a real
+    // workspace most edges are unresolved (external packages, builtins), so it
+    // dragged in essentially the whole repository for a one-file edit. A
+    // reference can only change meaning when a definition of THAT name appears
+    // or disappears, so the name delta is both narrower and complete.
+    const oldNames = new Set<string>()
+    if (impacted.length > 0) {
+      for (const row of db.prepare(
+        `SELECT DISTINCT name FROM symbols WHERE file_id IN (${impacted.join(',')})`)
+        .all() as unknown as Array<{ name: string }>) oldNames.add(row.name)
+    }
 
     // -- 2. Forced rebuild drops the old graph inside this transaction -------
     if (forceFull) {
@@ -302,6 +308,27 @@ export function indexWorkspace(
       for (const imp of parsed.imports) {
         insertImport.run(
           workspaceId, parsed.fileId, imp.specifier, imp.local, imp.imported, imp.line)
+      }
+    }
+
+    // -- 6b. Widen the affected set by the NAME delta only -------------------
+    // A file is only re-resolved when this generation added or removed a
+    // definition of a name it actually references.
+    if (!forceFull) {
+      const newNames = new Set<string>()
+      for (const parsed of parsedFiles) for (const sym of parsed.symbols) newNames.add(sym.name)
+      const delta: string[] = []
+      for (const name of oldNames) if (!newNames.has(name)) delta.push(name)
+      for (const name of newNames) if (!oldNames.has(name)) delta.push(name)
+      // Chunked: SQLite caps host parameters, and a large rename can move many
+      // names at once.
+      for (let i = 0; i < delta.length; i += 400) {
+        const chunk = delta.slice(i, i + 400)
+        const holes = chunk.map(() => '?').join(',')
+        for (const row of db.prepare(
+          `SELECT DISTINCT src_file AS id FROM edges
+            WHERE workspace_id = ? AND src_file IS NOT NULL AND raw_target IN (${holes})`)
+          .all(workspaceId, ...chunk) as unknown as Array<{ id: number }>) affected.add(row.id)
       }
     }
 
