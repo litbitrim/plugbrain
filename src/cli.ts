@@ -17,6 +17,7 @@ import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
+import { startDaemon } from './daemon.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 const DB_FILE = join(HOME, 'plugbrain.db')
@@ -140,6 +141,9 @@ switch (command) {
   case 'serve': {
     const port = Number(args[0] ?? 4310)
     const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
+    // The daemon runs inside serve by default: a brain that is only correct
+    // when a human remembers to re-index is not a system of record.
+    if (process.env.PLUGBRAIN_NO_DAEMON !== '1') startDaemon(db)
     startServer({ db, uiRoot }, port).then(actual => {
       console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
       console.log(`  UI       http://127.0.0.1:${actual}/`)
