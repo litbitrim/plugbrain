@@ -16,6 +16,7 @@ import { indexWorkspace } from './indexer/index.ts'
 import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
+import { startServer } from './server/api.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 const DB_FILE = join(HOME, 'plugbrain.db')
@@ -136,8 +137,18 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
+  case 'serve': {
+    const port = Number(args[0] ?? 4310)
+    const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
+    startServer({ db, uiRoot }, port).then(actual => {
+      console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
+      console.log(`  UI       http://127.0.0.1:${actual}/`)
+      console.log(`  Galaxy   http://127.0.0.1:${actual}/api/galaxy`)
+    })
+    break
+  }
   default:
-    console.log('usage: plugbrain <register|index|status|search|attach|read|write|who|agents> …')
+    console.log('usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve> …')
     process.exit(1)
 }
 } catch (error) {

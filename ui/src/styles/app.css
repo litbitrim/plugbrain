@@ -1,0 +1,224 @@
+/* A knowledge network has exactly one failure mode: the hairball.
+   A hundred nodes with two hundred edges converge into a blob of glow — pretty
+   for two seconds, unreadable after that. This page treats four things as hard
+   constraints; everything else is decoration:
+
+     1. Partition first, then converge. The seven clusters are anchored to fixed
+        bearings on the sphere and each node feels a weak pull toward its anchor.
+        The topology still comes from the force layout, but the map is stable —
+        open it today or tomorrow and every cluster sits in the same sky region.
+     2. Selecting dims. Click a node and everything outside its neighborhood
+        drops to 12% brightness. Nobody reads a hundred points at once; they
+        read one point and its neighbors.
+     3. Labels have a budget. By default only the highest-degree dozen plus the
+        hovered and selected neighborhoods are drawn; with every label on they
+        would inevitably overlap.
+     4. Edges need direction. Prerequisites are directed, shown by a pulse of
+        light traveling along each edge — cheaper than arrowheads and easier to
+        catch in peripheral vision.
+
+   Palette: neutral near-black with one cool-white highlight, cluster colors as
+   an equal-luminance spectrum. In dark mode nodes use additive blending; in
+   light mode they must switch to normal blending with deepened colors —
+   additive blending on white paper just smears into gray. Both themes share
+   the same shaders through the uLight branch, so neither can drift without
+   the other. */
+
+:root{
+  --r:6px; --r-sm:4px; --r-lg:10px;
+}
+:root[data-theme="dark"]{
+  --bg:#050507; --panel:#0a0a0d; --raised:#14141a; --ink:#eceef3;
+  --muted:#8d919b; --faint:#585c66;
+  --line:#1d1e25; --line-soft:#131419;
+  --accent:#9dc4ff; --accent-ink:#05101f; --accent-soft:#101a2c;
+  --halo:#000;
+}
+:root[data-theme="light"]{
+  --bg:#f4f4f1; --panel:#fbfbf9; --raised:#ececeb; --ink:#16171a;
+  --muted:#5b5e65; --faint:#94969c;
+  --line:#e1e0dc; --line-soft:#eeede9;
+  --accent:#2f62d0; --accent-ink:#fff; --accent-soft:#e7edfa;
+  --halo:#fff;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}
+
+/* ── Layout: sidebar / stage / right drawer — three columns, one screen ──── */
+#app{display:grid;grid-template-columns:264px 1fr 0;height:100vh;transition:grid-template-columns .34s var(--ease)}
+#app.open{grid-template-columns:264px 1fr 322px}
+@media (max-width:1180px){ #app{grid-template-columns:224px 1fr 0} #app.open{grid-template-columns:224px 1fr 300px} }
+
+aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+#stage{position:relative;overflow:hidden}
+#drawer{border-left:1px solid var(--line);background:var(--panel);overflow:hidden;min-width:0}
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+.brand{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
+.brand h1{font-size:15px;font-weight:560;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand h1 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 10px var(--accent);flex:none}
+.brand p{font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.6}
+
+.searchbox{padding:12px 14px 10px;position:relative}
+.searchbox input{width:100%;background:var(--raised);border-color:var(--line);
+  padding:7px 9px 7px 27px;font-size:12.5px;border-radius:var(--r-sm)}
+.searchbox input::placeholder{color:var(--faint)}
+.searchbox svg{position:absolute;left:23px;top:50%;transform:translateY(-50%);
+  width:12px;height:12px;color:var(--faint);pointer-events:none}
+
+.legend{padding:2px 14px 12px;display:flex;flex-wrap:wrap;gap:4px}
+.cl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);
+  background:none;border:1px solid transparent;border-radius:99px;padding:2.5px 8px 2.5px 6px;
+  cursor:pointer;transition:all var(--fast);font-family:inherit}
+.cl:hover{background:var(--raised)}
+.cl i{width:7px;height:7px;border-radius:50%;flex:none;transition:opacity var(--fast)}
+.cl.off{color:var(--faint)} .cl.off i{opacity:.22}
+.cl b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
+
+.listwrap{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--line-soft);padding:6px 0 10px}
+.lrow{display:flex;align-items:center;gap:8px;padding:5.5px 16px;cursor:pointer;
+  border-left:2px solid transparent;transition:background var(--fast)}
+.lrow:hover{background:var(--raised)}
+.lrow.on{background:var(--raised);border-left-color:var(--accent)}
+.lrow i{width:6px;height:6px;border-radius:50%;flex:none}
+.lrow span{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
+.lrow mark{background:none;color:var(--accent)}
+
+.foot{border-top:1px solid var(--line-soft);padding:10px 16px 12px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.foot .k{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.foot .l{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:1px}
+
+/* ── Overlays on the stage ─────────────────────────────────────────────── */
+/* The canvas is appended by JS, so in DOM order it lands after every overlay.
+   Without an explicit z-index it would cover the labels, toolbar and
+   readouts — the page would look like "3D works, but the UI is gone". */
+canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
+#labels,#hud,#tools,#hint,#pathbar{z-index:3}
+#gate{z-index:6}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
+  font-size:11px;letter-spacing:.01em;color:var(--ink);
+  text-shadow:0 0 4px var(--bg),0 0 9px var(--bg),0 1px 2px var(--halo);
+  padding-top:0;will-change:transform,opacity}
+.lab.sm{font-size:10px;color:var(--muted)}
+
+#hud{position:absolute;right:14px;top:12px;text-align:right;pointer-events:none;
+  font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.75;letter-spacing:.04em}
+#hud b{color:var(--muted);font-weight:400}
+
+/* width:max-content is the key here. An absolutely positioned element's
+   available width is "containing-block width − left", and left is 50%, so
+   without an explicit width it shrinks to half the screen — wrapping even
+   though the other half is still free. */
+#tools{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--panel) 88%,transparent);
+  border:1px solid var(--line);border-radius:99px;padding:5px 7px;backdrop-filter:blur(8px);
+  width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
+#tools .sep{width:1px;height:16px;background:var(--line);margin:0 2px}
+#zlvl{min-width:44px;letter-spacing:0}
+.tb{font:500 11px var(--mono);letter-spacing:.05em;color:var(--muted);background:none;border:0;
+  border-radius:99px;padding:5px 10px;cursor:pointer;transition:all var(--fast);white-space:nowrap}
+.tb:hover{color:var(--ink);background:var(--raised)}
+.tb.on{color:var(--accent-ink);background:var(--accent)}
+
+#hint{position:absolute;left:16px;bottom:16px;font-family:var(--mono);font-size:10px;
+  color:var(--faint);line-height:1.8;pointer-events:none;letter-spacing:.03em}
+#hint kbd{color:var(--muted);font:inherit}
+
+#pathbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);
+  display:none;align-items:center;gap:8px;max-width:min(70%,760px);
+  background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--accent);
+  border-radius:99px;padding:6px 8px 6px 13px;backdrop-filter:blur(8px);
+  font-size:11.5px;overflow:hidden}
+#pathbar.on{display:flex}
+#pathbar .chain{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+#pathbar .chain em{font-style:normal;color:var(--faint);margin:0 5px}
+#pathbar .x{font:inherit;color:var(--faint);background:none;border:0;cursor:pointer;padding:0 4px}
+#pathbar .x:hover{color:var(--ink)}
+
+/* ── Right drawer ─────────────────────────────────────────────────────── */
+/* The grid column owns the width. Hard-coding 322px would let the media
+   query shrink the column to 300px on narrow screens, and #drawer's
+   overflow:hidden would then slice 22px off the content. */
+.dr{width:100%;height:100%;display:flex;flex-direction:column;min-height:0}
+.dr-head{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
+.dr-head .kind{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.dr-head .kind i{width:7px;height:7px;border-radius:50%}
+.dr-head h2{font-size:17px;font-weight:560;letter-spacing:-.02em;margin-top:9px}
+.dr-head p{font-size:12.5px;line-height:1.75;color:var(--muted);margin-top:9px}
+/* Provenienz-Block: die PlugBrain-Auskunft „wer, wann, womit“ zum Objekt */
+.prov{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:12px;
+  padding-top:10px;border-top:1px solid var(--line-soft)}
+.prov dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);padding-top:1px}
+.prov dd{font-size:11.5px;color:var(--muted);line-height:1.5;word-break:break-all}
+.prov dd.mono{font-family:var(--mono);font-size:10.5px}
+.prov dd.bad{color:var(--neg);font-weight:500}
+#hud-sys{margin-top:2px}
+.dr-body{flex:1;min-height:0;overflow:auto;padding:4px 18px 18px}
+.dr-sec{margin-top:18px}
+.dr-sec h3{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--faint);font-weight:400;margin-bottom:7px;display:flex;gap:6px;align-items:baseline}
+.dr-sec h3 b{font-weight:400;color:var(--faint);opacity:.6}
+.nb{display:flex;align-items:center;gap:7px;padding:5px 7px;margin:0 -7px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background var(--fast)}
+.nb:hover{background:var(--raised)}
+.nb i{width:6px;height:6px;border-radius:50%;flex:none}
+.nb span{font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb u{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-decoration:none;letter-spacing:.05em}
+.dr-act{display:flex;gap:7px;padding:12px 18px;border-top:1px solid var(--line-soft)}
+.dr-act .btn{flex:1;background:var(--raised);border-color:var(--line);font-size:11.5px;padding:6px 8px}
+.dr-act .btn:hover{border-color:var(--faint);background:var(--raised)}
+.dr-act .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+#gate{position:absolute;inset:0;display:none;place-content:center;text-align:center;
+  background:var(--bg);color:var(--muted);font-size:13px;line-height:2;padding:40px}
+.live-status { position: fixed; z-index: 50; top: 0; left: 0; right: 0; min-height: 36px; padding: 8px 16px; background: #101613; color: #cde6d6; display: flex; gap: 18px; align-items: center; font-size: 12px; flex-wrap: wrap; }
+.live-status span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50vw; }
+#app { padding-top: 48px; box-sizing: border-box; }
+.brain-empty { padding: 90px 24px; color: #cde6d6; }
+
+/* ── The three-view switcher ────────────────────────────────────────────────
+   One brain, three renderings. Only the active view is mounted, so each
+   engine's own global stylesheet applies to a DOM that is only ever present
+   for that view. */
+.brain-views { display: flex; gap: 2px; margin-left: auto; }
+.brain-views button {
+  font: inherit; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
+  padding: 4px 12px; cursor: pointer;
+  color: currentColor; background: transparent;
+  border: 1px solid currentColor; border-radius: 999px; opacity: .45;
+  transition: opacity 140ms ease, background-color 140ms ease;
+}
+.brain-views button:hover { opacity: .8; }
+.brain-views button.on { opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent); }
+.brain-views button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; opacity: 1; }
+
+/* Each engine paints full-bleed beneath the status bar. */
+.brain-view { position: fixed; inset: 0; z-index: 0; }
+
+/* Stated plainly when a view is showing something other than real fleet data. */
+.brain-note {
+  position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 30;
+  max-width: min(680px, 92vw); padding: 8px 14px;
+  font-size: 13px; line-height: 1.45; text-align: center;
+  border: 1px solid currentColor; border-radius: 8px;
+  background: color-mix(in srgb, canvas 88%, transparent);
+}
+
+/* The mesh engine positions its canvases and HUD with `position: fixed`, which
+   would put them under the status bar. A transform makes this wrapper the
+   containing block for fixed descendants, so the whole view is offset once
+   instead of overriding every rule the engine owns. */
+.brain-view-mesh { top: 52px; transform: translateZ(0); overflow: hidden; }
+
+/* Real agent ids are longer than the simulation's "A7", so the roster name must
+   clip rather than wrap into the row below it. */
+.brain-view-mesh .ag .nm {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 104px; display: inline-block; vertical-align: bottom;
+}
