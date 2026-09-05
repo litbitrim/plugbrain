@@ -82,6 +82,12 @@ test('failed reindex rolls back deletion of the previous graph and FTS rows', ()
       END;
     `)
     writeFileSync(join(workspace, 'stable.ts'), 'export function changed() { return 2 }\n')
+    // A NEW path is what forces an INSERT into the files table. Since indexing
+    // became incremental, editing an existing file UPDATEs its row in place -
+    // that is what keeps its id, and therefore its owner - so an insert trigger
+    // alone would no longer fire and this test would silently stop exercising
+    // the rollback it exists to prove.
+    writeFileSync(join(workspace, 'appears.ts'), 'export function appears() { return 3 }' + String.fromCharCode(10))
     assert.throws(() => indexWorkspace(db, 'ws-test', workspace), /forced reindex failure/)
 
     assert.deepEqual(
