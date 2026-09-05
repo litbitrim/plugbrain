@@ -26,11 +26,44 @@ export default function App() {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [view, setView] = useState<ViewId>(initialView)
+  // Timelapse. `until` pins every projection to an instant, so Atlas, City and
+  // Mesh all show the same moment rather than three different presents.
+  const [bounds, setBounds] = useState<{ first: string; last: string } | null>(null)
+  const [until, setUntil] = useState<string | null>(null)
+  const [playing, setPlaying] = useState(false)
 
   useEffect(() => { try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ } }, [view])
 
   // One poller feeds all three views, so they can never disagree about what
   // the brain currently holds.
+  const untilRef = useRef<string | null>(null)
+  useEffect(() => { untilRef.current = until }, [until])
+
+  // The replay range comes from the ledger: it starts at the first thing an
+  // agent actually did, which is exactly "since the prompt".
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('workspace')
+    void fetch('/api/timeline' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''))
+      .then(r => r.json())
+      .then(payload => { if (payload?.bounds?.first) setBounds(payload.bounds) })
+      .catch(() => { /* a missing ledger simply means no replay to offer */ })
+  }, [])
+
+  // Playback walks the range in 60 steps and stops at the live present.
+  useEffect(() => {
+    if (!playing || !bounds) return
+    const from = new Date(bounds.first).getTime()
+    const to = new Date(bounds.last).getTime()
+    const span = Math.max(1, to - from)
+    let step = until ? Math.round(((new Date(until).getTime() - from) / span) * 60) : 0
+    const id = setInterval(() => {
+      step += 1
+      if (step >= 60) { setUntil(null); setPlaying(false); return }
+      setUntil(new Date(from + (span * step) / 60).toISOString())
+    }, 220)
+    return () => clearInterval(id)
+  }, [playing, bounds])
+
   useEffect(() => {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
@@ -39,7 +72,10 @@ export default function App() {
     const requested = new URLSearchParams(location.search).get('workspace')
     async function refresh() {
       try {
-        const response = await fetch('/api/atlas/snapshot' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''), { signal: controller.signal })
+        const params = new URLSearchParams()
+        if (requested) params.set('workspace', requested)
+        if (untilRef.current) params.set('until', untilRef.current)
+        const response = await fetch('/api/atlas/snapshot' + (params.toString() ? `?${params}` : ''), { signal: controller.signal })
         if (!response.ok) throw new Error(`Brain-Verbindung: HTTP ${response.status}`)
         const next: Snapshot = await response.json()
         if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) throw new Error('Der Brain-Snapshot ist unvollständig.')
@@ -80,7 +116,7 @@ export default function App() {
     }
     void refresh()
     return () => { controller.abort(); clearTimeout(timer) }
-  }, [attempt])
+  }, [attempt, until])
 
   const indexed = snapshot?.graph.nodes.length ?? 0
   const status = error
@@ -104,6 +140,30 @@ export default function App() {
       </nav>
       {error && <button type="button" onClick={() => setAttempt(value => value + 1)}>Erneut verbinden</button>}
     </div>
+
+    {bounds && (
+      <div className="brain-timelapse">
+        <button type="button" onClick={() => setPlaying(p => !p)} title="Wachstum abspielen">
+          {playing ? '❚❚' : '▶'}
+        </button>
+        <input
+          type="range" min={0} max={60} step={1}
+          value={until && bounds
+            ? Math.round(((new Date(until).getTime() - new Date(bounds.first).getTime()) /
+                Math.max(1, new Date(bounds.last).getTime() - new Date(bounds.first).getTime())) * 60)
+            : 60}
+          onChange={event => {
+            setPlaying(false)
+            const step = Number(event.target.value)
+            if (step >= 60) { setUntil(null); return }
+            const from = new Date(bounds.first).getTime()
+            const to = new Date(bounds.last).getTime()
+            setUntil(new Date(from + ((to - from) * step) / 60).toISOString())
+          }}
+        />
+        <span>{until ? new Date(until).toLocaleTimeString() : 'jetzt'}</span>
+      </div>
+    )}
 
     {view === 'atlas' && (
       snapshot && indexed > 0

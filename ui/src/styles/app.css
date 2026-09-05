@@ -222,3 +222,18 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   max-width: 104px; display: inline-block; vertical-align: bottom;
 }
+
+/* Timelapse scrubber. Pinned above the view so all three renderings are read
+   at the same instant; "jetzt" means the live present, not the end of a clip. */
+.brain-timelapse {
+  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: 54px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 14px; border: 1px solid #2a3a33; border-radius: 999px;
+  background: #101613ee; color: #cde6d6; font-size: 12px;
+}
+.brain-timelapse button {
+  font: inherit; width: 26px; height: 26px; cursor: pointer;
+  color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 50%;
+}
+.brain-timelapse input[type="range"] { width: 260px; accent-color: #6ee7b7; }
+.brain-timelapse span { min-width: 74px; text-align: right; opacity: .8; }
