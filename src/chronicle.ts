@@ -23,6 +23,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
+import { readTrace, type StoredTraceEvent, type TraceEventType } from './trace.ts'
 import { requireWorkspace } from './access.ts'
 
 const SCHEMA = `
@@ -36,9 +37,23 @@ CREATE TABLE IF NOT EXISTS chronicle (
   agent_id     TEXT REFERENCES agents(id) ON DELETE SET NULL,
   kind         TEXT NOT NULL,      -- instruction | response | tool_call | command | error | note
   body         TEXT NOT NULL,
-  at           TEXT NOT NULL
+  at           TEXT NOT NULL,
+  -- The identity chain, carried rather than re-invented. These are the SAME
+  -- ids the Operator and @plug/work use; chronicle never mints its own.
+  runtime_instance_id TEXT,
+  task_id             TEXT,
+  worker_id           TEXT,
+  trace_event_id      TEXT,
+  source              TEXT NOT NULL DEFAULT 'local'
 );
 CREATE INDEX IF NOT EXISTS idx_chronicle_turn ON chronicle(workspace_id, turn_id, id);
+-- Every chronicle row names the runtime and work it belongs to, and the trace
+-- event it was projected from. A row with no trace_event_id is a direct local
+-- note; a row with one is a PROJECTION of an authority-confirmed fact, not a
+-- second private history of the same thing. The unique index is what makes
+-- projecting the same trace twice a no-op.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chronicle_event
+  ON chronicle(workspace_id, trace_event_id) WHERE trace_event_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS snapshots (
   id           TEXT PRIMARY KEY,
@@ -262,4 +277,118 @@ export function packStaleness(db: DatabaseSync, packId: string): {
     if (source.hash && row.hash && row.hash !== source.hash) changed.push(source.path)
   }
   return { packId, stale: changed.length > 0 || missing.length > 0, changed, missing }
+}
+
+
+// ---------------------------------------------------------------------------
+// Trace projection
+// ---------------------------------------------------------------------------
+
+interface ChronicleColumnRow { name: string }
+
+/** Widen a chronicle table created by an older version. */
+function ensureChronicleColumns(db: DatabaseSync): void {
+  const columns = db.prepare('PRAGMA table_info(chronicle)').all() as unknown as ChronicleColumnRow[]
+  if (columns.length === 0) return
+  const have = new Set(columns.map(row => row.name))
+  const additions: Array<[string, string]> = [
+    ['runtime_instance_id', 'TEXT'],
+    ['task_id', 'TEXT'],
+    ['worker_id', 'TEXT'],
+    ['trace_event_id', 'TEXT'],
+    ['source', "TEXT NOT NULL DEFAULT 'local'"],
+  ]
+  for (const [name, definition] of additions) {
+    if (!have.has(name)) db.exec('ALTER TABLE chronicle ADD COLUMN ' + name + ' ' + definition)
+  }
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_chronicle_event
+             ON chronicle(workspace_id, trace_event_id) WHERE trace_event_id IS NOT NULL`)
+}
+
+/** Which chronicle kind an authority-confirmed event reads as. */
+function kindForTraceType(type: TraceEventType): ChronicleKind {
+  if (type === 'worker.failed' || type === 'integration.rejected' || type === 'file.claim.denied') return 'error'
+  if (type === 'test.started' || type === 'test.completed' || type === 'commit.created') return 'command'
+  if (type === 'context.pack.created' || type === 'context.pack.consumed') return 'instruction'
+  if (type.startsWith('file.') || type === 'symbol.changed' || type === 'artifact.created') return 'tool_call'
+  return 'note'
+}
+
+/** A short, already-redacted line describing what the authority reported. */
+function bodyForTrace(event: StoredTraceEvent): string {
+  const parts: string[] = [event.type]
+  if (event.fileRefs.length > 0) parts.push(`files=${event.fileRefs.slice(0, 8).join(',')}`)
+  if (event.symbolRefs.length > 0) parts.push(`symbols=${event.symbolRefs.slice(0, 8).join(',')}`)
+  if (event.receiptRefs.length > 0) parts.push(`receipts=${event.receiptRefs.slice(0, 4).join(',')}`)
+  const summary = event.payload.summary
+  if (typeof summary === 'string' && summary !== '') parts.push(summary.slice(0, 400))
+  parts.push(`via ${event.provenance.mode}:${event.provenance.authorityRef}`)
+  return parts.join(' | ')
+}
+
+export interface ProjectionResult {
+  projected: number
+  /** Already present: projecting the same trace twice is a no-op. */
+  alreadyPresent: number
+}
+
+/**
+ * Project authority-confirmed trace events into the chronicle.
+ *
+ * Chronicle used to be written only by whatever happened to call `record()`,
+ * which made it a private second history that could disagree with the Operator
+ * about what occurred. It is now a PROJECTION: every projected row carries the
+ * runtime, task, worker and turn ids the authority used, plus the id of the
+ * trace event it came from, and re-running this inserts nothing new.
+ *
+ * A turn boundary, a worker event and a receipt therefore all reach the
+ * chronicle through the same door, and none of them can invent an id.
+ */
+export function projectChronicleFromTrace(
+  db: DatabaseSync,
+  workspaceId: string,
+  filter: { taskId?: string; limit?: number } = {},
+): ProjectionResult {
+  ensureChronicleSchema(db)
+  ensureChronicleColumns(db)
+  const events = readTrace(db, workspaceId, filter)
+  const result: ProjectionResult = { projected: 0, alreadyPresent: 0 }
+  if (events.length === 0) return result
+
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO chronicle
+       (workspace_id, turn_id, mission_id, agent_id, kind, body, at,
+        runtime_instance_id, task_id, worker_id, trace_event_id, source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    for (const event of events) {
+      // An agent id that this workspace has never seen would violate the
+      // agents foreign key. Attribution is dropped to null rather than
+      // inventing an agent row for a name we cannot vouch for.
+      const knownAgent = event.agentId !== undefined && db.prepare(
+        'SELECT 1 AS present FROM agents WHERE id = ?').get(event.agentId) !== undefined
+      const info = insert.run(
+        workspaceId,
+        event.turnId ?? event.taskId ?? event.workerId ?? event.eventId,
+        event.missionId ?? null,
+        knownAgent ? event.agentId ?? null : null,
+        kindForTraceType(event.type),
+        bodyForTrace(event),
+        event.occurredAt,
+        event.runtimeInstanceId,
+        event.taskId ?? null,
+        event.workerId ?? null,
+        event.eventId,
+        event.source)
+      if (Number(info.changes) === 0) result.alreadyPresent += 1
+      else result.projected += 1
+    }
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  return result
 }
