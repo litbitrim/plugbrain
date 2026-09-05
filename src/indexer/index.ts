@@ -112,13 +112,6 @@ export function indexWorkspace(db: DatabaseSync, workspaceId: string, root: stri
     files: files.length, parsed: 0, symbols: 0, edges: 0, unresolved: 0, skipped: 0, ms: 0,
   }
 
-  // Replace the previous graph for this workspace. file_owner/activity survive
-  // via their own tables keyed by path, so attribution is not lost on re-index.
-  db.prepare('DELETE FROM edges WHERE workspace_id = ?').run(workspaceId)
-  db.prepare('DELETE FROM symbols WHERE file_id IN (SELECT id FROM files WHERE workspace_id = ?)').run(workspaceId)
-  db.prepare('DELETE FROM files WHERE workspace_id = ?').run(workspaceId)
-  db.prepare('DELETE FROM search_rows WHERE workspace_id = ?').run(workspaceId)
-
   const insertFile = db.prepare(
     `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -139,8 +132,16 @@ export function indexWorkspace(db: DatabaseSync, workspaceId: string, root: stri
   /** name -> symbol ids. A name can be defined in several files; all are kept. */
   const symbolsByName = new Map<string, number[]>()
 
-  db.exec('BEGIN')
+  db.exec('BEGIN IMMEDIATE')
   try {
+    // Replacing a graph is one atomic operation. If parsing or insertion fails,
+    // readers keep seeing the complete previous generation rather than an
+    // empty or partially rebuilt workspace.
+    db.prepare('DELETE FROM edges WHERE workspace_id = ?').run(workspaceId)
+    db.prepare('DELETE FROM symbols WHERE file_id IN (SELECT id FROM files WHERE workspace_id = ?)').run(workspaceId)
+    db.prepare('DELETE FROM files WHERE workspace_id = ?').run(workspaceId)
+    db.prepare('DELETE FROM search_rows WHERE workspace_id = ?').run(workspaceId)
+
     // ── pass 1: files + symbols ─────────────────────────────────────────
     for (const file of files) {
       let content = ''

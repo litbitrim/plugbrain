@@ -6,6 +6,7 @@
   "description": "PlugBrain — standalone workspace indexer: real AST code intelligence with three renderings of one graph.",
   "bin": { "plugbrain": "./src/cli.ts" },
   "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts",
     "index": "node --experimental-strip-types src/cli.ts index",
     "serve": "node --experimental-strip-types src/cli.ts serve",
     "status": "node --experimental-strip-types src/cli.ts status",

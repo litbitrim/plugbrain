@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS file_owner (
 -- Full-text search: how an agent finds code without grepping a disk.
 --
 -- External-content FTS5 over a real table. The obvious shape -- one fts5 table
--- with workspace_id UNINDEXED -- is a trap: a plain `WHERE workspace_id = ?`
+-- with workspace_id UNINDEXED -- is a trap: a plain WHERE workspace_id = ?
 -- against an fts5 table does NOT filter the way it does on an ordinary table,
 -- so the indexer's per-workspace DELETE silently removed nothing and every
 -- re-index left the old rows behind. Owning the rows in a normal table makes
@@ -179,10 +179,104 @@ CREATE TRIGGER IF NOT EXISTS search_rows_au AFTER UPDATE ON search_rows BEGIN
 END;
 `
 
+interface SqlDefinition { sql: string | null }
+
+/**
+ * Upgrade the original all-in-one FTS5 table before the current schema is
+ * applied. `CREATE VIRTUAL TABLE IF NOT EXISTS` cannot change an existing
+ * virtual-table definition, so treating schema creation as migration would
+ * silently leave the old layout active while the new queries join against an
+ * empty `search_rows` table.
+ */
+function migrateLegacySearch(db: DatabaseSync): void {
+  const definition = db.prepare(
+    "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'search'"
+  ).get() as SqlDefinition | undefined
+  if (!definition?.sql || /content\s*=\s*['\"]search_rows['\"]/i.test(definition.sql)) return
+
+  const hasSearchRows = Boolean(db.prepare(
+    "SELECT 1 present FROM sqlite_master WHERE type = 'table' AND name = 'search_rows'"
+  ).get())
+
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    db.exec(`
+      DROP TABLE IF EXISTS search_rows_migrating;
+      CREATE TABLE search_rows_migrating (
+        id           INTEGER PRIMARY KEY,
+        workspace_id TEXT NOT NULL,
+        name         TEXT NOT NULL,
+        path         TEXT NOT NULL,
+        kind         TEXT NOT NULL,
+        symbol_id    INTEGER,
+        file_id      INTEGER
+      );
+    `)
+    if (hasSearchRows) {
+      db.exec(`
+        INSERT INTO search_rows_migrating (workspace_id, name, path, kind, symbol_id, file_id)
+        SELECT workspace_id, name, path, kind, symbol_id, file_id FROM search_rows;
+      `)
+    }
+    db.exec(`
+      INSERT INTO search_rows_migrating (workspace_id, name, path, kind, symbol_id, file_id)
+      SELECT DISTINCT legacy.workspace_id, legacy.name, legacy.path, legacy.kind,
+                      legacy.symbol_id, legacy.file_id
+        FROM search AS legacy
+       WHERE NOT EXISTS (
+         SELECT 1 FROM search_rows_migrating AS current
+          WHERE current.workspace_id IS legacy.workspace_id
+            AND current.name IS legacy.name
+            AND current.path IS legacy.path
+            AND current.kind IS legacy.kind
+            AND current.symbol_id IS legacy.symbol_id
+            AND current.file_id IS legacy.file_id
+       );
+
+      DROP TRIGGER IF EXISTS search_rows_ai;
+      DROP TRIGGER IF EXISTS search_rows_ad;
+      DROP TRIGGER IF EXISTS search_rows_au;
+      DROP TABLE search;
+      DROP TABLE IF EXISTS search_rows;
+      ALTER TABLE search_rows_migrating RENAME TO search_rows;
+      CREATE INDEX idx_search_rows_ws ON search_rows(workspace_id);
+      CREATE VIRTUAL TABLE search USING fts5(
+        name, path, kind,
+        content = 'search_rows', content_rowid = 'id',
+        tokenize = 'unicode61'
+      );
+      CREATE TRIGGER search_rows_ai AFTER INSERT ON search_rows BEGIN
+        INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
+      END;
+      CREATE TRIGGER search_rows_ad AFTER DELETE ON search_rows BEGIN
+        INSERT INTO search(search, rowid, name, path, kind)
+          VALUES ('delete', old.id, old.name, old.path, old.kind);
+      END;
+      CREATE TRIGGER search_rows_au AFTER UPDATE ON search_rows BEGIN
+        INSERT INTO search(search, rowid, name, path, kind)
+          VALUES ('delete', old.id, old.name, old.path, old.kind);
+        INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
+      END;
+      INSERT INTO search(search) VALUES ('rebuild');
+    `)
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+}
+
 /** Open (creating if needed) the PlugBrain database at `file`. */
 export function openStore(file: string): DatabaseSync {
   mkdirSync(dirname(file), { recursive: true })
   const db = new DatabaseSync(file)
-  db.exec(SCHEMA)
-  return db
+  try {
+    db.exec('PRAGMA busy_timeout = 15000;')
+    migrateLegacySearch(db)
+    db.exec(SCHEMA)
+    return db
+  } catch (error) {
+    db.close()
+    throw error
+  }
 }
