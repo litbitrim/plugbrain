@@ -177,6 +177,85 @@ CREATE TRIGGER IF NOT EXISTS search_rows_au AFTER UPDATE ON search_rows BEGIN
     VALUES ('delete', old.id, old.name, old.path, old.kind);
   INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
 END;
+
+-- The index checkpoint. A generation is only ever incremented by a COMMIT that
+-- completed a whole build, so generation names the last COMPLETE graph a
+-- reader can see. Restart reads this row, compares git_head and the per-file
+-- hashes in the files table, and processes only the missing delta: an unchanged
+-- workspace does no parsing work at all.
+CREATE TABLE IF NOT EXISTS workspace_index_state (
+  workspace_id     TEXT PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+  generation       INTEGER NOT NULL DEFAULT 0,
+  git_head         TEXT,
+  last_success_at  TEXT,
+  last_failure_at  TEXT,
+  failure_reason   TEXT,
+  file_count       INTEGER NOT NULL DEFAULT 0,
+  symbol_count     INTEGER NOT NULL DEFAULT 0,
+  edge_count       INTEGER NOT NULL DEFAULT 0,
+  unresolved_count INTEGER NOT NULL DEFAULT 0,
+  ambiguous_count  INTEGER NOT NULL DEFAULT 0
+);
+
+-- A deleted path stays known for one generation. Without this a consumer
+-- cannot tell "this file was removed" from "this file never existed", and an
+-- incremental pass cannot prove it already handled the deletion.
+CREATE TABLE IF NOT EXISTS file_tombstones (
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  path         TEXT NOT NULL,
+  hash         TEXT,
+  generation   INTEGER NOT NULL,
+  deleted_at   TEXT NOT NULL,
+  reason       TEXT NOT NULL DEFAULT 'deleted',
+  PRIMARY KEY (workspace_id, path)
+);
+
+-- Parsed-but-unresolved reference facts, kept per file so an incremental pass
+-- can re-resolve edges WITHOUT re-parsing the file. Re-parsing is the expensive
+-- half of indexing; resolution is cheap. Separating them is what makes a
+-- one-file edit cost one parse instead of a whole workspace.
+CREATE TABLE IF NOT EXISTS file_refs (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  kind         TEXT NOT NULL,
+  target       TEXT NOT NULL,
+  receiver     TEXT,
+  from_name    TEXT,
+  -- 'code' resolves through imports and symbol tables; 'md-link' resolves as a
+  -- document path; 'md-tag' attaches to a shared concept node. One table, an
+  -- explicit discriminator, rather than three tables that drift apart.
+  scope        TEXT NOT NULL DEFAULT 'code',
+  line         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_file_refs_file ON file_refs(file_id);
+CREATE INDEX IF NOT EXISTS idx_file_refs_ws ON file_refs(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_file_refs_target ON file_refs(workspace_id, target);
+
+CREATE TABLE IF NOT EXISTS file_imports (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  specifier    TEXT NOT NULL,
+  local_name   TEXT,
+  imported_name TEXT,
+  line         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_file_imports_file ON file_imports(file_id);
+CREATE INDEX IF NOT EXISTS idx_file_imports_ws ON file_imports(workspace_id);
+
+-- Ownership keyed by PATH as well as file id. file_owner.file_id cascades away
+-- whenever a file row is deleted; this table is what makes attribution survive
+-- a delete-and-reinsert rebuild, and it is the restore source used inside the
+-- same transaction.
+CREATE TABLE IF NOT EXISTS path_owner (
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  path         TEXT NOT NULL,
+  agent_id     TEXT REFERENCES agents(id) ON DELETE SET NULL,
+  action       TEXT NOT NULL,
+  at           TEXT NOT NULL,
+  PRIMARY KEY (workspace_id, path)
+);
 `
 
 interface SqlDefinition { sql: string | null }
@@ -266,6 +345,38 @@ function migrateLegacySearch(db: DatabaseSync): void {
   }
 }
 
+interface ColumnRow { name: string }
+
+/**
+ * Add a column that a later schema version introduced. `CREATE TABLE IF NOT
+ * EXISTS` never alters an existing table, so a database created by an older
+ * PlugBrain keeps the old column set until something explicitly widens it.
+ * Adding a nullable/defaulted column is the one schema change SQLite can make
+ * in place without rewriting the table.
+ */
+function ensureColumn(db: DatabaseSync, table: string, column: string, definition: string): void {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as unknown as ColumnRow[]
+  if (columns.length === 0) return                      // table not present yet
+  if (columns.some(row => row.name === column)) return  // already widened
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`)
+}
+
+/**
+ * Widen tables that existed before this version. Runs after the CREATE
+ * statements so a fresh database is already correct and these are no-ops.
+ */
+function migrateAddedColumns(db: DatabaseSync): void {
+  // `ambiguous` records that resolution found MORE THAN ONE plausible target
+  // and therefore refused to pick. It is deliberately distinct from
+  // `resolved = 0`, which means "no target found at all"; conflating the two
+  // is how a first-match resolver hides its guesses.
+  ensureColumn(db, 'edges', 'ambiguous', 'INTEGER NOT NULL DEFAULT 0')
+  ensureColumn(db, 'edges', 'candidates', 'INTEGER NOT NULL DEFAULT 0')
+  // The generation that last wrote this file row, so a reader can tell how
+  // current a row is without re-hashing the file.
+  ensureColumn(db, 'files', 'generation', 'INTEGER NOT NULL DEFAULT 0')
+}
+
 /** Open (creating if needed) the PlugBrain database at `file`. */
 export function openStore(file: string): DatabaseSync {
   mkdirSync(dirname(file), { recursive: true })
@@ -274,6 +385,7 @@ export function openStore(file: string): DatabaseSync {
     db.exec('PRAGMA busy_timeout = 15000;')
     migrateLegacySearch(db)
     db.exec(SCHEMA)
+    migrateAddedColumns(db)
     return db
   } catch (error) {
     db.close()
