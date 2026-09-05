@@ -14,6 +14,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import { indexWorkspace } from '../indexer/index.ts'
+import * as missions from '../missions.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -174,7 +175,8 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
     // the runtime, and one bad request cannot be allowed to stop every agent.
     void handle(req, res).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
-      const status = error instanceof access.AccessDenied ? 403 : 500
+      const status = error instanceof access.AccessDenied ? 403
+        : error instanceof missions.MissionError ? 409 : 500
       if (!res.headersSent) json(res, { ok: false, error: message }, status)
       else res.end()
     })
@@ -296,6 +298,41 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
         },
         updatedAt: new Date().toISOString(),
       })
+    }
+
+    // ── missions: isolation and the verified change pipeline ─────────────
+    if (p === '/api/missions') {
+      access.requireWorkspace(db, ws)
+      return json(res, { ok: true, missions: missions.listMissions(db, ws) })
+    }
+    if (p.startsWith('/api/mission/') && req.method === 'POST') {
+      const step = p.slice('/api/mission/'.length)
+      const body = await readBody(req)
+      const id = String(body.missionId ?? '')
+      const actor = String(body.agentId ?? '')
+      switch (step) {
+        case 'start':
+          return json(res, { ok: true, mission: missions.startMission(
+            db, String(body.workspace ?? ws), actor, String(body.title ?? 'untitled'),
+            Array.isArray(body.acceptance) ? body.acceptance.map(String) : []) })
+        case 'submit':
+          return json(res, { ok: true, mission: missions.submitForReview(db, id) })
+        case 'review':
+          return json(res, { ok: true, mission: missions.review(
+            db, id, actor, Boolean(body.passed), String(body.notes ?? '')) })
+        case 'commit':
+          return json(res, { ok: true, mission: missions.commitMission(db, id, String(body.message ?? '')) })
+        case 'verify':
+          return json(res, { ok: true, mission: missions.verify(
+            db, id, actor, Boolean(body.passed), String(body.notes ?? '')) })
+        case 'merge':
+          return json(res, { ok: true, mission: missions.merge(db, id) })
+        case 'close':
+          missions.closeMission(db, id)
+          return json(res, { ok: true })
+        default:
+          return json(res, { ok: false, error: `unknown mission step: ${step}` }, 404)
+      }
     }
 
     // ── git: branch, worktrees, commits ──────────────────────────────────
