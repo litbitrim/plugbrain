@@ -298,6 +298,28 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
       })
     }
 
+    // ── git: branch, worktrees, commits ──────────────────────────────────
+    if (p === '/api/git') {
+      access.requireWorkspace(db, ws)
+      const row = db.prepare('SELECT * FROM git_state WHERE workspace_id = ?').get(ws) as
+        Record<string, unknown> | undefined
+      if (!row) return json(res, { ok: true, isRepo: false, note: 'no git state captured yet' })
+      return json(res, {
+        ok: true,
+        isRepo: Boolean(row.is_repo),
+        isRepoRoot: Boolean(row.is_repo_root),
+        // Stated plainly: this workspace lives inside someone else's repository.
+        contractWarning: row.is_repo && !row.is_repo_root
+          ? 'This workspace is not the repository root — one workspace must be one repository with one authoritative main.'
+          : null,
+        root: row.root, branch: row.branch, head: row.head,
+        dirtyCount: row.dirty_count,
+        worktrees: JSON.parse(String(row.worktrees_json ?? '[]')),
+        commits: JSON.parse(String(row.commits_json ?? '[]')),
+        error: row.error, readAt: row.read_at,
+      })
+    }
+
     // ── timelapse: the ordered growth of this workspace ──────────────────
     if (p === '/api/timeline') {
       access.requireWorkspace(db, ws)

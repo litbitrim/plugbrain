@@ -15,6 +15,7 @@ import { extname, join, posix, relative, resolve as resolvePath, dirname } from 
 import type { DatabaseSync } from 'node:sqlite'
 import { extractFromSource, languageOf } from './ast.ts'
 import { extractFromMarkdown, resolveMarkdownTarget } from './markdown.ts'
+import { readGit, storeGit } from './git.ts'
 
 /** Directories never worth indexing. Skipped by name at any depth. */
 const SKIP_DIRS = new Set([
@@ -254,6 +255,11 @@ export function indexWorkspace(db: DatabaseSync, workspaceId: string, root: stri
     db.exec('ROLLBACK')
     throw error
   }
+
+  // The git view is read after the graph commits: a workspace's branch,
+  // worktrees and dirty set are part of what "current" means, and the
+  // contract's isolation invariants cannot be checked without them.
+  try { storeGit(db, workspaceId, readGit(absRoot)) } catch { /* not a repo, or git absent */ }
 
   result.ms = Date.now() - started
   return result

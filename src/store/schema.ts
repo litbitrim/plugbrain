@@ -37,6 +37,11 @@ export type Action = (typeof ACTIONS)[number]
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
+-- The server, the daemon, the CLI and every agent share this database. Without
+-- a busy timeout a writer that arrives while another holds the lock fails
+-- instantly with SQLITE_BUSY instead of waiting a moment, which showed up as
+-- "database is locked" the first time a re-index raced the daemon.
+PRAGMA busy_timeout = 15000;
 
 -- A workspace is a folder that has been registered. Nothing outside a
 -- registered workspace is reachable through this store, by design.
