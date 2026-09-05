@@ -22,6 +22,9 @@ const SKIP_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', 'out', 'coverage', '.next', '.turbo',
   '.cache', '__pycache__', '.venv', 'venv', 'target', '.pnpm', 'release',
   '.codegraph', '.plugbrain',
+  // Build output masquerades as source: a minified bundle matches every search
+  // term and would crowd real files out of context packs.
+  'ui-dist', 'lib', '.next', '.output', '.svelte-kit', '.nuxt',
 ])
 
 /** Extensions we record as files even when we cannot parse them. */
@@ -114,7 +117,7 @@ export function indexWorkspace(db: DatabaseSync, workspaceId: string, root: stri
   db.prepare('DELETE FROM edges WHERE workspace_id = ?').run(workspaceId)
   db.prepare('DELETE FROM symbols WHERE file_id IN (SELECT id FROM files WHERE workspace_id = ?)').run(workspaceId)
   db.prepare('DELETE FROM files WHERE workspace_id = ?').run(workspaceId)
-  db.prepare('DELETE FROM search WHERE workspace_id = ?').run(workspaceId)
+  db.prepare('DELETE FROM search_rows WHERE workspace_id = ?').run(workspaceId)
 
   const insertFile = db.prepare(
     `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at)
@@ -126,7 +129,7 @@ export function indexWorkspace(db: DatabaseSync, workspaceId: string, root: stri
     `INSERT INTO edges (workspace_id, kind, src_symbol, src_file, dst_symbol, dst_file, raw_target, resolved, line)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   const insertSearch = db.prepare(
-    `INSERT INTO search (name, path, kind, workspace_id, symbol_id, file_id) VALUES (?, ?, ?, ?, ?, ?)`)
+    `INSERT INTO search_rows (name, path, kind, workspace_id, symbol_id, file_id) VALUES (?, ?, ?, ?, ?, ?)`)
 
   interface Pending { fileId: number; rel: string; extract: ReturnType<typeof extractFromSource> }
   const pending: Pending[] = []

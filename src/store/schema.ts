@@ -140,12 +140,43 @@ CREATE TABLE IF NOT EXISTS file_owner (
   at         TEXT NOT NULL
 );
 
--- Full-text search over symbol names and file paths: this is how an agent
--- finds code without grepping a disk.
+-- Full-text search: how an agent finds code without grepping a disk.
+--
+-- External-content FTS5 over a real table. The obvious shape -- one fts5 table
+-- with workspace_id UNINDEXED -- is a trap: a plain `WHERE workspace_id = ?`
+-- against an fts5 table does NOT filter the way it does on an ordinary table,
+-- so the indexer's per-workspace DELETE silently removed nothing and every
+-- re-index left the old rows behind. Owning the rows in a normal table makes
+-- deletes real; triggers keep the index in step.
+CREATE TABLE IF NOT EXISTS search_rows (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  path         TEXT NOT NULL,
+  kind         TEXT NOT NULL,
+  symbol_id    INTEGER,
+  file_id      INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_search_rows_ws ON search_rows(workspace_id);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS search USING fts5(
-  name, path, kind, workspace_id UNINDEXED, symbol_id UNINDEXED, file_id UNINDEXED,
+  name, path, kind,
+  content = 'search_rows', content_rowid = 'id',
   tokenize = 'unicode61'
 );
+
+CREATE TRIGGER IF NOT EXISTS search_rows_ai AFTER INSERT ON search_rows BEGIN
+  INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
+END;
+CREATE TRIGGER IF NOT EXISTS search_rows_ad AFTER DELETE ON search_rows BEGIN
+  INSERT INTO search(search, rowid, name, path, kind)
+    VALUES ('delete', old.id, old.name, old.path, old.kind);
+END;
+CREATE TRIGGER IF NOT EXISTS search_rows_au AFTER UPDATE ON search_rows BEGIN
+  INSERT INTO search(search, rowid, name, path, kind)
+    VALUES ('delete', old.id, old.name, old.path, old.kind);
+  INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
+END;
 `
 
 /** Open (creating if needed) the PlugBrain database at `file`. */

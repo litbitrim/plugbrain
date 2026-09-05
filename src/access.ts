@@ -171,12 +171,13 @@ export function search(
   const cleaned = query.trim().replace(/["']/g, '')
   if (cleaned === '') return []
   const rows = db.prepare(
-    `SELECT s.name, s.path, s.kind, sym.line
-       FROM search s
-       LEFT JOIN symbols sym ON sym.id = s.symbol_id
-      WHERE s.workspace_id = ? AND search MATCH ?
+    `SELECT r.name, r.path, r.kind, sym.line
+       FROM search f
+       JOIN search_rows r ON r.id = f.rowid
+       LEFT JOIN symbols sym ON sym.id = r.symbol_id
+      WHERE f.search MATCH ? AND r.workspace_id = ?
       LIMIT ?`
-  ).all(workspace.id, `${cleaned}*`, limit) as SearchHit[]
+  ).all(`${cleaned}*`, workspace.id, limit) as SearchHit[]
   record(db, workspace, `search:${cleaned}`, agentId, 'search', `${rows.length} hits`)
   return rows
 }
