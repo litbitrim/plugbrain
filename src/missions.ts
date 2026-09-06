@@ -20,7 +20,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
-import { requireWorkspace } from './access.ts'
+import { requireAgent, requireWorkspace } from './access.ts'
 
 export type MissionState =
   | 'draft' | 'running' | 'review' | 'repair' | 'committed' | 'verified' | 'merged' | 'abandoned'
@@ -98,6 +98,7 @@ export function startMission(
 ): Mission {
   ensureMissionSchema(db)
   const ws = requireWorkspace(db, workspaceId)
+  requireAgent(db, agentId)
 
   let baseBranch: string
   let baseSha: string
@@ -149,6 +150,7 @@ export function review(
 ): Mission {
   const mission = load(db, missionId)
   if (mission.state !== 'review') throw new MissionError(`mission is ${mission.state}, not awaiting review`)
+  requireAgent(db, reviewerId)
   if (reviewerId === mission.agent_id) {
     throw new MissionError('an agent cannot review its own mission — invariant 9')
   }
@@ -191,6 +193,7 @@ export function verify(
 ): Mission {
   const mission = load(db, missionId)
   if (mission.state !== 'committed') throw new MissionError(`mission is ${mission.state}, nothing committed to verify`)
+  requireAgent(db, verifierId)
   if (verifierId === mission.agent_id) {
     throw new MissionError('an agent cannot verify its own commit — invariant 9')
   }

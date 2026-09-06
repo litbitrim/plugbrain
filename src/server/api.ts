@@ -15,6 +15,10 @@ import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import { indexWorkspace } from '../indexer/index.ts'
 import * as missions from '../missions.ts'
+import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
+import { evaluateClaim } from '../projections/conflicts.ts'
+import { ingestTraceEvents } from '../trace.ts'
+import { buildContextPack, packStaleness } from '../chronicle.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -22,7 +26,14 @@ const MIME: Record<string, string> = {
   '.woff2': 'font/woff2', '.svg': 'image/svg+xml',
 }
 
-interface Ctx { db: DatabaseSync; uiRoot: string | null }
+export class AuthenticationRequired extends Error {}
+
+export interface Ctx {
+  db: DatabaseSync
+  uiRoot: string | null
+  authKey?: string | null
+  requireAuth?: boolean
+}
 
 const json = (res: ServerResponse, body: unknown, status = 200): void => {
   const payload = JSON.stringify(body)
@@ -167,7 +178,43 @@ function tracksOf(db: DatabaseSync, workspaceId: string, limit: number) {
   ).all(workspaceId, limit)
 }
 
+function checkAuth(req: IncomingMessage, ctx: Ctx): void {
+  const expectedKey = ctx.authKey ?? process.env.PLUG_BRAIN_AUTH_KEY ?? process.env.PLUG_INSTANCE_ID
+  if (!expectedKey) {
+    if (ctx.requireAuth) {
+      throw new AuthenticationRequired('authentication required: no credentials configured on server')
+    }
+    return
+  }
+  const auth = req.headers['authorization']
+  const xInstance = req.headers['x-plug-instance']
+  const xToken = req.headers['x-plug-auth-token']
+
+  let bearerToken: string | undefined
+  if (typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    bearerToken = auth.slice('Bearer '.length).trim()
+  }
+
+  const matches = (bearerToken !== undefined && bearerToken === expectedKey) ||
+    (typeof xInstance === 'string' && xInstance === expectedKey) ||
+    (typeof xToken === 'string' && xToken === expectedKey)
+
+  if (!matches) {
+    throw new AuthenticationRequired('unauthorized: valid auth token required')
+  }
+}
+
 export function startServer(ctx: Ctx, port: number): Promise<number> {
+  return serve(ctx, port).then(h => h.port)
+}
+
+export interface ServerHandle {
+  port: number
+  server: ReturnType<typeof createServer>
+  close(): Promise<void>
+}
+
+export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   const { db } = ctx
 
   const server = createServer((req, res) => {
@@ -175,7 +222,8 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
     // the runtime, and one bad request cannot be allowed to stop every agent.
     void handle(req, res).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
-      const status = error instanceof access.AccessDenied ? 403
+      const status = error instanceof AuthenticationRequired ? 401
+        : error instanceof access.AccessDenied ? 403
         : error instanceof missions.MissionError ? 409 : 500
       if (!res.headersSent) json(res, { ok: false, error: message }, status)
       else res.end()
@@ -306,30 +354,58 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
       return json(res, { ok: true, missions: missions.listMissions(db, ws) })
     }
     if (p.startsWith('/api/mission/') && req.method === 'POST') {
+      checkAuth(req, ctx)
       const step = p.slice('/api/mission/'.length)
       const body = await readBody(req)
-      const id = String(body.missionId ?? '')
-      const actor = String(body.agentId ?? '')
+      const id = String(body.missionId ?? '').trim()
+      const actor = String(body.agentId ?? '').trim()
       switch (step) {
-        case 'start':
+        case 'start': {
+          const workspaceId = String(body.workspace ?? ws).trim()
+          access.requireWorkspace(db, workspaceId)
+          if (!actor) return json(res, { ok: false, error: 'agentId required' }, 400)
+          access.requireAgent(db, actor)
           return json(res, { ok: true, mission: missions.startMission(
-            db, String(body.workspace ?? ws), actor, String(body.title ?? 'untitled'),
+            db, workspaceId, actor, String(body.title ?? 'untitled'),
             Array.isArray(body.acceptance) ? body.acceptance.map(String) : []) })
-        case 'submit':
+        }
+        case 'submit': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
           return json(res, { ok: true, mission: missions.submitForReview(db, id) })
-        case 'review':
+        }
+        case 'review': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
+          if (!actor) return json(res, { ok: false, error: 'agentId required' }, 400)
+          access.requireAgent(db, actor)
+          if (typeof body.passed !== 'boolean') {
+            return json(res, { ok: false, error: 'passed must be a strict boolean; string-false rejected' }, 400)
+          }
           return json(res, { ok: true, mission: missions.review(
-            db, id, actor, Boolean(body.passed), String(body.notes ?? '')) })
-        case 'commit':
+            db, id, actor, body.passed, String(body.notes ?? '')) })
+        }
+        case 'commit': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
           return json(res, { ok: true, mission: missions.commitMission(db, id, String(body.message ?? '')) })
-        case 'verify':
+        }
+        case 'verify': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
+          if (!actor) return json(res, { ok: false, error: 'agentId required' }, 400)
+          access.requireAgent(db, actor)
+          if (typeof body.passed !== 'boolean') {
+            return json(res, { ok: false, error: 'passed must be a strict boolean; string-false rejected' }, 400)
+          }
           return json(res, { ok: true, mission: missions.verify(
-            db, id, actor, Boolean(body.passed), String(body.notes ?? '')) })
-        case 'merge':
+            db, id, actor, body.passed, String(body.notes ?? '')) })
+        }
+        case 'merge': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
           return json(res, { ok: true, mission: missions.merge(db, id) })
-        case 'close':
+        }
+        case 'close': {
+          if (!id) return json(res, { ok: false, error: 'missionId required' }, 400)
           missions.closeMission(db, id)
           return json(res, { ok: true })
+        }
         default:
           return json(res, { ok: false, error: `unknown mission step: ${step}` }, 404)
       }
@@ -382,44 +458,186 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
       return json(res, { ok: true, ...access.fileProvenance(db, ws, q.get('path') ?? '') })
     }
 
+    // ── Awareness & Context Pack endpoints (FO-4 & CP01-014) ────────────
+    if ((p === '/api/awareness' || p === '/api/agent/awareness') && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      access.requireWorkspace(db, workspaceId)
+      const taskId = String(body.taskId ?? '').trim()
+      if (!taskId) return json(res, { ok: false, error: 'taskId required' }, 400)
+      const agentId = body.agentId ? String(body.agentId).trim() : undefined
+      if (agentId) access.requireAgent(db, agentId)
+      const intendedPaths = Array.isArray(body.intendedPaths) ? body.intendedPaths.map(String) : []
+      const mode = body.mode === 'read' ? 'read' : 'write'
+      const port = createAwarenessPort(db)
+      const pack = port({
+        workspaceId,
+        taskId,
+        agentId,
+        intendedPaths,
+        mode,
+        limits: typeof body.limits === 'object' && body.limits !== null ? body.limits as any : undefined,
+      })
+
+      // Ingest trace event context.pack.created (bounded, no secrets)
+      try {
+        ingestTraceEvents(db, [{
+          schema: 1,
+          eventId: `evt-pack-${pack.packDigest.slice(0, 8)}-${Date.now()}`,
+          source: 'brain',
+          runtimeInstanceId: ctx.authKey ?? 'brain-local',
+          workspaceId,
+          taskId,
+          agentId,
+          type: 'context.pack.created',
+          occurredAt: pack.generatedAt,
+          observedAt: new Date().toISOString(),
+          fileRefs: intendedPaths,
+          payload: { digest: pack.packDigest, brainGeneration: pack.brainGeneration, admissible: pack.verdict.admissible },
+          provenance: { mode: 'live', authorityRef: 'brain:createAwarenessPort', confidence: 'authoritative' },
+        }])
+      } catch {
+        // Trace logging should not break awareness pack return
+      }
+
+      return json(res, { ok: true, pack })
+    }
+
+    if (p === '/api/context/pack' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      access.requireWorkspace(db, workspaceId)
+      const goal = String(body.goal ?? '').trim()
+      if (!goal) return json(res, { ok: false, error: 'goal required' }, 400)
+      const agentId = body.agentId ? String(body.agentId).trim() : undefined
+      if (agentId) access.requireAgent(db, agentId)
+      const pack = buildContextPack(db, workspaceId, goal, {
+        agentId,
+        missionId: body.missionId ? String(body.missionId) : undefined,
+      })
+      return json(res, { ok: true, ...pack })
+    }
+
+    if (p.startsWith('/api/context/pack/') && p.endsWith('/staleness') && req.method === 'GET') {
+      const packId = p.slice('/api/context/pack/'.length, -'/staleness'.length)
+      try {
+        const result = packStaleness(db, packId)
+        return json(res, { ok: true, ...result })
+      } catch (err: unknown) {
+        return json(res, { ok: false, error: err instanceof Error ? err.message : String(err) }, 404)
+      }
+    }
+
     // ── Agent-facing surface: the only sanctioned way in ─────────────────
     if (p === '/api/agent/attach' && req.method === 'POST') {
+      checkAuth(req, ctx)
       const body = await readBody(req)
-      const agentId = String(body.agentId ?? '')
+      const agentId = String(body.agentId ?? '').trim()
       if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
-      access.ensureAgent(db, agentId, body.name ? String(body.name) : undefined)
-      const briefing = buildBriefing(db, String(body.workspace ?? ws), agentId)
-      return json(res, { ok: true, briefing, markdown: renderBriefing(briefing) })
+      const workspaceId = String(body.workspace ?? ws).trim()
+      access.requireWorkspace(db, workspaceId)
+
+      // Identity creation is an explicit, authorized registration operation (FO-3)
+      access.registerAgent(db, agentId, body.name ? String(body.name) : undefined)
+      const briefing = buildBriefing(db, workspaceId, agentId)
+
+      let awareness: TaskAwarenessPack | undefined
+      if (body.taskId || Array.isArray(body.intendedPaths)) {
+        const port = createAwarenessPort(db)
+        awareness = port({
+          workspaceId,
+          taskId: String(body.taskId ?? `task-${agentId}`),
+          agentId,
+          intendedPaths: Array.isArray(body.intendedPaths) ? body.intendedPaths.map(String) : [],
+          mode: body.mode === 'read' ? 'read' : 'write',
+        })
+      }
+
+      return json(res, {
+        ok: true,
+        briefing,
+        markdown: renderBriefing(briefing),
+        ...(awareness ? { awareness } : {}),
+      })
     }
 
     if (p === '/api/agent/read' && req.method === 'POST') {
+      checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const relPath = String(body.path ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      if (!relPath) return json(res, { ok: false, error: 'path required' }, 400)
+
+      access.requireWorkspace(db, workspaceId)
+      access.requireAgent(db, agentId)
+
       return json(res, {
         ok: true,
-        ...access.readFile(db, String(body.workspace ?? ws), String(body.agentId ?? ''), String(body.path ?? '')),
+        ...access.readFile(db, workspaceId, agentId, relPath),
       })
     }
 
     if (p === '/api/agent/write' && req.method === 'POST') {
+      checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const relPath = String(body.path ?? '').trim()
+      const content = typeof body.content === 'string' ? body.content : ''
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      if (!relPath) return json(res, { ok: false, error: 'path required' }, 400)
+
+      access.requireWorkspace(db, workspaceId)
+      access.requireAgent(db, agentId)
+
+      // FO-4 Hard conflict gate: evaluate intended write against active claims
+      const taskId = String(body.taskId ?? `task-${agentId}`)
+      const claimVerdict = evaluateClaim(db, workspaceId, {
+        taskId,
+        agentId,
+        paths: [relPath],
+        mode: 'write',
+      })
+      if (!claimVerdict.admissible && claimVerdict.hardConflicts.length > 0) {
+        return json(res, {
+          ok: false,
+          error: `hard conflict: path '${relPath}' is held by another active task`,
+          hardConflicts: claimVerdict.hardConflicts,
+          verdict: claimVerdict,
+        }, 409)
+      }
+
       return json(res, {
         ok: true,
-        ...access.writeFile(db, String(body.workspace ?? ws), String(body.agentId ?? ''),
-          String(body.path ?? ''), String(body.content ?? '')),
+        ...access.writeFile(db, workspaceId, agentId, relPath, content),
       })
     }
 
     if (p === '/api/agent/search' && req.method === 'POST') {
+      checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const query = String(body.query ?? '')
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+
+      access.requireWorkspace(db, workspaceId)
+      access.requireAgent(db, agentId)
+
       return json(res, {
         ok: true,
-        hits: access.search(db, String(body.workspace ?? ws), String(body.agentId ?? ''), String(body.query ?? '')),
+        hits: access.search(db, workspaceId, agentId, query),
       })
     }
 
     if (p === '/api/reindex' && req.method === 'POST') {
+      checkAuth(req, ctx)
       const body = await readBody(req)
-      const id = String(body.workspace ?? ws)
+      const id = String(body.workspace ?? ws).trim()
       const w = access.requireWorkspace(db, id)
       return json(res, { ok: true, result: indexWorkspace(db, id, w.root) })
     }
@@ -444,10 +662,18 @@ export function startServer(ctx: Ctx, port: number): Promise<number> {
     json(res, { ok: false, error: `no route: ${p}` }, 404)
   }
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    server.on('error', reject)
     server.listen(port, '127.0.0.1', () => {
       const address = server.address()
-      resolve(typeof address === 'object' && address ? address.port : port)
+      const actualPort = typeof address === 'object' && address ? address.port : port
+      resolve({
+        port: actualPort,
+        server,
+        close: () => new Promise<void>((res, rej) => {
+          server.close(err => (err ? rej(err) : res()))
+        }),
+      })
     })
   })
 }

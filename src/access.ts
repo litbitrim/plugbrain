@@ -27,6 +27,7 @@ export class AccessDenied extends Error {}
 
 /** Look up a registered workspace, or throw — an unregistered folder is not reachable. */
 export function requireWorkspace(db: DatabaseSync, workspaceId: string): Workspace {
+  if (!workspaceId || typeof workspaceId !== 'string') throw new AccessDenied(`invalid workspace: ${workspaceId}`)
   const row = db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').get(workspaceId) as
     Workspace | undefined
   if (!row) throw new AccessDenied(`unknown workspace: ${workspaceId}`)
@@ -34,11 +35,27 @@ export function requireWorkspace(db: DatabaseSync, workspaceId: string): Workspa
 }
 
 /**
- * Register an agent (idempotent) and return its identity including the colour
- * every surface paints its files in. The hue is derived from how many agents
- * came before, so colours are stable and never reused while an agent lives.
+ * Require a previously registered agent, or throw.
+ * Identity creation and identity authorization are strictly separate operations (FO-3).
+ * An unauthenticated or unauthorized caller cannot mint an agent row simply by passing an ID.
  */
-export function ensureAgent(db: DatabaseSync, agentId: string, name?: string): AgentIdentity {
+export function requireAgent(db: DatabaseSync, agentId: string): AgentIdentity {
+  if (!agentId || typeof agentId !== 'string') throw new AccessDenied(`invalid agentId: ${agentId}`)
+  const existing = db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId) as
+    AgentIdentity | undefined
+  if (!existing) throw new AccessDenied(`unknown or unauthorized agent: ${agentId}`)
+  const now = new Date().toISOString()
+  db.prepare('UPDATE agents SET last_seen = ? WHERE id = ?').run(now, agentId)
+  return existing
+}
+
+/**
+ * Register an agent (idempotent) and return its identity including the colour
+ * every surface paints its files in. Must only be invoked by authenticated/authorized
+ * registration flows (e.g. authenticated attach), NEVER as a fallback on read/write/search.
+ */
+export function registerAgent(db: DatabaseSync, agentId: string, name?: string): AgentIdentity {
+  if (!agentId || typeof agentId !== 'string') throw new AccessDenied(`invalid agentId: ${agentId}`)
   const now = new Date().toISOString()
   const existing = db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId) as
     AgentIdentity | undefined
@@ -54,6 +71,11 @@ export function ensureAgent(db: DatabaseSync, agentId: string, name?: string): A
   ).run(agentId, name ?? agentId, color, hue, now, now)
   return { id: agentId, name: name ?? agentId, color, hue }
 }
+
+/**
+ * Register an agent (legacy alias). Kept for backward compatibility with explicit registration calls.
+ */
+export const ensureAgent = registerAgent
 
 /**
  * Resolve a workspace-relative path to an absolute one, refusing anything that
@@ -111,7 +133,7 @@ export function readFile(
   db: DatabaseSync, workspaceId: string, agentId: string, relPath: string,
 ): ReadResult {
   const workspace = requireWorkspace(db, workspaceId)
-  ensureAgent(db, agentId)
+  requireAgent(db, agentId)
   const abs = resolveInside(workspace, relPath)
   const rel = toRel(workspace, abs)
   if (!existsSync(abs)) {
@@ -136,7 +158,7 @@ export function writeFile(
   db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string,
 ): WriteResult {
   const workspace = requireWorkspace(db, workspaceId)
-  const agent = ensureAgent(db, agentId)
+  const agent = requireAgent(db, agentId)
   const abs = resolveInside(workspace, relPath)
   const rel = toRel(workspace, abs)
   const created = !existsSync(abs)
@@ -167,7 +189,7 @@ export function search(
   db: DatabaseSync, workspaceId: string, agentId: string, query: string, limit = 40,
 ): SearchHit[] {
   const workspace = requireWorkspace(db, workspaceId)
-  ensureAgent(db, agentId)
+  requireAgent(db, agentId)
   const cleaned = query.trim().replace(/["']/g, '')
   if (cleaned === '') return []
   const rows = db.prepare(
