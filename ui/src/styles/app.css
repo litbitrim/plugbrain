@@ -177,19 +177,41 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 
 #gate{position:absolute;inset:0;display:none;place-content:center;text-align:center;
   background:var(--bg);color:var(--muted);font-size:13px;line-height:2;padding:40px}
-.live-status { position: fixed; z-index: 50; top: 0; left: 0; right: 0; min-height: 36px; padding: 8px 16px; background: #101613; color: #cde6d6; display: flex; gap: 18px; align-items: center; font-size: 12px; flex-wrap: wrap; }
-.live-status span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 50vw; }
-#app { padding-top: 48px; box-sizing: border-box; }
+/* One row, always. Wrapping turned this bar into four lines at lane width and
+   pushed the visualisation off the bottom of the surface; the name is what
+   gives way, because a truncated name still identifies and a hidden figure
+   does not inform. */
+.live-status {
+  position: fixed; z-index: 50; top: 0; left: 0; right: 0;
+  height: 30px; padding: 0 12px; box-sizing: border-box;
+  background: #101613; color: #cde6d6;
+  display: flex; gap: 14px; align-items: center;
+  font-size: 11px; line-height: 1; flex-wrap: nowrap; overflow: hidden;
+}
+.live-status__name {
+  min-width: 0; flex: 0 1 auto;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The figures never shrink: they are the reason to look at this bar. */
+.live-status__figures {
+  flex: none; white-space: nowrap; opacity: .72;
+  font-variant-numeric: tabular-nums; letter-spacing: .01em;
+}
+.live-status__figures b { color: #eafff2; font-weight: 600; opacity: 1; }
+.live-status__figures b + b { margin-left: 10px; }
+.live-status__state { flex: none; white-space: nowrap; opacity: .55; }
+.live-status__state.is-bad { color: #ff9c8a; opacity: 1; }
+#app { padding-top: 30px; box-sizing: border-box; }
 .brain-empty { padding: 90px 24px; color: #cde6d6; }
 
 /* ── The three-view switcher ────────────────────────────────────────────────
    One brain, three renderings. Only the active view is mounted, so each
    engine's own global stylesheet applies to a DOM that is only ever present
    for that view. */
-.brain-views { display: flex; gap: 2px; margin-left: auto; }
+.brain-views { display: flex; gap: 2px; margin-left: auto; flex: none; }
 .brain-views button {
   font: inherit; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
-  padding: 4px 12px; cursor: pointer;
+  padding: 3px 9px; cursor: pointer;
   color: currentColor; background: transparent;
   border: 1px solid currentColor; border-radius: 999px; opacity: .45;
   transition: opacity 140ms ease, background-color 140ms ease;

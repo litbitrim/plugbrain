@@ -7,9 +7,10 @@
  * every projection, so a track is visible in every graph without the client
  * having to correlate anything itself.
  */
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { extname, join } from 'node:path'
+import { extname, join, resolve as resolvePath } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
@@ -632,6 +633,32 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         ok: true,
         hits: access.search(db, workspaceId, agentId, query),
       })
+    }
+
+    // ── workspace registration ───────────────────────────────────────────
+    // A client that can open a folder must be able to make it a workspace
+    // without shelling out to the CLI. The id is derived from the canonical
+    // root exactly as `plugbrain register` derives it, so registering the same
+    // folder twice is one workspace, whichever side asked for it.
+    if (p === '/api/workspaces' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const raw = String(body.root ?? '').trim()
+      if (raw === '') return json(res, { ok: false, error: 'root is required' }, 400)
+      const root = resolvePath(raw)
+      if (!existsSync(root) || !statSync(root).isDirectory()) {
+        return json(res, { ok: false, error: `not a directory: ${root}` }, 400)
+      }
+      const id = `ws-${createHash('sha256').update(root.toLowerCase()).digest('hex').slice(0, 12)}`
+      // Both separators: a Windows root splits on backslashes, and a class of
+      // only `/` leaves the whole path as the workspace name.
+      const fallback = root.split(/[\\/]/).filter(Boolean).pop() ?? id
+      const name = String(body.name ?? '').trim() || fallback
+      db.prepare(
+        `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT(root) DO UPDATE SET name = excluded.name`
+      ).run(id, name, root, new Date().toISOString())
+      return json(res, { ok: true, workspace: { id, name, root } })
     }
 
     if (p === '/api/reindex' && req.method === 'POST') {

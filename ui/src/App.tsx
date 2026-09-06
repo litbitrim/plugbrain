@@ -12,6 +12,18 @@ const VIEWS: { id: ViewId; label: string; hint: string }[] = [
 ]
 
 /** Remember the chosen view across reloads without inventing a backend. */
+/**
+ * A workspace label, never a path.
+ *
+ * Rows registered before the name fallback was fixed carry their whole root as
+ * the name, and a lane header is not the place to render `C:\...\...`. Taking
+ * the last segment repairs the display for those rows without a migration.
+ */
+function shortLabel(value: string): string {
+  const parts = value.split(/[\/]/).filter(Boolean)
+  return parts.length > 0 ? (parts[parts.length - 1] as string) : value
+}
+
 function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
   const stored = (() => { try { return localStorage.getItem('plugbrain.view') } catch { return null } })()
@@ -119,17 +131,26 @@ export default function App() {
   }, [attempt, until])
 
   const indexed = snapshot?.graph.nodes.length ?? 0
-  const status = error
-    ? `Verbindung unterbrochen · ${error}`
-    : snapshot
-      ? `${indexed} Objekte · ${snapshot.coverage?.complete ? 'laufend aktualisiert' : 'Index unvollständig'}`
-      : 'Index wird geladen …'
+  const edgeCount = snapshot?.graph.edges.length ?? 0
+  /**
+   * One word, not a sentence.
+   *
+   * The header used to carry the full status prose plus the canonical path,
+   * and at lane width that wrapped into four rows before the visualisation
+   * even began. The path is still reachable — it is the title of the name —
+   * but it is not what anyone reads while watching a graph.
+   */
+  const state = error ? 'getrennt' : snapshot ? (snapshot.coverage?.complete ? 'live' : 'Index unvollständig') : 'lädt …'
 
   return <>
     <div className="live-status" role="status">
-      <strong>{snapshot?.workspace.name || 'PlugBrain'}</strong>
-      <span>{snapshot?.workspace.canonicalPath || 'Workspace wird verbunden …'}</span>
-      <span>{status}</span>
+      <strong className="live-status__name" title={snapshot?.workspace.canonicalPath ?? ''}>
+        {snapshot ? shortLabel(snapshot.workspace.name) : 'PlugBrain'}
+      </strong>
+      <span className="live-status__figures">
+        <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
+      </span>
+      <span className={error ? 'live-status__state is-bad' : 'live-status__state'}>{state}</span>
       <nav className="brain-views" aria-label="Ansicht">
         {VIEWS.map(v => (
           <button key={v.id} type="button" title={v.hint}
