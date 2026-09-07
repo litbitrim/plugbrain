@@ -16,6 +16,7 @@ import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import { indexWorkspace } from '../indexer/index.ts'
 import * as missions from '../missions.ts'
+import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
 import { evaluateClaim } from '../projections/conflicts.ts'
 import { ingestTraceEvents } from '../trace.ts'
@@ -669,6 +670,58 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // without shelling out to the CLI. The id is derived from the canonical
     // root exactly as `plugbrain register` derives it, so registering the same
     // folder twice is one workspace, whichever side asked for it.
+    // ── Workspace task queue ─────────────────────────────────────────────
+    // Work is pulled, not routed: the first free agent claims the next task.
+    // Reading the queue is open; changing it is a mutation like any other.
+    if (p === '/api/queue' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const staleAfterMs = Number(q.get('staleAfterMs'))
+      return json(res, {
+        ok: true,
+        depth: queue.queueDepth(db, ws),
+        tasks: queue.listQueue(db, ws, Number.isFinite(staleAfterMs) ? { staleAfterMs } : {}),
+      })
+    }
+
+    if (p === '/api/queue' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      return json(res, {
+        ok: true,
+        task: queue.enqueueTask(db, workspaceId, {
+          title: String(body.title ?? ''),
+          ...(body.body === undefined ? {} : { body: String(body.body) }),
+          ...(body.addressedTo === undefined ? {} : { addressedTo: String(body.addressedTo) }),
+          ...(body.requestedBy === undefined ? {} : { requestedBy: String(body.requestedBy) }),
+        }),
+      })
+    }
+
+    if (p === '/api/queue/claim' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const task = queue.claimNextTask(db, workspaceId, agentId)
+      // An empty queue is an honest answer, not an error: there is simply
+      // nothing to do, and an idle agent must be able to tell the difference.
+      return json(res, { ok: true, task })
+    }
+
+    if (p === '/api/queue/deliver' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const taskId = String(body.taskId ?? '').trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const path = String(body.deliveredPath ?? '').trim()
+      if (!taskId || !agentId || !path) {
+        return json(res, { ok: false, error: 'taskId, agentId and deliveredPath required' }, 400)
+      }
+      return json(res, { ok: true, task: queue.deliverTask(db, taskId, agentId, path) })
+    }
+
     if (p === '/api/workspaces' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)

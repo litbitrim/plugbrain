@@ -3,13 +3,15 @@ import { createAtlasModel } from './lib/atlas.js'
 import { folderName } from './lib/workspace-name.js'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
-import type { BoardTask, Snapshot, ViewId } from './types'
+import QueueView from './views/QueueView'
+import type { BoardTask, QueueTask, Snapshot, ViewId } from './types'
 
-/** The three renderings of one brain. Order is the order of the switcher. */
+/** The renderings of one brain. Order is the order of the switcher. */
 const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'atlas', label: 'Atlas', hint: 'Wissensgraph der indexierten Objekte' },
   { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
   { id: 'mesh', label: 'Mesh', hint: 'Agenten und Zustände aus dem PlugBoard-Ledger' },
+  { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
 ]
 
 /** Remember the chosen view across reloads without inventing a backend. */
@@ -34,6 +36,7 @@ function initialView(): ViewId {
 export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [tasks, setTasks] = useState<BoardTask[]>([])
+  const [queue, setQueue] = useState<{ depth: number; tasks: QueueTask[] }>({ depth: 0, tasks: [] })
   const [boardReachable, setBoardReachable] = useState(true)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -46,8 +49,8 @@ export default function App() {
 
   useEffect(() => { try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ } }, [view])
 
-  // One poller feeds all three views, so they can never disagree about what
-  // the brain currently holds.
+  // One poller feeds every view, so they can never disagree about what the
+  // brain currently holds.
   const untilRef = useRef<string | null>(null)
   useEffect(() => { untilRef.current = until }, [until])
 
@@ -130,6 +133,19 @@ export default function App() {
       } catch {
         if (!controller.signal.aborted) setBoardReachable(false)
       }
+      // Same tick as everything else: a queue read from a different instant
+      // than the mesh would show an agent idle beside the task it just took.
+      try {
+        const response = await fetch(
+          '/api/queue' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''),
+          { signal: controller.signal })
+        if (response.ok) {
+          const payload = await response.json()
+          if (payload?.ok === true && Array.isArray(payload.tasks)) {
+            setQueue({ depth: Number(payload.depth ?? 0), tasks: payload.tasks as QueueTask[] })
+          }
+        }
+      } catch { /* a queue that cannot be read is reported by the header state */ }
       if (!controller.signal.aborted) timer = setTimeout(refresh, 3000)
     }
     void refresh()
@@ -199,6 +215,8 @@ export default function App() {
     )}
 
     {view === 'city' && <div className="brain-view brain-view-city"><CityView snapshot={snapshot} /></div>}
+
+    {view === 'queue' && <div className="brain-view brain-view-queue"><QueueView tasks={queue.tasks} depth={queue.depth} /></div>}
 
     {view === 'mesh' && <div className="brain-view brain-view-mesh">
       {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}

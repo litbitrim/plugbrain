@@ -259,3 +259,33 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 }
 .brain-timelapse input[type="range"] { width: 260px; accent-color: #6ee7b7; }
 .brain-timelapse span { min-width: 74px; text-align: right; opacity: .8; }
+
+/* ── Queue ────────────────────────────────────────────────────────────────
+   Depth first and largest: it is the number that predicts trouble. The list
+   below it answers "who holds what", which is the only other live question. */
+.queue { display: flex; flex-direction: column; gap: 18px; padding: 18px 22px; height: 100%; overflow: hidden; }
+
+.queue__figures { display: flex; gap: 34px; flex: 0 0 auto; }
+.queue__figure { display: flex; flex-direction: column; gap: 2px; }
+.queue__figure strong { font-size: 30px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.queue__figure span { font-size: 10px; letter-spacing: .14em; opacity: .55; }
+.queue__figure--hot strong { color: #e2a33c; }
+
+.queue__list { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+.queue__row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) auto auto auto;
+  gap: 12px; align-items: baseline;
+  padding: 7px 10px; border-radius: 5px;
+  background: color-mix(in oklab, currentColor 4%, transparent);
+}
+.queue__row--delivered { opacity: .5; }
+.queue__state { font-size: 9.5px; letter-spacing: .12em; opacity: .6; }
+.queue__row--pending .queue__state { color: #6fa8dc; opacity: .9; }
+.queue__row--claimed .queue__state { color: #7fc98a; opacity: .9; }
+.queue__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue__holder, .queue__path { font-size: 11px; opacity: .6; }
+.queue__stale {
+  font-size: 9.5px; letter-spacing: .1em; color: #e2a33c;
+  border: 1px solid currentColor; border-radius: 3px; padding: 1px 5px;
+}

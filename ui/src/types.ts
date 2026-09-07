@@ -18,4 +18,17 @@ export type BoardTask = {
 }
 
 /** Which of the three renderings of the same brain is on screen. */
-export type ViewId = 'atlas' | 'city' | 'mesh'
+export type ViewId = 'atlas' | 'city' | 'mesh' | 'queue'
+
+/** A row of the workspace queue, as the Brain reports it. */
+export type QueueTask = {
+  id: string
+  title: string
+  state: 'pending' | 'claimed' | 'delivered' | 'cancelled'
+  addressed_to: string | null
+  claimed_by: string | null
+  claimed_at: string | null
+  delivered_path: string | null
+  /** A claim that has gone quiet. A reading, never a decision. */
+  stale: boolean
+}
