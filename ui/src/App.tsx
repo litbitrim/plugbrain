@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createAtlasModel } from './lib/atlas.js'
+import { folderName } from './lib/workspace-name.js'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
 import type { BoardTask, Snapshot, ViewId } from './types'
@@ -12,17 +13,16 @@ const VIEWS: { id: ViewId; label: string; hint: string }[] = [
 ]
 
 /** Remember the chosen view across reloads without inventing a backend. */
+/** Show the folder name, never the canonical path. Shared with the city. */
+const shortLabel = folderName
+
 /**
- * A workspace label, never a path.
- *
- * Rows registered before the name fallback was fixed carry their whole root as
- * the name, and a lane header is not the place to render `C:\...\...`. Taking
- * the last segment repairs the display for those rows without a migration.
+ * Files requested per snapshot. Matches the server's own ceiling: the point is
+ * to ask for the entire workspace and let the server refuse only what is
+ * genuinely absurd, so "Index unvollständig" means the index really is
+ * incomplete rather than that the client asked for too little.
  */
-function shortLabel(value: string): string {
-  const parts = value.split(/[\/]/).filter(Boolean)
-  return parts.length > 0 ? (parts[parts.length - 1] as string) : value
-}
+const SNAPSHOT_FILE_LIMIT = 20000
 
 function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
@@ -86,6 +86,12 @@ export default function App() {
       try {
         const params = new URLSearchParams()
         if (requested) params.set('workspace', requested)
+        // Ask for the whole workspace, not a demo-sized slice. The City draws
+        // every indexed object, so a default of 900 made a 7 800-file project
+        // render as a fraction of itself under an honest but permanent
+        // "Index unvollständig". The Atlas is unaffected: toAtlasData bounds
+        // its own layout, so one snapshot can still feed all three views.
+        params.set('limit', String(SNAPSHOT_FILE_LIMIT))
         if (untilRef.current) params.set('until', untilRef.current)
         const response = await fetch('/api/atlas/snapshot' + (params.toString() ? `?${params}` : ''), { signal: controller.signal })
         if (!response.ok) throw new Error(`Brain-Verbindung: HTTP ${response.status}`)

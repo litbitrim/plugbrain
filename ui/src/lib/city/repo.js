@@ -11,8 +11,9 @@
      PlugBrainCity.event('ws-core', 'checkpoint written')
      PlugBrainCity.unregister('ws-core')
 
-   Until the first real register() call, a simulated fleet of workspaces
-   keeps the map alive — the first real registration clears the simulation.
+   The map is deliberately empty until the real PlugBrain adapter registers a
+   workspace. A product surface must never turn missing index data into a
+   convincing demo city; the empty state is the evidence-bearing state.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── live collections (mutated in place; city.js reads them every frame) ── */
@@ -174,77 +175,11 @@ setInterval(() => {
 }, 600);
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Simulated fleet — placeholder until the real runtime checks in.
-   ═══════════════════════════════════════════════════════════════════════ */
-const SIM_WS = [
-  ['plugbrain-core', ['runtime/orb.js', 'runtime/loop.js', 'runtime/checkpoint.js', 'core/registry.js', 'core/scheduler.js', 'core/bus.js']],
-  ['agent-mesh', ['mesh/trails.js', 'mesh/signals.js', 'mesh/swarm.js', 'mesh/registry.js']],
-  ['gitnexus', ['nexus/codegraph.js', 'nexus/indexer.js', 'nexus/query.js']],
-  ['plugnetz', ['netz/shell.ts', 'netz/routes.ts', 'netz/peers.ts']],
-];
-const SIM_ACTS = ['checkpoint written', 'task delegated', 'signal emitted', 'module indexed', 'state verified', 'job completed', 'agent pinged', 'trace persisted'];
-let simTimer = null, simActive = true;
-
-function simTick() {
-  const live = workspaces.filter(w => w.sim && !w.dying);
-  if (!live.length) return;
-  const ws = live[Math.floor(Math.random() * live.length)];
-  const conf = SIM_WS.find(s => s[0] === ws.id);
-  const own = files.filter(f => f.dir === ws.id);
-  const r = Math.random();
-  if (r < 0.62) {
-    // grow: extend an existing module or raise a new one
-    if (own.length && Math.random() < 0.55) {
-      const f = own[Math.floor(Math.random() * own.length)];
-      f.loc += 6 + Math.round(Math.random() * 26); f.pulse = 1;
-      log(ws.name, `${f.name} +${Math.round(6 + Math.random() * 20)} lines`);
-    } else {
-      const pool = conf[1].filter(p => !FMAP[`${ws.id}/${p}`]);
-      const extra = [`mod-${Math.random().toString(36).slice(2, 6)}.js`];
-      const name = (pool.length ? pool[0] : `lib/${extra[0]}`);
-      const deps = own.length ? [own[Math.floor(Math.random() * own.length)].name] : [];
-      addFile(ws, { path: name, loc: 30 + Math.round(Math.random() * 160), deps });
-      log(ws.name, `new module ${name.split('/').pop()}`, 'new');
-    }
-  } else {
-    const f = own.length ? own[Math.floor(Math.random() * own.length)] : null;
-    if (f) f.pulse = 1;
-    log(ws.name, SIM_ACTS[Math.floor(Math.random() * SIM_ACTS.length)]);
-  }
-  ws.load = Math.min(1, ws.load + 0.35); ws.events++;
-  notify();
-}
-
-function startSimulation() {
-  SIM_WS.forEach(([id]) => addWorkspace(id, id, true));
-  // seed a few buildings so the city doesn't start empty
-  for (const [id, mods] of SIM_WS) {
-    const ws = workspaces.find(w => w.id === id);
-    mods.slice(0, 3).forEach((m, i) =>
-      addFile(ws, { path: m, loc: 40 + Math.round(Math.random() * 180), deps: i ? [mods[i - 1].split('/').pop()] : [] }));
-  }
-  simTimer = setInterval(simTick, 1100);
-}
-
-function stopSimulation() {
-  if (!simActive) return;
-  simActive = false;
-  clearInterval(simTimer);
-  for (const ws of workspaces.filter(w => w.sim)) {
-    ws.dying = true;
-    files.filter(f => f.dir === ws.id).forEach(f => { f.dying = true });
-    log(ws.name, 'simulation cleared — runtime connected', 'sys');
-  }
-  notify();
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
    Public API — the runtime's attachment point: window.PlugBrainCity
    ═══════════════════════════════════════════════════════════════════════ */
 const api = {
   register({ id, name } = {}) {
     if (!id) return console.warn('[PlugBrainCity] register() needs an id');
-    stopSimulation();
     return addWorkspace(String(id), name && String(name), false);
   },
   grow(id, { path, loc = 40, deps = [], note = '', agentColor = null, agentName = null, access = null } = {}) {
@@ -271,8 +206,10 @@ const api = {
     rebuildLayout(); notify();
   },
   list: () => workspaces.map(w => ({ id: w.id, name: w.name, buildings: files.filter(f => f.dir === w.id).length })),
-  simulated: () => simActive,
+  // Kept as a read-only compatibility field for older embedded callers. A
+  // false result is the only honest answer: this product has no demo fleet.
+  simulated: () => false,
 };
 window.PlugBrainCity = api;
 
-export { api, removeDead, rebuildLayout, log, notify, startSimulation };
+export { api, removeDead, rebuildLayout, log, notify };

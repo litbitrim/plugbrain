@@ -7,9 +7,7 @@
    No example objects are ever substituted: when the snapshot carries no
    indexed nodes, nothing is grown and the caller reports the empty index. */
 import { api, workspaces } from './city/repo.js'
-
-/** Must stay at or below MAXB in ./city/city.js — that pool is preallocated. */
-export const CITY_BUILDING_LIMIT = 1000
+import { folderName } from './workspace-name.js'
 
 /** Workspaces already registered with the engine, and the paths grown per workspace. */
 const grown = new Map()
@@ -39,11 +37,12 @@ export function feedCity(snapshot) {
 
   const id = String(ws.id)
   if (!grown.has(id)) {
-    api.register({ id, name: ws.name || id })
+    // The district carries the same short label the header shows, so a
+    // legacy path-shaped name never reaches the map as a full canonical path.
+    api.register({ id, name: folderName(ws.name || id) })
     grown.set(id, new Set())
-    // register() stops the simulation from adding more, but districts it already
-    // placed stay on the map and would be counted in the same KPI as real ones.
-    // Once a real workspace is on screen, nothing simulated may remain.
+    // Registration is the first evidence-bearing write to the city. There is no
+    // synthetic district to clear: the map only contains this real workspace.
     for (const w of workspaces.slice()) {
       if (w.sim && w.id !== id) api.unregister(w.id)
     }
@@ -64,22 +63,17 @@ export function feedCity(snapshot) {
     depsOf.get(from.id).push(tp)
   }
 
-  // The city engine draws from a FIXED pool (MAXB in city/city.js). Feeding it
-  // more than that cannot render and pushes the layout past what the camera can
-  // frame, so the visible set is bounded — exactly as toAtlasData bounds the
-  // Atlas. Selection is sorted by path so the same workspace always yields the
-  // same city, and the caller reports the truncation rather than showing a
-  // partial map as if it were the whole workspace.
+  // Keep every indexed file. The renderer grows its GPU buffers on demand, so
+  // a large workspace is not silently turned into a partial city by a demo
+  // sized demo capacity. Sorting keeps the layout deterministic across polls.
   const withPaths = []
   for (const node of nodes) {
     const path = pathOf(node)
     if (path) withPaths.push({ node, path })
   }
   withPaths.sort((a, b) => a.path.localeCompare(b.path))
-  const selected = withPaths.slice(0, CITY_BUILDING_LIMIT)
-
   let added = 0
-  for (const { node, path } of selected) {
+  for (const { node, path } of withPaths) {
     if (seen.has(path)) continue
     seen.add(path)
     const props = node.properties || {}
@@ -99,9 +93,9 @@ export function feedCity(snapshot) {
     buildings: seen.size,
     added,
     total: withPaths.length,
-    truncated: withPaths.length > selected.length,
+    truncated: false,
   }
 }
 
-/** True when the engine is still showing its own simulated fleet. */
+/** Compatibility read for older callers; the production city never simulates. */
 export const isSimulated = () => api.simulated()

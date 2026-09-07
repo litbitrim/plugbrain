@@ -65,6 +65,24 @@ function agentsOf(db: DatabaseSync, workspaceId: string) {
 }
 
 /**
+ * Upper bound on files in one snapshot. Not a product limit — a refusal of an
+ * absurd request. See the note at the snapshot route for the measurements.
+ */
+const MAX_SNAPSHOT_FILES = 20000
+
+/**
+ * Read a positive integer query parameter, falling back to `fallback` for
+ * anything missing or unparseable. A bare `Number(...)` returns NaN for junk,
+ * and NaN survives Math.max/Math.min unchanged — it would reach SQLite as a
+ * bound parameter and silently return nothing.
+ */
+function clampLimit(raw: string | null, fallback: number, ceiling: number): number {
+  const parsed = Number(raw)
+  if (raw === null || raw === '' || !Number.isFinite(parsed)) return fallback
+  return Math.min(ceiling, Math.max(1, Math.floor(parsed)))
+}
+
+/**
  * The unified graph projection. Nodes carry the colour of the agent that owns
  * them, so agent tracks are visible in the Atlas, the City and the Planet
  * without any of them re-deriving attribution.
@@ -224,9 +242,13 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     void handle(req, res).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
       const status = error instanceof AuthenticationRequired ? 401
+        : error instanceof access.WriteConflictError ? 409
         : error instanceof access.AccessDenied ? 403
         : error instanceof missions.MissionError ? 409 : 500
-      if (!res.headersSent) json(res, { ok: false, error: message }, status)
+      const body = error instanceof access.WriteConflictError
+        ? { ok: false, error: message, hardConflicts: error.verdict.hardConflicts, verdict: error.verdict }
+        : { ok: false, error: message }
+      if (!res.headersSent) json(res, body, status)
       else res.end()
     })
   })
@@ -280,7 +302,14 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // carried on every node so a track shows up in whichever view is open.
     if (p === '/api/atlas/snapshot') {
       const w = access.requireWorkspace(db, ws)
-      const limit = Number(q.get('limit') ?? 900)
+      // The City draws the whole workspace, so the file scan must not stay at a
+      // demo-sized number. Measured on plugharness (7 800 files, 132 954
+      // symbols): limit=900 → 67 ms, limit=8000 → 111 ms. The file scan is not
+      // what costs; the symbol join is, and it stays bounded independently
+      // below. This ceiling only refuses an absurd request — it is not a
+      // product limit, and the honest `coverage` fields still report any
+      // shortfall rather than presenting a partial city as complete.
+      const limit = clampLimit(q.get('limit'), 900, MAX_SNAPSHOT_FILES)
       const until = q.get('until')            // timelapse: state as of this instant
       const g = graphOf(db, ws, limit, until)
 
@@ -596,7 +625,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       access.requireAgent(db, agentId)
 
       // FO-4 Hard conflict gate: evaluate intended write against active claims
-      const taskId = String(body.taskId ?? `task-${agentId}`)
+      const taskId = String(body.taskId ?? `task-${agentId}`).trim() || `task-${agentId}`
       const claimVerdict = evaluateClaim(db, workspaceId, {
         taskId,
         agentId,
@@ -614,7 +643,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
 
       return json(res, {
         ok: true,
-        ...access.writeFile(db, workspaceId, agentId, relPath, content),
+        ...access.writeFile(db, workspaceId, agentId, relPath, content, taskId),
       })
     }
 

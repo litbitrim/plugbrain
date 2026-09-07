@@ -25,11 +25,9 @@ import type { Snapshot } from '../types.js'
 export default function CityView({ snapshot }: { snapshot: Snapshot | null }) {
   // Apply every snapshot the shell polls. feedCity skips what it already grew,
   // so an unchanged workspace produces no churn on the map.
-  const [coverage, setCoverage] = useState<{ buildings: number; total: number; truncated: boolean } | null>(null)
   useEffect(() => {
     if (!snapshot) return
-    const result = feedCity(snapshot)
-    setCoverage({ buildings: result.buildings, total: result.total ?? result.buildings, truncated: Boolean(result.truncated) })
+    feedCity(snapshot)
   }, [snapshot])
 
   const [ok, setOk] = useState(true)
@@ -60,7 +58,10 @@ export default function CityView({ snapshot }: { snapshot: Snapshot | null }) {
   }, [])
 
   // the runtime model notifies; panels re-read the live collections
-  useEffect(() => subscribe(() => force()), [])
+  useEffect(() => {
+    const unsubscribe = subscribe(() => force())
+    return () => { unsubscribe() }
+  }, [])
 
   useEffect(() => { city.current?.setSel(sel) }, [sel])
   useEffect(() => { city.current?.setQuery(query) }, [query])
@@ -85,22 +86,20 @@ export default function CityView({ snapshot }: { snapshot: Snapshot | null }) {
   const list = (title: string, arr: string[]) => arr.length ? (
     <>
       <h3>{title + ' '}<span style={{ color: 'var(--faint)' }}>{arr.length}</span></h3>
-      {arr.map(p => FMAP[p] && (
-        <div className="dep" data-p={p} key={p} onClick={() => setSelS(FMAP[p])}>
-          <span className="sw" style={{ background: colorOf(FMAP[p]) }} />
-          <span>{p}</span>
-        </div>
-      ))}
+      {arr.map(p => {
+        const file = (FMAP as Record<string, File>)[p]
+        return file && (
+          <div className="dep" data-p={p} key={p} onClick={() => setSelS(file)}>
+            <span className="sw" style={{ background: colorOf(file) }} />
+            <span>{p}</span>
+          </div>
+        )
+      })}
     </>
   ) : null
 
-  const truncationNote = coverage?.truncated
-    ? `Karte zeigt ${coverage.buildings} von ${coverage.total} indexierten Objekten — die Stadt-Engine rendert aus einem festen Pool.`
-    : null
-
   return (
     <div id="app" className={sel ? undefined : 'closed'}>
-      {truncationNote && <div className="brain-note">{truncationNote}</div>}
       <aside>
         <div className="hd">
           <h1>PlugBrain City</h1>

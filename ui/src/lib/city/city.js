@@ -1,15 +1,15 @@
 import * as THREE from 'three';
-import { CELL, KVARS, STREET, colorOf, cssv, edges, files, hOf, plots, removeDead, shadeOf, startSimulation } from './repo.js';
+import { CELL, KVARS, STREET, colorOf, cssv, edges, files, hOf, plots, removeDead, shadeOf } from './repo.js';
 
 /* ═══════════════════════════════════════════════════════════════════════
    3D — PlugBrain City. The city is alive: workspaces register as districts,
-   buildings rise out of the ground as modules appear, and everything is
-   pooled up-front (instancing, outlines, link vertices, flow points) so the
-   runtime can grow the map without ever reallocating a buffer.
-   ═══════════════════════════════════════════════════════════════════════ */
-const MAXB = 1024;               // building pool
-const MAXE = 2048;               // edge pool
-const MAXP = 96;                 // district pool
+   buildings rise out of the ground as modules appear. GPU buffers start small
+   and grow geometrically when a real workspace needs more capacity; the city
+   never drops indexed objects just because a demo-sized pool was exhausted.
+    ═══════════════════════════════════════════════════════════════════════ */
+const INITIAL_BUILDINGS = 1024;
+const INITIAL_EDGES = 2048;
+const MAXP = 96;                 // current district pool; workspaces are bounded separately
 
 /* Agent attribution beats workspace hue on this map. The brain hands each
    building the colour of the agent that touched it; a file only READ is drawn
@@ -38,8 +38,6 @@ export function createCity(cv, stage, tip, { onSelect, onZoom }) {
 let renderer;
 try { renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, canvas: cv}) } catch (e) {}
 if (!renderer) return null;
-
-startSimulation();
 
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setClearColor(0x000000, 0);
@@ -93,10 +91,11 @@ const boxMat = new THREE.ShaderMaterial({
   uniforms: {uHatch: {value: 1}, uTime: {value: 0}},
   vertexShader: BOX_VERT, fragmentShader: BOX_FRAG,
 });
-const boxes = new THREE.InstancedMesh(boxGeo, boxMat, MAXB);
+let buildingCapacity = INITIAL_BUILDINGS;
+let boxes = new THREE.InstancedMesh(boxGeo, boxMat, buildingCapacity);
 boxes.frustumCulled = false;
-const bColor = new THREE.InstancedBufferAttribute(new Float32Array(MAXB * 3), 3);
-const bHi = new THREE.InstancedBufferAttribute(new Float32Array(MAXB * 2), 2);
+let bColor = new THREE.InstancedBufferAttribute(new Float32Array(buildingCapacity * 3), 3);
+let bHi = new THREE.InstancedBufferAttribute(new Float32Array(buildingCapacity * 2), 2);
 boxGeo.setAttribute('aColor', bColor);
 boxGeo.setAttribute('aHi', bHi);
 scene.add(boxes);
@@ -107,12 +106,48 @@ scene.add(boxes);
    so each building gets its own wireframe from a pre-allocated pool. */
 const edgeGeo = new THREE.EdgesGeometry(boxGeo);
 const outlineMat = new THREE.LineBasicMaterial({color: 0x3a3527, transparent: true, opacity: 0.30});
-const outlinePool = [];
-for (let i = 0; i < MAXB; i++) {
+let outlinePool = [];
+for (let i = 0; i < buildingCapacity; i++) {
   const o = new THREE.LineSegments(edgeGeo, outlineMat);
   o.visible = false;
   outlinePool.push(o);
   scene.add(o);
+}
+
+const nextCapacity = (current, required) => {
+  let next = Math.max(1, current);
+  while (next < required) next *= 2;
+  return next;
+};
+
+/* Reallocate only when the authoritative feed actually outgrows the current
+   capacity. Every frame after that uses the complete `files` collection. */
+function ensureBuildingCapacity(required) {
+  if (required <= buildingCapacity) return;
+  const next = nextCapacity(buildingCapacity, required);
+  const oldBoxes = boxes;
+  const oldOutlines = outlinePool;
+  const nextBoxes = new THREE.InstancedMesh(boxGeo, boxMat, next);
+  nextBoxes.frustumCulled = false;
+  nextBoxes.count = 0;
+  const nextColor = new THREE.InstancedBufferAttribute(new Float32Array(next * 3), 3);
+  const nextHi = new THREE.InstancedBufferAttribute(new Float32Array(next * 2), 2);
+  boxGeo.setAttribute('aColor', nextColor);
+  boxGeo.setAttribute('aHi', nextHi);
+  const nextOutlines = [];
+  for (let i = 0; i < next; i++) {
+    const o = new THREE.LineSegments(edgeGeo, outlineMat);
+    o.visible = false;
+    nextOutlines.push(o);
+    scene.add(o);
+  }
+  scene.remove(oldBoxes);
+  for (const o of oldOutlines) scene.remove(o);
+  boxes = nextBoxes;
+  bColor = nextColor;
+  bHi = nextHi;
+  outlinePool = nextOutlines;
+  buildingCapacity = next;
 }
 
 /* Districts: one thin slab per workspace, pooled and damped toward its
@@ -147,8 +182,9 @@ for (let i = 0; i < MAXP; i++) {
       More than thirty static lines turn into a hairball; moving points can be
       tracked in peripheral vision, and direction needs no arrows. ── */
 const FLOW_PER = 3;
-const fPos = new Float32Array(MAXE * FLOW_PER * 3);
-const fA = new Float32Array(MAXE * FLOW_PER);
+let edgeCapacity = INITIAL_EDGES;
+let fPos = new Float32Array(edgeCapacity * FLOW_PER * 3);
+let fA = new Float32Array(edgeCapacity * FLOW_PER);
 const fGeo = new THREE.BufferGeometry();
 fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
 fGeo.setAttribute('aA', new THREE.BufferAttribute(fA, 1));
@@ -170,8 +206,8 @@ flow.frustumCulled = false;
 scene.add(flow);
 
 // The dependency lines themselves: barely visible by default, lit on selection.
-const lPos = new Float32Array(MAXE * 6);
-const lA = new Float32Array(MAXE * 2);
+let lPos = new Float32Array(edgeCapacity * 6);
+let lA = new Float32Array(edgeCapacity * 2);
 const lGeo = new THREE.BufferGeometry();
 lGeo.setAttribute('position', new THREE.BufferAttribute(lPos, 3));
 lGeo.setAttribute('aA', new THREE.BufferAttribute(lA, 1));
@@ -184,6 +220,19 @@ const links = new THREE.LineSegments(lGeo, new THREE.ShaderMaterial({
 }));
 links.frustumCulled = false;
 scene.add(links);
+
+function ensureEdgeCapacity(required) {
+  if (required <= edgeCapacity) return;
+  edgeCapacity = nextCapacity(edgeCapacity, required);
+  fPos = new Float32Array(edgeCapacity * FLOW_PER * 3);
+  fA = new Float32Array(edgeCapacity * FLOW_PER);
+  lPos = new Float32Array(edgeCapacity * 6);
+  lA = new Float32Array(edgeCapacity * 2);
+  fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
+  fGeo.setAttribute('aA', new THREE.BufferAttribute(fA, 1));
+  lGeo.setAttribute('position', new THREE.BufferAttribute(lPos, 3));
+  lGeo.setAttribute('aA', new THREE.BufferAttribute(lA, 1));
+}
 
 /* ── Camera: the isometric angle is fixed; only orbiting around Y and zooming
       are allowed. Free pitch would turn it into an ordinary 3D view at once. ── */
@@ -246,6 +295,8 @@ function frame(now) {
 
   // buried first: reap buildings that finished collapsing, drop dead districts
   removeDead();
+  ensureBuildingCapacity(files.length);
+  ensureEdgeCapacity(edges.length);
 
   if (spin) cam.tYaw += dt * 0.12;
   cam.yaw += (cam.tYaw - cam.yaw) * k;
@@ -281,7 +332,7 @@ function frame(now) {
   const near = sel ? new Set([sel.path, ...sel.deps, ...sel.usedBy]) : null;
   const focus = sel || hover || railHover;
 
-  const N = Math.min(files.length, MAXB);
+  const N = files.length;
   boxes.count = N;
   for (let i = 0; i < N; i++) {
     const f = files[i];
@@ -307,12 +358,12 @@ function frame(now) {
     bHi.array[i * 2] += (hi - bHi.array[i * 2]) * k;
     bHi.array[i * 2 + 1] += (fade - bHi.array[i * 2 + 1]) * k;
   }
-  for (let i = N; i < MAXB; i++) outlinePool[i].visible = false;
+  for (let i = N; i < buildingCapacity; i++) outlinePool[i].visible = false;
   boxes.instanceMatrix.needsUpdate = true;
   bColor.needsUpdate = bHi.needsUpdate = true;
 
   // Dependency lines and flow points
-  const E = Math.min(edges.length, MAXE);
+  const E = edges.length;
   lGeo.setDrawRange(0, E * 2);
   fGeo.setDrawRange(0, E * FLOW_PER);
   for (let i = 0; i < E; i++) {
