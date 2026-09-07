@@ -106,7 +106,7 @@ function agentRead(workspaceId: string, agentId: string, path: string): void {
 }
 
 function agentWrite(workspaceId: string, agentId: string, path: string, content: string): void {
-  const r = access.writeFile(db, workspaceId, agentId, path, content)
+  const r = access.writeFile(db, workspaceId, agentId, path, content, `task-${agentId}`)
   console.log(`${r.created ? 'created' : 'wrote'} ${r.path} (${r.bytes} bytes) as ${r.agent.name} ${r.agent.color}`)
 }
 
@@ -157,6 +157,13 @@ switch (command) {
 }
 } catch (error) {
   // A refused access is a normal answer, not a crash: report it as one line.
+  if (error instanceof access.WriteConflictError) {
+    console.error(`refused: ${error.message}`)
+    for (const conflict of error.verdict.hardConflicts) {
+      console.error(`  holder ${conflict.holder.taskId} (${conflict.holder.agentId ?? 'unknown agent'}) → ${conflict.path}`)
+    }
+    process.exit(3)
+  }
   if (error instanceof access.AccessDenied) {
     console.error(`refused: ${error.message}`)
     process.exit(3)

@@ -15,6 +15,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import * as access from '../src/access.ts'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { ingestTraceEvents } from '../src/trace.ts'
@@ -296,6 +297,93 @@ test('FO-4 Tier 3 (Behaviourally Effective): Conflicting file claim blocks write
   }
 })
 
+test('FO-4 shared mutation boundary: direct library/CLI writes obey the same claim gate', async () => {
+  const fx = await createFixture()
+  try {
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${fx.authKey}`,
+    }
+
+    await fetch(`${fx.baseUrl}/api/agent/attach`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ workspace: fx.workspaceId, agentId: 'agent-direct-lead' }),
+    })
+    await fetch(`${fx.baseUrl}/api/agent/attach`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ workspace: fx.workspaceId, agentId: 'agent-direct-junior' }),
+    })
+
+    const now = new Date().toISOString()
+    ingestTraceEvents(fx.db, [{
+      schema: 1,
+      eventId: 'evt-claim-direct-service',
+      source: 'work',
+      runtimeInstanceId: 'rt-direct-gate',
+      workspaceId: fx.workspaceId,
+      taskId: 'task-direct-lead',
+      agentId: 'agent-direct-lead',
+      type: 'file.claimed',
+      occurredAt: now,
+      observedAt: now,
+      fileRefs: ['src/service.ts'],
+      payload: { mode: 'write' },
+      provenance: { mode: 'live', authorityRef: 'operator:direct-gate', confidence: 'authoritative' },
+    }])
+
+    assert.throws(
+      () => access.writeFile(
+        fx.db, fx.workspaceId, 'agent-direct-junior', 'src/service.ts',
+        'export const service = { status: "bypassed" }\n',
+      ),
+      (error: unknown) => error instanceof access.WriteConflictError
+        && error.verdict.hardConflicts[0]?.holder.taskId === 'task-direct-lead',
+      'the shared write layer must reject a direct write before touching disk',
+    )
+    assert.match(
+      (await (await fetch(`${fx.baseUrl}/api/agent/read`, {
+        method: 'POST', headers: authHeaders,
+        body: JSON.stringify({ workspace: fx.workspaceId, agentId: 'agent-direct-lead', path: 'src/service.ts' }),
+      })).json() as { content: string }).content,
+      /"active"/,
+      'the rejected direct write must leave the file unchanged',
+    )
+
+    const releaseTime = new Date().toISOString()
+    ingestTraceEvents(fx.db, [{
+      schema: 1,
+      eventId: 'evt-release-direct-service',
+      source: 'operator',
+      runtimeInstanceId: 'rt-direct-gate',
+      workspaceId: fx.workspaceId,
+      taskId: 'task-direct-lead',
+      agentId: 'agent-direct-lead',
+      type: 'worker.completed',
+      occurredAt: releaseTime,
+      observedAt: releaseTime,
+      provenance: { mode: 'live', authorityRef: 'operator:direct-release', confidence: 'authoritative' },
+    }])
+
+    const result = access.writeFile(
+      fx.db, fx.workspaceId, 'agent-direct-junior', 'src/service.ts',
+      'export const service = { status: "direct-ok" }\n',
+    )
+    assert.equal(result.path, 'src/service.ts')
+    assert.match(
+      (await (await fetch(`${fx.baseUrl}/api/agent/read`, {
+        method: 'POST', headers: authHeaders,
+        body: JSON.stringify({ workspace: fx.workspaceId, agentId: 'agent-direct-junior', path: 'src/service.ts' }),
+      })).json() as { content: string }).content,
+      /"direct-ok"/,
+      'the same direct path must work after authoritative release',
+    )
+  } finally {
+    await fx.cleanup()
+  }
+})
+
 test('CP01-014 & CP01-018: Context pack build, staleness detection, and durable pre-compression snapshot', async () => {
   const fx = await createFixture()
   try {
@@ -372,4 +460,3 @@ test('CP01-014 & CP01-018: Context pack build, staleness detection, and durable 
     await fx.cleanup()
   }
 })
-

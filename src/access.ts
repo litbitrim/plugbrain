@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
+import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
 import type { Action } from './store/schema.ts'
 
 export interface Workspace { id: string; name: string; root: string }
@@ -24,6 +25,24 @@ export interface AgentIdentity { id: string; name: string; color: string; hue: n
 const GOLDEN_ANGLE = 137.508
 
 export class AccessDenied extends Error {}
+
+/**
+ * A write was refused by the same live-claim projection used by the HTTP API.
+ * Keeping this error in the access layer is deliberate: CLI and library users
+ * must not get a weaker mutation path than agents speaking HTTP.
+ */
+export class WriteConflictError extends AccessDenied {
+  readonly verdict: ConflictVerdict
+
+  constructor(verdict: ConflictVerdict) {
+    const first = verdict.hardConflicts[0]
+    super(first
+      ? `hard conflict: path '${first.requestedPath}' is held by another active task`
+      : 'hard conflict: write is not admissible')
+    this.verdict = verdict
+    this.name = 'WriteConflictError'
+  }
+}
 
 /** Look up a registered workspace, or throw — an unregistered folder is not reachable. */
 export function requireWorkspace(db: DatabaseSync, workspaceId: string): Workspace {
@@ -156,11 +175,26 @@ export interface WriteResult { path: string; created: boolean; bytes: number; ag
  */
 export function writeFile(
   db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string,
+  taskId = `task-${agentId}`,
 ): WriteResult {
   const workspace = requireWorkspace(db, workspaceId)
   const agent = requireAgent(db, agentId)
   const abs = resolveInside(workspace, relPath)
   const rel = toRel(workspace, abs)
+
+  // This is the mutation boundary for every client, not just the HTTP route.
+  // The route still returns the richer 409 payload, while CLI/library callers
+  // receive the same authoritative verdict as an exception before disk I/O.
+  const claimVerdict = evaluateClaim(db, workspaceId, {
+    taskId: taskId.trim() || `task-${agentId}`,
+    agentId,
+    paths: [rel],
+    mode: 'write',
+  })
+  if (!claimVerdict.admissible && claimVerdict.hardConflicts.length > 0) {
+    throw new WriteConflictError(claimVerdict)
+  }
+
   const created = !existsSync(abs)
   mkdirSync(dirname(abs), { recursive: true })
   writeFileSync(abs, content, 'utf8')
