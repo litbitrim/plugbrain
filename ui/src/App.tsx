@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createAtlasModel } from './lib/atlas.js'
 import { folderName } from './lib/workspace-name.js'
+import { galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace } from './lib/workspaces.js'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
 import QueueView from './views/QueueView'
 import type { BoardTask, QueueTask, Snapshot, ViewId } from './types'
+
+/** One planet from /api/galaxy — the daemon's registry, never re-derived here. */
+type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
 /** The renderings of one brain. Order is the order of the switcher. */
 const VIEWS: { id: ViewId; label: string; hint: string }[] = [
@@ -33,6 +37,21 @@ function initialView(): ViewId {
   return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'atlas'
 }
 
+/**
+ * The vault to show on boot, before any data arrives.
+ *
+ * URL wins (a launcher asked for a specific workspace), then the last vault
+ * this browser had open — the Obsidian half of "standalone": open the app and
+ * your folder is there again. Empty means the landing: no URL, no memory, so
+ * the human chooses. The most-recently-indexed planet is resolved after the
+ * galaxy loads so a first run never asks twice.
+ */
+function initialWorkspace(): string {
+  const fromUrl = new URLSearchParams(location.search).get('workspace')
+  if (fromUrl) return fromUrl
+  return lastWorkspace()
+}
+
 export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [tasks, setTasks] = useState<BoardTask[]>([])
@@ -41,6 +60,14 @@ export default function App() {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [view, setView] = useState<ViewId>(initialView)
+  // The vault this brain shows. "" is the landing — an honest "no vault yet".
+  const [workspaceId, setWorkspaceId] = useState<string>(initialWorkspace)
+  const [planets, setPlanets] = useState<Planet[]>([])
+  const [vaultOpen, setVaultOpen] = useState(false)
+  const [vaultPath, setVaultPath] = useState('')
+  const [vaultBusy, setVaultBusy] = useState(false)
+  const [vaultError, setVaultError] = useState('')
+  const [vaultDone, setVaultDone] = useState('')
   // Timelapse. `until` pins every projection to an instant, so Atlas, City and
   // Mesh all show the same moment rather than three different presents.
   const [bounds, setBounds] = useState<{ first: string; last: string } | null>(null)
@@ -54,15 +81,112 @@ export default function App() {
   const untilRef = useRef<string | null>(null)
   useEffect(() => { untilRef.current = until }, [until])
 
+  /** Switch vaults: state, the URL and the remembered last vault together. */
+  const applyWorkspace = (id: string): void => {
+    setWorkspaceId(id)
+    rememberWorkspace(id)
+    const url = new URL(location.href)
+    if (id) url.searchParams.set('workspace', id)
+    else url.searchParams.delete('workspace')
+    history.replaceState(null, '', url.toString())
+  }
+
+  // The vault registry and first-run resolution. The picker and the landing
+  // read the daemon's own galaxy — they never re-implement which folders are
+  // vaults, and a planet registered anywhere shows up here.
+  useEffect(() => {
+    let alive = true
+    void galaxy()
+      .then(list => {
+        if (!alive) return
+        setPlanets(list)
+        if (!workspaceId && list.length > 0) {
+          const newest = [...list].sort((a, b) =>
+            (b.indexedAt ?? '').localeCompare(a.indexedAt ?? ''))[0]
+          if (newest) applyWorkspace(newest.id)
+        }
+      })
+      .catch(() => {
+        if (alive) setVaultError('Die Galaxie ist nicht erreichbar — läuft plugbrain serve?')
+      })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const submitVault = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault()
+    const root = vaultPath.trim()
+    if (root === '') return
+    setVaultBusy(true)
+    setVaultError('')
+    setVaultDone('')
+    try {
+      const id = await openVault(root)
+      // The registry changed (a rename, a new planet) — refresh the switcher
+      // so its labels can never disagree with what the header shows.
+      void galaxy().then(list => { if (list.length > 0) setPlanets(list) }).catch(() => { /* header still tells the truth */ })
+      setVaultDone('Vault registriert und indiziert.')
+      setVaultPath('')
+      setVaultOpen(false)
+      applyWorkspace(id)
+    } catch (cause) {
+      setVaultError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setVaultBusy(false)
+    }
+  }
+
+  const reindexNow = async (): Promise<void> => {
+    if (!workspaceId || vaultBusy) return
+    setVaultBusy(true)
+    setVaultError('')
+    setVaultDone('')
+    try {
+      const result = await reindexWorkspace(workspaceId)
+      setVaultDone(`Neu indiziert: ${result?.files ?? 0} Dateien, ${result?.symbols ?? 0} Symbole, ${result?.edges ?? 0} Kanten.`)
+    } catch (cause) {
+      setVaultError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setVaultBusy(false)
+    }
+  }
+
+  const vaultForm = (
+    <form className="brain-vault" onSubmit={submitVault}>
+      <div className="brain-vault__row">
+        <input
+          className="brain-vault__path"
+          value={vaultPath}
+          onChange={event => setVaultPath(event.target.value)}
+          placeholder={'Pfad eines Ordners, z. B. C:\\Notizen\\vault'}
+          spellCheck={false}
+          aria-label="Vault-Pfad"
+        />
+        <button type="submit" className="brain-vault__open" disabled={vaultBusy || vaultPath.trim() === ''}>
+          {vaultBusy ? 'Indiziere …' : 'Als Vault öffnen'}
+        </button>
+      </div>
+      {workspaceId && (
+        <div className="brain-vault__row brain-vault__row--tools">
+          <button type="button" className="brain-vault__reindex" disabled={vaultBusy} onClick={() => void reindexNow()}>
+            {vaultBusy ? '…' : 'Neu indizieren'}
+          </button>
+        </div>
+      )}
+      {vaultError && <p className="brain-vault__error" role="alert">{vaultError}</p>}
+      {vaultDone && <p className="brain-vault__done" role="status">{vaultDone}</p>}
+    </form>
+  )
+
   // The replay range comes from the ledger: it starts at the first thing an
   // agent actually did, which is exactly "since the prompt".
   useEffect(() => {
-    const requested = new URLSearchParams(location.search).get('workspace')
+    const requested = workspaceId || undefined
     void fetch('/api/timeline' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''))
       .then(r => r.json())
       .then(payload => { if (payload?.bounds?.first) setBounds(payload.bounds) })
       .catch(() => { /* a missing ledger simply means no replay to offer */ })
-  }, [])
+  }, [workspaceId])
 
   // Playback walks the range in 60 steps and stops at the live present.
   useEffect(() => {
@@ -84,7 +208,7 @@ export default function App() {
     let timer: ReturnType<typeof setTimeout>
     let previous = ''
     let previousTasks = ''
-    const requested = new URLSearchParams(location.search).get('workspace')
+    const requested = workspaceId || undefined
     async function refresh() {
       try {
         const params = new URLSearchParams()
@@ -150,7 +274,7 @@ export default function App() {
     }
     void refresh()
     return () => { controller.abort(); clearTimeout(timer) }
-  }, [attempt, until])
+  }, [attempt, until, workspaceId])
 
   const indexed = snapshot?.graph.nodes.length ?? 0
   const edgeCount = snapshot?.graph.edges.length ?? 0
@@ -169,6 +293,22 @@ export default function App() {
       <strong className="live-status__name" title={snapshot?.workspace.canonicalPath ?? ''}>
         {snapshot ? shortLabel(snapshot.workspace.name) : 'PlugBrain'}
       </strong>
+      {workspaceId && planets.length > 0 && (
+        <label className="brain-switcher" title="Zu einem anderen Vault wechseln">
+          <select value={workspaceId} onChange={event => { const id = event.target.value; if (id) applyWorkspace(id) }}>
+            {planets.map(p => (
+              <option key={p.id} value={p.id}>{shortLabel(p.name)}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      {workspaceId && (
+        <button type="button" className="brain-vault-toggle"
+          onClick={() => { setVaultOpen(v => !v); setVaultError(''); setVaultDone('') }}
+          title="Einen Ordner als neuen Vault öffnen">
+          {vaultOpen ? 'Schließen' : 'Vault öffnen'}
+        </button>
+      )}
       <span className="live-status__figures">
         <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
       </span>
@@ -208,21 +348,48 @@ export default function App() {
       </div>
     )}
 
-    {view === 'atlas' && (
-      snapshot && indexed > 0
-        ? <AtlasGraph graph={snapshot.graph} />
-        : <div className="brain-empty">{error || (snapshot ? 'Dieser Workspace enthält noch keine indexierten Objekte.' : 'Echten Workspace-Graphen laden …')}</div>
+    {vaultOpen && workspaceId && vaultForm}
+
+    {!workspaceId ? (
+      <div className="brain-landing" role="main">
+        <h1 className="brain-landing__title">PlugBrain</h1>
+        <p className="brain-landing__lead">
+          Ein Ordner als Vault öffnen — der Brain indiziert ihn einmal und hält ihn über den
+          Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
+          einem durchsuchbaren Graphen.
+        </p>
+        {vaultForm}
+        {planets.length > 0 && (
+          <div className="brain-vault__known">
+            <span>Oder einen bekannten Vault öffnen:</span>
+            {planets.map(p => (
+              <button key={p.id} type="button" className="brain-vault__known-item"
+                onClick={() => applyWorkspace(p.id)}>
+                {shortLabel(p.name)} <em title={p.root}>{p.indexedAt ? 'indiziert' : 'nicht indiziert'}</em>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : (
+      <>
+        {view === 'atlas' && (
+          snapshot && indexed > 0
+            ? <AtlasGraph graph={snapshot.graph} />
+            : <div className="brain-empty">{error || (snapshot ? 'Dieser Workspace enthält noch keine indexierten Objekte.' : 'Echten Workspace-Graphen laden …')}</div>
+        )}
+
+        {view === 'city' && <div className="brain-view brain-view-city"><CityView snapshot={snapshot} /></div>}
+
+        {view === 'queue' && <div className="brain-view brain-view-queue"><QueueView tasks={queue.tasks} depth={queue.depth} /></div>}
+
+        {view === 'mesh' && <div className="brain-view brain-view-mesh">
+          {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}
+          {boardReachable && tasks.length === 0 && <div className="brain-note">Noch kein Agent hat diesen Workspace angefasst. Die Engine läuft in Eigensimulation — das sind keine echten Agenten.</div>}
+          <MeshView tasks={tasks} />
+        </div>}
+      </>
     )}
-
-    {view === 'city' && <div className="brain-view brain-view-city"><CityView snapshot={snapshot} /></div>}
-
-    {view === 'queue' && <div className="brain-view brain-view-queue"><QueueView tasks={queue.tasks} depth={queue.depth} /></div>}
-
-    {view === 'mesh' && <div className="brain-view brain-view-mesh">
-      {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}
-      {boardReachable && tasks.length === 0 && <div className="brain-note">Noch kein Agent hat diesen Workspace angefasst. Die Engine läuft in Eigensimulation — das sind keine echten Agenten.</div>}
-      <MeshView tasks={tasks} />
-    </div>}
   </>
 }
 
