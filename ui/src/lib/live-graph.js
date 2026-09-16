@@ -17,7 +17,8 @@ export function toAtlasData(graph, limit = 300) {
   const META = Object.fromEntries(selected.map(n => [n.id, {
     label: n.label || n.name || n.id,
     kind: n.type || 'unknown',
-    path: n.properties?.path || n.properties?.filePath || n.uri || '',
+    path: n.properties?.path || n.properties?.filePath || (n.uri && n.uri.startsWith('file://') ? n.uri.replace(/^file:\/\//, '') : (n.uri && n.uri.startsWith('symbol://') ? n.uri.replace(/^symbol:\/\//, '').split('#')[0] : n.uri)) || '',
+    line: n.properties?.line || null,
     status: n.properties?.status || 'Im aktuellen Graph-Snapshot',
     prov: [n.id, n.updatedAt].filter(Boolean).join(' · '),
   }]));

@@ -17,8 +17,8 @@ export type BoardTask = {
   activeMissionId?: string
 }
 
-/** Which of the three renderings of the same brain is on screen. */
-export type ViewId = 'atlas' | 'city' | 'mesh' | 'queue'
+/** Which of the renderings or tools of the same brain is on screen. */
+export type ViewId = 'atlas' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue'
 
 /** A row of the workspace queue, as the Brain reports it. */
 export type QueueTask = {

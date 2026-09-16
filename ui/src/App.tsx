@@ -2,32 +2,29 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createAtlasModel } from './lib/atlas.js'
 import { folderName } from './lib/workspace-name.js'
 import { galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace } from './lib/workspaces.js'
+import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId } from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
 import QueueView from './views/QueueView'
+import SourceView from './views/SourceView'
+import ExplorerView from './views/ExplorerView'
+import SearchView from './views/SearchView'
+import ContextPackView from './views/ContextPackView'
 import type { BoardTask, QueueTask, Snapshot, ViewId } from './types'
 
-/** One planet from /api/galaxy — the daemon's registry, never re-derived here. */
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
-/** The renderings of one brain. Order is the order of the switcher. */
 const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'atlas', label: 'Atlas', hint: 'Wissensgraph der indexierten Objekte' },
+  { id: 'explorer', label: 'Explorer', hint: 'Echter Quellbaum aus dem Brain' },
+  { id: 'search', label: 'Suche', hint: 'Code- & Symbolsuche über /api/agent/search' },
+  { id: 'packs', label: 'Packs', hint: 'Context-Pack-Inspector' },
   { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
   { id: 'mesh', label: 'Mesh', hint: 'Agenten und Zustände aus dem PlugBoard-Ledger' },
   { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
 ]
 
-/** Remember the chosen view across reloads without inventing a backend. */
-/** Show the folder name, never the canonical path. Shared with the city. */
 const shortLabel = folderName
-
-/**
- * Files requested per snapshot. Matches the server's own ceiling: the point is
- * to ask for the entire workspace and let the server refuse only what is
- * genuinely absurd, so "Index unvollständig" means the index really is
- * incomplete rather than that the client asked for too little.
- */
 const SNAPSHOT_FILE_LIMIT = 20000
 
 function initialView(): ViewId {
@@ -37,15 +34,6 @@ function initialView(): ViewId {
   return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'atlas'
 }
 
-/**
- * The vault to show on boot, before any data arrives.
- *
- * URL wins (a launcher asked for a specific workspace), then the last vault
- * this browser had open — the Obsidian half of "standalone": open the app and
- * your folder is there again. Empty means the landing: no URL, no memory, so
- * the human chooses. The most-recently-indexed planet is resolved after the
- * galaxy loads so a first run never asks twice.
- */
 function initialWorkspace(): string {
   const fromUrl = new URLSearchParams(location.search).get('workspace')
   if (fromUrl) return fromUrl
@@ -60,7 +48,6 @@ export default function App() {
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [view, setView] = useState<ViewId>(initialView)
-  // The vault this brain shows. "" is the landing — an honest "no vault yet".
   const [workspaceId, setWorkspaceId] = useState<string>(initialWorkspace)
   const [planets, setPlanets] = useState<Planet[]>([])
   const [vaultOpen, setVaultOpen] = useState(false)
@@ -68,20 +55,32 @@ export default function App() {
   const [vaultBusy, setVaultBusy] = useState(false)
   const [vaultError, setVaultError] = useState('')
   const [vaultDone, setVaultDone] = useState('')
-  // Timelapse. `until` pins every projection to an instant, so Atlas, City and
-  // Mesh all show the same moment rather than three different presents.
   const [bounds, setBounds] = useState<{ first: string; last: string } | null>(null)
   const [until, setUntil] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
 
-  useEffect(() => { try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ } }, [view])
+  // Direct fast graph files
+  const [graphFiles, setGraphFiles] = useState<any[]>([])
 
-  // One poller feeds every view, so they can never disagree about what the
-  // brain currently holds.
+  // Source View state
+  const [selectedSource, setSelectedSource] = useState<{ path: string; line?: number | null } | null>(() => {
+    const f = new URLSearchParams(location.search).get('file')
+    const l = Number(new URLSearchParams(location.search).get('line'))
+    return f ? { path: f, line: Number.isFinite(l) ? l : null } : null
+  })
+
+  // Token Modal state
+  const [tokenModalOpen, setTokenModalOpen] = useState(false)
+  const [tokenInput, setTokenInput] = useState(getStoredToken())
+  const [agentInput, setAgentInput] = useState(getStoredAgentId())
+
+  useEffect(() => {
+    try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ }
+  }, [view])
+
   const untilRef = useRef<string | null>(null)
   useEffect(() => { untilRef.current = until }, [until])
 
-  /** Switch vaults: state, the URL and the remembered last vault together. */
   const applyWorkspace = (id: string): void => {
     setWorkspaceId(id)
     rememberWorkspace(id)
@@ -91,9 +90,34 @@ export default function App() {
     history.replaceState(null, '', url.toString())
   }
 
-  // The vault registry and first-run resolution. The picker and the landing
-  // read the daemon's own galaxy — they never re-implement which folders are
-  // vaults, and a planet registered anywhere shows up here.
+  // Fast load of graph files for Explorer
+  useEffect(() => {
+    if (!workspaceId) return
+    let alive = true
+    fetch(`/api/graph?workspace=${encodeURIComponent(workspaceId)}&limit=5000`)
+      .then(r => r.json())
+      .then(data => {
+        if (!alive || !data?.nodes) return
+        const files = data.nodes
+          .filter((n: any) => n.type === 'file' && (n.path || n.properties?.path))
+          .map((n: any) => ({
+            id: n.id,
+            path: n.path || n.properties?.path,
+            label: n.label || n.path,
+            lang: n.lang || n.properties?.lang,
+            loc: n.loc ?? n.properties?.lines ?? 0,
+            agent: n.agent || (n.properties?.agentId ? {
+              id: n.properties.agentId,
+              name: n.properties.agentName,
+              color: n.properties.agentColor,
+            } : null),
+          }))
+        setGraphFiles(files)
+      })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [workspaceId, attempt])
+
   useEffect(() => {
     let alive = true
     void galaxy()
@@ -110,7 +134,6 @@ export default function App() {
         if (alive) setVaultError('Die Galaxie ist nicht erreichbar — läuft plugbrain serve?')
       })
     return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const submitVault = async (event: React.FormEvent): Promise<void> => {
@@ -122,9 +145,7 @@ export default function App() {
     setVaultDone('')
     try {
       const id = await openVault(root)
-      // The registry changed (a rename, a new planet) — refresh the switcher
-      // so its labels can never disagree with what the header shows.
-      void galaxy().then(list => { if (list.length > 0) setPlanets(list) }).catch(() => { /* header still tells the truth */ })
+      void galaxy().then(list => { if (list.length > 0) setPlanets(list) }).catch(() => {})
       setVaultDone('Vault registriert und indiziert.')
       setVaultPath('')
       setVaultOpen(false)
@@ -149,6 +170,13 @@ export default function App() {
     } finally {
       setVaultBusy(false)
     }
+  }
+
+  const handleSaveToken = (e: React.FormEvent) => {
+    e.preventDefault()
+    setStoredToken(tokenInput.trim())
+    setStoredAgentId(agentInput.trim())
+    setTokenModalOpen(false)
   }
 
   const vaultForm = (
@@ -178,17 +206,14 @@ export default function App() {
     </form>
   )
 
-  // The replay range comes from the ledger: it starts at the first thing an
-  // agent actually did, which is exactly "since the prompt".
   useEffect(() => {
     const requested = workspaceId || undefined
     void fetch('/api/timeline' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''))
       .then(r => r.json())
       .then(payload => { if (payload?.bounds?.first) setBounds(payload.bounds) })
-      .catch(() => { /* a missing ledger simply means no replay to offer */ })
+      .catch(() => {})
   }, [workspaceId])
 
-  // Playback walks the range in 60 steps and stops at the live present.
   useEffect(() => {
     if (!playing || !bounds) return
     const from = new Date(bounds.first).getTime()
@@ -213,29 +238,22 @@ export default function App() {
       try {
         const params = new URLSearchParams()
         if (requested) params.set('workspace', requested)
-        // Ask for the whole workspace, not a demo-sized slice. The City draws
-        // every indexed object, so a default of 900 made a 7 800-file project
-        // render as a fraction of itself under an honest but permanent
-        // "Index unvollständig". The Atlas is unaffected: toAtlasData bounds
-        // its own layout, so one snapshot can still feed all three views.
         params.set('limit', String(SNAPSHOT_FILE_LIMIT))
         if (untilRef.current) params.set('until', untilRef.current)
         const response = await fetch('/api/atlas/snapshot' + (params.toString() ? `?${params}` : ''), { signal: controller.signal })
         if (!response.ok) throw new Error(`Brain-Verbindung: HTTP ${response.status}`)
         const next: Snapshot = await response.json()
-        if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) throw new Error('Der Brain-Snapshot ist unvollständig.')
+        if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) {
+          throw new Error('Der Brain-Snapshot ist unvollständig.')
+        }
         const signature = JSON.stringify([next.workspace, next.graph, next.coverage])
         if (signature !== previous) { setSnapshot(next); previous = signature }
         setError('')
       } catch (cause) {
         if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause))
       }
-      // The board is a separate authority: it may be absent while the index is
-      // healthy, and that must never be reported as a broken brain.
+
       try {
-        // The Mesh shows the REAL swarm: one orb per agent that has actually
-        // touched this workspace, its state derived from what the ledger says
-        // it last did. No simulated fleet stands in for that.
         const board = await fetch(
           '/api/agents' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''),
           { signal: controller.signal })
@@ -247,8 +265,6 @@ export default function App() {
           id: a.id,
           title: a.name,
           assignedAgentId: a.name,
-          // An agent that has written is executing; one that only read is
-          // still gathering context. Both are honest readings of the ledger.
           status: a.filesTouched > 0 ? 'RUNNING' : a.actions > 0 ? 'REVIEW' : 'PLANNED',
         }))
         const signature = JSON.stringify(next)
@@ -257,8 +273,7 @@ export default function App() {
       } catch {
         if (!controller.signal.aborted) setBoardReachable(false)
       }
-      // Same tick as everything else: a queue read from a different instant
-      // than the mesh would show an agent idle beside the task it just took.
+
       try {
         const response = await fetch(
           '/api/queue' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''),
@@ -269,29 +284,64 @@ export default function App() {
             setQueue({ depth: Number(payload.depth ?? 0), tasks: payload.tasks as QueueTask[] })
           }
         }
-      } catch { /* a queue that cannot be read is reported by the header state */ }
+      } catch {}
       if (!controller.signal.aborted) timer = setTimeout(refresh, 3000)
     }
     void refresh()
     return () => { controller.abort(); clearTimeout(timer) }
   }, [attempt, until, workspaceId])
 
-  const indexed = snapshot?.graph.nodes.length ?? 0
+  const indexed = snapshot?.graph.nodes.length ?? graphFiles.length
   const edgeCount = snapshot?.graph.edges.length ?? 0
-  /**
-   * One word, not a sentence.
-   *
-   * The header used to carry the full status prose plus the canonical path,
-   * and at lane width that wrapped into four rows before the visualisation
-   * even began. The path is still reachable — it is the title of the name —
-   * but it is not what anyone reads while watching a graph.
-   */
-  const state = error ? 'getrennt' : snapshot ? (snapshot.coverage?.complete ? 'live' : 'Index unvollständig') : 'lädt …'
+  const state = error ? 'getrennt (offline)' : (snapshot || graphFiles.length > 0) ? (snapshot?.coverage?.complete ?? true ? 'live' : 'Index unvollständig') : 'lädt …'
+
+  // Extract real files for Explorer (graphFiles prioritized for instant responsiveness)
+  const fileNodes = useMemo(() => {
+    if (graphFiles.length > 0) return graphFiles
+    if (!snapshot?.graph?.nodes) return []
+    return snapshot.graph.nodes
+      .filter((n: any) => n.type === 'file' && (n.properties?.path || n.path))
+      .map((n: any) => {
+        const relPath = n.properties?.path || n.path || ''
+        return {
+          id: n.id,
+          path: relPath,
+          label: n.label || n.name || relPath,
+          lang: n.properties?.lang ?? n.lang ?? null,
+          loc: n.properties?.lines ?? n.loc ?? 0,
+          agent: n.properties?.agentId ? {
+            id: n.properties.agentId,
+            name: n.properties.agentName || n.properties.agentId,
+            color: n.properties.agentColor || '#60a5fa',
+          } : null,
+        }
+      })
+  }, [graphFiles, snapshot])
+
+  const handleOpenSource = (path: string, line?: number | null) => {
+    if (!path) return
+    setSelectedSource({ path, line })
+  }
 
   return <>
+    {/* Negativprüfung: Bei gestopptem Server erscheint ein Offline-Zustand */}
+    {error && (
+      <div className="brain-offline-banner" role="alert">
+        <div className="brain-offline-banner__inner">
+          <span className="brain-offline-badge">OFFLINE</span>
+          <span className="brain-offline-text">
+            <strong>Server nicht erreichbar:</strong> {error} — läuft <code>plugbrain serve</code>?
+          </span>
+          <button type="button" className="brain-offline-btn" onClick={() => setAttempt(v => v + 1)}>
+            Erneut verbinden
+          </button>
+        </div>
+      </div>
+    )}
+
     <div className="live-status" role="status">
       <strong className="live-status__name" title={snapshot?.workspace.canonicalPath ?? ''}>
-        {snapshot ? shortLabel(snapshot.workspace.name) : 'PlugBrain'}
+        {snapshot ? shortLabel(snapshot.workspace.name) : (planets.find(p => p.id === workspaceId)?.name || 'PlugBrain')}
       </strong>
       {workspaceId && planets.length > 0 && (
         <label className="brain-switcher" title="Zu einem anderen Vault wechseln">
@@ -313,18 +363,68 @@ export default function App() {
         <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
       </span>
       <span className={error ? 'live-status__state is-bad' : 'live-status__state'}>{state}</span>
+
       <nav className="brain-views" aria-label="Ansicht">
         {VIEWS.map(v => (
           <button key={v.id} type="button" title={v.hint}
             className={v.id === view ? 'on' : undefined}
             aria-pressed={v.id === view}
-            onClick={() => setView(v.id)}>{v.label}</button>
+            onClick={() => { setView(v.id); }}>
+            {v.label}
+          </button>
         ))}
       </nav>
+
+      <button
+        type="button"
+        className="brain-auth-btn"
+        onClick={() => setTokenModalOpen(true)}
+        title="Auth-Token konfigurieren"
+      >
+        🔑 Auth
+      </button>
+
       {error && <button type="button" onClick={() => setAttempt(value => value + 1)}>Erneut verbinden</button>}
     </div>
 
-    {bounds && (
+    {tokenModalOpen && (
+      <div className="brain-modal-backdrop" onClick={() => setTokenModalOpen(false)}>
+        <div className="brain-modal" onClick={e => e.stopPropagation()}>
+          <div className="brain-modal__header">
+            <h3>PlugBrain Authentifizierung</h3>
+            <button type="button" className="brain-modal__close" onClick={() => setTokenModalOpen(false)}>✕</button>
+          </div>
+          <form onSubmit={handleSaveToken}>
+            <div className="brain-modal__field">
+              <label>Bearer Token (aus <code>auth.token</code>):</label>
+              <input
+                type="text"
+                className="brain-modal__input mono"
+                value={tokenInput}
+                onChange={e => setTokenInput(e.target.value)}
+                placeholder="plug-..."
+              />
+            </div>
+            <div className="brain-modal__field">
+              <label>Agent ID:</label>
+              <input
+                type="text"
+                className="brain-modal__input mono"
+                value={agentInput}
+                onChange={e => setAgentInput(e.target.value)}
+                placeholder="agy"
+              />
+            </div>
+            <div className="brain-modal__actions">
+              <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
+              <button type="submit" className="primary">Speichern</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {bounds && (view === 'atlas' || view === 'city' || view === 'mesh') && (
       <div className="brain-timelapse">
         <button type="button" onClick={() => setPlaying(p => !p)} title="Wachstum abspielen">
           {playing ? '❚❚' : '▶'}
@@ -372,35 +472,151 @@ export default function App() {
         )}
       </div>
     ) : (
-      <>
+      <div className="brain-workspace-layout">
         {view === 'atlas' && (
-          snapshot && indexed > 0
-            ? <AtlasGraph graph={snapshot.graph} />
-            : <div className="brain-empty">{error || (snapshot ? 'Dieser Workspace enthält noch keine indexierten Objekte.' : 'Echten Workspace-Graphen laden …')}</div>
+          snapshot && indexed > 0 ? (
+            <div className="atlas-wrapper">
+              <AtlasGraph graph={snapshot.graph} onOpenSource={handleOpenSource} />
+              {selectedSource && (
+                <div className="atlas-source-overlay">
+                  <SourceView
+                    workspaceId={workspaceId}
+                    path={selectedSource.path}
+                    highlightLine={selectedSource.line}
+                    onClose={() => setSelectedSource(null)}
+                  />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="brain-empty">
+              {error ? (
+                <div className="brain-empty--offline-box">
+                  <div className="offline-icon">🔌</div>
+                  <h3>Server getrennt (Offline-Zustand)</h3>
+                  <p>Die Verbindung zu PlugBrain wurde unterbrochen oder der Server ist gestoppt.</p>
+                  <button type="button" className="btn primary" onClick={() => setAttempt(a => a + 1)}>
+                    Erneut verbinden
+                  </button>
+                </div>
+              ) : (
+                snapshot ? 'Dieser Workspace enthält noch keine indexierten Objekte.' : 'Echten Workspace-Graphen laden …'
+              )}
+            </div>
+          )
         )}
 
-        {view === 'city' && <div className="brain-view brain-view-city"><CityView snapshot={snapshot} /></div>}
+        {view === 'explorer' && (
+          <div className="workbench-split">
+            <div className="workbench-pane workbench-pane--side">
+              <ExplorerView
+                workspaceName={snapshot?.workspace.name ?? (planets.find(p => p.id === workspaceId)?.name || 'Workspace')}
+                files={fileNodes}
+                activePath={selectedSource?.path}
+                onSelectFile={path => handleOpenSource(path)}
+              />
+            </div>
+            <div className="workbench-pane workbench-pane--main">
+              {selectedSource ? (
+                <SourceView
+                  workspaceId={workspaceId}
+                  path={selectedSource.path}
+                  highlightLine={selectedSource.line}
+                  onClose={() => setSelectedSource(null)}
+                />
+              ) : (
+                <div className="source-placeholder">
+                  <div className="source-placeholder__icon">📂</div>
+                  <h3>Datei im Explorer auswählen</h3>
+                  <p>Wähle eine Datei im linken Baum, um den echten Inhalt mit Zeilennummern und Revision anzuzeigen.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        {view === 'queue' && <div className="brain-view brain-view-queue"><QueueView tasks={queue.tasks} depth={queue.depth} /></div>}
+        {view === 'search' && (
+          <div className="workbench-split">
+            <div className="workbench-pane workbench-pane--side">
+              <SearchView
+                workspaceId={workspaceId}
+                onSelectHit={(path, line) => handleOpenSource(path, line)}
+              />
+            </div>
+            <div className="workbench-pane workbench-pane--main">
+              {selectedSource ? (
+                <SourceView
+                  workspaceId={workspaceId}
+                  path={selectedSource.path}
+                  highlightLine={selectedSource.line}
+                  onClose={() => setSelectedSource(null)}
+                />
+              ) : (
+                <div className="source-placeholder">
+                  <div className="source-placeholder__icon">🔍</div>
+                  <h3>Code- und Symbolsuche über <code>/api/agent/search</code></h3>
+                  <p>Gib einen Suchbegriff ein (z. B. <code>authKey</code>). Ein Klick auf einen Treffer öffnet direkt die Quelle.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        {view === 'mesh' && <div className="brain-view brain-view-mesh">
-          {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}
-          {boardReachable && tasks.length === 0 && <div className="brain-note">Noch kein Agent hat diesen Workspace angefasst. Die Engine läuft in Eigensimulation — das sind keine echten Agenten.</div>}
-          <MeshView tasks={tasks} />
-        </div>}
-      </>
+        {view === 'packs' && (
+          <div className="workbench-split">
+            <div className="workbench-pane workbench-pane--side">
+              <ContextPackView
+                workspaceId={workspaceId}
+                onSelectSource={path => handleOpenSource(path)}
+              />
+            </div>
+            <div className="workbench-pane workbench-pane--main">
+              {selectedSource ? (
+                <SourceView
+                  workspaceId={workspaceId}
+                  path={selectedSource.path}
+                  highlightLine={selectedSource.line}
+                  onClose={() => setSelectedSource(null)}
+                />
+              ) : (
+                <div className="source-placeholder">
+                  <div className="source-placeholder__icon">📦</div>
+                  <h3>Context-Pack-Inspector</h3>
+                  <p>Erzeuge einen Context Pack für eine Aufgabe. Klicke auf eine extrahierte Quelle, um ihren Inhalt zu prüfen.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {view === 'city' && (
+          <div className="brain-view brain-view-city">
+            <CityView snapshot={snapshot} />
+          </div>
+        )}
+
+        {view === 'queue' && (
+          <div className="brain-view brain-view-queue">
+            <QueueView tasks={queue.tasks} depth={queue.depth} />
+          </div>
+        )}
+
+        {view === 'mesh' && (
+          <div className="brain-view brain-view-mesh">
+            {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}
+            {boardReachable && tasks.length === 0 && <div className="brain-note">Noch kein Agent hat diesen Workspace angefasst. Die Engine läuft in Eigensimulation — das sind keine echten Agenten.</div>}
+            <MeshView tasks={tasks} />
+          </div>
+        )}
+      </div>
     )}
   </>
 }
 
 type Cluster = { id: string; name: string; color: string }
 type Row = { i: number; name: string; color: string; deg: number; on: boolean }
-type Item = { i: number; name: string; color: string }
 
-/* The rendering engine lives in src/lib/atlas.js (untyped on purpose); these
-   declarations pin the boundary contract the engine has always honoured so the
-   app strict-typechecks without touching engine or design. */
-type AtlasNode = { i: number; cid: string; name: string }
+type AtlasNode = { i: number; cid: string; name: string; meta?: any }
 type AtlasEngine = {
   setView(view: string): void; toggleFlow(): void; toggleLabel(): void; toggleSpin(): void
   reset(): void; toggleTheme(): void; dolly(factor: number): void; zoomReset(): void
@@ -416,22 +632,23 @@ type AtlasModel = {
 }
 type Drawer = {
   i: number; name: string; desc: string; cname: string; color: string
-  deg: number; depth: number; kind: string; path: string; status: string; prov: string
-  groups: { title: string; tag: string; items: Item[] }[]
+  deg: number; depth: number; kind: string; path: string; line?: number | null; status: string; prov: string
+  groups: any[]
 }
 
-
-/* Störungen bleiben die einzigen roten Dinge im System */
-const isBad = (s: string) => /✗|STALE|REPAIR|Quarantäne|secret|offen/i.test(s)
-
-/* Escape regex metacharacters, then wrap the matched parts in <mark> */
 function mark(name: string, q: string) {
   if (!q) return name
   const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig')
   return name.split(re).map((part, i) => i % 2 ? <mark key={i}>{part}</mark> : part)
 }
 
-export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknown[] } }) {
+export function AtlasGraph({
+  graph,
+  onOpenSource,
+}: {
+  graph: { nodes: unknown[]; edges: unknown[] }
+  onOpenSource: (path: string, line?: number | null) => void
+}) {
   const { CLUSTERS, nodes, edges, createAtlas } = useMemo(
     () => createAtlasModel(graph) as unknown as AtlasModel,
     [graph]
@@ -453,11 +670,17 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
 
   const [gate, setGate] = useState(false)
   const [list, setList] = useState<{ q: string; rows: Row[] }>({ q: '', rows: [] })
-  const [drawer, setDrawer] = useState<Drawer | null>(null)
   const [tools, setTools] = useState({ flow: true, label: true, spin: false })
   const [view, setView] = useState('atlas')
   const [theme, setTheme] = useState('dark')
   const [off, setOff] = useState<string[]>([])
+
+  // Requirement 4: "Graph aus /api/graph bzw. /api/atlas/snapshot; ein Knoten-Klick öffnet die richtige Quelle, keine Infobox."
+  const handleDrawer = (d: Drawer | null) => {
+    if (d?.path) {
+      onOpenSource(d.path, d.line ?? null)
+    }
+  }
 
   useEffect(() => {
     const a = createAtlas({
@@ -467,7 +690,7 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
         zlvl: zlvl.current!, sNode: sNode.current!, sEdge: sEdge.current!,
         sDeg: sDeg.current!, sFps: sFps.current!, q: q.current!,
       },
-      emit: { gate: setGate, list: setList, drawer: setDrawer, tools: setTools, theme: setTheme },
+      emit: { gate: setGate, list: setList, drawer: handleDrawer, tools: setTools, theme: setTheme },
     })
     api.current = a
     return () => { a.dispose(); api.current = null }
@@ -479,7 +702,7 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
   }
 
   return (
-    <div id="app" className={drawer ? 'open' : ''}>
+    <div id="app">
       <aside>
         <div className="brand">
           <h1><span className="dot"></span>PlugBrain</h1>
@@ -490,7 +713,7 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
         <div className="searchbox">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
             <circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5 14 14" /></svg>
-          <input id="q" type="search" placeholder="Datei, Symbol, Mission, Pack suchen…" autoComplete="off" spellCheck={false} ref={q}
+          <input id="q" type="search" placeholder="Datei, Symbol im Graph suchen…" autoComplete="off" spellCheck={false} ref={q}
             onChange={e => api.current?.setQuery(e.target.value)} />
         </div>
 
@@ -504,7 +727,13 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
         <div className="listwrap" id="list">
           {list.rows.length ? list.rows.map(n => (
             <div key={n.i} className={'lrow' + (n.on ? ' on' : '')} data-i={n.i}
-              onClick={() => api.current?.selectAt(n.i)}
+              onClick={() => {
+                api.current?.selectAt(n.i)
+                const nodeObj = nodes[n.i]
+                if (nodeObj?.meta?.path) {
+                  onOpenSource(nodeObj.meta.path, nodeObj.meta.line)
+                }
+              }}
               onMouseOver={() => api.current?.hoverAt(n.i)}
               onMouseLeave={() => api.current?.hoverAt(null)}>
               <i style={{ background: n.color }}></i><span>{mark(n.name, list.q)}</span><b>{n.deg}</b>
@@ -521,12 +750,11 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
       </aside>
 
       <div id="stage" ref={stage}>
-        {/* Labels are projected every frame and drawn from a fixed div pool; React is not involved */}
         <div id="labels" ref={labels}></div>
 
         <div id="hud">
           <div><b id="hud-mode" ref={hudMode}>GALAXIE · FREIER ORBIT</b></div>
-          <div id="hud-sel" ref={hudSel}>Nichts ausgewählt</div>
+          <div id="hud-sel" ref={hudSel}>Knoten anklicken, um Quelle direkt zu öffnen</div>
           <div id="hud-sys">{nodes.length} VON {graph.nodes.length} OBJEKTEN · {edges.length} VON {graph.edges.length} KANTEN</div>
         </div>
 
@@ -559,44 +787,11 @@ export function AtlasGraph({ graph }: { graph: { nodes: unknown[]; edges: unknow
         </div>
 
         <div id="hint">
-          Ziehen rotiert · Scrollen oder <kbd>+</kbd>/<kbd>−</kbd> zoomt · Klick fokussiert ein Objekt<br />{' '}
-          <kbd>Shift</kbd>+Klick auf ein zweites Objekt zeigt die kürzeste Kausalkette · <kbd>Esc</kbd> löst die Auswahl
+          Klick auf einen Graphknoten öffnet sofort die Quellansicht · Ziehen rotiert · Scrollen zoomt
         </div>
 
         <div id="gate" style={gate ? { display: 'grid' } : undefined}>WebGL ist auf diesem Gerät nicht verfügbar.<br />Suche und Objekt-Inspector bleiben nutzbar.</div>
       </div>
-
-      <div id="drawer"><div className="dr" id="dr">
-        {drawer && <>
-          <div className="dr-head">
-            <div className="kind"><i style={{ background: drawer.color }}></i>{drawer.cname} · Grad {drawer.deg} · Ebene {drawer.depth}</div>
-            <h2>{drawer.name}</h2>
-            <p>{drawer.desc}</p>
-            <dl className="prov">
-              {drawer.kind && <><dt>Typ</dt><dd>{drawer.kind}</dd></>}
-              {drawer.path && <><dt>Pfad</dt><dd className="mono">{drawer.path}</dd></>}
-              {drawer.status && <><dt>Status</dt><dd className={isBad(drawer.status) ? 'bad' : ''}>{drawer.status}</dd></>}
-              {drawer.prov && <><dt>Provenienz</dt><dd>{drawer.prov}</dd></>}
-            </dl>
-          </div>
-          <div className="dr-body">
-            {drawer.groups.map(g => (
-              <div className="dr-sec" key={g.tag}>
-                <h3>{g.title} <b style={{ color: 'var(--faint)', opacity: .6 }}>{g.items.length}</b></h3>
-                {g.items.map(m => (
-                  <div className="nb" data-i={m.i} key={m.i} onClick={() => api.current?.selectAt(m.i)}>
-                    <i style={{ background: m.color }}></i>
-                    <span>{m.name}</span><u>{g.tag}</u></div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="dr-act">
-            <button className="btn" id="a-center" type="button" onClick={() => api.current?.centerOn(drawer.i)}>Hier zentrieren</button>
-            <button className="btn primary" id="a-path" type="button" onClick={() => api.current?.startPath(drawer.i)}>Kausalkette ab hier</button>
-          </div>
-        </>}
-      </div></div>
     </div>
   )
 }

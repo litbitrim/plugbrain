@@ -704,7 +704,7 @@ function createAtlas({els, emit}) {
     emit.drawer(n && {
       i: n.i, name: n.name, desc: n.desc, cname: n.cluster.name, color: n.cluster.color,
       deg: deg(n), depth: depth[n.i],
-      kind: n.meta.kind || '', path: n.meta.path || '', status: n.meta.status || '', prov: n.meta.prov || '',
+      kind: n.meta.kind || '', path: n.meta.path || '', line: n.meta.line || null, status: n.meta.status || '', prov: n.meta.prov || '',
       groups: [['Ursache · eingehend', n.in, 'IN'], ['Wirkung · ausgehend', n.out, 'OUT'], ['Assoziiert · Backlinks', n.rel, 'REL']]
         .filter(([, arr]) => arr.length)
         .map(([title, arr, tag]) => ({
