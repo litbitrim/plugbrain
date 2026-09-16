@@ -11,11 +11,13 @@
  */
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync, readFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { DatabaseSync } from 'node:sqlite'
+import * as access from '../src/access.ts'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 
@@ -314,3 +316,309 @@ test('FO-3: Authenticated authorized agent lifecycle: attach -> write -> read ->
     await fx.cleanup()
   }
 })
+
+test('FO-3 / B06: Symlink, junction and traversal escape outside workspace is strictly rejected', async () => {
+  const fx = await createFixture()
+  try {
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${fx.authKey}`,
+    }
+    // Register agent
+    await fetch(`${fx.baseUrl}/api/agent/attach`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({ workspace: fx.workspaceId, agentId: 'agent-escape-probe' }),
+    })
+
+    // 1. Direct lexical traversal outside workspace
+    const lexicalRes = await fetch(`${fx.baseUrl}/api/agent/write`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        workspace: fx.workspaceId,
+        agentId: 'agent-escape-probe',
+        path: '../escaped-canary.txt',
+        content: 'ESCAPED_CANARY',
+      }),
+    })
+    assert.strictEqual(lexicalRes.status, 403)
+    const lexicalData = await lexicalRes.json() as { ok: boolean; error: string }
+    assert.strictEqual(lexicalData.ok, false)
+    assert.match(lexicalData.error, /escapes|outside/i)
+
+    // 2. Symlink / Junction traversal outside workspace
+    const outsideDir = join(fx.dir, 'outside-target')
+    mkdirSync(outsideDir, { recursive: true })
+    let symlinkCreated = false
+    try {
+      symlinkSync(outsideDir, join(fx.root, 'escape-link'), 'dir')
+      symlinkCreated = true
+    } catch {
+      // Non-elevated Windows environment may disallow creating new symlinks;
+      // realpath check remains active for existing junctions/links
+    }
+
+    if (symlinkCreated) {
+      const symlinkRes = await fetch(`${fx.baseUrl}/api/agent/write`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          workspace: fx.workspaceId,
+          agentId: 'agent-escape-probe',
+          path: 'escape-link/canary.txt',
+          content: 'ESCAPED_CANARY',
+        }),
+      })
+      assert.strictEqual(symlinkRes.status, 403)
+      const symlinkData = await symlinkRes.json() as { ok: boolean; error: string }
+      assert.strictEqual(symlinkData.ok, false)
+      assert.match(symlinkData.error, /escapes.*symlink|junction/i)
+    }
+  } finally {
+    await fx.cleanup()
+  }
+})
+
+test('REV2-D01: Unconfigured server strictly rejects mutating routes (attach/write) with 401 and creates zero state', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-d01-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'readme.md'), '# D01 Test\n')
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-d01', 'D01 Test', root, new Date().toISOString())
+
+  // Server without authKey or requireAuth
+  const handle = await serve({ db, uiRoot: null }, 0)
+  try {
+    const url = `http://127.0.0.1:${handle.port}`
+    // 1. Attempt to attach agent
+    const attachRes = await fetch(`${url}/api/agent/attach`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspace: 'ws-d01', agentId: 'unauth-probe' }),
+    })
+    assert.strictEqual(attachRes.status, 401, 'unconfigured attach must return 401')
+
+    // 2. Attempt to write file
+    const writeRes = await fetch(`${url}/api/agent/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspace: 'ws-d01', agentId: 'unauth-probe', path: 'unauth.txt', content: 'MALICIOUS' }),
+    })
+    assert.strictEqual(writeRes.status, 401, 'unconfigured write must return 401')
+
+    // 3. Database state invariant: 0 agents minted, file does not exist
+    const agentCount = (db.prepare('SELECT count(*) c FROM agents').get() as { c: number }).c
+    assert.strictEqual(agentCount, 0, 'no agent rows may be minted')
+    assert.strictEqual(existsSync(join(root, 'unauth.txt')), false, 'file must not be written')
+  } finally {
+    await handle.close()
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('REV2-D02: Configured authKey is never stored verbatim in trace_events runtime_instance_id', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-d02-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'doc.md'), '# Doc\n')
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-d02', 'D02 Test', root, new Date().toISOString())
+
+  const secretCanary = 'secret-canary-key-99999-alpha'
+  const handle = await serve({ db, uiRoot: null, authKey: secretCanary, requireAuth: true }, 0)
+  try {
+    const url = `http://127.0.0.1:${handle.port}`
+    const res = await fetch(`${url}/api/awareness`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${secretCanary}`,
+      },
+      body: JSON.stringify({ workspaceId: 'ws-d02', taskId: 'task-d02', intendedPaths: ['doc.md'], mode: 'read' }),
+    })
+    assert.strictEqual(res.status, 200)
+
+    // Check trace_events table
+    const rows = db.prepare('SELECT type, runtime_instance_id FROM trace_events').all() as { type: string; runtime_instance_id: string }[]
+    assert.ok(rows.length > 0, 'trace event was logged')
+    for (const row of rows) {
+      assert.notStrictEqual(row.runtime_instance_id, secretCanary, 'secret canary key must never appear in runtime_instance_id')
+    }
+  } finally {
+    await handle.close()
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('REV2-D03: Dangling symlinks pointing outside workspace are strictly blocked from writing', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-d03-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  const outside = join(dir, 'outside')
+  mkdirSync(outside, { recursive: true })
+
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-d03', 'D03 Test', root, new Date().toISOString())
+  access.registerAgent(db, 'agent-d03')
+
+  const targetFile = join(outside, 'escaped-target.txt')
+  const linkPath = join(root, 'dangling-link.txt')
+
+  let symlinkCreated = false
+  try {
+    symlinkSync(targetFile, linkPath)
+    symlinkCreated = true
+  } catch {
+    // Non-elevated Windows may disallow creating symlinks without Developer Mode
+  }
+
+  try {
+    if (symlinkCreated) {
+      assert.throws(
+        () => access.writeFile(db, 'ws-d03', 'agent-d03', 'dangling-link.txt', 'ESCAPED_DATA', 'task-d03'),
+        (err: unknown) => err instanceof access.AccessDenied
+      )
+      assert.strictEqual(existsSync(targetFile), false, 'outside target file must not be created by write')
+    }
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('REV3-D01: Public instance ID header never satisfies authentication on mutating routes', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-r3d01-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'doc.md'), '# Doc\n')
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-r3d01', 'R3D01 Test', root, new Date().toISOString())
+
+  process.env.PLUG_INSTANCE_ID = 'public-instance-' + randomUUID()
+  delete process.env.PLUG_BRAIN_AUTH_KEY
+
+  const handle = await serve({ db, uiRoot: null }, 0)
+  const url = `http://127.0.0.1:${handle.port}`
+
+  try {
+    const headers = { 'Content-Type': 'application/json', 'x-plug-instance': process.env.PLUG_INSTANCE_ID! }
+    const attachRes = await fetch(`${url}/api/agent/attach`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ workspace: 'ws-r3d01', agentId: 'agent-unauth' }),
+    })
+    assert.strictEqual(attachRes.status, 401, 'attach must be rejected with 401 when only x-plug-instance is supplied')
+
+    const writeRes = await fetch(`${url}/api/agent/write`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ workspace: 'ws-r3d01', agentId: 'agent-unauth', path: 'bad.txt', content: 'MALICIOUS' }),
+    })
+    assert.strictEqual(writeRes.status, 401, 'write must be rejected with 401 when only x-plug-instance is supplied')
+    assert.strictEqual(existsSync(join(root, 'bad.txt')), false, 'file must not be written')
+  } finally {
+    await handle.close()
+    db.close()
+    delete process.env.PLUG_INSTANCE_ID
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('REV3-D02: Server restart produces distinct runtime_instance_id across lifetimes', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-r3d02-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'doc.md'), '# Doc\n')
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-r3d02', 'R3D02 Test', root, new Date().toISOString())
+
+  const secretKey = 'secret-' + randomUUID()
+  const payload = { workspaceId: 'ws-r3d02', taskId: 'task-1', intendedPaths: ['doc.md'], mode: 'read' }
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${secretKey}` }
+
+  // Lifetime 1
+  const h1 = await serve({ db, uiRoot: null, authKey: secretKey, requireAuth: true }, 0)
+  try {
+    const res1 = await fetch(`http://127.0.0.1:${h1.port}/api/awareness`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    assert.strictEqual(res1.status, 200)
+    const inst1 = (db.prepare('SELECT runtime_instance_id FROM trace_events ORDER BY rowid DESC LIMIT 1').get() as any).runtime_instance_id
+    assert.ok(inst1 && inst1.startsWith('inst-'), 'instance 1 must be formatted inst-*')
+    assert.notStrictEqual(inst1, secretKey, 'instance 1 must not contain secret')
+
+    await h1.close()
+
+    // Lifetime 2 with same secretKey
+    const h2 = await serve({ db, uiRoot: null, authKey: secretKey, requireAuth: true }, 0)
+    try {
+      const res2 = await fetch(`http://127.0.0.1:${h2.port}/api/awareness`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...payload, taskId: 'task-2' }),
+      })
+      assert.strictEqual(res2.status, 200)
+      const inst2 = (db.prepare('SELECT runtime_instance_id FROM trace_events ORDER BY rowid DESC LIMIT 1').get() as any).runtime_instance_id
+      assert.ok(inst2 && inst2.startsWith('inst-'), 'instance 2 must be formatted inst-*')
+      assert.notStrictEqual(inst2, secretKey, 'instance 2 must not contain secret')
+      assert.notStrictEqual(inst1, inst2, 'server restart must produce a distinct runtime_instance_id')
+    } finally {
+      await h2.close()
+    }
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('REV3-D03: Chained dangling symlinks escaping workspace boundary are blocked', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-r3d03-'))
+  const root = join(dir, 'ws')
+  mkdirSync(root, { recursive: true })
+  const outside = join(dir, 'outside')
+  mkdirSync(outside, { recursive: true })
+  const target = join(outside, 'new-chained.txt')
+
+  const db = openStore(join(dir, 'brain.db'))
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run('ws-r3d03', 'R3D03 Test', root, new Date().toISOString())
+  access.registerAgent(db, 'agent-r3d03')
+
+  let linksCreated = false
+  try {
+    symlinkSync(target, join(root, 'second-link'))
+    symlinkSync('second-link', join(root, 'first-link'))
+    linksCreated = true
+  } catch {
+    // Skip assertion if platform permissions forbid symlink creation
+  }
+
+  try {
+    if (linksCreated) {
+      assert.throws(
+        () => access.writeFile(db, 'ws-r3d03', 'agent-r3d03', 'first-link', 'CHAINED-PAYLOAD', 'task-r3d03'),
+        (err: unknown) => err instanceof access.AccessDenied
+      )
+      assert.strictEqual(existsSync(target), false, 'chained target file must not be written')
+    }
+
+    // Ensure normal non-escaping file still writes cleanly
+    access.writeFile(db, 'ws-r3d03', 'agent-r3d03', 'valid/sub/new.txt', 'LEGITIMATE', 'task-r3d03')
+    assert.strictEqual(readFileSync(join(root, 'valid/sub/new.txt'), 'utf8'), 'LEGITIMATE')
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+

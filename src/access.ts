@@ -12,7 +12,7 @@
  * always identifies an author, in every surface, without a lookup.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
@@ -103,18 +103,99 @@ export const ensureAgent = registerAgent
  * would be a comment rather than a guarantee.
  */
 function resolveInside(workspace: Workspace, relPath: string): string {
+  let abs: string
   if (isAbsolute(relPath)) {
     const rel = relative(workspace.root, relPath)
     if (rel.startsWith('..') || isAbsolute(rel)) {
       throw new AccessDenied(`path is outside the workspace: ${relPath}`)
     }
-    return resolve(relPath)
+    abs = resolve(relPath)
+  } else {
+    abs = resolve(join(workspace.root, relPath))
+    const rel = relative(workspace.root, abs)
+    if (rel.startsWith('..') || isAbsolute(rel)) {
+      throw new AccessDenied(`path escapes the workspace: ${relPath}`)
+    }
   }
-  const abs = resolve(join(workspace.root, relPath))
-  const rel = relative(workspace.root, abs)
-  if (rel.startsWith('..') || isAbsolute(rel)) {
-    throw new AccessDenied(`path escapes the workspace: ${relPath}`)
+
+  // Symlink, Junction and Dangling Symlink containment check (B06 / FO-3 / REV2-D03 / R3-CHAINED-DANGLING-SYMLINK)
+  if (existsSync(workspace.root)) {
+    const realRoot = realpathSync(workspace.root)
+    const relFromRoot = relative(realRoot, abs)
+    if (relFromRoot.startsWith('..') || isAbsolute(relFromRoot)) {
+      throw new AccessDenied(`path escapes the workspace: ${relPath}`)
+    }
+
+    const resolveSymlinkChain = (startPath: string, maxHops = 40): string => {
+      let curr = startPath
+      let hops = 0
+      const visited = new Set<string>()
+
+      while (hops < maxHops) {
+        let st
+        try {
+          st = lstatSync(curr, { throwIfNoEntry: false })
+        } catch {
+          break
+        }
+        if (!st || !st.isSymbolicLink()) {
+          break
+        }
+        if (visited.has(curr)) {
+          throw new AccessDenied(`symlink cycle detected: ${startPath}`)
+        }
+        visited.add(curr)
+        hops++
+
+        let linkTarget: string
+        try {
+          linkTarget = readlinkSync(curr)
+        } catch (err) {
+          throw new AccessDenied(`cannot read symlink ${curr}: ${(err as Error).message}`)
+        }
+
+        const nextPath = isAbsolute(linkTarget) ? resolve(linkTarget) : resolve(dirname(curr), linkTarget)
+        const rel = relative(realRoot, nextPath)
+        if (rel.startsWith('..') || isAbsolute(rel)) {
+          throw new AccessDenied(`path escapes workspace via symlink chain: ${relPath} -> ${nextPath}`)
+        }
+        curr = nextPath
+      }
+
+      if (hops >= maxHops) {
+        throw new AccessDenied(`too many symlink hops (potential cycle): ${startPath}`)
+      }
+
+      if (existsSync(curr)) {
+        const realTarget = realpathSync(curr)
+        const relReal = relative(realRoot, realTarget)
+        if (relReal.startsWith('..') || isAbsolute(relReal)) {
+          throw new AccessDenied(`path escapes workspace via symlink chain: ${relPath} -> ${realTarget}`)
+        }
+        return realTarget
+      }
+
+      return curr
+    }
+
+    // Check each segment from realRoot to abs for symlinks (including chained and dangling links)
+    const segments = relFromRoot.split(/[\\/]/).filter(Boolean)
+    let current = realRoot
+    for (const seg of segments) {
+      current = join(current, seg)
+      current = resolveSymlinkChain(current)
+    }
+
+    // For any existing leaf or path, ensure final realpath does not escape
+    if (existsSync(abs)) {
+      const realCur = realpathSync(abs)
+      const realRel = relative(realRoot, realCur)
+      if (realRel.startsWith('..') || isAbsolute(realRel)) {
+        throw new AccessDenied(`path escapes workspace via symlink or junction: ${relPath}`)
+      }
+    }
   }
+
   return abs
 }
 

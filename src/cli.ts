@@ -7,8 +7,8 @@
  *   plugbrain search <query>           find code without touching the disk
  *   plugbrain serve [port]             run the API + UI daemon
  */
-import { createHash } from 'node:crypto'
-import { existsSync, statSync } from 'node:fs'
+import { createHash, randomUUID } from 'node:crypto'
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
@@ -144,10 +144,25 @@ switch (command) {
     // The daemon runs inside serve by default: a brain that is only correct
     // when a human remembers to re-index is not a system of record.
     if (process.env.PLUGBRAIN_NO_DAEMON !== '1') startDaemon(db)
-    startServer({ db, uiRoot }, port).then(actual => {
+    const tokenFile = join(HOME, 'auth.token')
+    let authKey = process.env.PLUG_BRAIN_AUTH_KEY
+    if (!authKey) {
+      if (existsSync(tokenFile)) {
+        authKey = readFileSync(tokenFile, 'utf8').trim()
+      } else {
+        authKey = `plug-${randomUUID().replace(/-/g, '')}`
+        try {
+          writeFileSync(tokenFile, authKey, { mode: 0o600 })
+        } catch (err) {
+          console.error(`warning: could not write auth token file: ${(err as Error).message}`)
+        }
+      }
+    }
+    startServer({ db, uiRoot, authKey, requireAuth: true }, port).then(actual => {
       console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
       console.log(`  UI       http://127.0.0.1:${actual}/`)
       console.log(`  Galaxy   http://127.0.0.1:${actual}/api/galaxy`)
+      console.log(`  Auth     Bearer token configured (${tokenFile})`)
     })
     break
   }

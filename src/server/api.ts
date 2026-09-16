@@ -7,7 +7,7 @@
  * every projection, so a track is visible in every graph without the client
  * having to correlate anything itself.
  */
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, resolve as resolvePath } from 'node:path'
@@ -35,6 +35,7 @@ export interface Ctx {
   uiRoot: string | null
   authKey?: string | null
   requireAuth?: boolean
+  instanceId?: string | null
 }
 
 const json = (res: ServerResponse, body: unknown, status = 200): void => {
@@ -199,15 +200,12 @@ function tracksOf(db: DatabaseSync, workspaceId: string, limit: number) {
 }
 
 function checkAuth(req: IncomingMessage, ctx: Ctx): void {
-  const expectedKey = ctx.authKey ?? process.env.PLUG_BRAIN_AUTH_KEY ?? process.env.PLUG_INSTANCE_ID
+  const expectedKey = ctx.authKey ?? process.env.PLUG_BRAIN_AUTH_KEY
   if (!expectedKey) {
-    if (ctx.requireAuth) {
-      throw new AuthenticationRequired('authentication required: no credentials configured on server')
-    }
-    return
+    // REV2-D01: Unconfigured service must default-deny mutating routes
+    throw new AuthenticationRequired('authentication required: server running without configured auth credentials; mutating operations are rejected')
   }
   const auth = req.headers['authorization']
-  const xInstance = req.headers['x-plug-instance']
   const xToken = req.headers['x-plug-auth-token']
 
   let bearerToken: string | undefined
@@ -216,7 +214,6 @@ function checkAuth(req: IncomingMessage, ctx: Ctx): void {
   }
 
   const matches = (bearerToken !== undefined && bearerToken === expectedKey) ||
-    (typeof xInstance === 'string' && xInstance === expectedKey) ||
     (typeof xToken === 'string' && xToken === expectedKey)
 
   if (!matches) {
@@ -236,6 +233,7 @@ export interface ServerHandle {
 
 export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   const { db } = ctx
+  const serverInstanceId = ctx.instanceId ?? ('inst-' + randomUUID().slice(0, 12))
 
   const server = createServer((req, res) => {
     // A thrown handler must never take the brain down: this is the kernel of
@@ -517,7 +515,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
           schema: 1,
           eventId: `evt-pack-${pack.packDigest.slice(0, 8)}-${Date.now()}`,
           source: 'brain',
-          runtimeInstanceId: ctx.authKey ?? 'brain-local',
+          runtimeInstanceId: serverInstanceId,
           workspaceId,
           taskId,
           agentId,
