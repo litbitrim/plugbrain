@@ -38,6 +38,8 @@ export default function MeshView({ tasks, workspaceId, onSelectFile }: MeshViewP
   const [agents, setAgents] = useState<AgentPresenceItem[]>([])
   const [leases, setLeases] = useState<LeaseItem[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
+  const selectedAgentIdRef = useRef<string | null>(null)
+  selectedAgentIdRef.current = selectedAgentId
   const [inspectData, setInspectData] = useState<AgentInspectResult | null>(null)
   const [inspectLoading, setInspectLoading] = useState(false)
   const [liveLog, setLiveLog] = useState<Array<{ id: string; time: string; text: string; color?: string }>>([])
@@ -51,6 +53,9 @@ export default function MeshView({ tasks, workspaceId, onSelectFile }: MeshViewP
       ])
       setAgents(presenceList)
       setLeases(leaseList)
+      if (!selectedAgentIdRef.current && presenceList.length > 0) {
+        void handleSelectAgent(presenceList[0].id)
+      }
     } catch {
       // Swarm server may be starting or offline
     }

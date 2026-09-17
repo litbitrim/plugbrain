@@ -246,7 +246,9 @@ export interface NoteQueryResult {
 }
 
 export async function queryNotes(workspaceId: string, filter: string): Promise<NoteQueryResult> {
-  const res = await fetch(`/api/notes/query?workspace=${encodeURIComponent(workspaceId)}&filter=${encodeURIComponent(filter)}`)
+  const res = await fetch(`/api/notes/query?workspace=${encodeURIComponent(workspaceId)}&q=${encodeURIComponent(filter)}`, {
+    headers: authHeaders(),
+  })
   if (!res.ok) {
     const err = await res.json().catch(() => null)
     throw new Error(err?.error ?? `Notes Query HTTP ${res.status}`)

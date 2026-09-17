@@ -78,17 +78,14 @@ async function setupSwarm() {
 async function capture() {
   await setupSwarm()
 
-  const browser = await chromium.launch({ headless: true })
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--enable-webgl', '--use-gl=angle']
+  })
 
   const resolutions = [
     { width: 1920, height: 1080, suffix: '1920x1080' },
     { width: 1366, height: 768, suffix: '1366x768' },
-  ]
-
-  const views = [
-    { id: 'atlas', name: 'atlas' },
-    { id: 'city', name: 'city' },
-    { id: 'mesh', name: 'mesh' },
   ]
 
   for (const res of resolutions) {
@@ -102,18 +99,93 @@ async function capture() {
     await page.goto(`${BASE_URL}/`)
     await page.evaluate(({ token, ws }) => {
       localStorage.setItem('plugbrain.token', token)
+      localStorage.setItem('plugbrain.auth_token', token)
       localStorage.setItem('plugbrain.workspace', ws)
       localStorage.setItem('plugbrain.agentId', 'agy-brain-02')
+      localStorage.setItem('plugbrain.agent_id', 'agy-brain-02')
     }, { token: AUTH_TOKEN, ws: WS_ID })
 
-    for (const v of views) {
-      console.log(`Capturing ${v.name} at ${res.suffix}...`)
-      await page.goto(`${BASE_URL}/?view=${v.id}&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(3000)
+    // 1. Atlas View
+    console.log(`Capturing Atlas at ${res.suffix}...`)
+    await page.goto(`${BASE_URL}/?view=atlas&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
+    try {
+      await page.waitForSelector('.atlas-wrapper', { timeout: 15000 })
+      await page.waitForSelector('#legend .cl', { timeout: 15000 })
+      await page.waitForSelector('#stage canvas', { timeout: 15000 })
+      await page.waitForTimeout(3000) // Allow 3D graph layout to settle
+    } catch (e) {
+      console.warn('Atlas wait warning:', e.message)
+    }
+    const atlasPath = `${ASSETS_DIR}/atlas-${res.suffix}.png`
+    await page.screenshot({ path: atlasPath, fullPage: false })
+    console.log(`Saved ${atlasPath}`)
 
-      const targetPath = `${ASSETS_DIR}/${v.name}-${res.suffix}.png`
-      await page.screenshot({ path: targetPath, fullPage: false })
-      console.log(`Saved ${targetPath}`)
+    // 2. City View
+    console.log(`Capturing City at ${res.suffix}...`)
+    await page.goto(`${BASE_URL}/?view=city&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
+    try {
+      await page.waitForSelector('#tree .ws', { timeout: 15000 })
+      await page.waitForSelector('#app:not(.closed) #side .dt', { timeout: 15000 })
+      await page.waitForTimeout(3000) // Allow 3D city buildings to settle
+    } catch (e) {
+      console.warn('City wait warning:', e.message)
+    }
+    const cityPath = `${ASSETS_DIR}/city-${res.suffix}.png`
+    await page.screenshot({ path: cityPath, fullPage: false })
+    console.log(`Saved ${cityPath}`)
+
+    // 3. Agent Mesh View
+    console.log(`Capturing Mesh at ${res.suffix}...`)
+    await setupSwarm() // Refresh agents and claims immediately before mesh
+    await page.goto(`${BASE_URL}/?view=mesh&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
+    try {
+      await page.waitForSelector('#hud .tally b', { timeout: 15000 })
+      await page.waitForSelector('#inspect.on', { timeout: 15000 })
+      await page.waitForTimeout(2500)
+    } catch (e) {
+      console.warn('Mesh wait warning:', e.message)
+    }
+    const meshPath = `${ASSETS_DIR}/mesh-${res.suffix}.png`
+    await page.screenshot({ path: meshPath, fullPage: false })
+    console.log(`Saved ${meshPath}`)
+
+    // 4. Search & Bases View (only for 1920x1080)
+    if (res.width === 1920) {
+      console.log(`Capturing Bases Query at ${res.suffix}...`)
+      await page.goto(`${BASE_URL}/?view=search&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
+      try {
+        // Click Notizen tab (auto-searches typ=gate UND stand=offen)
+        const notesTab = await page.waitForSelector('button:has-text("Notizen & Properties")', { timeout: 10000 })
+        if (notesTab) await notesTab.click()
+        await page.waitForSelector('.search-hit-card', { timeout: 10000 })
+        // Click first hit to open in SourceView
+        const firstHit = await page.waitForSelector('.search-hit-card', { timeout: 10000 })
+        if (firstHit) await firstHit.click()
+        await page.waitForSelector('.source-container', { timeout: 10000 })
+        await page.waitForTimeout(1500)
+        const searchPath = `${ASSETS_DIR}/bases-query-${res.suffix}.png`
+        await page.screenshot({ path: searchPath, fullPage: false })
+        console.log(`Saved ${searchPath}`)
+      } catch (e) {
+        console.warn('Search wait warning:', e.message)
+      }
+
+      // 5. Explorer & Source View
+      console.log(`Capturing Explorer & Source at ${res.suffix}...`)
+      await page.goto(`${BASE_URL}/?view=explorer&workspace=${WS_ID}`, { waitUntil: 'domcontentloaded' })
+      try {
+        await page.waitForSelector('.tree-item--file', { timeout: 10000 })
+        // Click a file node
+        const fileNode = await page.waitForSelector('.tree-item--file', { timeout: 10000 })
+        if (fileNode) await fileNode.click()
+        await page.waitForSelector('.source-container', { timeout: 10000 })
+        await page.waitForTimeout(1500)
+        const explorerPath = `${ASSETS_DIR}/explorer-source-${res.suffix}.png`
+        await page.screenshot({ path: explorerPath, fullPage: false })
+        console.log(`Saved ${explorerPath}`)
+      } catch (e) {
+        console.warn('Explorer wait warning:', e.message)
+      }
     }
 
     await context.close()

@@ -25,7 +25,7 @@ const VIEWS: { id: ViewId; label: string; hint: string }[] = [
 ]
 
 const shortLabel = folderName
-const SNAPSHOT_FILE_LIMIT = 20000
+const SNAPSHOT_FILE_LIMIT = 2000
 
 function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
@@ -246,7 +246,7 @@ export default function App() {
         if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) {
           throw new Error('Der Brain-Snapshot ist unvollständig.')
         }
-        const signature = JSON.stringify([next.workspace, next.graph, next.coverage])
+        const signature = `${next.workspace.id}:${next.updatedAt ?? ''}:${next.graph.nodes.length}:${next.graph.edges.length}`
         if (signature !== previous) { setSnapshot(next); previous = signature }
         setError('')
       } catch (cause) {

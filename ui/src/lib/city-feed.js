@@ -25,6 +25,18 @@ function locOf(node) {
   return Number.isFinite(n) && n > 0 ? Math.min(4000, Math.round(n)) : 40
 }
 
+function districtForPath(path) {
+  const norm = String(path).replace(/\\/g, '/')
+  const parts = norm.split('/')
+  if (parts[0] === 'Code' && parts[1]) {
+    return parts[1].split('--')[0]
+  }
+  if (['Master', 'Roadmap', 'Auftrag', 'Planung', 'Codebasis', 'PLUG-Ordner', 'Aufräumen'].includes(parts[0])) {
+    return parts[0]
+  }
+  return 'plugpt-vault'
+}
+
 /**
  * Apply one snapshot. Safe to call on every poll: buildings already grown are
  * skipped, so a workspace that has not changed produces no churn.
@@ -35,19 +47,10 @@ export function feedCity(snapshot) {
   const nodes = snapshot?.graph?.nodes
   if (!ws?.id || !Array.isArray(nodes)) return { workspaces: grown.size, buildings: 0, added: 0 }
 
-  const id = String(ws.id)
-  if (!grown.has(id)) {
-    // The district carries the same short label the header shows, so a
-    // legacy path-shaped name never reaches the map as a full canonical path.
-    api.register({ id, name: folderName(ws.name || id) })
-    grown.set(id, new Set())
-    // Registration is the first evidence-bearing write to the city. There is no
-    // synthetic district to clear: the map only contains this real workspace.
-    for (const w of workspaces.slice()) {
-      if (w.sim && w.id !== id) api.unregister(w.id)
-    }
+  // Clear simulated districts on real data
+  for (const w of workspaces.slice()) {
+    if (w.sim) api.unregister(w.id)
   }
-  const seen = grown.get(id)
 
   // Outgoing references per node id, resolved to paths, so a building knows
   // what it depends on rather than standing alone.
@@ -63,34 +66,41 @@ export function feedCity(snapshot) {
     depsOf.get(from.id).push(tp)
   }
 
-  // Keep every indexed file. The renderer grows its GPU buffers on demand, so
-  // a large workspace is not silently turned into a partial city by a demo
-  // sized demo capacity. Sorting keeps the layout deterministic across polls.
+  // Keep every indexed file. Sorting keeps the layout deterministic across polls.
   const withPaths = []
   for (const node of nodes) {
     const path = pathOf(node)
     if (path) withPaths.push({ node, path })
   }
   withPaths.sort((a, b) => a.path.localeCompare(b.path))
+
   let added = 0
+  let totalBuildings = 0
+
   for (const { node, path } of withPaths) {
+    const distId = districtForPath(path)
+    if (!grown.has(distId)) {
+      api.register({ id: distId, name: distId })
+      grown.set(distId, new Set())
+    }
+    const seen = grown.get(distId)
     if (seen.has(path)) continue
     seen.add(path)
+    totalBuildings += seen.size
+
     const props = node.properties || {}
-    api.grow(id, {
+    api.grow(distId, {
       path, loc: locOf(node), deps: depsOf.get(node.id) || [], note: node.type || '',
-      // The brain already resolved who owns this file; the city just paints it.
-      // Written wins over read: authorship is the stronger claim on a building.
       agentColor: props.agentColor || props.readerColor || null,
       agentName: props.agentName || props.readerName || null,
       access: props.agentColor ? 'write' : props.readerColor ? 'read' : null,
     })
     added += 1
   }
-  if (added > 0) api.event(id, `${added} indexed object${added === 1 ? '' : 's'} added`)
+  if (added > 0) api.event(String(ws.id), `${added} indexed object${added === 1 ? '' : 's'} added across ${grown.size} districts`)
   return {
     workspaces: grown.size,
-    buildings: seen.size,
+    buildings: totalBuildings,
     added,
     total: withPaths.length,
     truncated: false,

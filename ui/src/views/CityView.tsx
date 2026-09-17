@@ -69,6 +69,12 @@ export default function CityView({
     return () => { unsubscribe() }
   }, [])
 
+  useEffect(() => {
+    if (!sel && files.length > 0) {
+      setSelS(files[0])
+    }
+  }, [files.length, sel])
+
   useEffect(() => { city.current?.setSel(sel) }, [sel])
   useEffect(() => { city.current?.setQuery(query) }, [query])
   useEffect(() => { city.current?.setFocusTop(focusWs) }, [focusWs])
