@@ -47,6 +47,19 @@ const git = (root: string, args: string[]): string =>
   }).trim()
 
 /**
+ * Run git and return its trimmed stdout, or `null` when git refuses.
+ *
+ * Callers that read a repository's SHAPE (does this folder have an origin?
+ * which worktree is the main one?) ask many small questions, most of which are
+ * legitimately unanswerable: not a repository, unborn branch, no remote, no
+ * worktrees. A throw per question would make "not a repo" indistinguishable
+ * from "git is broken", so the refusal is returned as a value.
+ */
+export function gitText(root: string, args: string[]): string | null {
+  try { return git(root, args) } catch { return null }
+}
+
+/**
  * Read the repository state for a workspace root. A folder that is not a git
  * repository is a normal answer, not an error — plenty of useful workspaces
  * are not versioned, and saying so is more useful than throwing.

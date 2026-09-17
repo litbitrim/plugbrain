@@ -36,23 +36,98 @@ import { extname, join, posix, relative } from 'node:path'
 import { extractFromSource, languageOf } from './ast.ts'
 import { extractFromMarkdown } from './markdown.ts'
 
-/** Directories never worth indexing. Skipped by name at any depth. */
-const SKIP_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', 'out', 'coverage', '.next', '.turbo',
-  '.cache', '__pycache__', '.venv', 'venv', 'target', '.pnpm', 'release',
-  '.codegraph', '.plugbrain',
-  // Build output masquerades as source: a minified bundle matches every search
-  // term and would crowd real files out of context packs.
-  'ui-dist', 'lib', '.output', '.svelte-kit', '.nuxt',
+/**
+ * Directories that are never part of a planet's source, at ANY depth.
+ *
+ * The list is the mandated exclusion set plus tool debris, and it is
+ * deliberately not "every dot-folder". Measured on the real planet, a blanket
+ * dot-rule hid 19 169 files of genuine content — `.agents/notes/**`, the
+ * written reasoning of every agent that worked here — while the same rule left
+ * `lib/` (real source in PlugMil-Web and PlugBoard) subject to a name that
+ * means "build output" in exactly one repository layout.
+ *
+ *   node_modules .git .pnpm        dependency and version-control trees
+ *   dist ui-dist .output coverage  build output that masquerades as source: a
+ *                                  minified bundle matches every search term
+ *   .cache .next .turbo .nuxt
+ *   .svelte-kit                    framework and tool caches
+ *   .venv venv target __pycache__  language environments, not code
+ *   .codegraph                     a second brain's store
+ *
+ * `.plugbrain*` is handled by prefix (see `isNeverIndexedDir`): brain data
+ * belongs in PLUGBRAIN_HOME and never inside a repository.
+ */
+export const NEVER_INDEX_DIRS: ReadonlySet<string> = new Set([
+  'node_modules', '.git', '.pnpm',
+  'dist', 'ui-dist', '.output', 'coverage',
+  '.cache', '.next', '.turbo', '.nuxt', '.svelte-kit',
+  '.venv', 'venv', 'target', '__pycache__',
+  '.codegraph',
 ])
 
+/**
+ * Output folders that are only output at a CHECKOUT ROOT.
+ *
+ * `build/` at the root of an Electron app is its packaging resources; the same
+ * name three levels down is a source folder. Checking the depth is what lets
+ * one rule cover both without lying about either. `lib` is deliberately NOT
+ * here any more: PlugMil-Web keeps real TypeScript in a root `lib/`.
+ */
+export const ROOT_OUTPUT_DIRS: ReadonlySet<string> = new Set(['build', 'out', 'release'])
+
+/** True for a directory that is never indexed, whatever its depth. */
+export const isNeverIndexedDir = (name: string): boolean =>
+  NEVER_INDEX_DIRS.has(name) || name.startsWith('.plugbrain')
+
+/** True for a directory the indexer refuses to descend into. */
+export const isSkippedDir = (name: string, depth: number): boolean =>
+  isNeverIndexedDir(name) || (depth === 1 && ROOT_OUTPUT_DIRS.has(name))
+
 /** Extensions we record as files even when we cannot parse them. */
-const TEXTUAL = new Set([
+export const TEXTUAL: ReadonlySet<string> = new Set([
   '.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs',
   '.json', '.md', '.yml', '.yaml', '.css', '.html', '.py', '.rs', '.go', '.sql', '.sh',
 ])
 
-const MAX_BYTES = 2_000_000   // a 2 MB source file is generated; parsing it helps nobody
+export const MAX_BYTES = 2_000_000   // a 2 MB source file is generated; parsing it helps nobody
+
+/**
+ * File names that are secrets and are NEVER indexed, whatever they contain.
+ *
+ * The rule is by NAME, not by content: a private key is a private key even
+ * when it is two lines long, and `node_modules` is not the only place people
+ * park one. An allow-list of "safe" extensions would be the wrong shape here —
+ * `.json` is both `package.json` and `service-account.json`.
+ *
+ * Each entry earns its place: `.env*` (all dotenv variants), `.netrc`/
+ * `.pgpass`/`.npmrc`/`.htpasswd` (stored credentials), `id_rsa` family (SSH
+ * keys; the `.pub` half is public but has no business in a code index),
+ * `credentials.*` (blocked only in its credential SHAPES, so `credentials.ts`
+ * — real source — still indexes), service-account JSON, and the key/cert
+ * container extensions.
+ */
+const SECRET_NAME = /^(?:\.env(?:\..+)?|\.netrc|\.pgpass|\.npmrc|\.htpasswd|id_(?:rsa|dsa|ecdsa|ed25519)(?:\.pub)?|credentials(?:\.(?:json|ya?ml|ini|toml|txt))?|service[_-]?account(?:\.[\w-]+)?\.json|.*\.(?:pem|key|pfx|p12|jks|keystore|ppk|kdbx|crt|cer|asc|gpg))$/i
+
+/** True for a path whose file name is a credential or a key. */
+export const isSecretPath = (rel: string): boolean =>
+  SECRET_NAME.test(rel.split('/').pop() ?? rel)
+
+/**
+ * One root of a planet's index: a folder to walk, the planet-relative prefix
+ * its files are stored under, and the repository/checkout they belong to.
+ *
+ * A plain workspace has exactly one root with an empty prefix, which is why
+ * this is a superset of the old single-folder walk rather than a second code
+ * path: the same walker, the same hashing, the same generation.
+ */
+export interface IndexRoot {
+  abs: string
+  /** Planet-relative prefix, forward slashes, no trailing slash. '' for a bare workspace. */
+  prefix: string
+  kind: 'checkout' | 'root'
+  repoId: string | null
+  checkoutId: string | null
+}
 
 export interface ChangeCounts {
   added: number
@@ -63,6 +138,8 @@ export interface ChangeCounts {
 }
 
 export interface IndexResult {
+  /** Files seen on disk this pass, before any of them were classified. */
+  scanned: number
   files: number
   parsed: number
   symbols: number
@@ -83,23 +160,45 @@ export interface IndexResult {
   reresolved: number
 }
 
-export interface WalkedFile { abs: string; rel: string; ext: string; size: number; mtime: string }
+export interface WalkedFile {
+  abs: string
+  /** Workspace/planet-relative, forward slashes. */
+  rel: string
+  ext: string
+  size: number
+  mtime: string
+  repoId: string | null
+  checkoutId: string | null
+}
 
-/** Depth-first walk yielding indexable files, skipping known noise. */
-export function walk(root: string): WalkedFile[] {
-  const found: WalkedFile[] = []
-  const stack: string[] = [root]
+/** Which checkout a file belongs to, for rename matching and attribution. */
+const groupKey = (item: { repoId: string | null; checkoutId: string | null }): string =>
+  `${item.repoId ?? ''}\u0000${item.checkoutId ?? ''}`
+
+/**
+ * Depth-first walk of ONE root, mapping every file to its planet-relative path.
+ *
+ * Three exclusions are enforced here rather than later, because a file that is
+ * never walked is a file that can never be indexed by accident:
+ *   - directories that are never source, by name and depth (isSkippedDir),
+ *   - any file name that is a credential or a key (see SECRET_NAME),
+ *   - a symlink or junction at all: a checkout linked to a folder outside the
+ *     planet is not a way into that folder.
+ * Everything else IS indexed, including dot-folders like `.agents` and
+ * `.github` — they are written content, not noise.
+ */
+function walkInto(root: IndexRoot, found: WalkedFile[]): void {
+  const stack: Array<{ dir: string; depth: number }> = [{ dir: root.abs, depth: 0 }]
   while (stack.length > 0) {
-    const dir = stack.pop() as string
+    const { dir, depth } = stack.pop() as { dir: string; depth: number }
     let entries: ReturnType<typeof readdirSync>
     try { entries = readdirSync(dir, { withFileTypes: true }) } catch { continue }
     for (const entry of entries) {
       const abs = join(dir, entry.name)
+      if (entry.isSymbolicLink()) continue          // junction or symlink out
       if (entry.isDirectory()) {
-        if (SKIP_DIRS.has(entry.name)) continue
-        // A junction/symlink out of the workspace is not part of it.
-        if (entry.isSymbolicLink()) continue
-        stack.push(abs)
+        if (isSkippedDir(entry.name, depth + 1)) continue
+        stack.push({ dir: abs, depth: depth + 1 })
         continue
       }
       if (!entry.isFile()) continue
@@ -108,15 +207,32 @@ export function walk(root: string): WalkedFile[] {
       let st: ReturnType<typeof statSync>
       try { st = statSync(abs) } catch { continue }
       if (st.size > MAX_BYTES) continue
+      const inside = relative(root.abs, abs).split('\\').join('/')
+      const rel = root.prefix === '' ? inside : `${root.prefix}/${inside}`
+      if (isSecretPath(rel)) continue
       found.push({
-        abs,
-        rel: relative(root, abs).split('\\').join('/'),
-        ext,
-        size: st.size,
-        mtime: st.mtime.toISOString(),
+        abs, rel, ext, size: st.size, mtime: st.mtime.toISOString(),
+        repoId: root.repoId, checkoutId: root.checkoutId,
       })
     }
   }
+}
+
+/** Depth-first walk of a single folder (a bare, non-planet workspace). */
+export function walk(root: string): WalkedFile[] {
+  const found: WalkedFile[] = []
+  walkInto({ abs: root, prefix: '', kind: 'root', repoId: null, checkoutId: null }, found)
+  return found
+}
+
+/**
+ * Walk several roots into ONE namespace. Files from different checkouts are
+ * therefore distinct rows even when their paths inside the checkout are
+ * identical, which is what keeps two repos' `run()` symbols apart.
+ */
+export function walkRoots(roots: IndexRoot[]): WalkedFile[] {
+  const found: WalkedFile[] = []
+  for (const root of roots) walkInto(root, found)
   return found
 }
 
@@ -139,7 +255,15 @@ export function resolveImport(fromRel: string, spec: string, known: Set<string>)
 export const hashOf = (content: string): string =>
   createHash('sha256').update(content).digest('hex').slice(0, 16)
 
-export interface StoredFile { id: number; path: string; size: number; mtime: string; hash: string | null }
+export interface StoredFile {
+  id: number
+  path: string
+  size: number
+  mtime: string
+  hash: string | null
+  repoId: string | null
+  checkoutId: string | null
+}
 
 export interface Classified {
   added: WalkedFile[]
@@ -160,6 +284,11 @@ export interface Classified {
  * index cost a directory walk instead of a full hash of the workspace.
  * Anything that fails that cheap test is read and hashed, so a file merely
  * touched is still recognised as unchanged by content.
+ *
+ * Rename matching is scoped to ONE checkout. Nine worktrees of the same repo
+ * hold near-identical files, so matching purely on content hash would happily
+ * "move" a file out of checkout A and into checkout B — a rename that never
+ * happened, reported as one.
  */
 export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
   const out: Classified = {
@@ -198,15 +327,18 @@ export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
   // Rename detection: an added path and a deleted path with identical content
   // are the same file. Moving the row keeps its id, and therefore keeps its
   // owner, its activity history and every edge that points at it.
+  const pairKey = (hash: string, item: { repoId: string | null; checkoutId: string | null }): string =>
+    `${groupKey(item)}\u0000${hash}`
   const deletedByHash = new Map<string, StoredFile[]>()
   for (const row of candidateDeleted) {
     if (row.hash === null) continue
-    const list = deletedByHash.get(row.hash)
-    if (list) list.push(row); else deletedByHash.set(row.hash, [row])
+    const key = pairKey(row.hash, row)
+    const list = deletedByHash.get(key)
+    if (list) list.push(row); else deletedByHash.set(key, [row])
   }
   const consumed = new Set<number>()
   for (const candidate of candidateAdded) {
-    const pool = deletedByHash.get(candidate.hash)
+    const pool = deletedByHash.get(pairKey(candidate.hash, candidate.file))
     const match = pool?.find(row => !consumed.has(row.id))
     if (match !== undefined) {
       consumed.add(match.id)

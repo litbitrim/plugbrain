@@ -16,7 +16,7 @@
  */
 import { watch, type FSWatcher } from 'node:fs'
 import type { DatabaseSync } from 'node:sqlite'
-import { indexWorkspace } from './indexer/index.ts'
+import { indexPlanetWorkspace } from './planet.ts'
 
 /** Wait this long after the last change before re-indexing a workspace. */
 const DEBOUNCE_MS = 4000
@@ -25,7 +25,7 @@ const MIN_INTERVAL_MS = 20_000
 /** Catch anything the OS watcher missed (network drives, editors that swap files). */
 const SWEEP_MS = 5 * 60_000
 
-const NOISE = /[\\/](node_modules|\.git|dist|build|out|coverage|\.plugbrain|\.codegraph)[\\/]?/
+const NOISE = /[\\/](node_modules|\.git|dist|build|out|coverage|\.plugbrain|\.codegraph|\.env)[\\/]?/
 
 export interface DaemonHandle { stop(): void }
 
@@ -48,8 +48,10 @@ export function startDaemon(db: DatabaseSync, log: (line: string) => void = cons
     }
     lastRun.set(ws.id, Date.now())
     try {
-      const r = indexWorkspace(db, ws.id, ws.root)
-      log(`[daemon] ${ws.name}: ${reason} → ${r.files} files, ${r.symbols} symbols, ${r.edges} edges (${r.ms} ms)`)
+      // A planet re-indexes through its checkout roots; a plain workspace
+      // through its own. Same call, so the daemon cannot drift from the CLI.
+      const r = indexPlanetWorkspace(db, ws.id)
+      log(`[daemon] ${ws.name}: ${reason} → ${r.scanned} scanned, ${r.files} files, ${r.symbols} symbols, ${r.edges} edges (${r.ms} ms)`)
     } catch (error) {
       log(`[daemon] ${ws.name}: re-index FAILED — ${error instanceof Error ? error.message : String(error)}`)
     }

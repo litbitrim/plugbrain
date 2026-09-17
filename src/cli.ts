@@ -6,13 +6,20 @@
  *   plugbrain status                   what the brain currently holds
  *   plugbrain search <query>           find code without touching the disk
  *   plugbrain serve [port]             run the API + UI daemon
+ *
+ *   plugbrain planet register [path] [name]   register a planet, discover its repos
+ *   plugbrain planet scan [workspaceId]       refresh revisions, then index
+ *   plugbrain planet status [workspaceId]     repos, checkouts, revisions, counts
+ *   plugbrain planet history [workspaceId]    files the planet no longer has
  */
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
-import { indexWorkspace } from './indexer/index.ts'
+import {
+  indexPlanetWorkspace, listPlanet, planetHistory, registerPlanet, workspaceIdFor,
+} from './planet.ts'
 import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
@@ -23,9 +30,6 @@ const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 const DB_FILE = join(HOME, 'plugbrain.db')
 
 const db = openStore(DB_FILE)
-
-const workspaceIdFor = (root: string): string =>
-  `ws-${createHash('sha256').update(resolve(root).toLowerCase()).digest('hex').slice(0, 12)}`
 
 function register(path: string, name?: string): void {
   const root = resolve(path)
@@ -42,6 +46,16 @@ function register(path: string, name?: string): void {
   console.log(`registered ${label}  ${id}\n  ${root}`)
 }
 
+function reportIndex(name: string, r: ReturnType<typeof indexPlanetWorkspace>): void {
+  console.log(
+    `${name}: ${r.mode}  generation ${r.generation}  ${r.ms} ms\n` +
+    `  scanned ${r.scanned}  files ${r.files}  parsed ${r.parsed}  skipped ${r.skipped}\n` +
+    `  changed  added ${r.changed.added}  modified ${r.changed.modified}` +
+    `  renamed ${r.changed.renamed}  deleted ${r.changed.deleted}  unchanged ${r.changed.unchanged}\n` +
+    `  reparsed ${r.reparsed}  reresolved ${r.reresolved}\n` +
+    `  symbols ${r.symbols}  edges ${r.edges}  unresolved ${r.unresolved}  ambiguous ${r.ambiguous}`)
+}
+
 function indexAll(only?: string): void {
   const rows = only
     ? db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').all(only)
@@ -49,11 +63,81 @@ function indexAll(only?: string): void {
   if (rows.length === 0) { console.log('no workspaces registered'); return }
   for (const row of rows as { id: string; name: string; root: string }[]) {
     process.stdout.write(`indexing ${row.name} …\n`)
-    const r = indexWorkspace(db, row.id, row.root)
-    console.log(
-      `  files ${r.files} (parsed ${r.parsed}, skipped ${r.skipped})\n` +
-      `  symbols ${r.symbols}  edges ${r.edges}  unresolved ${r.unresolved}\n` +
-      `  ${r.ms} ms`)
+    reportIndex(row.name, indexPlanetWorkspace(db, row.id))
+  }
+}
+
+/** Register a planet and everything inside it, then say what was found. */
+function planetRegister(path?: string, name?: string): void {
+  const root = resolve(path ?? process.cwd())
+  const registered = registerPlanet(db, root, name)
+  console.log(
+    `${registered.created ? 'registered' : 'already known'} planet ${registered.name}\n` +
+    `  planet    ${registered.planetId}\n` +
+    `  workspace ${registered.workspaceId}\n` +
+    `  root      ${registered.root}\n` +
+    `  repos     ${registered.repos}\n` +
+    `  checkouts ${registered.checkouts}`)
+}
+
+/** Refresh the revision vectors, then index: the honest "is this current" verb. */
+function planetScan(only?: string): void {
+  const planet = only ?? singlePlanetId()
+  const row = db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').get(planet) as
+    { id: string; name: string; root: string } | undefined
+  if (!row) { console.error(`unknown workspace: ${planet}`); process.exit(2) }
+  const registered = registerPlanet(db, row.root, row.name)
+  console.log(`planet ${registered.name}: ${registered.repos} repos, ${registered.checkouts} checkouts`)
+  reportIndex(row.name, indexPlanetWorkspace(db, row.id))
+}
+
+/** The planet a bare command should act on: the only one, or a clear refusal. */
+function singlePlanetId(): string {
+  const rows = db.prepare('SELECT workspace_id AS id FROM planets ORDER BY name').all() as
+    Array<{ id: string }>
+  if (rows.length === 0) { console.error('no planet registered'); process.exit(2) }
+  if (rows.length > 1) {
+    console.error('several planets registered — name one:')
+    for (const row of rows) console.error(`  ${row.id}`)
+    process.exit(2)
+  }
+  return rows[0].id
+}
+
+function planetStatus(only?: string): void {
+  const id = only ?? singlePlanetId()
+  const view = listPlanet(db, id)
+  console.log(`\n${view.name}  ${view.planetId}`)
+  console.log(`  workspace ${view.workspaceId}`)
+  console.log(`  root      ${view.root}`)
+  console.log(`  indexed   ${view.indexedAt ?? 'never'}  generation ${view.index.generation}`)
+  console.log(
+    `  totals    repos ${view.totals.repos}  checkouts ${view.totals.activeCheckouts} active` +
+    ` (${view.totals.checkouts} known)  files ${view.totals.files}` +
+    `  symbols ${view.totals.symbols}  edges ${view.totals.edges}` +
+    `  unattributed ${view.unattributedFiles}`)
+  if (view.index.lastFailureAt) {
+    console.log(`  last failure ${view.index.lastFailureAt}: ${view.index.failureReason ?? ''}`)
+  }
+  for (const repo of view.repos) {
+    console.log(`\n  ${repo.name}  ${repo.id}`)
+    if (repo.remoteUrl) console.log(`    origin ${repo.remoteUrl}`)
+    for (const co of view.checkouts.filter(c => c.repoId === repo.id)) {
+      const dirty = co.dirtyHash === null ? 'clean' : `dirty ${co.dirtyCount}`
+      console.log(
+        `    ${co.relPrefix}  ${co.branch ?? '(detached)'} ${(co.head ?? '').slice(0, 10)}` +
+        `  ${dirty}  ${co.revision ?? ''}  files ${co.files}  symbols ${co.symbols}` +
+        (co.retiredAt ? '  [retired]' : ''))
+    }
+  }
+}
+
+function planetLog(only?: string, limit = 50): void {
+  const id = only ?? singlePlanetId()
+  const rows = planetHistory(db, id, limit)
+  if (rows.length === 0) { console.log('nothing deleted or renamed yet'); return }
+  for (const row of rows) {
+    console.log(`  ${row.deletedAt}  ${row.reason.padEnd(8)} gen ${row.generation}  ${row.path}`)
   }
 }
 
@@ -138,6 +222,18 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
+  case 'planet': {
+    const [step, ...rest] = args
+    if (step === 'register') planetRegister(rest[0], rest[1])
+    else if (step === 'scan') planetScan(rest[0])
+    else if (step === 'status') planetStatus(rest[0])
+    else if (step === 'history') planetLog(rest[0])
+    else {
+      console.error('usage: plugbrain planet <register|scan|status|history> [path|workspaceId]')
+      process.exit(1)
+    }
+    break
+  }
   case 'serve': {
     const port = Number(args[0] ?? 4310)
     const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
@@ -167,7 +263,9 @@ switch (command) {
     break
   }
   default:
-    console.log('usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve> …')
+    console.log(
+      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet> …\n' +
+      '       plugbrain planet <register|scan|status|history> [path|workspaceId]')
     process.exit(1)
 }
 } catch (error) {

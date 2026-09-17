@@ -33,15 +33,15 @@ import type { DatabaseSync } from 'node:sqlite'
 import { readGit, storeGit } from './git.ts'
 import { resolveMarkdownTarget } from './markdown.ts'
 import {
-  classify, parseFile, resolveImport, walk,
-  type IndexResult, type ParsedFile, type StoredFile,
+  classify, parseFile, resolveImport, walk, walkRoots,
+  type IndexResult, type IndexRoot, type ParsedFile, type StoredFile,
 } from './scan.ts'
 import {
   resolveReference,
   type ResolveContext, type ResolvedBinding, type SymbolRow,
 } from './resolve.ts'
 
-export type { ChangeCounts, IndexResult } from './scan.ts'
+export type { ChangeCounts, IndexResult, IndexRoot } from './scan.ts'
 
 /** The stored checkpoint for a workspace, or a zeroed one on first index. */
 interface IndexState {
@@ -72,16 +72,28 @@ function readState(db: DatabaseSync, workspaceId: string): IndexState {
  * Pass `full: true` to force a complete rebuild. Even then ownership is
  * preserved: `path_owner` is refreshed from the live `file_owner` rows before
  * anything is deleted, and replayed onto the new rows before the commit.
+ *
+ * Pass `roots` to index a PLANET: several checkout folders walked into one
+ * namespace, each file carrying the repository and checkout it came from. The
+ * generation, the transaction and the publish stay single, which is what makes
+ * "one brain, many worktrees" true rather than aspirational.
  */
 export function indexWorkspace(
   db: DatabaseSync,
   workspaceId: string,
   root: string,
-  options: { full?: boolean } = {},
+  options: { full?: boolean; roots?: IndexRoot[] } = {},
 ): IndexResult {
   const started = Date.now()
   const now = new Date().toISOString()
   const absRoot = resolvePath(root)
+
+  if (Array.isArray(options.roots) && options.roots.length === 0) {
+    // An empty root set is not "index nothing", it is "everything on disk just
+    // disappeared": every stored file would tombstone and the graph would be
+    // wiped by a configuration mistake. Refuse instead of destroying.
+    throw new Error('refusing to index with an empty root set — that would tombstone every file')
+  }
 
   let gitHead: string | null = null
   try { gitHead = readGit(absRoot, 1).head } catch { gitHead = null }
@@ -89,10 +101,12 @@ export function indexWorkspace(
   const state = readState(db, workspaceId)
   const forceFull = options.full === true || state.generation === 0
 
-  const disk = walk(absRoot)
+  const disk = options.roots === undefined ? walk(absRoot) : walkRoots(options.roots)
   const stored = forceFull
     ? []
-    : db.prepare('SELECT id, path, size, mtime, hash FROM files WHERE workspace_id = ?')
+    : db.prepare(
+        `SELECT id, path, size, mtime, hash, repo_id AS repoId, checkout_id AS checkoutId
+           FROM files WHERE workspace_id = ?`)
         .all(workspaceId) as unknown as StoredFile[]
 
   const change = classify(disk, stored)
@@ -103,6 +117,7 @@ export function indexWorkspace(
     // Nothing moved. An unchanged workspace must not pay for a reindex, and
     // must not burn a generation number either.
     return {
+      scanned: disk.length,
       files: state.file_count, parsed: 0, symbols: state.symbol_count,
       edges: state.edge_count, unresolved: state.unresolved_count,
       ambiguous: state.ambiguous_count, skipped: change.skipped,
@@ -114,6 +129,7 @@ export function indexWorkspace(
 
   const generation = state.generation + 1
   const result: IndexResult = {
+    scanned: disk.length,
     files: 0, parsed: 0, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
     skipped: change.skipped, ms: 0, generation,
     mode: forceFull ? 'full' : 'incremental',
@@ -126,10 +142,10 @@ export function indexWorkspace(
   }
 
   const insertFile = db.prepare(
-    `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at, generation)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   const updateFile = db.prepare(
-    `UPDATE files SET path = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
+    `UPDATE files SET path = ?, repo_id = ?, checkout_id = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
             loc = ?, indexed_at = ?, generation = ? WHERE id = ?`)
   const insertSymbol = db.prepare(
     `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
@@ -248,8 +264,8 @@ export function indexWorkspace(
       if (payload === undefined) { result.skipped += 1; continue }
       const parsed = parseFile(file.rel, file.ext, payload.content)
       const info = insertFile.run(
-        workspaceId, file.rel, file.ext, parsed.lang, file.size, file.mtime,
-        payload.hash, parsed.loc, now, generation)
+        workspaceId, file.rel, file.repoId, file.checkoutId, file.ext, parsed.lang,
+        file.size, file.mtime, payload.hash, parsed.loc, now, generation)
       const fileId = Number(info.lastInsertRowid)
       parsedFiles.push({ ...parsed, fileId })
       result.reparsed += 1
@@ -260,8 +276,8 @@ export function indexWorkspace(
     for (const item of change.renamed) {
       const parsed = parseFile(item.file.rel, item.file.ext, item.content)
       updateFile.run(
-        item.file.rel, item.file.ext, parsed.lang, item.file.size, item.file.mtime,
-        item.hash, parsed.loc, now, generation, item.id)
+        item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
+        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation, item.id)
       clearFileGraph(item.id)
       parsedFiles.push({ ...parsed, fileId: item.id })
       result.reparsed += 1
@@ -278,8 +294,8 @@ export function indexWorkspace(
       }
       const parsed = parseFile(item.file.rel, item.file.ext, item.content)
       updateFile.run(
-        item.file.rel, item.file.ext, parsed.lang, item.file.size, item.file.mtime,
-        item.hash, parsed.loc, now, generation, item.id)
+        item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
+        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation, item.id)
       clearFileGraph(item.id)
       parsedFiles.push({ ...parsed, fileId: item.id })
       result.reparsed += 1

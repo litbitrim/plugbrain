@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS files (
   id           INTEGER PRIMARY KEY,
   workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   path         TEXT NOT NULL,          -- workspace-relative, forward slashes
+  -- Which repository and which CHECKOUT of it this file belongs to. In a
+  -- planet the same path shape exists many times over (nine checkouts of
+  -- PlugHarness on one disk), so "which repo" cannot be inferred from the
+  -- path alone and has to be a column. Deliberately not a foreign key: a
+  -- retired checkout must not cascade away the graph it produced.
+  repo_id      TEXT,
+  checkout_id  TEXT,
   ext          TEXT NOT NULL,
   lang         TEXT,
   size         INTEGER NOT NULL,
@@ -67,6 +74,8 @@ CREATE TABLE IF NOT EXISTS files (
   UNIQUE (workspace_id, path)
 );
 CREATE INDEX IF NOT EXISTS idx_files_ws ON files(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_files_repo ON files(repo_id);
+CREATE INDEX IF NOT EXISTS idx_files_checkout ON files(checkout_id);
 
 CREATE TABLE IF NOT EXISTS symbols (
   id        INTEGER PRIMARY KEY,
@@ -106,6 +115,55 @@ CREATE INDEX IF NOT EXISTS idx_edges_kind ON edges(kind);
 -- Every agent that has ever touched a workspace, and the colour the views
 -- paint its files in. The colour is assigned once and never reused, so a
 -- file's colour identifies its author across all three renderings.
+-- A planet is a workspace plus the structure of the repositories inside it.
+-- One planet is ONE brain: the contract forbids a second brain per worktree,
+-- so every checkout of every repo of a planet lands in this one store and is
+-- told apart by id rather than by which database it was written to.
+CREATE TABLE IF NOT EXISTS planets (
+  id           TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL UNIQUE REFERENCES workspaces(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  root         TEXT NOT NULL UNIQUE,
+  created_at   TEXT NOT NULL
+);
+
+-- One repository. Identity is the git COMMON directory, which is what makes
+-- nine linked worktrees of PlugHarness one repo instead of nine.
+CREATE TABLE IF NOT EXISTS repos (
+  id         TEXT PRIMARY KEY,
+  planet_id  TEXT NOT NULL REFERENCES planets(id) ON DELETE CASCADE,
+  name       TEXT NOT NULL,
+  common_dir TEXT,
+  remote_url TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE (planet_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_repos_planet ON repos(planet_id);
+
+-- One checkout (a main worktree or a linked worktree) with its revision
+-- vector: branch + HEAD + a hash of the uncommitted patch. Two checkouts of
+-- the same repo on different branches are two rows, never one.
+CREATE TABLE IF NOT EXISTS checkouts (
+  id          TEXT PRIMARY KEY,
+  planet_id   TEXT NOT NULL REFERENCES planets(id) ON DELETE CASCADE,
+  repo_id     TEXT NOT NULL REFERENCES repos(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  path        TEXT NOT NULL UNIQUE,
+  rel_prefix  TEXT NOT NULL,          -- planet-relative prefix, e.g. 'Code/PlugHarness'
+  branch      TEXT,
+  head        TEXT,
+  dirty_hash  TEXT,                   -- null when the tree is clean
+  dirty_count INTEGER NOT NULL DEFAULT 0,
+  revision    TEXT,                   -- branch|head|dirty folded into one hash
+  is_primary  INTEGER NOT NULL DEFAULT 0,
+  seen_at     TEXT NOT NULL,
+  -- A checkout that disappeared from disk keeps its row and its history, but
+  -- stops being an index root; its files then tombstone on the next pass.
+  retired_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_checkouts_planet ON checkouts(planet_id);
+CREATE INDEX IF NOT EXISTS idx_checkouts_repo ON checkouts(repo_id);
+
 CREATE TABLE IF NOT EXISTS agents (
   id         TEXT PRIMARY KEY,
   name       TEXT NOT NULL,
@@ -375,6 +433,10 @@ function migrateAddedColumns(db: DatabaseSync): void {
   // The generation that last wrote this file row, so a reader can tell how
   // current a row is without re-hashing the file.
   ensureColumn(db, 'files', 'generation', 'INTEGER NOT NULL DEFAULT 0')
+  // Planet attribution. NULL on every workspace that is not a planet, which is
+  // exactly what "this file belongs to no repository" means.
+  ensureColumn(db, 'files', 'repo_id', 'TEXT')
+  ensureColumn(db, 'files', 'checkout_id', 'TEXT')
 }
 
 /** Open (creating if needed) the PlugBrain database at `file`. */

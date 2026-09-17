@@ -14,7 +14,9 @@ import { extname, join, resolve as resolvePath } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
-import { indexWorkspace } from '../indexer/index.ts'
+import {
+  indexPlanetWorkspace, listPlanet, planetHistory, registerPlanet,
+} from '../planet.ts'
 import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
@@ -440,6 +442,57 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       }
     }
 
+    // ── planet: repos, checkouts, revision vectors ───────────────────────
+    // One planet is one workspace with many repos and checkouts inside it. The
+    // UI never guesses which worktree a file came from: the ids are here.
+    if (p === '/api/planet' && req.method === 'GET') {
+      if (!ws) return json(res, { ok: false, error: 'workspace required' }, 400)
+      try {
+        return json(res, { ok: true, planet: listPlanet(db, ws) })
+      } catch (error) {
+        return json(res, {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }, 404)
+      }
+    }
+
+    if (p === '/api/planet/history' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      return json(res, {
+        ok: true,
+        history: planetHistory(db, ws, clampLimit(q.get('limit'), 200, 5000)),
+      })
+    }
+
+    if (p === '/api/planet/register' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const raw = String(body.root ?? '').trim()
+      if (raw === '') return json(res, { ok: false, error: 'root is required' }, 400)
+      try {
+        const registered = registerPlanet(db, raw, body.name ? String(body.name) : undefined)
+        return json(res, { ok: true, ...registered })
+      } catch (error) {
+        return json(res, {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }, 400)
+      }
+    }
+
+    if (p === '/api/planet/scan' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const id = String(body.workspace ?? ws).trim()
+      const w = access.requireWorkspace(db, id)
+      // Refresh the revision vectors first: a scan IS the act of looking again,
+      // and reporting yesterday's branch beside today's index would be a lie.
+      const registered = registerPlanet(db, w.root, w.name)
+      const result = indexPlanetWorkspace(db, id, { full: body.full === true })
+      return json(res, { ok: true, registered, result })
+    }
+
     // ── git: branch, worktrees, commits ──────────────────────────────────
     if (p === '/api/git') {
       access.requireWorkspace(db, ws)
@@ -745,8 +798,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       checkAuth(req, ctx)
       const body = await readBody(req)
       const id = String(body.workspace ?? ws).trim()
-      const w = access.requireWorkspace(db, id)
-      return json(res, { ok: true, result: indexWorkspace(db, id, w.root) })
+      access.requireWorkspace(db, id)
+      // A planet reindexes through its checkout roots, never by walking the
+      // whole planet folder — that would pull in every worktree unlabelled.
+      return json(res, { ok: true, result: indexPlanetWorkspace(db, id) })
     }
 
     // ── static UI ────────────────────────────────────────────────────────
