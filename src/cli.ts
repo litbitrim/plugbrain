@@ -38,6 +38,7 @@ import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
 import { startMcpServer } from './mcp/server.ts'
+import { backupStore, restoreStore } from './store/backup.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 const DB_FILE = join(HOME, 'plugbrain.db')
@@ -618,13 +619,37 @@ switch (command) {
     startMcpServer({ db, workspaceId: ws, authKey })
     break
   }
+  case 'backup': {
+    const target = args[0] ? resolve(args[0]) : join(HOME, 'backups', `plugbrain-backup-${Date.now()}.db`)
+    const result = backupStore(db, target)
+    console.log(`backup created: ${result.path} (${result.bytes} bytes in ${result.durationMs}ms)`)
+    break
+  }
+  case 'restore': {
+    const source = args[0]
+    if (!source) {
+      console.error('usage: plugbrain restore <path-to-backup-file>')
+      process.exit(1)
+    }
+    try { db.close() } catch { /* ignore */ }
+    const result = restoreStore(source, DB_FILE)
+    console.log(`restored database from: ${result.sourcePath}`)
+    console.log(`  target:     ${result.targetDbPath}`)
+    console.log(`  workspaces: ${result.workspaces}`)
+    console.log(`  files:      ${result.files}`)
+    console.log(`  symbols:    ${result.symbols}`)
+    console.log(`  notes:      ${result.notes}`)
+    break
+  }
   default:
     console.log(
-      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp> …\n' +
+      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
       '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
-      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]')
+      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
+      '       plugbrain backup [target_path]\n' +
+      '       plugbrain restore <backup_path>')
     process.exit(1)
 }
 } catch (error) {

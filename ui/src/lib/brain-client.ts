@@ -230,3 +230,127 @@ export async function checkPackStaleness(packId: string): Promise<PackStalenessR
   }
   return res.json()
 }
+
+export interface NoteQueryResult {
+  ok: boolean
+  total: number
+  notes: Array<{
+    path: string
+    title: string
+    typ?: string | null
+    stand?: string | null
+    outLinks?: number
+    inLinks?: number
+  }>
+  error?: string
+}
+
+export async function queryNotes(workspaceId: string, filter: string): Promise<NoteQueryResult> {
+  const res = await fetch(`/api/notes/query?workspace=${encodeURIComponent(workspaceId)}&filter=${encodeURIComponent(filter)}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.error ?? `Notes Query HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export interface BacklinkItem {
+  path: string
+  line: number
+  alias?: string | null
+}
+
+export async function fetchBacklinks(workspaceId: string, path: string): Promise<BacklinkItem[]> {
+  const res = await fetch(`/api/notes/backlinks?workspace=${encodeURIComponent(workspaceId)}&path=${encodeURIComponent(path)}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data?.backlinks) ? data.backlinks : []
+}
+
+export interface AgentPresenceItem {
+  id: string
+  name: string
+  color: string
+  hue?: number
+  model?: string | null
+  host?: string | null
+  workspaceId: string
+  checkoutId?: string | null
+  taskId?: string | null
+  missionId?: string | null
+  lastHeartbeat: string
+  heartbeatTtlMs: number
+  presence: 'active' | 'idle' | 'dead'
+  isExpired: boolean
+}
+
+export async function fetchAgentPresence(workspaceId?: string): Promise<AgentPresenceItem[]> {
+  const query = workspaceId ? `?workspace=${encodeURIComponent(workspaceId)}` : ''
+  const res = await fetch(`/api/agent/presence${query}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data?.agents) ? data.agents : []
+}
+
+export interface LeaseItem {
+  id: string
+  workspaceId: string
+  agentId: string
+  taskId: string
+  paths: string[]
+  symbols: string[]
+  mode: 'read' | 'write'
+  epoch: number
+  createdAt: string
+  expiresAt: string
+  ttlMs: number
+}
+
+export async function fetchActiveLeases(workspaceId?: string): Promise<LeaseItem[]> {
+  const query = workspaceId ? `?workspace=${encodeURIComponent(workspaceId)}` : ''
+  const res = await fetch(`/api/agent/leases${query}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data?.leases) ? data.leases : []
+}
+
+export interface AgentInspectResult {
+  ok: boolean
+  agent: {
+    id: string
+    name: string
+    color: string
+    hue?: number
+    model?: string | null
+    host?: string | null
+    workspaceId?: string
+    checkoutId?: string | null
+    taskId?: string | null
+    missionId?: string | null
+    state: 'active' | 'idle' | 'dead'
+    lastHeartbeat?: string | null
+    heartbeatTtlMs?: number
+  }
+  claims: LeaseItem[]
+  dateiereignisse: Array<{ id: number; path: string; action: string; at: string; detail?: string | null }>
+  toolereignisse: Array<{ id: number; type: string; occurred_at: string; task_id?: string | null; payload: string }>
+  messages: Array<{
+    id: string
+    fromAgent: string
+    toAgent: string | null
+    channel: string | null
+    subject: string
+    body: string
+    createdAt: string
+    deliveredAt: string | null
+    readAt: string | null
+  }>
+  error?: string
+}
+
+export async function fetchAgentInspect(agentId: string, workspaceId?: string): Promise<AgentInspectResult | null> {
+  const query = `?agentId=${encodeURIComponent(agentId)}${workspaceId ? `&workspace=${encodeURIComponent(workspaceId)}` : ''}`
+  const res = await fetch(`/api/agent/inspect${query}`)
+  if (!res.ok) return null
+  return res.json()
+}

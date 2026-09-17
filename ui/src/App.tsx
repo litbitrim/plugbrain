@@ -591,7 +591,18 @@ export default function App() {
 
         {view === 'city' && (
           <div className="brain-view brain-view-city">
-            <CityView snapshot={snapshot} />
+            <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
+            {selectedSource && (
+              <div className="atlas-source-overlay">
+                <SourceView
+                  workspaceId={workspaceId}
+                  path={selectedSource.path}
+                  highlightLine={selectedSource.line}
+                  onClose={() => setSelectedSource(null)}
+                  onNavigateFile={(p, l) => handleOpenSource(p, l)}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -603,9 +614,18 @@ export default function App() {
 
         {view === 'mesh' && (
           <div className="brain-view brain-view-mesh">
-            {!boardReachable && <div className="brain-note">Agenten-Register nicht erreichbar — es werden keine echten Agenten angezeigt.</div>}
-            {boardReachable && tasks.length === 0 && <div className="brain-note">Noch kein Agent hat diesen Workspace angefasst. Die Engine läuft in Eigensimulation — das sind keine echten Agenten.</div>}
-            <MeshView tasks={tasks} />
+            <MeshView tasks={tasks} workspaceId={workspaceId} onSelectFile={handleOpenSource} />
+            {selectedSource && (
+              <div className="atlas-source-overlay">
+                <SourceView
+                  workspaceId={workspaceId}
+                  path={selectedSource.path}
+                  highlightLine={selectedSource.line}
+                  onClose={() => setSelectedSource(null)}
+                  onNavigateFile={(p, l) => handleOpenSource(p, l)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

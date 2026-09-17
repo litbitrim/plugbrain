@@ -22,7 +22,13 @@ import type { Snapshot } from '../types.js'
  * indexed objects; both come from the same authoritative snapshot the Atlas
  * renders, so the two views can never disagree about what is indexed.
  */
-export default function CityView({ snapshot }: { snapshot: Snapshot | null }) {
+export default function CityView({
+  snapshot,
+  onSelectFile,
+}: {
+  snapshot: Snapshot | null
+  onSelectFile?: (path: string) => void
+}) {
   // Apply every snapshot the shell polls. feedCity skips what it already grew,
   // so an unchanged workspace produces no churn on the map.
   useEffect(() => {
@@ -195,6 +201,16 @@ export default function CityView({ snapshot }: { snapshot: Snapshot | null }) {
             <div className="kind">{sel.dir + '/'}</div>
             <h2>{sel.name}</h2>
             {sel.note ? <div className="note">{sel.note}</div> : null}
+            {onSelectFile && (
+              <button
+                type="button"
+                className="btn primary"
+                style={{ marginTop: '10px', marginBottom: '14px', width: '100%', padding: '8px 12px' }}
+                onClick={() => onSelectFile(sel.path)}
+              >
+                📄 Datei in Quellansicht öffnen
+              </button>
+            )}
             <dl>
               <dt>Size</dt><dd>{sel.loc}</dd>
               <dt>References</dt><dd>{sel.deps.length}</dd>

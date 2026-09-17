@@ -23,10 +23,12 @@ import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
 import { evaluateClaim } from '../projections/conflicts.ts'
-import { ingestTraceEvents } from '../trace.ts'
+import { ingestTraceEvents, ensureTraceSchema } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
 import * as coord from '../coord/index.ts'
+import { homedir } from 'node:os'
+import { backupStore, verifyBackupFile } from '../store/backup.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -239,6 +241,7 @@ export interface ServerHandle {
 
 export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   const { db } = ctx
+  ensureTraceSchema(db)
   const serverInstanceId = ctx.instanceId ?? ('inst-' + randomUUID().slice(0, 12))
 
   const server = createServer((req, res) => {
@@ -1033,6 +1036,99 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
       const acked = coord.confirmDelivery(db, messageId, agentId)
       return json(res, { ok: true, acked })
+    }
+
+    // ── Swarm Agent Inspect (M5: Mesh Inspection) ───────────────────────
+    if (p === '/api/agent/inspect' && (req.method === 'GET' || req.method === 'POST')) {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const agentId = String(body.agentId ?? q.get('agentId') ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws ?? q.get('workspace') ?? '').trim() || undefined
+
+      const agentRow = db.prepare(`
+        SELECT id, name, color, hue, model, host, workspace_id, checkout_id, task_id, mission_id,
+               first_seen, last_seen, last_heartbeat, heartbeat_ttl_ms
+          FROM agents WHERE id = ?
+      `).get(agentId) as any
+
+      if (!agentRow) {
+        return json(res, { ok: false, error: `agent '${agentId}' not found` }, 404)
+      }
+
+      const isDead = coord.isAgentDead(db, agentId)
+      const lastHbMs = agentRow.last_heartbeat ? new Date(agentRow.last_heartbeat).getTime() : 0
+      const isIdle = (Date.now() - lastHbMs) > 15000 && !isDead
+      const state = isDead ? 'dead' : isIdle ? 'idle' : 'active'
+
+      const leases = coord.listActiveLeases(db, workspaceId, agentId)
+
+      const dateiereignisse = db.prepare(`
+        SELECT ac.id, ac.path, ac.action, ac.at, ac.detail
+          FROM activity ac
+         WHERE ac.agent_id = ?
+         ORDER BY ac.id DESC LIMIT 15
+      `).all(agentId)
+
+      const toolereignisse = db.prepare(`
+        SELECT te.id, te.type, te.occurred_at, te.task_id, te.file_refs, te.payload
+          FROM trace_events te
+         WHERE te.agent_id = ?
+         ORDER BY te.id DESC LIMIT 15
+      `).all(agentId)
+
+      coord.ensureInboxSchema(db)
+      const messages = db.prepare(`
+        SELECT m.id, m.from_agent AS fromAgent, m.to_agent AS toAgent, m.channel, m.subject, m.body,
+               m.created_at AS createdAt, m.delivered_at AS deliveredAt, m.read_at AS readAt
+          FROM inbox_messages m
+         WHERE m.from_agent = ? OR m.to_agent = ? OR m.to_agent IS NULL
+         ORDER BY m.created_at DESC LIMIT 15
+      `).all(agentId, agentId)
+
+      return json(res, {
+        ok: true,
+        agent: {
+          id: agentRow.id,
+          name: agentRow.name,
+          color: agentRow.color,
+          hue: agentRow.hue,
+          model: agentRow.model,
+          host: agentRow.host,
+          workspaceId: agentRow.workspace_id,
+          checkoutId: agentRow.checkout_id,
+          taskId: agentRow.task_id,
+          missionId: agentRow.mission_id,
+          state,
+          lastHeartbeat: agentRow.last_heartbeat,
+          heartbeatTtlMs: agentRow.heartbeat_ttl_ms,
+        },
+        claims: leases,
+        dateiereignisse,
+        toolereignisse,
+        messages,
+      })
+    }
+
+    // ── Online Backup & Restore (M5) ────────────────────────────────────
+    if (p === '/api/backup' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const targetPath = String(body.targetPath ?? body.path ?? '').trim() ||
+        join(process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain'), 'backups', `plugbrain-backup-${Date.now()}.db`)
+      try {
+        const result = backupStore(db, targetPath)
+        return json(res, { ok: true, ...result })
+      } catch (err: unknown) {
+        return json(res, { ok: false, error: (err as Error).message }, 500)
+      }
+    }
+
+    if (p === '/api/backup/verify' && (req.method === 'GET' || req.method === 'POST')) {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const path = String(body.path ?? q.get('path') ?? '').trim()
+      if (!path) return json(res, { ok: false, error: 'path required' }, 400)
+      const verified = verifyBackupFile(path)
+      return json(res, { ok: verified.valid, ...verified })
     }
 
     if (p === '/api/agent/search' && req.method === 'POST') {

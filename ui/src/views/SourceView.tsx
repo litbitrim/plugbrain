@@ -3,9 +3,11 @@ import {
   readAgentFile,
   fetchGitState,
   fetchProvenance,
+  fetchBacklinks,
   type FileReadResult,
   type GitState,
   type FileProvenance,
+  type BacklinkItem,
 } from '../lib/brain-client'
 
 interface SourceViewProps {
@@ -26,19 +28,22 @@ export default function SourceView({
   const [fileData, setFileData] = useState<FileReadResult | null>(null)
   const [gitState, setGitState] = useState<GitState | null>(null)
   const [prov, setProv] = useState<FileProvenance | null>(null)
+  const [backlinks, setBacklinks] = useState<BacklinkItem[]>([])
   const targetLineRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let alive = true
     setLoading(true)
     setFileData(null)
+    setBacklinks([])
 
-    // Parallel fetch: file content, git info, and provenance
+    // Parallel fetch: file content, git info, provenance, and backlinks
     Promise.allSettled([
       readAgentFile(workspaceId, path),
       fetchGitState(workspaceId),
       fetchProvenance(workspaceId, path),
-    ]).then(([readRes, gitRes, provRes]) => {
+      fetchBacklinks(workspaceId, path),
+    ]).then(([readRes, gitRes, provRes, blRes]) => {
       if (!alive) return
       if (readRes.status === 'fulfilled') {
         setFileData(readRes.value)
@@ -58,6 +63,9 @@ export default function SourceView({
       }
       if (provRes.status === 'fulfilled') {
         setProv(provRes.value)
+      }
+      if (blRes.status === 'fulfilled') {
+        setBacklinks(blRes.value)
       }
       setLoading(false)
     })
@@ -180,6 +188,29 @@ export default function SourceView({
             </tbody>
           </table>
         </div>
+
+        {backlinks.length > 0 && (
+          <div className="source-backlinks" style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)', marginBottom: '6px' }}>
+              ← Rückverweise / Backlinks ({backlinks.length})
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {backlinks.map((bl, i) => (
+                <div
+                  key={i}
+                  className="search-hit-card"
+                  style={{ padding: '6px 10px', fontSize: '11px', cursor: 'pointer' }}
+                  onClick={() => onNavigateFile ? onNavigateFile(bl.path, bl.line) : null}
+                  title={`Zeile ${bl.line} in ${bl.path}`}
+                >
+                  <span className="mono" style={{ color: 'var(--accent)' }}>{bl.path}</span>
+                  <span style={{ color: 'var(--faint)', marginLeft: '6px' }}>:{bl.line}</span>
+                  {bl.alias && <span style={{ marginLeft: '4px', fontStyle: 'italic' }}>({bl.alias})</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

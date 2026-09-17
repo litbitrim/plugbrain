@@ -10,7 +10,9 @@
     "index": "node --experimental-strip-types src/cli.ts index",
     "serve": "node --experimental-strip-types src/cli.ts serve",
     "status": "node --experimental-strip-types src/cli.ts status",
-    "build:ui": "cd ui && vite build"
+    "build:ui": "npm --prefix ui run build",
+    "backup": "node --experimental-strip-types src/cli.ts backup",
+    "restore": "node --experimental-strip-types src/cli.ts restore"
   },
   "dependencies": {
     "typescript": "^5.9.3"
