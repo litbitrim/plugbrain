@@ -11,6 +11,13 @@
  *   plugbrain planet scan [workspaceId]       refresh revisions, then index
  *   plugbrain planet status [workspaceId]     repos, checkouts, revisions, counts
  *   plugbrain planet history [workspaceId]    files the planet no longer has
+ *
+ *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
+ *   plugbrain notes search <text>             prose search across the vault, with snippets
+ *   plugbrain notes read <path>               one note with links, backlinks and properties
+ *   plugbrain notes write <path> --from <f>   save with a version check
+ *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
+ *   plugbrain notes backlinks <path>          who points at this note
  */
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -18,8 +25,12 @@ import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
 import {
-  indexPlanetWorkspace, listPlanet, planetHistory, registerPlanet, workspaceIdFor,
+  indexPlanetWorkspace, listPlanet, noteRootRows, planetHistory, registerPlanet, workspaceIdFor,
 } from './planet.ts'
+import {
+  backlinksOf, listNotes, noteGraph, queryNotes, readNote, writeNote,
+} from './notes/vault.ts'
+import { searchNotes } from './notes/search.ts'
 import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
@@ -116,6 +127,13 @@ function planetStatus(only?: string): void {
     ` (${view.totals.checkouts} known)  files ${view.totals.files}` +
     `  symbols ${view.totals.symbols}  edges ${view.totals.edges}` +
     `  unattributed ${view.unattributedFiles}`)
+  if (view.notes.roots.length > 0) {
+    console.log(
+      `  notes     ${view.notes.files} notes in ${view.notes.roots.length} roots` +
+      `  properties ${view.notes.properties}  links ${view.notes.links}` +
+      ` (resolved ${view.notes.resolvedLinks}, ambiguous ${view.notes.ambiguousLinks},` +
+      ` missing ${view.notes.missingLinks})`)
+  }
   if (view.index.lastFailureAt) {
     console.log(`  last failure ${view.index.lastFailureAt}: ${view.index.failureReason ?? ''}`)
   }
@@ -130,6 +148,133 @@ function planetStatus(only?: string): void {
         (co.retiredAt ? '  [retired]' : ''))
     }
   }
+}
+
+/* ── notes: the Obsidian replacement ────────────────────────────────────── */
+
+/**
+ * The identity a CLI read or edit is attributed to.
+ *
+ * Reads and writes go through the access layer, which records who did them, so
+ * the CLI cannot be anonymous: an unattributed edit to the knowledge base is
+ * exactly the thing the provenance exists to prevent.
+ */
+const NOTES_AGENT = 'notes-cli'
+const notesAgent = (): string => {
+  access.registerAgent(db, NOTES_AGENT, 'PlugBrain notes CLI')
+  return NOTES_AGENT
+}
+
+const flagValue = (args: string[], name: string): string | null => {
+  const inline = args.find(arg => arg.startsWith(`${name}=`))
+  if (inline !== undefined) return inline.slice(name.length + 1)
+  const at = args.indexOf(name)
+  return at === -1 ? null : args[at + 1] ?? null
+}
+
+function notesQuery(args: string[]): void {
+  const asJson = args.includes('--json')
+  const text = args.filter(arg => !arg.startsWith('--') && !/^\d+$/.test(arg)).join(' ')
+  const limit = Number(flagValue(args, '--limit') ?? 200)
+  const result = queryNotes(db, singlePlanetId(), text, { limit })
+  if (asJson) return jsonOut(result)
+  console.log(`${result.total} note(s) match  ${result.parsed}`)
+  for (const note of result.notes) {
+    console.log(`  ${(note.typ ?? '-').padEnd(13)} ${(note.stand ?? '-').padEnd(10)} ` +
+      `${note.title.padEnd(32)} ${note.path}`)
+  }
+}
+
+function jsonOut(value: unknown): void {
+  console.log(JSON.stringify(value, null, 2))
+}
+
+function notesSearch(args: string[]): void {
+  const asJson = args.includes('--json')
+  const text = args.filter(arg => !arg.startsWith('--') && !/^\d+$/.test(arg)).join(' ')
+  if (text.trim() === '') {
+    console.error('usage: plugbrain notes search <text> [--limit <n>] [--json]')
+    process.exit(1)
+  }
+  const result = searchNotes(db, singlePlanetId(), text, {
+    limit: Number(flagValue(args, '--limit') ?? 50),
+  })
+  if (asJson) return jsonOut(result)
+  console.log(`${result.total} note(s) contain '${result.query}'`)
+  for (const hit of result.hits) {
+    console.log(`  ${hit.path}`)
+    if (hit.snippet !== null) console.log(`      ${hit.snippet}`)
+  }
+}
+
+function notesRead(args: string[]): void {
+  const relPath = args.find(arg => !arg.startsWith('--'))
+  if (!relPath) { console.error('usage: plugbrain notes read <path> [--json]'); process.exit(1) }
+  const note = readNote(db, singlePlanetId(), notesAgent(), relPath)
+  if (args.includes('--json')) return jsonOut(note)
+  console.log(`${note.title}  (${note.path})`)
+  console.log(`  version ${note.hash}  ${note.bytes} bytes  ${note.indexStale ? 'STALE in index' : 'indexed'}`)
+  if (note.generated) console.log('  machine-generated: an edit will be overwritten by the tracker')
+  const keys = new Map<string, string[]>()
+  for (const property of note.properties) {
+    const list = keys.get(property.key)
+    if (list) list.push(property.value); else keys.set(property.key, [property.value])
+  }
+  for (const [key, values] of keys) console.log(`  ${key.padEnd(18)} ${values.filter(Boolean).join(', ')}`)
+  console.log(`  links ${note.links.length}  backlinks ${note.backlinks.length}`)
+  for (const backlink of note.backlinks) console.log(`    ← ${backlink.path}:${backlink.line}`)
+  for (const link of note.links) {
+    console.log(`    → ${link.target}${link.alias ? ` (${link.alias})` : ''}  [${link.status}]`)
+  }
+}
+
+function notesBacklinks(args: string[]): void {
+  const relPath = args.find(arg => !arg.startsWith('--'))
+  if (!relPath) { console.error('usage: plugbrain notes backlinks <path>'); process.exit(1) }
+  const rows = backlinksOf(db, singlePlanetId(), relPath)
+  if (args.includes('--json')) return jsonOut(rows)
+  if (rows.length === 0) { console.log('nobody links here'); return }
+  for (const row of rows) console.log(`  ${row.path}:${row.line}${row.alias ? ` (${row.alias})` : ''}`)
+}
+
+function notesGraph(args: string[]): void {
+  const graph = noteGraph(db, singlePlanetId(), {
+    focus: flagValue(args, '--focus'),
+    depth: Number(flagValue(args, '--depth') ?? 1),
+    filter: flagValue(args, '--filter'),
+    limit: Number(flagValue(args, '--limit') ?? 600),
+  })
+  if (args.includes('--json')) return jsonOut(graph)
+  console.log(`${graph.nodes.length} of ${graph.coverage.notesInScope} notes` +
+    `  ${graph.edges.length} links` + (graph.focus ? `  focus ${graph.focus} depth ${graph.depth}` : ''))
+  for (const group of graph.groups) {
+    console.log(`  ${group.name.padEnd(16)} ${String(group.count).padStart(4)}  hue ${String(group.hue).padStart(3)}  ${group.color}`)
+  }
+  if (graph.coverage.truncated) console.log(`  TRUNCATED at ${graph.nodes.length}`)
+}
+
+function notesWrite(args: string[]): void {
+  const relPath = args.find(arg => !arg.startsWith('--'))
+  if (!relPath) {
+    console.error('usage: plugbrain notes write <path> --from <file>|--content <text> [--expect <hash>] [--allow-generated]')
+    process.exit(1)
+  }
+  const from = flagValue(args, '--from')
+  const inline = flagValue(args, '--content')
+  if (from === null && inline === null) {
+    console.error('refusing to write an empty note: pass --from <file> or --content <text>')
+    process.exit(1)
+  }
+  const content = from === null ? String(inline) : readFileSync(from, 'utf8')
+  const expected = flagValue(args, '--expect')
+  const result = writeNote(db, singlePlanetId(), notesAgent(), relPath, content, {
+    ...(expected === null ? {} : { expectedHash: expected }),
+    allowGenerated: args.includes('--allow-generated'),
+  })
+  if (args.includes('--json')) return jsonOut(result)
+  console.log(`${result.created ? 'created' : 'wrote'} ${result.path}`)
+  console.log(`  version ${result.hash}  ${result.bytes} bytes  by ${result.agent}`)
+  console.log(`  ${result.indexed ? 'indexed immediately' : 'not part of the index'}`)
 }
 
 function planetLog(only?: string, limit = 50): void {
@@ -234,6 +379,30 @@ switch (command) {
     }
     break
   }
+  case 'notes': {
+    const [step, ...rest] = args
+    if (step === 'query') notesQuery(rest)
+    else if (step === 'search') notesSearch(rest)
+    else if (step === 'read') notesRead(rest)
+    else if (step === 'write') notesWrite(rest)
+    else if (step === 'graph') notesGraph(rest)
+    else if (step === 'backlinks') notesBacklinks(rest)
+    else if (step === 'list') {
+      const result = listNotes(db, singlePlanetId(), { limit: Number(flagValue(rest, '--limit') ?? 200) })
+      if (rest.includes('--json')) jsonOut(result)
+      else {
+        console.log(`${result.total} note(s)`)
+        for (const note of result.notes) {
+          console.log(`  ${(note.typ ?? '-').padEnd(13)} ${(note.stand ?? '-').padEnd(10)} ` +
+            `${note.title.padEnd(32)} →${note.outLinks} ←${note.inLinks}`)
+        }
+      }
+    } else {
+      console.error('usage: plugbrain notes <list|query|search|read|write|graph|backlinks> …')
+      process.exit(1)
+    }
+    break
+  }
   case 'serve': {
     const port = Number(args[0] ?? 4310)
     const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
@@ -264,8 +433,9 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet> …\n' +
-      '       plugbrain planet <register|scan|status|history> [path|workspaceId]')
+      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes> …\n' +
+      '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
+      '       plugbrain notes <list|query|search|read|write|graph|backlinks> …')
     process.exit(1)
 }
 } catch (error) {

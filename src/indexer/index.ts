@@ -28,12 +28,13 @@
  * file costs a query rather than a re-parse. That split is what makes editing
  * one file cost one parse instead of a whole workspace.
  */
-import { resolve as resolvePath } from 'node:path'
+import { readFileSync, statSync } from 'node:fs'
+import { extname, resolve as resolvePath } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { readGit, storeGit } from './git.ts'
 import { resolveMarkdownTarget } from './markdown.ts'
 import {
-  classify, parseFile, resolveImport, walk, walkRoots,
+  classify, hashOf, insideNoteRoot, PARSE_VERSION, parseFile, resolveImport, walk, walkRoots,
   type IndexResult, type IndexRoot, type ParsedFile, type StoredFile,
 } from './scan.ts'
 import {
@@ -105,13 +106,26 @@ export function indexWorkspace(
   const stored = forceFull
     ? []
     : db.prepare(
-        `SELECT id, path, size, mtime, hash, repo_id AS repoId, checkout_id AS checkoutId
+        `SELECT id, path, size, mtime, hash, repo_id AS repoId, checkout_id AS checkoutId,
+                parse_version AS parseVersion
            FROM files WHERE workspace_id = ?`)
         .all(workspaceId) as unknown as StoredFile[]
 
   const change = classify(disk, stored)
   const touched = change.added.length + change.modified.length
     + change.renamed.length + change.deleted.length
+
+  // The basenames that appeared or vanished. A wiki link addresses a note by
+  // NAME, so these are exactly the names whose resolvability changed.
+  const noteNameDelta = new Set<string>()
+  for (const rel of [
+    ...change.added.map(file => file.rel),
+    ...change.renamed.map(item => item.file.rel),
+    ...change.deleted.map(row => row.path),
+  ]) {
+    if (!rel.toLowerCase().endsWith('.md')) continue
+    noteNameDelta.add((rel.split('/').pop() ?? rel).replace(/\.md$/i, '').toLowerCase())
+  }
 
   if (touched === 0 && !forceFull && state.git_head === gitHead) {
     // Nothing moved. An unchanged workspace must not pay for a reindex, and
@@ -141,24 +155,7 @@ export function indexWorkspace(
     reparsed: 0, reresolved: 0,
   }
 
-  const insertFile = db.prepare(
-    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-  const updateFile = db.prepare(
-    `UPDATE files SET path = ?, repo_id = ?, checkout_id = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
-            loc = ?, indexed_at = ?, generation = ? WHERE id = ?`)
-  const insertSymbol = db.prepare(
-    `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`)
-  const insertRef = db.prepare(
-    `INSERT INTO file_refs (workspace_id, file_id, kind, target, receiver, from_name, scope, line)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-  const insertImport = db.prepare(
-    `INSERT INTO file_imports (workspace_id, file_id, specifier, local_name, imported_name, line)
-     VALUES (?, ?, ?, ?, ?, ?)`)
-  const insertSearch = db.prepare(
-    `INSERT INTO search_rows (name, path, kind, workspace_id, symbol_id, file_id)
-     VALUES (?, ?, ?, ?, ?, ?)`)
+  const writers = writersFor(db, workspaceId)
 
   db.exec('BEGIN IMMEDIATE')
   try {
@@ -250,89 +247,72 @@ export function indexWorkspace(
     }
 
     // -- 5. Write file rows; re-parse only what actually changed -------------
-    const parsedFiles: ParsedFile[] = []
-    const clearFileGraph = (fileId: number): void => {
-      db.prepare('DELETE FROM symbols WHERE file_id = ?').run(fileId)
-      db.prepare('DELETE FROM file_refs WHERE file_id = ?').run(fileId)
-      db.prepare('DELETE FROM file_imports WHERE file_id = ?').run(fileId)
-      db.prepare('DELETE FROM search_rows WHERE workspace_id = ? AND file_id = ?')
-        .run(workspaceId, fileId)
-    }
+    // Writes parse output directly into SQLite without buffering in memory,
+    // so indexing a 100,000+ file workspace runs in constant heap space.
+    const newNames = new Set<string>()
 
     for (const file of change.added) {
-      const payload = change.addedContent.get(file.rel)
-      if (payload === undefined) { result.skipped += 1; continue }
-      const parsed = parseFile(file.rel, file.ext, payload.content)
-      const info = insertFile.run(
+      let content: string
+      try { content = readFileSync(file.abs, 'utf8') } catch { result.skipped += 1; continue }
+      const parsed = parseFile(file.rel, file.ext, content)
+      const info = writers.insertFile.run(
         workspaceId, file.rel, file.repoId, file.checkoutId, file.ext, parsed.lang,
-        file.size, file.mtime, payload.hash, parsed.loc, now, generation)
+        file.size, file.mtime, file.hash, parsed.loc, now, generation, PARSE_VERSION)
       const fileId = Number(info.lastInsertRowid)
-      parsedFiles.push({ ...parsed, fileId })
+      const noteText = file.checkoutId === null ? content : null
+      writers.writeParse({ ...parsed, fileId }, workspaceId, noteText)
+      for (const sym of parsed.symbols) newNames.add(sym.name)
+      affected.add(fileId)
       result.reparsed += 1
       if (parsed.lang !== null) result.parsed += 1
-      affected.add(fileId)
     }
 
     for (const item of change.renamed) {
-      const parsed = parseFile(item.file.rel, item.file.ext, item.content)
-      updateFile.run(
+      let content: string
+      try { content = readFileSync(item.file.abs, 'utf8') } catch { result.skipped += 1; continue }
+      const parsed = parseFile(item.file.rel, item.file.ext, content)
+      writers.updateFile.run(
         item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
-        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation, item.id)
-      clearFileGraph(item.id)
-      parsedFiles.push({ ...parsed, fileId: item.id })
+        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation,
+        PARSE_VERSION, item.id)
+      writers.clearFileGraph(item.id)
+      const noteText = item.file.checkoutId === null ? content : null
+      writers.writeParse({ ...parsed, fileId: item.id }, workspaceId, noteText)
+      for (const sym of parsed.symbols) newNames.add(sym.name)
+      affected.add(item.id)
       result.reparsed += 1
       if (parsed.lang !== null) result.parsed += 1
-      affected.add(item.id)
     }
 
     for (const item of change.modified) {
-      if (item.content === null) {
-        // Byte-identical, only touched: refresh stat fields. No re-parse.
-        db.prepare('UPDATE files SET size = ?, mtime = ?, generation = ? WHERE id = ?')
-          .run(item.file.size, item.file.mtime, generation, item.id)
+      if (!item.reparse) {
+        // Byte-identical, only touched: refresh stat fields. No re-parse. The
+        // parse version is restated because reaching this branch means it is
+        // already current.
+        db.prepare('UPDATE files SET size = ?, mtime = ?, generation = ?, parse_version = ? WHERE id = ?')
+          .run(item.file.size, item.file.mtime, generation, PARSE_VERSION, item.id)
         continue
       }
-      const parsed = parseFile(item.file.rel, item.file.ext, item.content)
-      updateFile.run(
+      let content: string
+      try { content = readFileSync(item.file.abs, 'utf8') } catch { result.skipped += 1; continue }
+      const parsed = parseFile(item.file.rel, item.file.ext, content)
+      writers.updateFile.run(
         item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
-        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation, item.id)
-      clearFileGraph(item.id)
-      parsedFiles.push({ ...parsed, fileId: item.id })
+        item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation,
+        PARSE_VERSION, item.id)
+      writers.clearFileGraph(item.id)
+      const noteText = item.file.checkoutId === null ? content : null
+      writers.writeParse({ ...parsed, fileId: item.id }, workspaceId, noteText)
+      for (const sym of parsed.symbols) newNames.add(sym.name)
+      affected.add(item.id)
       result.reparsed += 1
       if (parsed.lang !== null) result.parsed += 1
-      affected.add(item.id)
     }
 
-    // -- 6. Symbols, refs, imports and search rows for the parsed files ------
-    for (const parsed of parsedFiles) {
-      insertSearch.run(
-        parsed.rel.split('/').pop() ?? parsed.rel, parsed.rel, 'file',
-        workspaceId, null, parsed.fileId)
-      for (const sym of parsed.symbols) {
-        const info = insertSymbol.run(
-          parsed.fileId, sym.name, sym.kind, sym.line, sym.endLine,
-          sym.exported ? 1 : 0, sym.container)
-        insertSearch.run(
-          sym.name, parsed.rel, sym.kind, workspaceId,
-          Number(info.lastInsertRowid), parsed.fileId)
-      }
-      for (const ref of parsed.refs) {
-        insertRef.run(
-          workspaceId, parsed.fileId, ref.kind, ref.target,
-          ref.receiver, ref.from, ref.scope, ref.line)
-      }
-      for (const imp of parsed.imports) {
-        insertImport.run(
-          workspaceId, parsed.fileId, imp.specifier, imp.local, imp.imported, imp.line)
-      }
-    }
-
-    // -- 6b. Widen the affected set by the NAME delta only -------------------
+    // -- 6. Widen the affected set by the NAME delta only -------------------
     // A file is only re-resolved when this generation added or removed a
     // definition of a name it actually references.
     if (!forceFull) {
-      const newNames = new Set<string>()
-      for (const parsed of parsedFiles) for (const sym of parsed.symbols) newNames.add(sym.name)
       const delta: string[] = []
       for (const name of oldNames) if (!newNames.has(name)) delta.push(name)
       for (const name of newNames) if (!oldNames.has(name)) delta.push(name)
@@ -361,6 +341,12 @@ export function indexWorkspace(
     // -- 8. Recompute edges for the affected set -----------------------------
     resolveEdges(db, workspaceId, affected)
     result.reresolved = affected.size
+
+    // -- 8b. Resolve note links ---------------------------------------------
+    // A note appearing or disappearing changes whether OTHER notes' wiki links
+    // point anywhere, so this looks at the changed files AND at every link whose
+    // target name was added or removed this generation.
+    resolveNoteLinks(db, workspaceId, affected, noteNameDelta)
 
     // -- 9. Reconcile search rows whose owner no longer exists ---------------
     // Legacy migration deliberately preserved historical rows; this is where
@@ -432,6 +418,322 @@ export function indexWorkspace(
   return result
 }
 
+/**
+ * Resolve every wiki link that could have changed meaning this generation.
+ *
+ * Two buckets, and both are needed:
+ *   - links WRITTEN BY a changed file (its own text moved),
+ *   - links ANYWHERE whose target name appeared or disappeared (a note that
+ *     now exists turns every `[[it]]` in the vault into a real edge).
+ *
+ * Resolution prefers a NOTE over any other document of the same name. A wiki
+ * link is a note-to-note reference first; `[[index]]` must not silently bind to
+ * some bundled README inside a checkout. When several notes share the name, the
+ * link is marked `ambiguous` and points nowhere — refusing to guess is the
+ * whole reason the status is a column rather than a boolean.
+ */
+function resolveNoteLinks(
+  db: DatabaseSync, workspaceId: string,
+  affected: Set<number>, nameDelta: Set<string>,
+): void {
+  const rows = db.prepare('SELECT id, path, checkout_id AS checkoutId FROM files WHERE workspace_id = ?')
+    .all(workspaceId) as unknown as Array<{ id: number; path: string; checkoutId: string | null }>
+  if (rows.length === 0) return
+  const idByRel = new Map(rows.map(row => [row.path, row.id]))
+
+  // Every file with no checkout IS a note: the note scope is the only index
+  // root that does not belong to a repository. One pass builds both buckets —
+  // notes first, then all documents as the fallback.
+  const noteBasenames = new Map<string, string[]>()
+  const anyBasenames = new Map<string, string[]>()
+  const noteIdByBasename = new Map<string, number>()
+  const addTo = (bucket: Map<string, string[]>, key: string, rel: string): void => {
+    const list = bucket.get(key)
+    if (list) list.push(rel); else bucket.set(key, [rel])
+  }
+  for (const row of rows) {
+    if (!row.path.toLowerCase().endsWith('.md')) continue
+    const base = (row.path.split('/').pop() ?? row.path).replace(/\.md$/i, '').toLowerCase()
+    addTo(anyBasenames, base, row.path)
+    if (row.checkoutId === null) {
+      addTo(noteBasenames, base, row.path)
+      noteIdByBasename.set(base, row.id)
+    }
+  }
+
+  const want = [...affected]
+  for (const name of nameDelta) {
+    const id = noteIdByBasename.get(name)
+    if (id !== undefined) want.push(id)
+  }
+  if (want.length === 0) return
+
+  const update = db.prepare('UPDATE note_links SET status = ?, dst_file = ? WHERE id = ?')
+  const seen = new Set<number>()
+  const wanted = [...new Set(want)]
+  for (let i = 0; i < wanted.length; i += 400) {
+    const chunk = wanted.slice(i, i + 400)
+    const holes = chunk.map(() => '?').join(',')
+    const links = db.prepare(
+      `SELECT id, file_id AS fileId, target FROM note_links
+        WHERE workspace_id = ? AND file_id IN (${holes})`).all(workspaceId, ...chunk) as
+      unknown as Array<{ id: number; fileId: number; target: string }>
+    for (const link of links) {
+      if (seen.has(link.id)) continue
+      seen.add(link.id)
+      const key = link.target.toLowerCase().replace(/\.md$/, '')
+      const preferred = noteBasenames.get(key) ?? []
+      const hits = preferred.length > 0 ? preferred : (anyBasenames.get(key) ?? [])
+      const dstRel = hits.length === 0 ? null : hits[0]
+      const dstId = dstRel === null ? null : idByRel.get(dstRel) ?? null
+      const status = dstId === null ? 'missing'
+        : dstId === link.fileId ? 'self'
+        : hits.length > 1 ? 'ambiguous'
+        : 'resolved'
+      update.run(status, status === 'resolved' || status === 'self' ? dstId : null, link.id)
+    }
+  }
+}
+
+/** The prepared statements that write one file's graph. */
+interface FileWriters {
+  insertFile: ReturnType<DatabaseSync['prepare']>
+  updateFile: ReturnType<DatabaseSync['prepare']>
+  clearFileGraph: (fileId: number) => void
+  writeParse: (parsed: ParsedFile, workspaceId: string, noteText: string | null) => void
+}
+
+/**
+ * All the statements that put ONE parsed file into the store.
+ *
+ * They live in a function rather than inside `indexWorkspace` because a second
+ * caller needs exactly the same writes: saving a note has to refresh that one
+ * note, and a copy of these statements would be a copy that can drift.
+ */
+function writersFor(db: DatabaseSync, workspaceId: string): FileWriters {
+  const insertFile = db.prepare(
+    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation, parse_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  const updateFile = db.prepare(
+    `UPDATE files SET path = ?, repo_id = ?, checkout_id = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
+            loc = ?, indexed_at = ?, generation = ?, parse_version = ? WHERE id = ?`)
+  const insertSymbol = db.prepare(
+    `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`)
+  const insertRef = db.prepare(
+    `INSERT INTO file_refs (workspace_id, file_id, kind, target, receiver, from_name, scope, line)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+  const insertImport = db.prepare(
+    `INSERT INTO file_imports (workspace_id, file_id, specifier, local_name, imported_name, line)
+     VALUES (?, ?, ?, ?, ?, ?)`)
+  const insertSearch = db.prepare(
+    `INSERT INTO search_rows (name, path, kind, workspace_id, symbol_id, file_id)
+     VALUES (?, ?, ?, ?, ?, ?)`)
+  const insertProperty = db.prepare(
+    `INSERT INTO note_properties (workspace_id, file_id, key, value, raw, ordinal, is_link, line)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+  const insertNoteLink = db.prepare(
+    `INSERT INTO note_links (workspace_id, file_id, target, alias, section, embed, source, status, dst_file, line)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'missing', NULL, ?)`)
+  const insertNoteTag = db.prepare(
+    `INSERT INTO note_tags (workspace_id, file_id, tag, source) VALUES (?, ?, ?, ?)
+     ON CONFLICT(file_id, tag) DO UPDATE SET source = excluded.source`)
+  const insertNoteBody = db.prepare(
+    `INSERT INTO note_body (workspace_id, file_id, path, text) VALUES (?, ?, ?, ?)
+     ON CONFLICT(file_id) DO UPDATE SET path = excluded.path, text = excluded.text`)
+
+  const clearFileGraph = (fileId: number): void => {
+    db.prepare('DELETE FROM symbols WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM file_refs WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM file_imports WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM note_properties WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM note_links WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM note_tags WHERE file_id = ?').run(fileId)
+    db.prepare('DELETE FROM search_rows WHERE workspace_id = ? AND file_id = ?')
+      .run(workspaceId, fileId)
+    // Explicit, and not left to the file's ON DELETE CASCADE: this runs for a
+    // RE-parse too, where the file row survives. A stale body row would keep
+    // answering prose searches with text that no longer exists anywhere.
+    db.prepare('DELETE FROM note_body WHERE file_id = ?').run(fileId)
+  }
+
+  /**
+   * Symbols, refs, imports, frontmatter, links and prose for one parsed file.
+   *
+   * `noteText` is non-null only for a file that IS a note — a path owned by no
+   * checkout. The prose of 100 000 source files is not worth storing, and the
+   * prose of the vault is the whole point of M2, so the caller decides and
+   * passes the text only in the case that matters.
+   */
+  const writeParse = (parsed: ParsedFile, workspace: string, noteText: string | null): void => {
+    insertSearch.run(
+      parsed.rel.split('/').pop() ?? parsed.rel, parsed.rel, 'file',
+      workspace, null, parsed.fileId)
+    for (const sym of parsed.symbols) {
+      const info = insertSymbol.run(
+        parsed.fileId, sym.name, sym.kind, sym.line, sym.endLine,
+        sym.exported ? 1 : 0, sym.container)
+      insertSearch.run(
+        sym.name, parsed.rel, sym.kind, workspace,
+        Number(info.lastInsertRowid), parsed.fileId)
+    }
+    for (const ref of parsed.refs) {
+      insertRef.run(
+        workspace, parsed.fileId, ref.kind, ref.target,
+        ref.receiver, ref.from, ref.scope, ref.line)
+    }
+    for (const imp of parsed.imports) {
+      insertImport.run(
+        workspace, parsed.fileId, imp.specifier, imp.local, imp.imported, imp.line)
+    }
+    // Frontmatter and wiki links are written here and resolved later in the same
+    // transaction: a link's target may be a file written a moment ago.
+    for (const property of parsed.properties) {
+      insertProperty.run(
+        workspace, parsed.fileId, property.key, property.value, property.raw,
+        property.ordinal, property.isLink ? 1 : 0, property.line)
+    }
+    for (const link of parsed.links) {
+      insertNoteLink.run(
+        workspace, parsed.fileId, link.target, link.alias, link.section,
+        link.embed ? 1 : 0, link.source, link.line)
+    }
+    for (const tag of parsed.tags) {
+      insertNoteTag.run(workspace, parsed.fileId, tag.tag, tag.source)
+    }
+    if (noteText !== null) {
+      insertNoteBody.run(workspace, parsed.fileId, parsed.rel, noteText)
+    }
+  }
+
+  return { insertFile, updateFile, clearFileGraph, writeParse }
+}
+
+/**
+ * Re-index ONE file, in place.
+ *
+ * A saved note must be current by the time the save returns, and a full planet
+ * pass costs tens of seconds. This does the same work as a full pass for a
+ * single path — same writes, same resolution, same transaction — and moves the
+ * generation, because the graph it publishes really is a new complete graph.
+ *
+ * Returns false when the path is not indexed yet, so a caller can never mistake
+ * "not tracked" for "refreshed".
+ */
+/**
+ * Which index root owns a planet-relative path, or `null` when none does.
+ *
+ * Read straight from the tables rather than from `planet.ts`, which would make
+ * the indexer depend on the module that already depends on it. Longest prefix
+ * wins, so a checkout inside a note folder is still attributed to the checkout.
+ */
+function ownerOf(db: DatabaseSync, workspaceId: string, rel: string):
+{ repoId: string | null; checkoutId: string | null } | null {
+  const checkouts = db.prepare(
+    `SELECT c.id, c.repo_id AS repoId, c.rel_prefix AS relPrefix
+       FROM checkouts c JOIN planets p ON p.id = c.planet_id
+      WHERE p.workspace_id = ? AND c.retired_at IS NULL`).all(workspaceId) as
+    unknown as Array<{ id: string; repoId: string; relPrefix: string }>
+  let best: { id: string; repoId: string; relPrefix: string } | null = null
+  for (const checkout of checkouts) {
+    if (rel !== checkout.relPrefix && !rel.startsWith(`${checkout.relPrefix}/`)) continue
+    if (best === null || checkout.relPrefix.length > best.relPrefix.length) best = checkout
+  }
+  if (best !== null) return { repoId: best.repoId, checkoutId: best.id }
+
+  const notes = db.prepare(
+    `SELECT n.rel_path AS relPath, n.kind AS kind
+       FROM note_roots n JOIN planets p ON p.id = n.planet_id
+      WHERE p.workspace_id = ?`).all(workspaceId) as unknown as
+    Array<{ relPath: string; kind: string }>
+  // A single-file root is matched exactly; a folder root uses the shared rule,
+  // so a dot-folder inside it is NOT owned — the walker would never index a
+  // file written there, and a write that lands outside the index is worse than
+  // a refused one.
+  const owned = notes.some(root => root.kind === 'file'
+    ? rel === root.relPath
+    : insideNoteRoot(root.relPath, rel))
+  return owned ? { repoId: null, checkoutId: null } : null
+}
+
+export function refreshFile(db: DatabaseSync, workspaceId: string, relPath: string): boolean {
+  const rel = relPath.split('\\').join('/')
+  const workspace = db.prepare('SELECT root FROM workspaces WHERE id = ?').get(workspaceId) as
+    { root: string } | undefined
+  if (workspace === undefined) return false
+  const existing = db.prepare(
+    'SELECT id, repo_id AS repoId, checkout_id AS checkoutId FROM files WHERE workspace_id = ? AND path = ?')
+    .get(workspaceId, rel) as
+    { id: number; repoId: string | null; checkoutId: string | null } | undefined
+
+  // A note that does not exist yet in the graph is a normal case: saving a new
+  // one must make it visible immediately, not on the next full pass.
+  const owner = existing === undefined ? ownerOf(db, workspaceId, rel) : null
+  if (existing === undefined && owner === null) return false
+
+  const abs = resolvePath(workspace.root, ...rel.split('/'))
+  let content: string
+  let stats: ReturnType<typeof statSync>
+  try {
+    content = readFileSync(abs, 'utf8')
+    stats = statSync(abs)
+  } catch {
+    // The file is gone: leave the graph alone rather than inventing a deletion
+    // here. The next full pass is the place that tombstones it, with the
+    // generation and the chronicle entry that a deletion deserves.
+    return false
+  }
+
+  const now = new Date().toISOString()
+  const parsed = parseFile(rel, extname(rel), content)
+  const hash = hashOf(content)
+  const state = readState(db, workspaceId)
+  const generation = state.generation + 1
+  const writers = writersFor(db, workspaceId)
+
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    let row: { id: number; repoId: string | null; checkoutId: string | null }
+    if (existing === undefined) {
+      const info = writers.insertFile.run(
+        workspaceId, rel, owner?.repoId ?? null, owner?.checkoutId ?? null, extname(rel),
+        parsed.lang, stats.size, stats.mtime.toISOString(), hash, parsed.loc, now, generation)
+      row = { id: Number(info.lastInsertRowid), repoId: owner?.repoId ?? null, checkoutId: owner?.checkoutId ?? null }
+    } else {
+      writers.updateFile.run(
+        rel, existing.repoId, existing.checkoutId, extname(rel), parsed.lang, stats.size,
+        stats.mtime.toISOString(), hash, parsed.loc, now, generation, existing.id)
+      row = existing
+    }
+    writers.clearFileGraph(row.id)
+    writers.writeParse({ ...parsed, fileId: row.id }, workspaceId,
+      row.checkoutId === null ? content : null)
+    const affected = new Set<number>([row.id])
+    resolveEdges(db, workspaceId, affected)
+    const basename = (rel.split('/').pop() ?? rel).replace(/\.md$/i, '').toLowerCase()
+    resolveNoteLinks(db, workspaceId, affected, new Set([basename]))
+
+    const totals = db.prepare(
+      `SELECT (SELECT COUNT(*) FROM files WHERE workspace_id = ?) AS files,
+              (SELECT COUNT(*) FROM symbols s JOIN files f ON f.id = s.file_id
+                WHERE f.workspace_id = ?) AS symbols,
+              (SELECT COUNT(*) FROM edges WHERE workspace_id = ?) AS edges`)
+      .get(workspaceId, workspaceId, workspaceId) as
+      { files: number; symbols: number; edges: number }
+    db.prepare(
+      `UPDATE workspace_index_state
+          SET generation = ?, last_success_at = ?, file_count = ?, symbol_count = ?, edge_count = ?
+        WHERE workspace_id = ?`)
+      .run(generation, now, Number(totals.files), Number(totals.symbols), Number(totals.edges), workspaceId)
+    db.prepare('UPDATE workspaces SET indexed_at = ? WHERE id = ?').run(now, workspaceId)
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  return true
+}
+
 interface RefRow {
   file_id: number
   kind: string
@@ -461,79 +763,11 @@ function resolveEdges(db: DatabaseSync, workspaceId: string, affected: Set<numbe
   for (const id of [...affected]) if (!live.has(id)) affected.delete(id)
   if (affected.size === 0) return
 
-  const list = [...affected].join(',')
-  db.prepare(`DELETE FROM edges WHERE workspace_id = ? AND src_file IN (${list})`).run(workspaceId)
-
-  const insertEdge = db.prepare(
-    `INSERT INTO edges (workspace_id, kind, src_symbol, src_file, dst_symbol, dst_file,
-                        raw_target, resolved, line, ambiguous, candidates)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-
   const fileRows = db.prepare('SELECT id, path FROM files WHERE workspace_id = ?')
     .all(workspaceId) as unknown as Array<{ id: number; path: string }>
   const relById = new Map(fileRows.map(row => [row.id, row.path]))
   const idByRel = new Map(fileRows.map(row => [row.path, row.id]))
   const known = new Set(idByRel.keys())
-
-  // Import bindings for the affected files, pointed at real file ids.
-  const importRows = db.prepare(
-    `SELECT file_id, specifier, local_name, imported_name, line FROM file_imports
-      WHERE workspace_id = ? AND file_id IN (${list})`)
-    .all(workspaceId) as unknown as ImportRow[]
-  const bindingsByFile = new Map<number, Map<string, ResolvedBinding>>()
-  const importTargets = new Set<number>()
-  const targetOf = (fileId: number, specifier: string): number | null => {
-    const fromRel = relById.get(fileId)
-    if (fromRel === undefined) return null
-    const targetRel = resolveImport(fromRel, specifier, known)
-    return targetRel === null ? null : idByRel.get(targetRel) ?? null
-  }
-  for (const row of importRows) {
-    const targetFileId = targetOf(row.file_id, row.specifier)
-    if (targetFileId !== null) importTargets.add(targetFileId)
-    if (row.local_name === null) continue
-    let map = bindingsByFile.get(row.file_id)
-    if (map === undefined) { map = new Map(); bindingsByFile.set(row.file_id, map) }
-    map.set(row.local_name, {
-      local: row.local_name,
-      imported: row.imported_name ?? row.local_name,
-      targetFileId,
-    })
-  }
-
-  // Symbols are loaded only for files resolution can actually reach: the
-  // affected files and the modules they import.
-  const needed = new Set<number>([...affected, ...importTargets])
-  const symbolsByFile = new Map<number, Map<string, SymbolRow[]>>()
-  if (needed.size > 0) {
-    for (const row of db.prepare(
-      `SELECT id, file_id, line, name, exported, container FROM symbols
-        WHERE file_id IN (${[...needed].join(',')})`).all() as unknown as
-      Array<{ id: number; file_id: number; line: number; name: string; exported: number; container: string | null }>) {
-      let byName = symbolsByFile.get(row.file_id)
-      if (byName === undefined) { byName = new Map(); symbolsByFile.set(row.file_id, byName) }
-      const entry: SymbolRow = {
-        id: row.id, fileId: row.file_id, line: row.line, name: row.name,
-        exported: row.exported === 1, container: row.container,
-      }
-      const bucket = byName.get(row.name)
-      if (bucket) bucket.push(entry); else byName.set(row.name, [entry])
-    }
-  }
-
-  // Workspace-wide UNIQUENESS only. One aggregate query, and deliberately not
-  // a list: uniqueness is the single global fact the resolver may act on.
-  const globalByName = new Map<string, { count: number; symbolId: number; fileId: number }>()
-  for (const row of db.prepare(
-    `SELECT s.name AS name, COUNT(*) AS count, MIN(s.id) AS symbolId, MIN(s.file_id) AS fileId
-       FROM symbols s JOIN files f ON f.id = s.file_id
-      WHERE f.workspace_id = ? GROUP BY s.name`).all(workspaceId) as unknown as
-    Array<{ name: string; count: number; symbolId: number; fileId: number }>) {
-    globalByName.set(row.name, {
-      count: Number(row.count), symbolId: row.symbolId, fileId: row.fileId,
-    })
-  }
-  const context: ResolveContext = { symbolsByFile, bindingsByFile, globalByName }
 
   // Markdown link resolution needs the document basename map.
   const byBasename = new Map<string, string[]>()
@@ -544,84 +778,171 @@ function resolveEdges(db: DatabaseSync, workspaceId: string, affected: Set<numbe
     if (bucket) bucket.push(rel); else byBasename.set(base, [rel])
   }
 
-  // `defines`: file -> its own symbols.
-  for (const fileId of affected) {
-    const byName = symbolsByFile.get(fileId)
-    if (byName === undefined) continue
-    for (const bucket of byName.values()) {
-      for (const symbol of bucket) {
-        insertEdge.run(workspaceId, 'defines', null, fileId, symbol.id, null, null, 1, symbol.line, 0, 1)
+  const insertEdge = db.prepare(
+    `INSERT INTO edges (workspace_id, kind, src_symbol, src_file, dst_symbol, dst_file,
+                        raw_target, resolved, line, ambiguous, candidates)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+
+  const globalLookupStmt = db.prepare(
+    `SELECT COUNT(*) AS count, MIN(s.id) AS symbolId, MIN(s.file_id) AS fileId
+       FROM symbols s JOIN files f ON f.id = s.file_id
+      WHERE f.workspace_id = ? AND s.name = ?`)
+
+  const globalCache = new Map<string, { count: number; symbolId: number; fileId: number }>()
+  const getGlobal = (name: string) => {
+    let hit = globalCache.get(name)
+    if (hit === undefined) {
+      const row = globalLookupStmt.get(workspaceId, name) as
+        { count: number; symbolId: number | null; fileId: number | null } | undefined
+      hit = {
+        count: Number(row?.count ?? 0),
+        symbolId: row?.symbolId ?? 0,
+        fileId: row?.fileId ?? 0,
       }
+      globalCache.set(name, hit)
     }
+    return hit
   }
+  const globalByNameProxy = {
+    get: (target: string) => {
+      const g = getGlobal(target)
+      return g.count === 0 ? undefined : g
+    },
+  } as unknown as Map<string, { count: number; symbolId: number; fileId: number }>
 
-  // `imports`: one edge per (file, specifier), not per bound name.
-  const emitted = new Set<string>()
-  for (const row of importRows) {
-    const key = `${row.file_id} ${row.specifier}`
-    if (emitted.has(key)) continue
-    emitted.add(key)
-    const targetId = targetOf(row.file_id, row.specifier)
-    insertEdge.run(
-      workspaceId, 'imports', null, row.file_id, null, targetId,
-      row.specifier, targetId === null ? 0 : 1, row.line, 0, targetId === null ? 0 : 1)
-  }
-
-  // Reference edges, scope by scope.
-  const refRows = db.prepare(
-    `SELECT file_id, kind, target, receiver, from_name, scope, line FROM file_refs
-      WHERE workspace_id = ? AND file_id IN (${list})`)
-    .all(workspaceId) as unknown as RefRow[]
   const tagIds = new Map<string, number>()
+  const targetOf = (fileId: number, specifier: string): number | null => {
+    const fromRel = relById.get(fileId)
+    if (fromRel === undefined) return null
+    const targetRel = resolveImport(fromRel, specifier, known)
+    return targetRel === null ? null : idByRel.get(targetRel) ?? null
+  }
 
-  for (const ref of refRows) {
-    if (ref.scope === 'md-link') {
-      const fromRel = relById.get(ref.file_id)
-      if (fromRel === undefined) continue
-      const targetRel = resolveMarkdownTarget(
-        fromRel, ref.target, ref.receiver === 'wiki', known, byBasename)
-      const targetId = targetRel === null ? null : idByRel.get(targetRel) ?? null
-      insertEdge.run(
-        workspaceId, 'references', null, ref.file_id, null, targetId,
-        ref.target, targetId === null ? 0 : 1, ref.line, 0, targetId === null ? 0 : 1)
-      continue
+  const affectedList = [...affected]
+  for (let c = 0; c < affectedList.length; c += 200) {
+    const chunk = affectedList.slice(c, c + 200)
+    const list = chunk.join(',')
+
+    db.prepare(`DELETE FROM edges WHERE workspace_id = ? AND src_file IN (${list})`).run(workspaceId)
+
+    // Import bindings for the chunk
+    const importRows = db.prepare(
+      `SELECT file_id, specifier, local_name, imported_name, line FROM file_imports
+        WHERE workspace_id = ? AND file_id IN (${list})`)
+      .all(workspaceId) as unknown as ImportRow[]
+    const bindingsByFile = new Map<number, Map<string, ResolvedBinding>>()
+    const importTargets = new Set<number>()
+    for (const row of importRows) {
+      const targetFileId = targetOf(row.file_id, row.specifier)
+      if (targetFileId !== null) importTargets.add(targetFileId)
+      if (row.local_name === null) continue
+      let map = bindingsByFile.get(row.file_id)
+      if (map === undefined) { map = new Map(); bindingsByFile.set(row.file_id, map) }
+      map.set(row.local_name, {
+        local: row.local_name,
+        imported: row.imported_name ?? row.local_name,
+        targetFileId,
+      })
     }
-    if (ref.scope === 'md-tag') {
-      // A tag is a shared concept node: one symbol, many documents attached.
-      const name = `#${ref.target}`
-      let tagId = tagIds.get(ref.target)
-      if (tagId === undefined) {
-        const existing = db.prepare(
-          `SELECT s.id AS id FROM symbols s JOIN files f ON f.id = s.file_id
-            WHERE f.workspace_id = ? AND s.name = ? LIMIT 1`)
-          .get(workspaceId, name) as { id: number } | undefined
-        tagId = existing !== undefined
-          ? existing.id
-          : Number(db.prepare(
-              `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
-               VALUES (?, ?, 'constant', 1, 1, 1, NULL)`).run(ref.file_id, name).lastInsertRowid)
-        tagIds.set(ref.target, tagId)
+
+    // Symbols loaded only for chunk files and their direct import targets
+    const needed = new Set<number>([...chunk, ...importTargets])
+    const symbolsByFile = new Map<number, Map<string, SymbolRow[]>>()
+    if (needed.size > 0) {
+      const neededList = [...needed].join(',')
+      for (const row of db.prepare(
+        `SELECT id, file_id, line, name, exported, container FROM symbols
+          WHERE file_id IN (${neededList})`).all() as unknown as
+        Array<{ id: number; file_id: number; line: number; name: string; exported: number; container: string | null }>) {
+        let byName = symbolsByFile.get(row.file_id)
+        if (byName === undefined) { byName = new Map(); symbolsByFile.set(row.file_id, byName) }
+        const entry: SymbolRow = {
+          id: row.id, fileId: row.file_id, line: row.line, name: row.name,
+          exported: row.exported === 1, container: row.container,
+        }
+        const bucket = byName.get(row.name)
+        if (bucket) bucket.push(entry); else byName.set(row.name, [entry])
       }
-      insertEdge.run(
-        workspaceId, 'references', null, ref.file_id, tagId, null, name, 1, ref.line, 0, 1)
-      continue
     }
-    const resolution = resolveReference(context, {
-      fileId: ref.file_id, target: ref.target,
-      receiver: ref.receiver, from: ref.from_name,
-    })
-    // The edge STARTS at the enclosing symbol when we can name it in this file.
-    const source = ref.from_name === null ? null : resolveReference(context, {
-      fileId: ref.file_id, target: ref.from_name, receiver: null, from: null,
-    })
-    insertEdge.run(
-      workspaceId, ref.kind,
-      source?.symbolId ?? null, ref.file_id,
-      resolution.symbolId, null,
-      ref.target,
-      resolution.symbolId === null ? 0 : 1,
-      ref.line,
-      resolution.kind === 'ambiguous' ? 1 : 0,
-      resolution.candidates)
+
+    const context: ResolveContext = { symbolsByFile, bindingsByFile, globalByName: globalByNameProxy }
+
+    // `defines`: file -> its own symbols
+    for (const fileId of chunk) {
+      const byName = symbolsByFile.get(fileId)
+      if (byName === undefined) continue
+      for (const bucket of byName.values()) {
+        for (const symbol of bucket) {
+          insertEdge.run(workspaceId, 'defines', null, fileId, symbol.id, null, null, 1, symbol.line, 0, 1)
+        }
+      }
+    }
+
+    // `imports`: one edge per (file, specifier)
+    const emitted = new Set<string>()
+    for (const row of importRows) {
+      const key = `${row.file_id}\u0000${row.specifier}`
+      if (emitted.has(key)) continue
+      emitted.add(key)
+      const targetId = targetOf(row.file_id, row.specifier)
+      insertEdge.run(
+        workspaceId, 'imports', null, row.file_id, null, targetId,
+        row.specifier, targetId === null ? 0 : 1, row.line, 0, targetId === null ? 0 : 1)
+    }
+
+    // Reference edges
+    const refRows = db.prepare(
+      `SELECT file_id, kind, target, receiver, from_name, scope, line FROM file_refs
+        WHERE workspace_id = ? AND file_id IN (${list})`)
+      .all(workspaceId) as unknown as RefRow[]
+
+    for (const ref of refRows) {
+      if (ref.scope === 'md-link') {
+        const fromRel = relById.get(ref.file_id)
+        if (fromRel === undefined) continue
+        const targetRel = resolveMarkdownTarget(
+          fromRel, ref.target, ref.receiver === 'wiki', known, byBasename)
+        const targetId = targetRel === null ? null : idByRel.get(targetRel) ?? null
+        insertEdge.run(
+          workspaceId, 'references', null, ref.file_id, null, targetId,
+          ref.target, targetId === null ? 0 : 1, ref.line, 0, targetId === null ? 0 : 1)
+        continue
+      }
+      if (ref.scope === 'md-tag') {
+        const name = `#${ref.target}`
+        let tagId = tagIds.get(ref.target)
+        if (tagId === undefined) {
+          const existing = db.prepare(
+            `SELECT s.id AS id FROM symbols s JOIN files f ON f.id = s.file_id
+              WHERE f.workspace_id = ? AND s.name = ? LIMIT 1`)
+            .get(workspaceId, name) as { id: number } | undefined
+          tagId = existing !== undefined
+            ? existing.id
+            : Number(db.prepare(
+                `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
+                 VALUES (?, ?, 'constant', 1, 1, 1, NULL)`).run(ref.file_id, name).lastInsertRowid)
+          tagIds.set(ref.target, tagId)
+        }
+        insertEdge.run(
+          workspaceId, 'references', null, ref.file_id, tagId, null, name, 1, ref.line, 0, 1)
+        continue
+      }
+      const resolution = resolveReference(context, {
+        fileId: ref.file_id, target: ref.target,
+        receiver: ref.receiver, from: ref.from_name,
+      })
+      const source = ref.from_name === null ? null : resolveReference(context, {
+        fileId: ref.file_id, target: ref.from_name, receiver: null, from: null,
+      })
+      insertEdge.run(
+        workspaceId, ref.kind,
+        source?.symbolId ?? null, ref.file_id,
+        resolution.symbolId, null,
+        ref.target,
+        resolution.symbolId === null ? 0 : 1,
+        ref.line,
+        resolution.kind === 'ambiguous' ? 1 : 0,
+        resolution.candidates)
+    }
   }
 }

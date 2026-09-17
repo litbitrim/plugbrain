@@ -124,7 +124,14 @@ export interface IndexRoot {
   abs: string
   /** Planet-relative prefix, forward slashes, no trailing slash. '' for a bare workspace. */
   prefix: string
-  kind: 'checkout' | 'root'
+  /**
+   * `checkout` is a repository, `notes` is a written-knowledge folder and
+   * `file` is a single note registered on its own. The kind changes ONE rule:
+   * a notes root skips every dot-folder, because the note scope is defined as
+   * "these folders, without the dot-folders inside them" — while a checkout
+   * indexes `.agents` and `.github`, which are genuine content there.
+   */
+  kind: 'checkout' | 'notes' | 'file' | 'root'
   repoId: string | null
   checkoutId: string | null
 }
@@ -187,7 +194,27 @@ const groupKey = (item: { repoId: string | null; checkoutId: string | null }): s
  * Everything else IS indexed, including dot-folders like `.agents` and
  * `.github` — they are written content, not noise.
  */
+/** Shared by the directory walk and the single-file root: is this file in? */
+function acceptFile(root: IndexRoot, abs: string, rel: string, found: WalkedFile[]): void {
+  const name = rel.split('/').pop() ?? rel
+  const ext = extname(name)
+  if (!TEXTUAL.has(ext.toLowerCase())) return
+  if (isSecretPath(rel)) return
+  let st: ReturnType<typeof statSync>
+  try { st = statSync(abs) } catch { return }
+  if (!st.isFile() || st.size > MAX_BYTES) return
+  found.push({
+    abs, rel, ext, size: st.size, mtime: st.mtime.toISOString(),
+    repoId: root.repoId, checkoutId: root.checkoutId,
+  })
+}
+
 function walkInto(root: IndexRoot, found: WalkedFile[]): void {
+  // A note registered on its own (`00 Übersicht.md`) has no directory to walk.
+  if (root.kind === 'file') {
+    acceptFile(root, root.abs, root.prefix, found)
+    return
+  }
   const stack: Array<{ dir: string; depth: number }> = [{ dir: root.abs, depth: 0 }]
   while (stack.length > 0) {
     const { dir, depth } = stack.pop() as { dir: string; depth: number }
@@ -197,23 +224,15 @@ function walkInto(root: IndexRoot, found: WalkedFile[]): void {
       const abs = join(dir, entry.name)
       if (entry.isSymbolicLink()) continue          // junction or symlink out
       if (entry.isDirectory()) {
+        if (entry.name.startsWith('.') && root.kind === 'notes') continue
         if (isSkippedDir(entry.name, depth + 1)) continue
         stack.push({ dir: abs, depth: depth + 1 })
         continue
       }
       if (!entry.isFile()) continue
-      const ext = extname(entry.name)
-      if (!TEXTUAL.has(ext.toLowerCase())) continue
-      let st: ReturnType<typeof statSync>
-      try { st = statSync(abs) } catch { continue }
-      if (st.size > MAX_BYTES) continue
       const inside = relative(root.abs, abs).split('\\').join('/')
       const rel = root.prefix === '' ? inside : `${root.prefix}/${inside}`
-      if (isSecretPath(rel)) continue
-      found.push({
-        abs, rel, ext, size: st.size, mtime: st.mtime.toISOString(),
-        repoId: root.repoId, checkoutId: root.checkoutId,
-      })
+      acceptFile(root, abs, rel, found)
     }
   }
 }
@@ -263,16 +282,57 @@ export interface StoredFile {
   hash: string | null
   repoId: string | null
   checkoutId: string | null
+  /** Extractor version that wrote this row; 0 means "older than the column". */
+  parseVersion: number
+}
+
+/**
+ * The extraction contract this build writes into `files.parse_version`.
+ *
+ * Bump it whenever the SHAPE of what an extractor stores changes — a new
+ * table, a fixed link syntax, an added field. Without the bump an incremental
+ * pass skips every file whose bytes are unchanged, which is all of them, and
+ * the new extraction stays empty until each file happens to be edited: the
+ * index would claim to know something it has never looked at. The cost of a
+ * bump is one full re-parse per workspace, which is the honest price of
+ * changing what "parsed" means.
+ *
+ *   1 — symbols, refs, imports, search rows, FTS.
+ *   2 — frontmatter properties and note links, and the table-escaped
+ *       `[[note\|alias]]` fix that made 336 wiki links resolvable.
+ *   3 — tags as their own rows (frontmatter tags and `#tags` in prose), and
+ *       note prose in `note_body` for full-text search.
+ */
+export const PARSE_VERSION = 3
+
+/**
+ * Is `rel` inside the note scope that `prefix` owns?
+ *
+ * The note scope is defined as "these folders, without the dot-folders inside
+ * them", so a dot-folder is not note scope at ANY depth. This lives beside the
+ * walker because three places have to agree about it — the walk that indexes,
+ * the attribution that decides whether a not-yet-indexed path may be refreshed,
+ * and the write guard — and the moment they disagree, a write can create a note
+ * the indexer will never look at.
+ */
+export function insideNoteRoot(prefix: string, rel: string): boolean {
+  if (rel !== prefix && !rel.startsWith(`${prefix}/`)) return false
+  const rest = rel.slice(prefix.length).replace(/^\//, '')
+  if (rest === '') return false
+  return !rest.split('/').some(segment => segment.startsWith('.'))
+}
+
+export interface AddedFile extends WalkedFile {
+  hash: string
 }
 
 export interface Classified {
-  added: WalkedFile[]
-  /** `content === null` means the bytes are identical; only stat fields moved. */
-  modified: Array<{ file: WalkedFile; id: number; content: string | null; hash: string }>
-  renamed: Array<{ file: WalkedFile; id: number; fromPath: string; content: string; hash: string }>
+  added: AddedFile[]
+  /** `reparse === false` means the bytes are identical; only stat fields moved. */
+  modified: Array<{ file: WalkedFile; id: number; reparse: boolean; hash: string }>
+  renamed: Array<{ file: WalkedFile; id: number; fromPath: string; hash: string }>
   deleted: StoredFile[]
   unchanged: number
-  addedContent: Map<string, { content: string; hash: string }>
   skipped: number
 }
 
@@ -293,16 +353,19 @@ export interface Classified {
 export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
   const out: Classified = {
     added: [], modified: [], renamed: [], deleted: [],
-    unchanged: 0, addedContent: new Map(), skipped: 0,
+    unchanged: 0, skipped: 0,
   }
   const storedByPath = new Map(stored.map(row => [row.path, row]))
   const seen = new Set<string>()
-  const candidateAdded: Array<{ file: WalkedFile; content: string; hash: string }> = []
+  const candidateAdded: Array<{ file: WalkedFile; hash: string }> = []
 
   for (const file of disk) {
     seen.add(file.rel)
     const row = storedByPath.get(file.rel)
-    if (row !== undefined && row.size === file.size && row.mtime === file.mtime) {
+    // A row written by an older extractor is stale even when the bytes are
+    // identical, so it fails the cheap test and gets read and parsed again.
+    const extractorStale = row !== undefined && row.parseVersion !== PARSE_VERSION
+    if (row !== undefined && !extractorStale && row.size === file.size && row.mtime === file.mtime) {
       out.unchanged += 1
       continue
     }
@@ -310,16 +373,21 @@ export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
     try { content = readFileSync(file.abs, 'utf8') } catch { out.skipped += 1; continue }
     const hash = hashOf(content)
     if (row === undefined) {
-      candidateAdded.push({ file, content, hash })
+      candidateAdded.push({ file, hash })
+      continue
+    }
+    if (extractorStale) {
+      // Byte-identical but extracted by an older version: re-parse.
+      out.modified.push({ file, id: row.id, reparse: true, hash })
       continue
     }
     if (row.hash === hash) {
       // Touched but byte-identical: refresh the stat fields, do not re-parse.
       out.unchanged += 1
-      out.modified.push({ file, id: row.id, content: null, hash })
+      out.modified.push({ file, id: row.id, reparse: false, hash })
       continue
     }
-    out.modified.push({ file, id: row.id, content, hash })
+    out.modified.push({ file, id: row.id, reparse: true, hash })
   }
 
   const candidateDeleted = stored.filter(row => !seen.has(row.path))
@@ -343,12 +411,10 @@ export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
     if (match !== undefined) {
       consumed.add(match.id)
       out.renamed.push({
-        file: candidate.file, id: match.id, fromPath: match.path,
-        content: candidate.content, hash: candidate.hash,
+        file: candidate.file, id: match.id, fromPath: match.path, hash: candidate.hash,
       })
     } else {
-      out.added.push(candidate.file)
-      out.addedContent.set(candidate.file.rel, { content: candidate.content, hash: candidate.hash })
+      out.added.push({ ...candidate.file, hash: candidate.hash })
     }
   }
   out.deleted = candidateDeleted.filter(row => !consumed.has(row.id))
@@ -365,6 +431,19 @@ export interface ParsedFile {
   symbols: Array<{ name: string; kind: string; line: number; endLine: number; exported: boolean; container: string | null }>
   refs: Array<{ kind: string; target: string; receiver: string | null; from: string | null; scope: string; line: number }>
   imports: Array<{ specifier: string; local: string | null; imported: string | null; line: number }>
+  /** Frontmatter facts. Empty for anything that is not a note. */
+  properties: Array<{ key: string; value: string; raw: string; ordinal: number; isLink: boolean; line: number }>
+  /** Wiki links with alias/section, body and property links alike. */
+  links: Array<{ target: string; alias: string | null; section: string | null; embed: boolean; source: string; line: number }>
+  /**
+   * Tags, deduplicated, with where each came from. A vault tags a note both
+   * ways — a `tags:` list in the frontmatter and `#tag` in the prose — and
+   * throwing away which is which loses the ability to say why a note matched a
+   * tag filter without re-reading the file.
+   */
+  tags: Array<{ tag: string; source: 'property' | 'body' }>
+  /** The note declares itself machine-generated. */
+  generated: boolean
 }
 
 /** Parse one file into the shape the tables expect. Never throws. */
@@ -372,6 +451,8 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
   const lang = languageOf(ext)
   const isMarkdown = ext.toLowerCase() === '.md'
   if (lang !== null) {
+    // A code file has no frontmatter and no wiki links; the md fields stay empty
+    // so the writer never has to ask what kind of file it is looking at.
     const extract = extractFromSource(rel, content, ext)
     const imports: ParsedFile['imports'] = []
     for (const imp of extract.imports) {
@@ -390,10 +471,17 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
         kind: r.kind, target: r.target, receiver: r.receiver, from: r.from, scope: 'code', line: r.line,
       })),
       imports,
+      properties: [], links: [], tags: [], generated: false,
     }
   }
   if (isMarkdown) {
     const md = extractFromMarkdown(content)
+    // Which tags were declared in the `tags:` frontmatter property. The body
+    // scanner has already merged both sources into one deduplicated list, so
+    // the source is recovered from the property values rather than tracked.
+    const declared = new Set(md.properties
+      .filter(property => property.key.toLowerCase() === 'tags')
+      .map(property => property.value.replace(/^#/, '').toLowerCase()))
     return {
       rel, ext, lang: null, loc: md.loc,
       symbols: md.symbols.map(s => ({ ...s, exported: false, endLine: s.line, container: s.container ?? null })),
@@ -407,10 +495,21 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
         })),
       ],
       imports: [],
+      properties: md.properties.map(p => ({
+        key: p.key, value: p.value, raw: p.raw, ordinal: p.ordinal, isLink: p.isLink, line: p.line,
+      })),
+      links: md.links.map(l => ({
+        target: l.target, alias: l.alias, section: l.section, embed: l.embed,
+        source: l.from, line: l.line,
+      })),
+      tags: md.tags.map(tag => ({
+        tag, source: declared.has(tag) ? 'property' as const : 'body' as const,
+      })),
+      generated: md.generated,
     }
   }
   return {
     rel, ext, lang: null, loc: content.split('\n').length,
-    symbols: [], refs: [], imports: [],
+    symbols: [], refs: [], imports: [], properties: [], links: [], tags: [], generated: false,
   }
 }

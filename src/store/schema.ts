@@ -69,13 +69,20 @@ CREATE TABLE IF NOT EXISTS files (
   size         INTEGER NOT NULL,
   mtime        TEXT NOT NULL,
   hash         TEXT,                   -- content hash, so re-index can skip
+  -- Which extractor version produced this row. A file whose bytes are
+  -- unchanged must still be parsed again when the extractor changed, or every
+  -- table the new version adds stays empty for the whole workspace.
+  parse_version INTEGER NOT NULL DEFAULT 0,
   loc          INTEGER NOT NULL DEFAULT 0,
   indexed_at   TEXT,
   UNIQUE (workspace_id, path)
 );
 CREATE INDEX IF NOT EXISTS idx_files_ws ON files(workspace_id);
-CREATE INDEX IF NOT EXISTS idx_files_repo ON files(repo_id);
-CREATE INDEX IF NOT EXISTS idx_files_checkout ON files(checkout_id);
+-- idx_files_repo and idx_files_checkout are created in migrateAddedIndexes,
+-- AFTER the columns they index are guaranteed to exist. Creating them here
+-- looks right and is fatal for every database that predates them: on an old
+-- file table CREATE INDEX IF NOT EXISTS ... (repo_id) fails with "no such
+-- column" and the whole store refuses to open.
 
 CREATE TABLE IF NOT EXISTS symbols (
   id        INTEGER PRIMARY KEY,
@@ -163,6 +170,109 @@ CREATE TABLE IF NOT EXISTS checkouts (
 );
 CREATE INDEX IF NOT EXISTS idx_checkouts_planet ON checkouts(planet_id);
 CREATE INDEX IF NOT EXISTS idx_checkouts_repo ON checkouts(repo_id);
+
+-- Which parts of a planet are written knowledge rather than code. Notes are a
+-- first-class scope, not "the markdown that happened to be lying around": the
+-- Obsidian replacement has to know which folders it owns, or a note link and a
+-- source import become the same kind of edge.
+CREATE TABLE IF NOT EXISTS note_roots (
+  planet_id TEXT NOT NULL REFERENCES planets(id) ON DELETE CASCADE,
+  rel_path  TEXT NOT NULL,            -- planet-relative: 'Master', '00 Übersicht.md'
+  kind      TEXT NOT NULL,            -- 'folder' | 'file'
+  added_at  TEXT NOT NULL,
+  PRIMARY KEY (planet_id, rel_path)
+);
+
+-- Frontmatter as queryable facts. One row per VALUE, so a list property is a set
+-- of rows and a query like typ=gate UND stand=offen never parses a blob.
+CREATE TABLE IF NOT EXISTS note_properties (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  key          TEXT NOT NULL,
+  value        TEXT NOT NULL,          -- normalised: unquoted, trimmed
+  raw          TEXT NOT NULL,          -- as written, for display
+  ordinal      INTEGER NOT NULL DEFAULT 0,
+  is_link      INTEGER NOT NULL DEFAULT 0,
+  line         INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_note_props_file ON note_properties(file_id);
+CREATE INDEX IF NOT EXISTS idx_note_props_kv ON note_properties(workspace_id, key, value);
+
+-- Wiki links, with the alias and the section, so a note view can render an
+-- aliased link as its alias, and a backlink list can answer "who points here".
+-- Kept beside the edges table rather than instead of it: edges is the graph that
+-- Atlas and the impact analysis read, this is the note-level projection that is
+-- allowed to carry display details the graph has no use for.
+CREATE TABLE IF NOT EXISTS note_links (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  target       TEXT NOT NULL,
+  alias        TEXT,
+  section      TEXT,
+  embed        INTEGER NOT NULL DEFAULT 0,
+  source       TEXT NOT NULL DEFAULT 'body',     -- body | property
+  status       TEXT NOT NULL DEFAULT 'missing',  -- resolved | ambiguous | missing | self
+  dst_file     INTEGER REFERENCES files(id) ON DELETE SET NULL,
+  line         INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_note_links_file ON note_links(file_id);
+CREATE INDEX IF NOT EXISTS idx_note_links_dst ON note_links(dst_file);
+CREATE INDEX IF NOT EXISTS idx_note_links_target ON note_links(workspace_id, target);
+
+-- Tags, from both places a vault writes them: the frontmatter tags list and a
+-- #tag in the prose. They live in their own table rather than being read back
+-- out of note_properties because a prose tag is not a property, and a tag filter
+-- that only saw half of a note's tags would quietly under-report.
+CREATE TABLE IF NOT EXISTS note_tags (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  tag          TEXT NOT NULL,          -- lowercased, no leading '#'
+  source       TEXT NOT NULL,          -- property | body
+  UNIQUE (file_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_note_tags_kv ON note_tags(workspace_id, tag);
+
+-- The PROSE of a note, searchable.
+--
+-- search_rows indexes names and paths: file basenames and headings. That is
+-- enough to find a document you can already name, and useless for the question
+-- a vault is actually asked -- "where did we write down that the gateway owner
+-- moved?" -- because the answer is a sentence in the middle of a note, not a
+-- title. So the body is indexed as well, as its own rows owned by their own
+-- table: same external-content shape as search_rows, and for the same
+-- reason, because a WHERE clause against an fts5 table does not filter the way
+-- it does against an ordinary one and deletes stop being real.
+CREATE TABLE IF NOT EXISTS note_body (
+  id           INTEGER PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  file_id      INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  path         TEXT NOT NULL,
+  text         TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_note_body_file ON note_body(file_id);
+CREATE INDEX IF NOT EXISTS idx_note_body_ws ON note_body(workspace_id);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS note_search USING fts5(
+  path, text,
+  content = 'note_body', content_rowid = 'id',
+  tokenize = 'unicode61'
+);
+
+CREATE TRIGGER IF NOT EXISTS note_body_ai AFTER INSERT ON note_body BEGIN
+  INSERT INTO note_search(rowid, path, text) VALUES (new.id, new.path, new.text);
+END;
+CREATE TRIGGER IF NOT EXISTS note_body_ad AFTER DELETE ON note_body BEGIN
+  INSERT INTO note_search(note_search, rowid, path, text)
+    VALUES ('delete', old.id, old.path, old.text);
+END;
+CREATE TRIGGER IF NOT EXISTS note_body_au AFTER UPDATE ON note_body BEGIN
+  INSERT INTO note_search(note_search, rowid, path, text)
+    VALUES ('delete', old.id, old.path, old.text);
+  INSERT INTO note_search(rowid, path, text) VALUES (new.id, new.path, new.text);
+END;
 
 CREATE TABLE IF NOT EXISTS agents (
   id         TEXT PRIMARY KEY,
@@ -437,6 +547,28 @@ function migrateAddedColumns(db: DatabaseSync): void {
   // exactly what "this file belongs to no repository" means.
   ensureColumn(db, 'files', 'repo_id', 'TEXT')
   ensureColumn(db, 'files', 'checkout_id', 'TEXT')
+  // Which extractor version produced this row. A file whose bytes did not
+  // change still has to be parsed again when the EXTRACTOR changed, otherwise
+  // every table a new version adds stays empty for the whole existing
+  // workspace. Default 0 marks every row written before this column existed as
+  // produced by an unknown, older extractor -- which is the truth.
+  ensureColumn(db, 'files', 'parse_version', 'INTEGER NOT NULL DEFAULT 0')
+  migrateAddedIndexes(db)
+}
+
+/**
+ * Indexes over columns that only exist after `migrateAddedColumns`.
+ *
+ * Split out because the order is load-bearing: a fresh database gets both the
+ * column and the index here, and an old one gets the column widened first. The
+ * previous arrangement — index in the schema block — opened every new database
+ * and no existing one.
+ */
+function migrateAddedIndexes(db: DatabaseSync): void {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_files_repo ON files(repo_id);
+    CREATE INDEX IF NOT EXISTS idx_files_checkout ON files(checkout_id);
+  `)
 }
 
 /** Open (creating if needed) the PlugBrain database at `file`. */

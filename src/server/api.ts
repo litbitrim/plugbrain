@@ -15,8 +15,10 @@ import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
-  indexPlanetWorkspace, listPlanet, planetHistory, registerPlanet,
+  indexPlanetWorkspace, listPlanet, noteRootRows, planetHistory, registerPlanet,
 } from '../planet.ts'
+import * as notes from '../notes/vault.ts'
+import { searchNotes } from '../notes/search.ts'
 import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
@@ -243,12 +245,17 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     void handle(req, res).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error)
       const status = error instanceof AuthenticationRequired ? 401
+        : error instanceof notes.NoteConflictError ? 409
+        : error instanceof notes.NoteGeneratedError ? 409
+        : error instanceof notes.QueryError ? 400
         : error instanceof access.WriteConflictError ? 409
         : error instanceof access.AccessDenied ? 403
         : error instanceof missions.MissionError ? 409 : 500
       const body = error instanceof access.WriteConflictError
         ? { ok: false, error: message, hardConflicts: error.verdict.hardConflicts, verdict: error.verdict }
-        : { ok: false, error: message }
+        : error instanceof notes.NoteConflictError
+          ? { ok: false, error: message, conflict: error.detail }
+          : { ok: false, error: message }
       if (!res.headersSent) json(res, body, status)
       else res.end()
     })
@@ -439,6 +446,117 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         }
         default:
           return json(res, { ok: false, error: `unknown mission step: ${step}` }, 404)
+      }
+    }
+
+    // ── notes: the Obsidian replacement ─────────────────────────────────
+    // Read routes are open the way /api/graph is; every mutation goes through
+    // checkAuth, and every read and write is attributed to a real agent.
+    if (p === '/api/notes' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      return json(res, {
+        ok: true,
+        ...notes.listNotes(db, ws, {
+          limit: clampLimit(q.get('limit'), 200, 5000),
+          offset: clampLimit(q.get('offset'), 0, 200000),
+        }),
+        scope: noteRootRows(db, ws),
+      })
+    }
+
+    if (p === '/api/notes/query' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const text = String(q.get('q') ?? q.get('query') ?? '').trim()
+      if (text === '') return json(res, { ok: false, error: 'q is required, e.g. typ=gate UND stand=offen' }, 400)
+      try {
+        return json(res, {
+          ok: true,
+          ...notes.queryNotes(db, ws, text, { limit: clampLimit(q.get('limit'), 200, 5000) }),
+        })
+      } catch (error) {
+        if (error instanceof notes.QueryError) return json(res, { ok: false, error: error.message }, 400)
+        throw error
+      }
+    }
+
+    if (p === '/api/notes/search' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const text = String(q.get('q') ?? q.get('query') ?? '').trim()
+      if (text === '') return json(res, { ok: false, error: 'q is required' }, 400)
+      return json(res, {
+        ok: true,
+        ...searchNotes(db, ws, text, { limit: clampLimit(q.get('limit'), 50, 500) }),
+      })
+    }
+
+    if (p === '/api/notes/graph' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      try {
+        return json(res, {
+          ok: true,
+          graph: notes.noteGraph(db, ws, {
+            focus: q.get('focus'),
+            depth: clampLimit(q.get('depth'), 1, 6),
+            filter: q.get('filter'),
+            limit: clampLimit(q.get('limit'), 600, 5000),
+          }),
+        })
+      } catch (error) {
+        if (error instanceof notes.QueryError) return json(res, { ok: false, error: error.message }, 400)
+        throw error
+      }
+    }
+
+    if (p === '/api/notes/read' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const relPath = String(q.get('path') ?? '').trim()
+      const agentId = String(q.get('agentId') ?? '').trim()
+      if (!relPath) return json(res, { ok: false, error: 'path is required' }, 400)
+      if (!agentId) return json(res, { ok: false, error: 'agentId is required: a read is attributed' }, 400)
+      access.requireAgent(db, agentId)
+      return json(res, { ok: true, note: notes.readNote(db, ws, agentId, relPath) })
+    }
+
+    if (p === '/api/notes/backlinks' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const relPath = String(q.get('path') ?? '').trim()
+      if (!relPath) return json(res, { ok: false, error: 'path is required' }, 400)
+      return json(res, { ok: true, backlinks: notes.backlinksOf(db, ws, relPath) })
+    }
+
+    if (p === '/api/notes/write' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const relPath = String(body.path ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      if (!relPath) return json(res, { ok: false, error: 'path required' }, 400)
+      access.requireWorkspace(db, workspaceId)
+      access.requireAgent(db, agentId)
+      // This endpoint edits KNOWLEDGE, not source. Writing a source file through
+      // it would bypass the mission/claim pipeline that guards code.
+      if (!notes.isNotePath(db, workspaceId, relPath)) {
+        return json(res, {
+          ok: false,
+          error: `'${relPath}' is outside the note scope — use the agent write path for source`,
+        }, 400)
+      }
+      try {
+        const result = notes.writeNote(db, workspaceId, agentId, relPath, String(body.content ?? ''), {
+          ...(typeof body.expectedHash === 'string' ? { expectedHash: body.expectedHash } : {}),
+          ...(typeof body.taskId === 'string' ? { taskId: body.taskId } : {}),
+          allowGenerated: body.allowGenerated === true,
+        })
+        return json(res, { ok: true, ...result })
+      } catch (error) {
+        if (error instanceof notes.NoteConflictError) {
+          return json(res, { ok: false, error: error.message, conflict: error.detail }, 409)
+        }
+        if (error instanceof notes.NoteGeneratedError) {
+          return json(res, { ok: false, error: error.message, generated: true }, 409)
+        }
+        throw error
       }
     }
 
