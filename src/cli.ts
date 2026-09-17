@@ -33,6 +33,7 @@ import {
 import { searchNotes } from './notes/search.ts'
 import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
+import * as intel from './intel/index.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
@@ -286,6 +287,164 @@ function planetLog(only?: string, limit = 50): void {
   }
 }
 
+function intelQuery(args: string[]): void {
+  const query = args.filter(a => !a.startsWith('--')).join(' ')
+  if (!query) {
+    console.error('usage: plugbrain query <search_query> [--repo <name>] [--limit <n>] [--json]')
+    process.exit(1)
+  }
+  const repo = flagValue(args, '--repo') ?? undefined
+  const limit = Number(flagValue(args, '--limit') ?? 25)
+  const result = intel.conceptSearch(db, query, { limit, repoId: repo })
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    console.log(`Query: "${result.query}" (${result.timingMs} ms, ${result.total} total hits)\n`)
+    if (result.symbols.length > 0) {
+      console.log(`Symbols (${result.symbols.length}):`)
+      for (const s of result.symbols) {
+        const v = s.isVendor ? ` [vendor: ${s.vendorReason ?? 'external'}]` : ''
+        console.log(`  ${s.kind.padEnd(12)} ${s.name.padEnd(28)} ${s.file}:${s.line}${v}`)
+      }
+      console.log('')
+    }
+    if (result.notes.length > 0) {
+      console.log(`Notes (${result.notes.length}):`)
+      for (const n of result.notes) {
+        console.log(`  ${n.title} (${n.path})`)
+        if (n.snippet) console.log(`    ${n.snippet}`)
+      }
+      console.log('')
+    }
+    if (result.flows.length > 0) {
+      console.log(`Execution Flows (${result.flows.length}):`)
+      for (const f of result.flows) {
+        console.log(`  [${f.processType}] ${f.label}`)
+      }
+      console.log('')
+    }
+  }
+}
+
+function intelContext(args: string[]): void {
+  const name = args.find(a => !a.startsWith('--'))
+  if (!name) {
+    console.error('usage: plugbrain context <symbol_name> [--file <path>] [--repo <id>] [--json]')
+    process.exit(1)
+  }
+  const file = flagValue(args, '--file') ?? undefined
+  const repo = flagValue(args, '--repo') ?? undefined
+  const result = intel.getSymbolContext(db, name, { file, repoId: repo })
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    if (result.status === 'not_found') {
+      console.log(`Symbol '${name}' not found.`)
+    } else if (result.status === 'ambiguous') {
+      console.log(`Ambiguous symbol '${name}' (${result.candidates?.length} candidates):`)
+      for (const c of result.candidates ?? []) {
+        console.log(`  ${c.kind} in ${c.file}:${c.line}`)
+      }
+    } else if (result.symbol) {
+      const s = result.symbol
+      const v = s.isVendor ? ` [vendor: ${s.vendorReason ?? 'external'}]` : ''
+      console.log(`Symbol: ${s.name} (${s.kind}) in ${s.file}:${s.line}${v}\n`)
+      console.log(`Incoming Calls (${result.incoming.calls.length}):`)
+      for (const c of result.incoming.calls) {
+        console.log(`  <- ${c.name} (${c.kind}) in ${c.file}:${c.line}`)
+      }
+      console.log(`\nOutgoing Calls (${result.outgoing.calls.length}):`)
+      for (const c of result.outgoing.calls) {
+        console.log(`  -> ${c.name} (${c.kind}) in ${c.file}:${c.line}`)
+      }
+      if (result.processes.length > 0) {
+        console.log(`\nExecution Flows (${result.processes.length}):`)
+        for (const p of result.processes) {
+          console.log(`  [${p.processType}] ${p.label}`)
+        }
+      }
+    }
+  }
+}
+
+function intelImpact(args: string[]): void {
+  const target = args.find(a => !a.startsWith('--'))
+  if (!target) {
+    console.error('usage: plugbrain impact <symbol_name> [--direction upstream|downstream|both] [--depth <n>] [--json]')
+    process.exit(1)
+  }
+  const direction = (flagValue(args, '--direction') ?? 'both') as 'upstream' | 'downstream' | 'both'
+  const maxDepth = Number(flagValue(args, '--depth') ?? 3)
+  const result = intel.getBlastRadius(db, target, { direction, maxDepth })
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    console.log(`Blast Radius for: ${result.target.name} (${result.target.file ?? ''})`)
+    console.log(`Direction: ${result.direction} | Max Depth: ${result.maxDepth} | Total Impacted: ${result.totalImpacted} | Risk: ${result.risk.toUpperCase()}\n`)
+    for (const [depth, nodes] of Object.entries(result.nodes)) {
+      console.log(`Depth ${depth} (${nodes.length} nodes):`)
+      for (const n of nodes) {
+        console.log(`  ${n.relationType} ${n.name} (${n.kind}) in ${n.file} (conf: ${n.confidence})`)
+      }
+    }
+  }
+}
+
+function intelDetectChanges(args: string[]): void {
+  const path = flagValue(args, '--path') ?? undefined
+  const result = intel.detectChanges(db, { checkoutPath: path })
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    console.log(`Changed Files: ${result.changedFiles} | Changed Symbols: ${result.changedSymbols.length} | Risk: ${result.riskLevel.toUpperCase()}`)
+    if (result.changedSymbols.length > 0) {
+      console.log('\nAffected Symbols:')
+      for (const s of result.changedSymbols) {
+        console.log(`  [${s.changeType}] ${s.name} (${s.kind}) in ${s.file}:${s.line}`)
+      }
+    }
+    if (result.affectedFlows.length > 0) {
+      console.log('\nAffected Flows:')
+      for (const f of result.affectedFlows) {
+        console.log(`  ${f.flow} (affected by: ${f.affectedBy.join(', ')})`)
+      }
+    }
+  }
+}
+
+function intelCypher(args: string[]): void {
+  const query = args.filter(a => !a.startsWith('--')).join(' ')
+  if (!query) {
+    console.error('usage: plugbrain cypher <query> [--limit <n>] [--json]')
+    process.exit(1)
+  }
+  const limit = Number(flagValue(args, '--limit') ?? 50)
+  const result = intel.executeCypherQuery(db, query, { limit })
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    console.log(result.markdown)
+    console.log(`\n(${result.rowCount} row(s), ${result.timingMs} ms)`)
+  }
+}
+
+function intelStatus(args: string[]): void {
+  const result = intel.getIntelStatus(db)
+  if (args.includes('--json')) {
+    jsonOut(result)
+  } else {
+    console.log('PlugBrain Code Intelligence Status:')
+    console.log(`  Planet:          ${result.planetId}`)
+    console.log(`  Workspace:       ${result.workspaceId}`)
+    console.log(`  Repositories:    ${result.repos}`)
+    console.log(`  Checkouts:       ${result.checkouts} (${result.dirtyCheckouts} dirty)`)
+    console.log(`  Files:           ${result.files}`)
+    console.log(`  Symbols:         ${result.symbols}`)
+    console.log(`  Edges:           ${result.edges}`)
+    console.log(`  Staleness:       ${result.staleness.isStale ? 'STALE' : 'CLEAN'} (${result.staleness.dirtyFiles} dirty files, ${result.staleness.untrackedFiles} untracked)`)
+  }
+}
+
 function status(): void {
   const ws = db.prepare('SELECT id, name, root, indexed_at FROM workspaces').all() as
     { id: string; name: string; root: string; indexed_at: string | null }[]
@@ -403,6 +562,27 @@ switch (command) {
     }
     break
   }
+  case 'query': intelQuery(args); break
+  case 'context': intelContext(args); break
+  case 'impact': intelImpact(args); break
+  case 'detect-changes':
+  case 'detect_changes': intelDetectChanges(args); break
+  case 'cypher': intelCypher(args); break
+  case 'intel-status': intelStatus(args); break
+  case 'intel': {
+    const [step, ...rest] = args
+    if (step === 'query') intelQuery(rest)
+    else if (step === 'context') intelContext(rest)
+    else if (step === 'impact') intelImpact(rest)
+    else if (step === 'detect-changes' || step === 'detect_changes') intelDetectChanges(rest)
+    else if (step === 'cypher') intelCypher(rest)
+    else if (step === 'status') intelStatus(rest)
+    else {
+      console.error('usage: plugbrain intel <query|context|impact|detect-changes|cypher|status> …')
+      process.exit(1)
+    }
+    break
+  }
   case 'serve': {
     const port = Number(args[0] ?? 4310)
     const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
@@ -433,9 +613,10 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes> …\n' +
+      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status> …\n' +
       '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
-      '       plugbrain notes <list|query|search|read|write|graph|backlinks> …')
+      '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
+      '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …')
     process.exit(1)
 }
 } catch (error) {

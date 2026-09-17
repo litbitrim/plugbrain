@@ -25,6 +25,7 @@ import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awar
 import { evaluateClaim } from '../projections/conflicts.ts'
 import { ingestTraceEvents } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
+import * as intel from '../intel/index.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -920,6 +921,60 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       // A planet reindexes through its checkout roots, never by walking the
       // whole planet folder — that would pull in every worktree unlabelled.
       return json(res, { ok: true, result: indexPlanetWorkspace(db, id) })
+    }
+
+    // ── Code Intelligence (M3: GitNexus Parity) ──────────────────────────
+    if (p === '/api/intel/status') {
+      return json(res, { ok: true, status: intel.getIntelStatus(db) })
+    }
+
+    if (p === '/api/intel/context') {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const name = String(body.name ?? q.get('name') ?? '').trim()
+      if (!name) return json(res, { ok: false, error: 'name parameter required' }, 400)
+      const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
+      const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
+      const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
+      return json(res, { ok: true, result: intel.getSymbolContext(db, name, { repoId, checkoutId, file }) })
+    }
+
+    if (p === '/api/intel/impact') {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const target = String(body.target ?? q.get('target') ?? '').trim()
+      if (!target) return json(res, { ok: false, error: 'target parameter required' }, 400)
+      const direction = ((body.direction ?? q.get('direction') ?? 'both') as 'upstream' | 'downstream' | 'both')
+      const maxDepth = Number(body.maxDepth ?? q.get('maxDepth') ?? 3)
+      const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
+      const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
+      return json(res, { ok: true, result: intel.getBlastRadius(db, target, { direction, maxDepth, repoId, file }) })
+    }
+
+    if (p === '/api/intel/query') {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const query = String(body.query ?? body.q ?? q.get('q') ?? q.get('query') ?? '').trim()
+      if (!query) return json(res, { ok: false, error: 'query parameter required' }, 400)
+      const limit = Number(body.limit ?? q.get('limit') ?? 25)
+      const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
+      const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
+      const workspaceId = ((body.workspace as string | undefined) ?? ws) || undefined
+      return json(res, { ok: true, result: intel.conceptSearch(db, query, { limit, repoId, checkoutId, workspaceId }) })
+    }
+
+    if (p === '/api/intel/detect_changes' || p === '/api/intel/detect-changes') {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
+      const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
+      const checkoutPath = (body.checkoutPath as string | undefined) ?? q.get('path') ?? undefined
+      const diffText = (body.diffText as string | undefined)
+      return json(res, { ok: true, result: intel.detectChanges(db, { checkoutId, repoId, checkoutPath, diffText }) })
+    }
+
+    if (p === '/api/intel/cypher' && (req.method === 'POST' || req.method === 'GET')) {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const query = (body.query ?? body.dsl ?? q.get('q') ?? q.get('query')) as string | object
+      if (!query) return json(res, { ok: false, error: 'query or dsl required' }, 400)
+      const limit = Number(body.limit ?? q.get('limit') ?? 50)
+      return json(res, { ok: true, result: intel.executeCypherQuery(db, query, { limit }) })
     }
 
     // ── static UI ────────────────────────────────────────────────────────
