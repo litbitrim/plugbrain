@@ -26,6 +26,7 @@ import { evaluateClaim } from '../projections/conflicts.ts'
 import { ingestTraceEvents } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
+import * as coord from '../coord/index.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -249,14 +250,20 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         : error instanceof notes.NoteConflictError ? 409
         : error instanceof notes.NoteGeneratedError ? 409
         : error instanceof notes.QueryError ? 400
+        : error instanceof coord.ClaimConflictError ? 409
+        : error instanceof coord.FencingError ? 409
         : error instanceof access.WriteConflictError ? 409
         : error instanceof access.AccessDenied ? 403
         : error instanceof missions.MissionError ? 409 : 500
-      const body = error instanceof access.WriteConflictError
-        ? { ok: false, error: message, hardConflicts: error.verdict.hardConflicts, verdict: error.verdict }
-        : error instanceof notes.NoteConflictError
-          ? { ok: false, error: message, conflict: error.detail }
-          : { ok: false, error: message }
+      const body = error instanceof coord.ClaimConflictError
+        ? { ok: false, error: message, conflict: error.conflict }
+        : error instanceof coord.FencingError
+          ? { ok: false, error: message, fencing: true, leaseId: error.leaseId }
+          : error instanceof access.WriteConflictError
+            ? { ok: false, error: message, hardConflicts: error.verdict.hardConflicts, verdict: error.verdict }
+            : error instanceof notes.NoteConflictError
+              ? { ok: false, error: message, conflict: error.detail }
+              : { ok: false, error: message }
       if (!res.headersSent) json(res, body, status)
       else res.end()
     })
@@ -269,6 +276,23 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     const ws = q.get('workspace') ?? ''
 
     if (p === '/api/health') return json(res, { ok: true, at: new Date().toISOString() })
+
+    // ── Live mesh events (SSE stream) ────────────────────────────────────
+    if (p === '/api/live/events' && req.method === 'GET') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+      })
+      res.write(': connected\n\n')
+      const unsubscribe = coord.coordEvents.onLive((evt) => {
+        res.write(`event: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
+      })
+      req.on('close', () => {
+        unsubscribe()
+      })
+      return
+    }
 
     // ── Galaxy: every workspace as a planet ──────────────────────────────
     if (p === '/api/galaxy') {
@@ -785,7 +809,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/agent/write' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
-      const workspaceId = String(body.workspace ?? ws).trim()
+      const workspaceId = String(body.workspace ?? body.workspaceId ?? ws).trim()
       const agentId = String(body.agentId ?? '').trim()
       const relPath = String(body.path ?? '').trim()
       const content = typeof body.content === 'string' ? body.content : ''
@@ -795,8 +819,50 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       access.requireWorkspace(db, workspaceId)
       access.requireAgent(db, agentId)
 
-      // FO-4 Hard conflict gate: evaluate intended write against active claims
       const taskId = String(body.taskId ?? `task-${agentId}`).trim() || `task-${agentId}`
+      const leaseId = typeof body.leaseId === 'string' ? body.leaseId.trim() : undefined
+      const epoch = typeof body.epoch === 'number' ? body.epoch : undefined
+
+      // Fencing and lease checks
+      try {
+        coord.checkWriteFencing(db, workspaceId, agentId, relPath, { taskId, leaseId, epoch })
+      } catch (err) {
+        if (err instanceof coord.ClaimConflictError) {
+          return json(res, {
+            ok: false,
+            error: err.message,
+            conflict: err.conflict,
+            hardConflicts: [{
+              kind: 'hard-conflict',
+              path: relPath,
+              requestedPath: relPath,
+              holder: {
+                taskId: err.conflict.holder.taskId,
+                agentId: err.conflict.holder.agentId,
+                workerId: null,
+                worktreeId: null,
+                path: relPath,
+                mode: 'write',
+                eventId: 'coord:lease',
+                claimedAt: err.conflict.holder.claimedAt,
+                lastHeartbeat: err.conflict.holder.lastHeartbeat,
+              },
+              reason: err.conflict.reason,
+            }],
+          }, 409)
+        }
+        if (err instanceof coord.FencingError) {
+          return json(res, {
+            ok: false,
+            error: err.message,
+            fencing: true,
+            leaseId: err.leaseId,
+          }, 409)
+        }
+        throw err
+      }
+
+      // FO-4 Hard conflict gate: evaluate intended write against active claims
       const claimVerdict = evaluateClaim(db, workspaceId, {
         taskId,
         agentId,
@@ -814,8 +880,159 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
 
       return json(res, {
         ok: true,
-        ...access.writeFile(db, workspaceId, agentId, relPath, content, taskId),
+        ...access.writeFile(db, workspaceId, agentId, relPath, content, taskId, { leaseId, epoch }),
       })
+    }
+
+    // ── Swarm Coordination (M4): Agent Register, Heartbeat, Presence ─────
+    if (p === '/api/agent/register' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? body.id ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      if (!workspaceId) return json(res, { ok: false, error: 'workspaceId required' }, 400)
+
+      const registration = coord.registerSwarmAgent(db, {
+        agentId,
+        name: body.name ? String(body.name) : undefined,
+        model: body.model ? String(body.model) : undefined,
+        host: body.host ? String(body.host) : undefined,
+        workspaceId,
+        checkoutId: body.checkoutId ? String(body.checkoutId) : undefined,
+        taskId: body.taskId ? String(body.taskId) : undefined,
+        missionId: body.missionId ? String(body.missionId) : undefined,
+        heartbeatTtlMs: typeof body.heartbeatTtlMs === 'number' ? body.heartbeatTtlMs : undefined,
+      })
+      return json(res, { ok: true, registration })
+    }
+
+    if (p === '/api/agent/heartbeat' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const taskId = body.taskId ? String(body.taskId) : undefined
+      const hb = coord.heartbeatAgent(db, agentId, taskId)
+      return json(res, { ok: true, ...hb })
+    }
+
+    if (p === '/api/agent/presence' && req.method === 'GET') {
+      const workspaceId = q.get('workspace') ?? q.get('workspaceId') ?? undefined
+      const agentId = q.get('agentId') ?? undefined
+      const agents = coord.getAgentPresence(db, { workspaceId: workspaceId || undefined, agentId: agentId || undefined })
+      return json(res, { ok: true, agents })
+    }
+
+    // ── Swarm Coordination (M4): Claims & Leases with TTL & Fencing ──────
+    if (p === '/api/agent/claim' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const taskId = String(body.taskId ?? `task-${agentId}`).trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      if (!workspaceId) return json(res, { ok: false, error: 'workspaceId required' }, 400)
+      const paths = Array.isArray(body.paths) ? body.paths.map(String) : []
+      const symbols = Array.isArray(body.symbols) ? body.symbols.map(String) : []
+      const mode = body.mode === 'read' ? 'read' : 'write'
+      const ttlMs = typeof body.ttlMs === 'number' ? body.ttlMs : undefined
+
+      const result = coord.acquireLease(db, workspaceId, {
+        agentId,
+        taskId,
+        paths,
+        symbols,
+        mode,
+        ttlMs,
+      })
+
+      if (!result.acquired && result.conflict) {
+        return json(res, { ok: false, error: 'claim conflict', conflict: result.conflict }, 409)
+      }
+      return json(res, { ok: true, lease: result.lease })
+    }
+
+    if (p === '/api/agent/release' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const leaseId = body.leaseId ? String(body.leaseId) : undefined
+      const workspaceId = body.workspaceId || body.workspace ? String(body.workspaceId ?? body.workspace) : undefined
+      const taskId = body.taskId ? String(body.taskId) : undefined
+
+      const result = coord.releaseLease(db, {
+        leaseId,
+        agentId,
+        workspaceId,
+        taskId,
+      })
+      return json(res, { ok: true, ...result })
+    }
+
+    if (p === '/api/agent/leases' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      return json(res, { ok: true, leases: coord.listActiveLeases(db, ws) })
+    }
+
+    // ── Swarm Coordination (M4): Agent Inbox & Messaging ─────────────────
+    if (p === '/api/agent/message' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      const fromAgent = String(body.fromAgent ?? body.agentId ?? '').trim()
+      if (!workspaceId) return json(res, { ok: false, error: 'workspaceId required' }, 400)
+      if (!fromAgent) return json(res, { ok: false, error: 'fromAgent required' }, 400)
+      const toAgent = body.toAgent ? String(body.toAgent).trim() : null
+      const channel = body.channel ? String(body.channel).trim() : null
+      const missionId = body.missionId ? String(body.missionId) : null
+      const subject = body.subject ? String(body.subject).trim() : ''
+      const text = String(body.body ?? body.message ?? body.text ?? '')
+      if (!text) return json(res, { ok: false, error: 'message body required' }, 400)
+
+      const message = coord.sendMessage(db, {
+        workspaceId,
+        fromAgent,
+        toAgent,
+        channel,
+        missionId,
+        subject,
+        body: text,
+      })
+      return json(res, { ok: true, message })
+    }
+
+    if ((p === '/api/agent/inbox' || p === '/api/agent/inbox/read') && (req.method === 'GET' || req.method === 'POST')) {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? q.get('agentId') ?? '').trim()
+      if (!workspaceId) return json(res, { ok: false, error: 'workspaceId required' }, 400)
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const channel = (body.channel as string | undefined) ?? q.get('channel') ?? undefined
+      const missionId = (body.missionId as string | undefined) ?? q.get('missionId') ?? undefined
+      const unreadOnly = body.unreadOnly === true || q.get('unreadOnly') === 'true'
+      const waitMs = typeof body.waitMs === 'number' ? body.waitMs : Number(q.get('waitMs') ?? 0)
+
+      const messages = await coord.readInbox(db, {
+        workspaceId,
+        agentId,
+        channel,
+        missionId,
+        unreadOnly,
+        waitMs: Number.isFinite(waitMs) ? waitMs : 0,
+      })
+      return json(res, { ok: true, messages })
+    }
+
+    if (p === '/api/agent/inbox/ack' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const messageId = String(body.messageId ?? '').trim()
+      const agentId = String(body.agentId ?? '').trim()
+      if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
+      const acked = coord.confirmDelivery(db, messageId, agentId)
+      return json(res, { ok: true, acked })
     }
 
     if (p === '/api/agent/search' && req.method === 'POST') {

@@ -40,6 +40,7 @@ export interface LiveClaim {
   /** The event that opened this claim. */
   eventId: string
   claimedAt: string
+  lastHeartbeat?: string
 }
 
 export interface Overlap {
@@ -116,6 +117,42 @@ export function liveClaims(db: DatabaseSync, workspaceId: string): LiveClaim[] {
     if (row.worker_id !== null) releasedWorkers.add(row.worker_id)
   }
 
+  // Also include tasks whose leases were explicitly released in leases table
+  try {
+    const releasedLeases = db.prepare(
+      `SELECT task_id FROM leases WHERE workspace_id = ? AND released_at IS NOT NULL`,
+    ).all(workspaceId) as unknown as Array<{ task_id: string }>
+    for (const r of releasedLeases) {
+      if (r.task_id) releasedTasks.add(r.task_id)
+    }
+  } catch {
+    // Leases table may not exist yet
+  }
+
+  // Dead agents whose heartbeats have expired do not block permanently
+  const deadAgents = new Set<string>()
+  const agentHeartbeats = new Map<string, string>()
+  try {
+    const agentRows = db.prepare(`SELECT id, last_heartbeat, last_seen, heartbeat_ttl_ms FROM agents`).all() as unknown as Array<{
+      id: string
+      last_heartbeat: string | null
+      last_seen: string
+      heartbeat_ttl_ms: number | null
+    }>
+    const nowMs = Date.now()
+    for (const a of agentRows) {
+      const hb = a.last_heartbeat ?? a.last_seen
+      agentHeartbeats.set(a.id, hb)
+      const hbMs = Date.parse(hb)
+      const ttl = a.heartbeat_ttl_ms && a.heartbeat_ttl_ms > 0 ? a.heartbeat_ttl_ms : 60000
+      if (Number.isFinite(hbMs) && nowMs - hbMs > ttl) {
+        deadAgents.add(a.id)
+      }
+    }
+  } catch {
+    // Schema may not have last_heartbeat column yet
+  }
+
   const rows = db.prepare(
     `SELECT event_id, task_id, agent_id, worker_id, worktree_id, file_refs, payload, occurred_at
        FROM trace_events
@@ -128,6 +165,7 @@ export function liveClaims(db: DatabaseSync, workspaceId: string): LiveClaim[] {
     if (row.task_id === null) continue                       // a claim with no task owns nothing
     if (releasedTasks.has(row.task_id)) continue
     if (row.worker_id !== null && releasedWorkers.has(row.worker_id)) continue
+    if (row.agent_id !== null && deadAgents.has(row.agent_id)) continue // Dead agent does not block
     let paths: string[] = []
     try { paths = JSON.parse(row.file_refs) as string[] } catch { paths = [] }
     let mode: ClaimMode = 'write'
@@ -135,6 +173,7 @@ export function liveClaims(db: DatabaseSync, workspaceId: string): LiveClaim[] {
       const payload = JSON.parse(row.payload) as { mode?: unknown }
       if (payload.mode === 'read') mode = 'read'
     } catch { /* default write: the safer assumption for a claim */ }
+    const lastHb = row.agent_id ? (agentHeartbeats.get(row.agent_id) ?? row.occurred_at) : row.occurred_at
     for (const path of paths) {
       claims.push({
         taskId: row.task_id,
@@ -145,6 +184,7 @@ export function liveClaims(db: DatabaseSync, workspaceId: string): LiveClaim[] {
         mode,
         eventId: row.event_id,
         claimedAt: row.occurred_at,
+        lastHeartbeat: lastHb,
       })
     }
   }

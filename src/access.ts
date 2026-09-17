@@ -16,6 +16,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathS
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
+import { checkWriteFencing } from './coord/leases.ts'
 import type { Action } from './store/schema.ts'
 
 export interface Workspace { id: string; name: string; root: string }
@@ -257,11 +258,14 @@ export interface WriteResult { path: string; created: boolean; bytes: number; ag
 export function writeFile(
   db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string,
   taskId = `task-${agentId}`,
+  options?: { leaseId?: string; epoch?: number },
 ): WriteResult {
   const workspace = requireWorkspace(db, workspaceId)
   const agent = requireAgent(db, agentId)
   const abs = resolveInside(workspace, relPath)
   const rel = toRel(workspace, abs)
+
+  checkWriteFencing(db, workspaceId, agentId, rel, { taskId, leaseId: options?.leaseId, epoch: options?.epoch })
 
   // This is the mutation boundary for every client, not just the HTTP route.
   // The route still returns the richer 409 payload, while CLI/library callers

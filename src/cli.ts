@@ -37,6 +37,7 @@ import * as intel from './intel/index.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
+import { startMcpServer } from './mcp/server.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 const DB_FILE = join(HOME, 'plugbrain.db')
@@ -611,12 +612,19 @@ switch (command) {
     })
     break
   }
+  case 'mcp': {
+    const ws = flagValue(args, '--workspace') ?? undefined
+    const authKey = flagValue(args, '--auth-key') ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
+    startMcpServer({ db, workspaceId: ws, authKey })
+    break
+  }
   default:
     console.log(
-      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status> …\n' +
+      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp> …\n' +
       '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
-      '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …')
+      '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
+      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]')
     process.exit(1)
 }
 } catch (error) {

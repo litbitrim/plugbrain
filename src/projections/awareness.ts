@@ -72,7 +72,7 @@ export interface RelatedTask {
   taskId: string
   agentId: string | null
   state: string
-  dependencyRelation: 'same-file' | 'same-module' | 'handoff-upstream' | 'handoff-downstream'
+  dependencyRelation: 'same-file' | 'same-module' | 'handoff-upstream' | 'handoff-downstream' | 'dependency-overlap'
 }
 
 export interface RecentChange {
@@ -258,6 +258,46 @@ export function buildAwarenessPack(db: DatabaseSync, request: AwarenessRequest):
     })
   }
 
+  // Check dependency overlaps with other active claims (interface and caller overlaps)
+  const dependencyWarnings: string[] = []
+  if (intended.length > 0) {
+    try {
+      const holes = intended.map(() => '?').join(',')
+      const callerFiles = new Set((db.prepare(`
+        SELECT DISTINCT f.path FROM edges e
+        JOIN files f ON f.id = e.src_file
+        JOIN files f2 ON f2.id = e.dst_file
+        WHERE e.workspace_id = ? AND e.resolved = 1 AND f2.path IN (${holes})
+      `).all(workspaceId, ...intended) as unknown as Array<{ path: string }>).map(r => r.path))
+
+      const depFiles = new Set((db.prepare(`
+        SELECT DISTINCT f2.path FROM edges e
+        JOIN files f ON f.id = e.src_file
+        JOIN files f2 ON f2.id = e.dst_file
+        WHERE e.workspace_id = ? AND e.resolved = 1 AND f.path IN (${holes})
+      `).all(workspaceId, ...intended) as unknown as Array<{ path: string }>).map(r => r.path))
+
+      const allClaims = liveClaims(db, workspaceId).filter(claim => claim.taskId !== request.taskId)
+      for (const c of allClaims) {
+        if (callerFiles.has(c.path)) {
+          relatedMap.set(c.taskId, {
+            taskId: c.taskId, agentId: c.agentId,
+            state: 'live', dependencyRelation: 'dependency-overlap',
+          })
+          dependencyWarnings.push(`DEPENDENCY: task ${c.taskId} is working on '${c.path}' which depends on an interface touched by this task`)
+        } else if (depFiles.has(c.path)) {
+          relatedMap.set(c.taskId, {
+            taskId: c.taskId, agentId: c.agentId,
+            state: 'live', dependencyRelation: 'dependency-overlap',
+          })
+          dependencyWarnings.push(`DEPENDENCY: task ${c.taskId} is working on '${c.path}' which is an upstream dependency of this task`)
+        }
+      }
+    } catch {
+      // Edges table query non-blocking
+    }
+  }
+
   // -- handoffs prepared FOR this task --------------------------------------
   const handoffRows = db.prepare(
     `SELECT event_id, agent_id, task_id, artifact_refs, payload, type, occurred_at
@@ -356,6 +396,7 @@ export function buildAwarenessPack(db: DatabaseSync, request: AwarenessRequest):
   const READ_CAP = 12
   const collisionWarnings = [
     ...verdict.hardConflicts.map(overlap => `HARD: ${overlap.reason}`),
+    ...dependencyWarnings,
     ...verdict.softOverlaps.slice(0, SOFT_CAP).map(overlap => `SOFT: ${overlap.reason}`),
     ...verdict.readOnlyOverlaps.slice(0, READ_CAP).map(overlap => `READ: ${overlap.reason}`),
   ]
