@@ -258,6 +258,11 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .brain-vault__reindex { color: currentColor; background: transparent; opacity: .7; }
 .brain-vault__reindex:hover:not(:disabled) { opacity: 1; }
 .brain-vault__error { color: #ff9c8a; font-size: 12px; margin: 0; }
+/* Live index counters. Monospace so the numbers stop dancing as they climb. */
+.brain-vault__progress {
+  color: #cde6d6; font-size: 12px; margin: 0;
+  font-family: "Geist Mono Variable", ui-monospace, monospace;
+}
 .brain-vault__done { color: #a8e6c0; font-size: 12px; margin: 0; }
 
 /* The first-run / no-vault landing. Scrolls on its own: the body is locked

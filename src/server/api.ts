@@ -15,7 +15,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
-  indexPlanetWorkspace, listPlanet, noteRootRows, planetHistory, registerPlanet,
+  indexPlanetWorkspace, listWorkspaceView, noteRootRows, planetHistory, registerPlanet,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 import { searchNotes } from '../notes/search.ts'
@@ -29,6 +29,9 @@ import * as intel from '../intel/index.ts'
 import * as coord from '../coord/index.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
+import { IndexRunBusy, startIndexRun } from '../index/runner.ts'
+import { appraiseRun, describeRun, listRunStates, readRunState } from '../index/runs.ts'
+import { refreshDaemon } from '../daemon.ts'
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -41,6 +44,12 @@ export class AuthenticationRequired extends Error {}
 export interface Ctx {
   db: DatabaseSync
   uiRoot: string | null
+  /**
+   * The store file. An index run happens in a worker thread with its own
+   * connection, and a worker cannot ask a `DatabaseSync` where it came from —
+   * so the path is configuration, not something to guess.
+   */
+  dbFile?: string | null
   authKey?: string | null
   requireAuth?: boolean
   instanceId?: string | null
@@ -243,6 +252,37 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   const { db } = ctx
   ensureTraceSchema(db)
   const serverInstanceId = ctx.instanceId ?? ('inst-' + randomUUID().slice(0, 12))
+
+  /**
+   * Start an index run and answer at once.
+   *
+   * Indexing a real planet is minutes of CPU work, so the request must not be
+   * the thing that waits: the run writes its own state file, and
+   * `GET /api/index/progress` reports it. Without a configured store path (a
+   * library or test context) there is nowhere for a worker to open its own
+   * connection, so that case indexes in line — correct, just not concurrent.
+   */
+  function startIndex(
+    workspaceId: string, full: boolean, res: ServerResponse,
+  ): void {
+    const dbFile = ctx.dbFile
+    if (dbFile === undefined || dbFile === null || dbFile === '') {
+      json(res, { ok: true, started: false, result: indexPlanetWorkspace(db, workspaceId, { full }) })
+      return
+    }
+    try {
+      const run = startIndexRun(workspaceId, { dbFile, full })
+      json(res, { ok: true, started: true, run: run.state }, 202)
+    } catch (error) {
+      if (error instanceof IndexRunBusy) {
+        // Not an error the caller caused: say who holds the lock and how far
+        // the other run has got, so the answer is actionable.
+        json(res, { ok: false, busy: true, error: error.message, run: error.state }, 409)
+        return
+      }
+      throw error
+    }
+  }
 
   const server = createServer((req, res) => {
     // A thrown handler must never take the brain down: this is the kernel of
@@ -594,7 +634,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/planet' && req.method === 'GET') {
       if (!ws) return json(res, { ok: false, error: 'workspace required' }, 400)
       try {
-        return json(res, { ok: true, planet: listPlanet(db, ws) })
+        // Every registered workspace answers here, planet or not: a vault that
+        // is one plain folder has counts too, and "not a planet" is not an
+        // answer to "what does this workspace hold".
+        return json(res, { ok: true, planet: listWorkspaceView(db, ws) })
       } catch (error) {
         return json(res, {
           ok: false,
@@ -618,6 +661,9 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (raw === '') return json(res, { ok: false, error: 'root is required' }, 400)
       try {
         const registered = registerPlanet(db, raw, body.name ? String(body.name) : undefined)
+        // A vault that was just opened must be watched from now on, not from
+        // the next daemon tick five minutes away.
+        refreshDaemon()
         return json(res, { ok: true, ...registered })
       } catch (error) {
         return json(res, {
@@ -635,8 +681,19 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       // Refresh the revision vectors first: a scan IS the act of looking again,
       // and reporting yesterday's branch beside today's index would be a lie.
       const registered = registerPlanet(db, w.root, w.name)
-      const result = indexPlanetWorkspace(db, id, { full: body.full === true })
-      return json(res, { ok: true, registered, result })
+      if (ctx.dbFile === undefined || ctx.dbFile === null || ctx.dbFile === '') {
+        const result = indexPlanetWorkspace(db, id, { full: body.full === true })
+        return json(res, { ok: true, registered, started: false, result })
+      }
+      try {
+        const run = startIndexRun(id, { dbFile: ctx.dbFile, full: body.full === true })
+        return json(res, { ok: true, registered, started: true, run: run.state }, 202)
+      } catch (error) {
+        if (error instanceof IndexRunBusy) {
+          return json(res, { ok: false, busy: true, error: error.message, run: error.state }, 409)
+        }
+        throw error
+      }
     }
 
     // ── git: branch, worktrees, commits ──────────────────────────────────
@@ -1223,6 +1280,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
          ON CONFLICT(root) DO UPDATE SET name = excluded.name`
       ).run(id, name, root, new Date().toISOString())
+      refreshDaemon()
       return json(res, { ok: true, workspace: { id, name, root } })
     }
 
@@ -1233,7 +1291,30 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       access.requireWorkspace(db, id)
       // A planet reindexes through its checkout roots, never by walking the
       // whole planet folder — that would pull in every worktree unlabelled.
-      return json(res, { ok: true, result: indexPlanetWorkspace(db, id) })
+      return startIndex(id, body.full === true, res)
+    }
+
+    // ── Index runs: is anything happening, and how far has it got? ─────────
+    // Read from the run state on disk, so this answer is available while the
+    // writer still holds its transaction — the one moment it matters.
+    if (p === '/api/index/progress' && req.method === 'GET') {
+      const target = String(q.get('workspace') ?? '').trim()
+      if (target === '') {
+        return json(res, { ok: true, runs: listRunStates().map(state => appraiseRun(state.workspaceId)) })
+      }
+      const appraisal = appraiseRun(target)
+      return json(res, {
+        ok: true,
+        workspace: target,
+        running: appraisal.running,
+        stale: appraisal.stale,
+        finished: appraisal.finished,
+        heartbeatAgeMs: appraisal.heartbeatAgeMs,
+        fraction: appraisal.fraction,
+        // A sentence that is safe to show as-is, next to the numbers.
+        summary: describeRun(appraisal),
+        run: appraisal.state,
+      })
     }
 
     // ── Code Intelligence (M3: GitNexus Parity) ──────────────────────────

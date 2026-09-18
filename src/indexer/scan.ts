@@ -209,10 +209,13 @@ function acceptFile(root: IndexRoot, abs: string, rel: string, found: WalkedFile
   })
 }
 
-function walkInto(root: IndexRoot, found: WalkedFile[]): void {
+function walkInto(
+  root: IndexRoot, found: WalkedFile[], counter: { seen: number }, onProgress?: ScanProgress,
+): void {
   // A note registered on its own (`00 Übersicht.md`) has no directory to walk.
   if (root.kind === 'file') {
     acceptFile(root, root.abs, root.prefix, found)
+    counter.seen += 1
     return
   }
   const stack: Array<{ dir: string; depth: number }> = [{ dir: root.abs, depth: 0 }]
@@ -233,14 +236,34 @@ function walkInto(root: IndexRoot, found: WalkedFile[]): void {
       const inside = relative(root.abs, abs).split('\\').join('/')
       const rel = root.prefix === '' ? inside : `${root.prefix}/${inside}`
       acceptFile(root, abs, rel, found)
+      counter.seen += 1
+      if (onProgress !== undefined) everyNth(counter.seen, 0, onProgress)
     }
   }
 }
 
 /** Depth-first walk of a single folder (a bare, non-planet workspace). */
-export function walk(root: string): WalkedFile[] {
+/**
+ * How often a long walk or classify reports back. 512 files is short enough
+ * that a watcher ticks several times a second on a warm disk and long enough
+ * that the callback is not the cost.
+ */
+export const SCAN_TICK_EVERY = 512
+
+/** Called with how many files have been seen so far (and a total when known). */
+export type ScanProgress = (seen: number, total: number) => void
+
+/** Report progress every N items, and once at the end. */
+export function everyNth(count: number, total: number, onProgress?: ScanProgress): void {
+  if (onProgress === undefined) return
+  if (count % SCAN_TICK_EVERY === 0 || count === total) onProgress(count, total)
+}
+
+export function walk(root: string, options: { onProgress?: ScanProgress } = {}): WalkedFile[] {
   const found: WalkedFile[] = []
-  walkInto({ abs: root, prefix: '', kind: 'root', repoId: null, checkoutId: null }, found)
+  const counter = { seen: 0 }
+  walkInto({ abs: root, prefix: '', kind: 'root', repoId: null, checkoutId: null }, found, counter, options.onProgress)
+  options.onProgress?.(found.length, found.length)
   return found
 }
 
@@ -248,10 +271,17 @@ export function walk(root: string): WalkedFile[] {
  * Walk several roots into ONE namespace. Files from different checkouts are
  * therefore distinct rows even when their paths inside the checkout are
  * identical, which is what keeps two repos' `run()` symbols apart.
+ *
+ * A planet has tens of thousands of files across dozens of checkouts, so the
+ * walk reports how far it has got rather than looking frozen for minutes.
  */
-export function walkRoots(roots: IndexRoot[]): WalkedFile[] {
+export function walkRoots(roots: IndexRoot[], options: { onProgress?: ScanProgress } = {}): WalkedFile[] {
   const found: WalkedFile[] = []
-  for (const root of roots) walkInto(root, found)
+  const counter = { seen: 0 }
+  for (const root of roots) {
+    walkInto(root, found, counter, options.onProgress)
+    if (options.onProgress) options.onProgress(counter.seen, counter.seen)
+  }
   return found
 }
 
@@ -350,7 +380,9 @@ export interface Classified {
  * "move" a file out of checkout A and into checkout B — a rename that never
  * happened, reported as one.
  */
-export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
+export function classify(
+  disk: WalkedFile[], stored: StoredFile[], options: { onProgress?: ScanProgress } = {},
+): Classified {
   const out: Classified = {
     added: [], modified: [], renamed: [], deleted: [],
     unchanged: 0, skipped: 0,
@@ -359,7 +391,10 @@ export function classify(disk: WalkedFile[], stored: StoredFile[]): Classified {
   const seen = new Set<string>()
   const candidateAdded: Array<{ file: WalkedFile; hash: string }> = []
 
+  let examined = 0
   for (const file of disk) {
+    examined += 1
+    if (options.onProgress !== undefined) everyNth(examined, disk.length, options.onProgress)
     seen.add(file.rel)
     const row = storedByPath.get(file.rel)
     // A row written by an older extractor is stale even when the bytes are

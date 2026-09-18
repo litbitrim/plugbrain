@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createAtlasModel } from './lib/atlas.js'
 import { folderName } from './lib/workspace-name.js'
-import { galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace } from './lib/workspaces.js'
+import {
+  describeProgress, galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace,
+} from './lib/workspaces.js'
 import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId } from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
@@ -55,6 +57,9 @@ export default function App() {
   const [vaultBusy, setVaultBusy] = useState(false)
   const [vaultError, setVaultError] = useState('')
   const [vaultDone, setVaultDone] = useState('')
+  // Live counters of a running index. Empty means "nothing is running", which
+  // is a different statement from "0 of 0 files".
+  const [vaultProgress, setVaultProgress] = useState('')
   const [bounds, setBounds] = useState<{ first: string; last: string } | null>(null)
   const [until, setUntil] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -143,17 +148,20 @@ export default function App() {
     setVaultBusy(true)
     setVaultError('')
     setVaultDone('')
+    setVaultProgress('Vault registriert — Indexlauf wird vorbereitet …')
     try {
-      const id = await openVault(root)
+      const id = await openVault(root, undefined, report => setVaultProgress(describeProgress(report)))
       void galaxy().then(list => { if (list.length > 0) setPlanets(list) }).catch(() => {})
       setVaultDone('Vault registriert und indiziert.')
       setVaultPath('')
       setVaultOpen(false)
       applyWorkspace(id)
+      setAttempt(a => a + 1)
     } catch (cause) {
       setVaultError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       setVaultBusy(false)
+      setVaultProgress('')
     }
   }
 
@@ -162,13 +170,17 @@ export default function App() {
     setVaultBusy(true)
     setVaultError('')
     setVaultDone('')
+    setVaultProgress('Indexlauf wird vorbereitet …')
     try {
-      const result = await reindexWorkspace(workspaceId)
+      const result = await reindexWorkspace(
+        workspaceId, report => setVaultProgress(describeProgress(report)))
       setVaultDone(`Neu indiziert: ${result?.files ?? 0} Dateien, ${result?.symbols ?? 0} Symbole, ${result?.edges ?? 0} Kanten.`)
+      setAttempt(a => a + 1)
     } catch (cause) {
       setVaultError(cause instanceof Error ? cause.message : String(cause))
     } finally {
       setVaultBusy(false)
+      setVaultProgress('')
     }
   }
 
@@ -197,9 +209,12 @@ export default function App() {
       {workspaceId && (
         <div className="brain-vault__row brain-vault__row--tools">
           <button type="button" className="brain-vault__reindex" disabled={vaultBusy} onClick={() => void reindexNow()}>
-            {vaultBusy ? '…' : 'Neu indizieren'}
+            {vaultBusy ? 'läuft …' : 'Neu indizieren'}
           </button>
         </div>
+      )}
+      {vaultProgress && (
+        <p className="brain-vault__progress" role="status" aria-live="polite">{vaultProgress}</p>
       )}
       {vaultError && <p className="brain-vault__error" role="alert">{vaultError}</p>}
       {vaultDone && <p className="brain-vault__done" role="status">{vaultDone}</p>}

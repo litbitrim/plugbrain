@@ -24,9 +24,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
-import {
-  indexPlanetWorkspace, listPlanet, noteRootRows, planetHistory, registerPlanet, workspaceIdFor,
-} from './planet.ts'
+import { listPlanet, planetHistory, registerPlanet, workspaceIdFor } from './planet.ts'
 import {
   backlinksOf, listNotes, noteGraph, queryNotes, readNote, writeNote,
 } from './notes/vault.ts'
@@ -37,6 +35,10 @@ import * as intel from './intel/index.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
+import { IndexRunBusy, runIndexInProcess } from './index/runner.ts'
+import { appraiseRun, describeRun, listRunStates } from './index/runs.ts'
+import type { IndexProgress } from './indexer/index.ts'
+import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 
@@ -60,7 +62,7 @@ function register(path: string, name?: string): void {
   console.log(`registered ${label}  ${id}\n  ${root}`)
 }
 
-function reportIndex(name: string, r: ReturnType<typeof indexPlanetWorkspace>): void {
+function reportIndex(name: string, r: IndexResult): void {
   console.log(
     `${name}: ${r.mode}  generation ${r.generation}  ${r.ms} ms\n` +
     `  scanned ${r.scanned}  files ${r.files}  parsed ${r.parsed}  skipped ${r.skipped}\n` +
@@ -70,6 +72,33 @@ function reportIndex(name: string, r: ReturnType<typeof indexPlanetWorkspace>): 
     `  symbols ${r.symbols}  edges ${r.edges}  unresolved ${r.unresolved}  ambiguous ${r.ambiguous}`)
 }
 
+/**
+ * A progress line a human can watch.
+ *
+ * A planet takes minutes, and for all of that time the only honest thing to
+ * show is work already done: files seen, files written, the phase, the elapsed
+ * time. Phase changes print at once; everything else at most every two seconds
+ * so the terminal stays readable.
+ */
+function progressPrinter(label: string): IndexProgress {
+  const started = Date.now()
+  let lastPhase = ''
+  let lastPrinted = 0
+  return tick => {
+    const now = Date.now()
+    const phaseChanged = tick.phase !== lastPhase
+    if (!phaseChanged && now - lastPrinted < 2000) return
+    lastPhase = tick.phase
+    lastPrinted = now
+    const seconds = Math.round((now - started) / 1000)
+    const percent = tick.total > 0 ? ` ${Math.round((Math.min(tick.processed, tick.total) / tick.total) * 100)}%` : ''
+    const counts = tick.phase === 'scan'
+      ? `${tick.scanned} file(s) seen`
+      : tick.total > 0 ? `${tick.processed}/${tick.total} file(s)${percent}` : `${tick.processed} file(s)`
+    process.stdout.write(`  ${label}  ${tick.phase}  ${counts}  ${seconds}s\n`)
+  }
+}
+
 function indexAll(only?: string): void {
   const rows = only
     ? db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').all(only)
@@ -77,7 +106,7 @@ function indexAll(only?: string): void {
   if (rows.length === 0) { console.log('no workspaces registered'); return }
   for (const row of rows as { id: string; name: string; root: string }[]) {
     process.stdout.write(`indexing ${row.name} …\n`)
-    reportIndex(row.name, indexPlanetWorkspace(db, row.id))
+    reportIndex(row.name, runIndexInProcess(db, row.id, { onProgress: progressPrinter(row.name) }))
   }
 }
 
@@ -102,7 +131,29 @@ function planetScan(only?: string): void {
   if (!row) { console.error(`unknown workspace: ${planet}`); process.exit(2) }
   const registered = registerPlanet(db, row.root, row.name)
   console.log(`planet ${registered.name}: ${registered.repos} repos, ${registered.checkouts} checkouts`)
-  reportIndex(row.name, indexPlanetWorkspace(db, row.id))
+  reportIndex(row.name, runIndexInProcess(db, row.id, { onProgress: progressPrinter(row.name) }))
+}
+
+/** What every known index run is doing, across processes. */
+function progressReport(only?: string): void {
+  const states = listRunStates()
+  const wanted = only === undefined ? states : states.filter(state => state.workspaceId === only)
+  if (wanted.length === 0) {
+    console.log(only === undefined
+      ? 'no index run recorded yet'
+      : `no index run recorded for ${only}`)
+    return
+  }
+  for (const state of wanted) {
+    const appraisal = appraiseRun(state.workspaceId)
+    console.log(`${describeRun(appraisal)}`)
+    console.log(`  run ${state.runId}  pid ${state.pid}  started ${state.startedAt}`)
+    console.log(`  scanned ${state.scanned}  processed ${state.processed}` +
+      (state.total > 0 ? `/${state.total}` : '') + `  generation ${state.generation}`)
+    if (state.symbols > 0 || state.edges > 0) {
+      console.log(`  symbols ${state.symbols}  edges ${state.edges}`)
+    }
+  }
 }
 
 /** The planet a bare command should act on: the only one, or a clear refusal. */
@@ -528,6 +579,10 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
+  case 'progress': {
+    progressReport(args[0])
+    break
+  }
   case 'planet': {
     const [step, ...rest] = args
     if (step === 'register') planetRegister(rest[0], rest[1])
@@ -589,8 +644,10 @@ switch (command) {
     const port = Number(args[0] ?? 4310)
     const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
     // The daemon runs inside serve by default: a brain that is only correct
-    // when a human remembers to re-index is not a system of record.
-    if (process.env.PLUGBRAIN_NO_DAEMON !== '1') startDaemon(db)
+    // when a human remembers to re-index is not a system of record. It gets
+    // the store path so its runs happen in a worker instead of in the event
+    // loop that serves the UI.
+    if (process.env.PLUGBRAIN_NO_DAEMON !== '1') startDaemon(db, { dbFile: DB_FILE })
     const tokenFile = join(HOME, 'auth.token')
     let authKey = process.env.PLUG_BRAIN_AUTH_KEY
     if (!authKey) {
@@ -605,7 +662,7 @@ switch (command) {
         }
       }
     }
-    startServer({ db, uiRoot, authKey, requireAuth: true }, port).then(actual => {
+    startServer({ db, dbFile: DB_FILE, uiRoot, authKey, requireAuth: true }, port).then(actual => {
       console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
       console.log(`  UI       http://127.0.0.1:${actual}/`)
       console.log(`  Galaxy   http://127.0.0.1:${actual}/api/galaxy`)
@@ -643,7 +700,8 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <register|index|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      'usage: plugbrain <register|index|progress|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
@@ -664,6 +722,13 @@ switch (command) {
   if (error instanceof access.AccessDenied) {
     console.error(`refused: ${error.message}`)
     process.exit(3)
+  }
+  // Not a failure of the command: another process is already doing this work.
+  // A stack trace would suggest a bug where there is only a busy brain.
+  if (error instanceof IndexRunBusy) {
+    console.error(`not started: ${error.message}`)
+    console.error('  wait for it, or watch it with: plugbrain progress')
+    process.exit(4)
   }
   throw error
 }

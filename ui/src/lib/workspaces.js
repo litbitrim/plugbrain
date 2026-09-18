@@ -39,7 +39,7 @@ export async function galaxy() {
  * registered-but-unindexed vault is a real state and must not look like one
  * that simply has nothing to show.
  */
-export async function openVault(root, name) {
+export async function openVault(root, name, onProgress) {
   const register = await fetch('/api/workspaces', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -53,18 +53,87 @@ export async function openVault(root, name) {
   if (!created?.ok || !created.workspace?.id) {
     throw new Error('Registrieren: unvollständige Antwort.')
   }
-  await reindexWorkspace(created.workspace.id)
+  await reindexWorkspace(created.workspace.id, onProgress)
   return created.workspace.id
 }
 
-export async function reindexWorkspace(id) {
+/**
+ * One progress line a person can read while the brain works.
+ *
+ * The counters come from the daemon, which reads them from the run state the
+ * indexer itself keeps current — nothing here estimates, and a phase that has
+ * no total yet says so instead of showing a bar that pretends to know.
+ */
+export function describeProgress(report) {
+  const run = report?.run
+  if (!run) return 'Kein Indexlauf bekannt.'
+  const seconds = Math.max(0, Math.round((Date.now() - Date.parse(run.startedAt)) / 1000))
+  const phase = {
+    starting: 'startet', scan: 'sammelt Dateien', classify: 'vergleicht',
+    write: 'schreibt', resolve: 'verknüpft', publish: 'veröffentlicht',
+    done: 'fertig', failed: 'fehlgeschlagen',
+  }[run.phase] ?? run.phase
+  if (run.finishedAt) {
+    return run.ok
+      ? `Fertig: ${run.result?.files ?? run.scanned} Dateien, ` +
+        `${run.result?.symbols ?? 0} Symbole, ${run.result?.edges ?? 0} Kanten in ${seconds} s.`
+      : `Indexlauf fehlgeschlagen: ${run.error ?? 'unbekannter Grund'}`
+  }
+  const total = run.total > 0 ? `/${run.total}` : ''
+  const percent = run.total > 0 ? ` (${Math.round((run.processed / run.total) * 100)} %)` : ''
+  return `Indexiert: ${phase} ${run.processed}${total}${percent} — ${seconds} s`
+}
+
+/** Fetch the daemon's view of the current run for one workspace. */
+export async function indexProgress(id) {
+  const response = await fetch(`/api/index/progress?workspace=${encodeURIComponent(id)}`)
+  if (!response.ok) return null
+  return response.json()
+}
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+/**
+ * Watch a started run until it ends.
+ *
+ * A run that went quiet is reported as quiet, never as still working: the
+ * daemon writes a heartbeat, and a heartbeat that stopped means the process is
+ * gone, not that the work is slow.
+ */
+export async function watchIndexRun(id, onProgress) {
+  for (;;) {
+    await sleep(900)
+    const report = await indexProgress(id)
+    if (report === null) throw new Error('Der Fortschritt ist nicht abrufbar.')
+    onProgress?.(report)
+    if (report.running) continue
+    if (report.stale) throw new Error('Der Indexlauf ist verstummt — kein Lebenszeichen mehr.')
+    const run = report.run
+    if (!run) throw new Error('Kein Indexlauf bekannt.')
+    if (run.ok) return run.result
+    throw new Error(run.error ?? 'Indexlauf fehlgeschlagen.')
+  }
+}
+
+/**
+ * Start an index run and, if the daemon took it, follow it to the end.
+ *
+ * A daemon that answers 202 is saying "started, not finished": the counters
+ * then come from the progress route. A daemon that answers with a result has
+ * indexed in line (no store path configured) and there is nothing to watch.
+ */
+export async function reindexWorkspace(id, onProgress) {
   const response = await fetch('/api/reindex', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ workspace: id }),
   })
+  const payload = await response.json().catch(() => null)
+  if (response.status === 409 && payload?.busy) {
+    throw new Error(payload.error ?? 'Ein Indexlauf ist bereits unterwegs.')
+  }
   if (!response.ok) throw new Error(`Indizieren: HTTP ${response.status}`)
-  const payload = await response.json()
   if (!payload?.ok) throw new Error('Indizieren: unvollständige Antwort.')
-  return payload.result
+  if (payload.result !== undefined && payload.result !== null) return payload.result
+  return watchIndexRun(id, onProgress)
 }

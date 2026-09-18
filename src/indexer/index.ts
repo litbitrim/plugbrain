@@ -34,8 +34,8 @@ import type { DatabaseSync } from 'node:sqlite'
 import { readGit, storeGit } from './git.ts'
 import { resolveMarkdownTarget } from './markdown.ts'
 import {
-  classify, hashOf, insideNoteRoot, PARSE_VERSION, parseFile, resolveImport, walk, walkRoots,
-  type IndexResult, type IndexRoot, type ParsedFile, type StoredFile,
+  classify, everyNth, hashOf, insideNoteRoot, PARSE_VERSION, parseFile, resolveImport, walk, walkRoots,
+  type IndexResult, type IndexRoot, type ParsedFile, type ScanProgress, type StoredFile,
 } from './scan.ts'
 import {
   resolveReference,
@@ -43,6 +43,29 @@ import {
 } from './resolve.ts'
 
 export type { ChangeCounts, IndexResult, IndexRoot } from './scan.ts'
+
+/**
+ * One progress tick from a running index.
+ *
+ * A tick is a fact about work already done, never a prediction: `total` is 0
+ * while the walk still does not know how many files there are, and `symbols`
+ * and `edges` stay null until the database has actually been asked. A progress
+ * display that invents a percentage from nothing is worse than no display.
+ */
+export interface IndexTick {
+  phase: 'scan' | 'classify' | 'write' | 'resolve' | 'publish'
+  scanned: number
+  total: number
+  /** Files written into this generation so far. */
+  processed: number
+  symbols: number | null
+  edges: number | null
+  generation: number
+  mode: 'full' | 'incremental'
+}
+
+/** Called by `indexWorkspace` as it moves through its phases. */
+export type IndexProgress = (tick: IndexTick) => void
 
 /** The stored checkpoint for a workspace, or a zeroed one on first index. */
 interface IndexState {
@@ -83,9 +106,10 @@ export function indexWorkspace(
   db: DatabaseSync,
   workspaceId: string,
   root: string,
-  options: { full?: boolean; roots?: IndexRoot[] } = {},
+  options: { full?: boolean; roots?: IndexRoot[]; onProgress?: IndexProgress } = {},
 ): IndexResult {
   const started = Date.now()
+  const progress = options.onProgress
   const now = new Date().toISOString()
   const absRoot = resolvePath(root)
 
@@ -102,7 +126,18 @@ export function indexWorkspace(
   const state = readState(db, workspaceId)
   const forceFull = options.full === true || state.generation === 0
 
-  const disk = options.roots === undefined ? walk(absRoot) : walkRoots(options.roots)
+  const scanned: ScanProgress = (seen, total) => progress?.({
+    phase: 'scan', scanned: seen, total, processed: 0, symbols: null, edges: null,
+    generation: state.generation, mode: forceFull ? 'full' : 'incremental',
+  })
+  const disk = options.roots === undefined
+    ? walk(absRoot, { onProgress: scanned })
+    : walkRoots(options.roots, { onProgress: scanned })
+  progress?.({
+    phase: 'scan', scanned: disk.length, total: disk.length, processed: 0,
+    symbols: null, edges: null, generation: state.generation,
+    mode: forceFull ? 'full' : 'incremental',
+  })
   const stored = forceFull
     ? []
     : db.prepare(
@@ -111,7 +146,12 @@ export function indexWorkspace(
            FROM files WHERE workspace_id = ?`)
         .all(workspaceId) as unknown as StoredFile[]
 
-  const change = classify(disk, stored)
+  const change = classify(disk, stored, {
+    onProgress: (seen, total) => progress?.({
+      phase: 'classify', scanned: seen, total, processed: 0, symbols: null, edges: null,
+      generation: state.generation, mode: forceFull ? 'full' : 'incremental',
+    }),
+  })
   const touched = change.added.length + change.modified.length
     + change.renamed.length + change.deleted.length
 
@@ -156,6 +196,24 @@ export function indexWorkspace(
   }
 
   const writers = writersFor(db, workspaceId)
+
+  // Everything that will be written this generation. Known before the write
+  // phase begins, so a percentage is a division and not a guess.
+  const writeTotal = change.added.length + change.renamed.length + change.modified.length
+  let written = 0
+  const writeTick = (): void => {
+    written += 1
+    everyNth(written, writeTotal, (done, total) => progress?.({
+      phase: 'write',
+      scanned: disk.length,
+      total,
+      processed: done,
+      symbols: null,
+      edges: null,
+      generation,
+      mode: forceFull ? 'full' : 'incremental',
+    }))
+  }
 
   db.exec('BEGIN IMMEDIATE')
   try {
@@ -265,6 +323,7 @@ export function indexWorkspace(
       affected.add(fileId)
       result.reparsed += 1
       if (parsed.lang !== null) result.parsed += 1
+      writeTick()
     }
 
     for (const item of change.renamed) {
@@ -291,6 +350,7 @@ export function indexWorkspace(
         // already current.
         db.prepare('UPDATE files SET size = ?, mtime = ?, generation = ?, parse_version = ? WHERE id = ?')
           .run(item.file.size, item.file.mtime, generation, PARSE_VERSION, item.id)
+        writeTick()
         continue
       }
       let content: string
@@ -339,6 +399,10 @@ export function indexWorkspace(
       .run(workspaceId)
 
     // -- 8. Recompute edges for the affected set -----------------------------
+    progress?.({
+      phase: 'resolve', scanned: disk.length, total: writeTotal, processed: writeTotal,
+      symbols: null, edges: null, generation, mode: forceFull ? 'full' : 'incremental',
+    })
     resolveEdges(db, workspaceId, affected)
     result.reresolved = affected.size
 
@@ -374,6 +438,11 @@ export function indexWorkspace(
     result.unresolved = Number(totals.unresolved ?? 0)
     result.ambiguous = Number(totals.ambiguous ?? 0)
 
+    progress?.({
+      phase: 'publish', scanned: disk.length, total: writeTotal, processed: writeTotal,
+      symbols: result.symbols, edges: result.edges, generation,
+      mode: forceFull ? 'full' : 'incremental',
+    })
     db.prepare('UPDATE workspaces SET indexed_at = ? WHERE id = ?').run(now, workspaceId)
     db.prepare(
       `INSERT INTO workspace_index_state

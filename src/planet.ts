@@ -31,7 +31,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
-import { indexWorkspace, type IndexResult } from './indexer/index.ts'
+import { indexWorkspace, type IndexProgress, type IndexResult } from './indexer/index.ts'
 import type { IndexRoot } from './indexer/scan.ts'
 
 /**
@@ -393,22 +393,57 @@ export interface PlanetView {
 
 /** The whole planet as one readable answer: repos, checkouts, revisions, counts. */
 export function listPlanet(db: DatabaseSync, workspaceId: string): PlanetView {
-  const ws = db.prepare(
-    'SELECT id, name, root, created_at AS createdAt, indexed_at AS indexedAt FROM workspaces WHERE id = ?')
-    .get(workspaceId) as
-    { id: string; name: string; root: string; createdAt: string; indexedAt: string | null } | undefined
-  if (!ws) throw new Error(`unknown workspace: ${workspaceId}`)
+  const ws = readWorkspaceRow(db, workspaceId)
   const planet = db.prepare(
     'SELECT id, name, root, created_at AS createdAt FROM planets WHERE workspace_id = ?')
     .get(workspaceId) as
     { id: string; name: string; root: string; createdAt: string } | undefined
   if (!planet) throw new Error(`workspace is not a planet: ${workspaceId}`)
+  return buildPlanetView(db, ws, planet)
+}
 
+interface WorkspaceRow {
+  id: string; name: string; root: string; createdAt: string; indexedAt: string | null
+}
+
+function readWorkspaceRow(db: DatabaseSync, workspaceId: string): WorkspaceRow {
+  const ws = db.prepare(
+    'SELECT id, name, root, created_at AS createdAt, indexed_at AS indexedAt FROM workspaces WHERE id = ?')
+    .get(workspaceId) as WorkspaceRow | undefined
+  if (!ws) throw new Error(`unknown workspace: ${workspaceId}`)
+  return ws
+}
+
+/**
+ * The same view for a workspace that is not a planet.
+ *
+ * A folder opened as a vault through the UI is a plain workspace: one root,
+ * its markdown, no repositories. The route contract is "what does this
+ * workspace hold", and answering that with an error because the folder happens
+ * not to be a planet leaves every caller with a broken view instead of a short
+ * list. The numbers are the same numbers; only the repository half is empty.
+ */
+export function listWorkspaceView(db: DatabaseSync, workspaceId: string): PlanetView {
+  const ws = readWorkspaceRow(db, workspaceId)
+  const planet = db.prepare(
+    'SELECT id, name, root, created_at AS createdAt FROM planets WHERE workspace_id = ?')
+    .get(workspaceId) as
+    { id: string; name: string; root: string; createdAt: string } | undefined
+  return buildPlanetView(db, ws, planet ?? null)
+}
+
+function buildPlanetView(
+  db: DatabaseSync, ws: WorkspaceRow,
+  planet: { id: string; name: string; root: string; createdAt: string } | null,
+): PlanetView {
+  // The queries below are written against the workspace id; it is the row's own
+  // id, which is what the caller asked for.
+  const workspaceId = ws.id
   const repoRows = db.prepare(
     `SELECT r.id, r.name, r.common_dir AS commonDir, r.remote_url AS remoteUrl,
             (SELECT COUNT(*) FROM checkouts c WHERE c.repo_id = r.id AND c.retired_at IS NULL) AS checkouts,
             (SELECT COUNT(*) FROM files f WHERE f.repo_id = r.id AND f.workspace_id = ?) AS files
-       FROM repos r WHERE r.planet_id = ? ORDER BY r.name`).all(workspaceId, planet.id) as
+       FROM repos r WHERE r.planet_id = ? ORDER BY r.name`).all(workspaceId, planet?.id ?? '') as
     Array<{ id: string; name: string; commonDir: string | null; remoteUrl: string | null; checkouts: number; files: number }>
 
   const fileCounts = new Map<string, number>()
@@ -429,7 +464,7 @@ export function listPlanet(db: DatabaseSync, workspaceId: string): PlanetView {
             c.dirty_count AS dirtyCount, c.revision, c.is_primary AS isPrimary,
             c.retired_at AS retiredAt
        FROM checkouts c JOIN repos r ON r.id = c.repo_id
-      WHERE c.planet_id = ? ORDER BY r.name, c.rel_prefix`).all(planet.id) as
+      WHERE c.planet_id = ? ORDER BY r.name, c.rel_prefix`).all(planet?.id ?? '') as
     Array<Omit<CheckoutView, 'isPrimary' | 'files' | 'symbols'> & { isPrimary: number }>)
     .map(row => ({
       ...row,
@@ -455,7 +490,7 @@ export function listPlanet(db: DatabaseSync, workspaceId: string): PlanetView {
   const notePaths = db.prepare(
     'SELECT path FROM files WHERE workspace_id = ? AND checkout_id IS NULL').all(workspaceId) as
     unknown as Array<{ path: string }>
-  const noteRootRowsHere = db.prepare(
+  const noteRootRowsHere = planet === null ? [] : db.prepare(
     'SELECT rel_path AS relPath, kind FROM note_roots WHERE planet_id = ? ORDER BY rel_path')
     .all(planet.id) as unknown as Array<{ relPath: string; kind: string }>
   const countSql = (sql: string, ...params: unknown[]): number =>
@@ -463,12 +498,22 @@ export function listPlanet(db: DatabaseSync, workspaceId: string): PlanetView {
   const linksByStatus = (status: string): number => countSql(
     'SELECT COUNT(*) AS n FROM note_links WHERE workspace_id = ? AND status = ?', workspaceId, status)
 
+  // A workspace that is not a planet has no registered note roots — for it the
+  // whole folder is the vault. Saying so with one honest row beats an empty
+  // list that reads as "this workspace has no notes".
+  const roots = planet === null
+    ? (notePaths.length === 0 ? [] : [{ relPath: '', kind: 'workspace', files: notePaths.length }])
+    : noteRootRowsHere.map(row => ({
+        ...row,
+        files: notePaths.filter(file => file.path === row.relPath || file.path.startsWith(`${row.relPath}/`)).length,
+      }))
+
   return {
-    planetId: planet.id,
+    planetId: planet?.id ?? '',
     workspaceId: ws.id,
-    name: planet.name,
-    root: planet.root,
-    createdAt: planet.createdAt,
+    name: planet?.name ?? ws.name,
+    root: planet?.root ?? ws.root,
+    createdAt: planet?.createdAt ?? ws.createdAt,
     indexedAt: ws.indexedAt,
     repos: repoRows.map(row => ({
       id: row.id, name: row.name, commonDir: row.commonDir, remoteUrl: row.remoteUrl,
@@ -493,10 +538,7 @@ export function listPlanet(db: DatabaseSync, workspaceId: string): PlanetView {
     },
     unattributedFiles: unattributed,
     notes: {
-      roots: noteRootRowsHere.map(row => ({
-        ...row,
-        files: notePaths.filter(file => file.path === row.relPath || file.path.startsWith(`${row.relPath}/`)).length,
-      })),
+      roots,
       files: unattributed,
       properties: countSql('SELECT COUNT(*) AS n FROM note_properties WHERE workspace_id = ?', workspaceId),
       links: countSql('SELECT COUNT(*) AS n FROM note_links WHERE workspace_id = ?', workspaceId),
@@ -559,7 +601,7 @@ Array<{ relPath: string; kind: string }> {
 export function indexPlanetWorkspace(
   db: DatabaseSync,
   workspaceId: string,
-  options: { full?: boolean } = {},
+  options: { full?: boolean; onProgress?: IndexProgress } = {},
 ): IndexResult {
   const ws = db.prepare('SELECT id, root FROM workspaces WHERE id = ?').get(workspaceId) as
     { id: string; root: string } | undefined
