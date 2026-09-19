@@ -167,11 +167,28 @@ test('the routes the local UI depends on all answer with real data', async () =>
     assert.equal(planet.planet.totals.files, 5, 'the planet route must count the indexed files')
     assert.equal(planet.planet.workspaceId, fx.workspaceId)
 
-    // A planet route asked without a workspace must say what is missing rather
-    // than answer 500 or invent a default.
+    // A planet route asked without a workspace, when exactly ONE workspace is
+    // registered, answers for it: a client that opened one vault asks "what does
+    // my vault hold", and making it pass an id it never chose is a rule the user
+    // has to learn for no reason.
     const unnamed = await fetch(`${fx.baseUrl}/api/planet`)
-    assert.equal(unnamed.status, 400)
-    assert.equal((await unnamed.json() as { error: string }).error, 'workspace required')
+    assert.equal(unnamed.status, 200)
+    const inferred = await unnamed.json() as { ok: boolean; planet: { workspaceId: string } }
+    assert.equal(inferred.ok, true)
+    assert.equal(inferred.planet.workspaceId, fx.workspaceId)
+
+    // With a SECOND workspace registered the same route must refuse to guess and
+    // name the candidates instead — guessing would answer about the wrong vault.
+    const otherRoot = mkdtempSync(join(tmpdir(), 'plugbrain-second-'))
+    try {
+      writeFileSync(join(otherRoot, 'other.ts'), 'export const other = 1\n', 'utf8')
+      const second = await post(fx, '/api/workspaces', { root: otherRoot, name: 'second' })
+      assert.equal(second.status, 200)
+      const ambiguous = await fetch(`${fx.baseUrl}/api/planet`)
+      assert.equal(ambiguous.status, 400)
+      const body = await ambiguous.json() as { error: string }
+      assert.match(body.error, /workspace required — 2 are registered/)
+    } finally { rmSync(otherRoot, { recursive: true, force: true }) }
 
     const registered = await post(fx, '/api/agent/register', {
       workspaceId: fx.workspaceId, agentId: 'api-run-agent', name: 'Run Agent',

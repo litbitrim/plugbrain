@@ -81,6 +81,21 @@ export interface PackStalenessResult {
 const TOKEN_KEY = 'plugbrain.auth_token'
 const AGENT_KEY = 'plugbrain.agent_id'
 
+// The daemon hands the shell its own session when it serves index.html, so the
+// vault works on first load without anyone pasting a key. Whatever the page was
+// explicitly configured with still wins.
+declare global {
+  interface Window { __PLUGBRAIN__?: { token?: string } }
+}
+
+function injectedToken(): string {
+  try {
+    return window.__PLUGBRAIN__?.token?.trim() ?? ''
+  } catch {
+    return ''
+  }
+}
+
 export function getStoredToken(): string {
   try {
     const fromUrl = new URLSearchParams(window.location.search).get('token')
@@ -88,10 +103,19 @@ export function getStoredToken(): string {
       localStorage.setItem(TOKEN_KEY, fromUrl)
       return fromUrl
     }
-    return localStorage.getItem(TOKEN_KEY) || 'plug-atlas-test-token-20260917'
-  } catch {
+    const stored = localStorage.getItem(TOKEN_KEY)
+    if (stored) return stored
+    const injected = injectedToken()
+    if (injected) return injected
     return 'plug-atlas-test-token-20260917'
+  } catch {
+    return injectedToken() || 'plug-atlas-test-token-20260917'
   }
+}
+
+/** True while the page is running on the daemon's own injected session. */
+export function hasInjectedSession(): boolean {
+  return injectedToken() !== ''
 }
 
 export function setStoredToken(token: string): void {
@@ -174,7 +198,33 @@ export async function attachAgent(workspaceId: string, agentId = getStoredAgentI
   return res.json()
 }
 
+// Reads require a *registered* agent (FO-3): a read must never mint an identity.
+// The local page therefore attaches its own agent once per workspace, memoised
+// so a view that opens ten files does not attach ten times. A failure is not
+// fatal here — the read itself reports the server's reason.
+const attached = new Map<string, Promise<void>>()
+
+export function ensureAgentAttached(workspaceId: string, agentId = getStoredAgentId()): Promise<void> {
+  const key = `${workspaceId}\u0000${agentId}`
+  const pending = attached.get(key)
+  if (pending) return pending
+  const run = attachAgent(workspaceId, agentId)
+    .then(() => undefined)
+    .catch(() => {
+      // Allow a later retry, e.g. once a token has been entered in the dialog.
+      attached.delete(key)
+    })
+  attached.set(key, run)
+  return run
+}
+
+/** Forget every attachment, e.g. after the operator changed token or agent id. */
+export function resetAgentAttachments(): void {
+  attached.clear()
+}
+
 export async function searchAgent(workspaceId: string, query: string, agentId = getStoredAgentId()): Promise<SearchHit[]> {
+  await ensureAgentAttached(workspaceId, agentId)
   const res = await fetch('/api/agent/search', {
     method: 'POST',
     headers: authHeaders(),
@@ -189,6 +239,7 @@ export async function searchAgent(workspaceId: string, query: string, agentId = 
 }
 
 export async function readAgentFile(workspaceId: string, path: string, agentId = getStoredAgentId()): Promise<FileReadResult> {
+  await ensureAgentAttached(workspaceId, agentId)
   const res = await fetch('/api/agent/read', {
     method: 'POST',
     headers: authHeaders(),
@@ -252,6 +303,44 @@ export async function queryNotes(workspaceId: string, filter: string): Promise<N
   if (!res.ok) {
     const err = await res.json().catch(() => null)
     throw new Error(err?.error ?? `Notes Query HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export interface NoteTextHit {
+  path: string
+  title: string
+  snippet: string | null
+  /** Line of the first matching passage when the daemon was asked for it. */
+  line: number | null
+  score: number
+}
+
+export interface NoteTextResult {
+  ok: boolean
+  query: string
+  total: number
+  returned: number
+  hits: NoteTextHit[]
+  error?: string
+}
+
+/**
+ * Prose search over the notes: "where did we write that down?".
+ *
+ * `lines=1` makes each hit landable — the daemon opens the note to say where
+ * the passage is, which is what "click opens the note at the match" needs.
+ */
+export async function searchNoteText(
+  workspaceId: string, query: string, limit = 30,
+): Promise<NoteTextResult> {
+  const res = await fetch(
+    `/api/notes/search?workspace=${encodeURIComponent(workspaceId)}` +
+    `&q=${encodeURIComponent(query)}&limit=${limit}&lines=1`,
+    { headers: authHeaders() })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.error ?? `Notizsuche HTTP ${res.status}`)
   }
   return res.json()
 }

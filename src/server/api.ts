@@ -18,7 +18,51 @@ import {
   indexPlanetWorkspace, listWorkspaceView, noteRootRows, planetHistory, registerPlanet,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
-import { searchNotes } from '../notes/search.ts'
+
+/**
+ * The identity a search is attributed to. A read is a read: the provenance
+ * records who looked, even when nobody typed a command.
+ */
+const NOTES_READ_AGENT = 'notes-search'
+
+/**
+ * Make sure the agent a READ is attributed to exists.
+ *
+ * A read route cannot close the loop the way a write does: there is no claim to
+ * take and no lease to fence, only "who looked". What it needs is a *known*
+ * identity, and that identity is created only by the explicit, authenticated
+ * `/api/agent/attach` — never by a read (FO-3). A read that invented an agent id
+ * would let any caller mint identities in the ledger for free, which is the one
+ * thing the access layer may not allow.
+ *
+ * The local UI therefore attaches its own agent once at startup; see
+ * `ensureAgentAttached` in the browser client. Until then a read of an unknown
+ * id is refused with 403 instead of being silently conceded.
+ */
+function knownAgent(db: DatabaseSync, agentId: string): void {
+  access.requireAgent(db, agentId)
+}
+
+/**
+ * Serve the browser shell with the daemon's own session already in it.
+ *
+ * The server binds 127.0.0.1 only and sends no CORS headers, so a foreign page
+ * cannot read this body. Handing the local page its token is what makes the
+ * vault work the instant it opens, instead of asking the operator to copy a key
+ * out of a log into a dialog — the step at which "click a file" used to answer
+ * `unauthorized`.
+ *
+ * The page's own stored/localStorage token still wins: this only fills in what
+ * the shell has not been configured with.
+ */
+function withLocalSession(html: string, ctx: Ctx): string {
+  const token = ctx.authKey ?? process.env.PLUG_BRAIN_AUTH_KEY
+  if (!token) return html
+  const script = `<script>window.__PLUGBRAIN__=${JSON.stringify({ token })}</script>`
+  return html.includes('</head>')
+    ? html.replace('</head>', `  ${script}\n</head>`)
+    : `${script}\n${html}`
+}
 import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
@@ -378,6 +422,13 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // carried on every node so a track shows up in whichever view is open.
     if (p === '/api/atlas/snapshot') {
       const w = access.requireWorkspace(db, ws)
+      const totalFiles = Number((db.prepare(
+        'SELECT COUNT(*) c FROM files WHERE workspace_id = ?').get(ws) as { c: number }).c)
+      // Files written but not yet re-read: the honest measure of "how far behind
+      // is the brain", the same one the daemon's sweep and the briefing use.
+      const staleFiles = Number((db.prepare(
+        'SELECT COUNT(*) c FROM files WHERE workspace_id = ? AND indexed_at IS NULL')
+        .get(ws) as { c: number }).c)
       // The City draws the whole workspace, so the file scan must not stay at a
       // demo-sized number. Measured on plugharness (7 800 files, 132 954
       // symbols): limit=900 → 67 ms, limit=8000 → 111 ms. The file scan is not
@@ -444,9 +495,23 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       return json(res, {
         workspace: { id: w.id, name: w.name, canonicalPath: w.root },
         graph: { nodes, edges },
+        // Two different facts, kept apart on purpose.
+        //
+        // `complete` is about THIS SNAPSHOT: does it show every file the index
+        // holds, or a sample of it? On a planet with 183 000 files the answer is
+        // "a sample", and calling that an incomplete INDEX — which the header
+        // used to do — tells the reader the brain is broken when it is only the
+        // picture that is cropped.
+        //
+        // `indexComplete` is about the INDEX: is every file it holds actually
+        // indexed? That is the question a user asking "is the brain current?"
+        // means, and it is answered by the files that are waiting to be read.
         coverage: {
-          complete: g.nodes.length >= (db.prepare(
-            'SELECT COUNT(*) c FROM files WHERE workspace_id = ?').get(ws) as { c: number }).c,
+          totalFiles,
+          shownFiles: g.nodes.length,
+          complete: g.nodes.length >= totalFiles,
+          indexComplete: staleFiles === 0,
+          staleFiles,
           truncated: g.truncated,
           errors: [],
         },
@@ -551,9 +616,22 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       access.requireWorkspace(db, ws)
       const text = String(q.get('q') ?? q.get('query') ?? '').trim()
       if (text === '') return json(res, { ok: false, error: 'q is required' }, 400)
+      // `lines=1` turns each hit into something to click: the search finds the
+      // note, the line says where in it the reader should land. It costs a read
+      // per hit, so the call that does not need it does not ask for it.
+      const withLines = q.get('lines') === '1'
+      // Register once, never on every search: registering touches `last_seen`, a
+      // write, and an index run holds the write lock — a read route must not
+      // depend on being able to write.
+      const known = db.prepare('SELECT id FROM agents WHERE id = ?').get(NOTES_READ_AGENT) !== undefined
+      if (withLines && !known) access.registerAgent(db, NOTES_READ_AGENT, 'PlugBrain note search')
+      const agentId = NOTES_READ_AGENT
       return json(res, {
         ok: true,
-        ...searchNotes(db, ws, text, { limit: clampLimit(q.get('limit'), 50, 500) }),
+        ...notes.searchNotesWithLines(db, ws, agentId, text, {
+          limit: clampLimit(q.get('limit'), 50, 500),
+          lines: withLines,
+        }),
       })
     }
 
@@ -632,12 +710,27 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // One planet is one workspace with many repos and checkouts inside it. The
     // UI never guesses which worktree a file came from: the ids are here.
     if (p === '/api/planet' && req.method === 'GET') {
-      if (!ws) return json(res, { ok: false, error: 'workspace required' }, 400)
+      // A brain with exactly one workspace does not need to be told which one
+      // it is: "the planet" is unambiguous, and a client that opens one vault
+      // asks exactly that. With several registered, guessing would be worse
+      // than asking, so the answer names the candidates.
+      let target = ws
+      if (!target) {
+        const known = db.prepare('SELECT id FROM workspaces ORDER BY created_at').all() as { id: string }[]
+        if (known.length === 1) target = known[0].id
+        else if (known.length === 0) return json(res, { ok: false, error: 'no workspace registered' }, 404)
+        else {
+          return json(res, {
+            ok: false,
+            error: `workspace required — ${known.length} are registered: ${known.map(w => w.id).join(', ')}`,
+          }, 400)
+        }
+      }
       try {
         // Every registered workspace answers here, planet or not: a vault that
         // is one plain folder has counts too, and "not a planet" is not an
         // answer to "what does this workspace hold".
-        return json(res, { ok: true, planet: listWorkspaceView(db, ws) })
+        return json(res, { ok: true, planet: listWorkspaceView(db, target) })
       } catch (error) {
         return json(res, {
           ok: false,
@@ -848,6 +941,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       })
     }
 
+    // A READ: it demands the token like every other agent route (FO-3) and a
+    // *registered* agent. The local UI gets both automatically — the daemon
+    // injects its token into the served shell and the client attaches its agent
+    // once at startup — so a vault still opens without anyone typing a token.
     if (p === '/api/agent/read' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
@@ -858,7 +955,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!relPath) return json(res, { ok: false, error: 'path required' }, 400)
 
       access.requireWorkspace(db, workspaceId)
-      access.requireAgent(db, agentId)
+      knownAgent(db, agentId)
 
       return json(res, {
         ok: true,
@@ -1188,6 +1285,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       return json(res, { ok: verified.valid, ...verified })
     }
 
+    // Also a read: searching the index changes nothing. The agent is required
+    // and the search is attributed to it, exactly like the file read above.
     if (p === '/api/agent/search' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
@@ -1197,7 +1296,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
 
       access.requireWorkspace(db, workspaceId)
-      access.requireAgent(db, agentId)
+      knownAgent(db, agentId)
 
       return json(res, {
         ok: true,
@@ -1378,13 +1477,17 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!file.startsWith(ctx.uiRoot)) return json(res, { ok: false, error: 'bad path' }, 400)
       try {
         const body = readFileSync(file)
+        if (extname(file) === '.html') {
+          res.writeHead(200, { 'Content-Type': MIME['.html'] })
+          return void res.end(withLocalSession(body.toString('utf8'), ctx))
+        }
         res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream' })
         return void res.end(body)
       } catch { /* fall through to 404 */ }
       try {
-        const shell = readFileSync(join(ctx.uiRoot, 'index.html'))
+        const shell = readFileSync(join(ctx.uiRoot, 'index.html'), 'utf8')
         res.writeHead(200, { 'Content-Type': MIME['.html'] })
-        return void res.end(shell)
+        return void res.end(withLocalSession(shell, ctx))
       } catch { /* no UI built */ }
     }
 

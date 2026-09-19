@@ -23,13 +23,14 @@ export default function SourceView({
   path,
   highlightLine,
   onClose,
+  onNavigateFile,
 }: SourceViewProps) {
   const [loading, setLoading] = useState(true)
   const [fileData, setFileData] = useState<FileReadResult | null>(null)
   const [gitState, setGitState] = useState<GitState | null>(null)
   const [prov, setProv] = useState<FileProvenance | null>(null)
   const [backlinks, setBacklinks] = useState<BacklinkItem[]>([])
-  const targetLineRef = useRef<HTMLDivElement | null>(null)
+  const targetLineRef = useRef<HTMLTableRowElement | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -200,7 +201,7 @@ export default function SourceView({
                   key={i}
                   className="search-hit-card"
                   style={{ padding: '6px 10px', fontSize: '11px', cursor: 'pointer' }}
-                  onClick={() => onNavigateFile ? onNavigateFile(bl.path, bl.line) : null}
+                  onClick={() => onNavigateFile?.(bl.path, bl.line)}
                   title={`Zeile ${bl.line} in ${bl.path}`}
                 >
                   <span className="mono" style={{ color: 'var(--accent)' }}>{bl.path}</span>

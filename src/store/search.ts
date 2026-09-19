@@ -14,6 +14,14 @@
  * and filtering afterwards is ~0.02 ms per query on the same data — about four
  * orders of magnitude, from the query SHAPE alone.
  *
+ * On a real planet the same mistake is not slow, it is a hang: 183 428 files,
+ * 3 380 220 rows of `search_rows`, and that plan needs 60 215 ms — a full
+ * minute in which the daemon answers nothing at all, because the query runs
+ * synchronously in its event loop. The fix that makes the shape impossible to
+ * get wrong is the MATERIALIZED CTE below: SQLite is told to evaluate the FTS
+ * match first, take at most `candidates` rowids, and only then join the ordinary
+ * tables. Measured on the same planet: 19 ms.
+ *
  * So the shape is not left to callers. Every surface that searches a workspace
  * goes through here.
  */
@@ -25,6 +33,8 @@ export interface SearchHit {
   kind: string
   symbolId: number | null
   fileId: number | null
+  /** Line of the definition, when the row is a symbol. Null for a file row. */
+  line: number | null
 }
 
 export interface SearchOptions {
@@ -35,6 +45,12 @@ export interface SearchOptions {
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 500
+/**
+ * Upper bound on the FTS matches a single query may pull before filtering.
+ * The match itself is cheap (measured 22 ms for 485 597 hits on the real
+ * planet); this only stops a pathological query from materialising millions.
+ */
+const MAX_CANDIDATES = 20_000
 
 /**
  * FTS5 treats a bare term with punctuation as syntax. A user typing `foo(` or
@@ -65,17 +81,38 @@ export function searchWorkspace(
   const limit = Math.min(MAX_LIMIT, Math.max(1, options.limit ?? DEFAULT_LIMIT))
   const kinds = options.kinds ?? []
 
-  // The FTS subquery is evaluated first and yields a small rowid set; the
+  // The FTS subquery is evaluated first and yields a bounded rowid set; the
   // outer query then filters that set. Never the other way round.
-  const kindFilter = kinds.length > 0
-    ? ` AND kind IN (${kinds.map(() => '?').join(',')})`
-    : ''
-  const rows = db.prepare(
-    `SELECT name, path, kind, symbol_id AS symbolId, file_id AS fileId
-       FROM search_rows
-      WHERE id IN (SELECT rowid FROM search WHERE search MATCH ?)
-        AND workspace_id = ?${kindFilter}
-      LIMIT ?`)
-    .all(match, workspaceId, ...kinds, limit) as unknown as SearchHit[]
+  //
+  // `MATERIALIZED` is what makes that binding rather than a suggestion: without
+  // it SQLite is free to flatten the CTE back into a join and pick the other
+  // order, which is the 60-second plan. The candidate window is wider than the
+  // answer because the workspace filter is applied AFTER the match — a store
+  // with several workspaces must not return short just because another one
+  // matched first.
+  const candidates = Math.min(MAX_CANDIDATES, Math.max(limit * 8, limit))
+  const rows = db.prepare(searchSql(kinds))
+    .all(match, candidates, workspaceId, ...kinds, limit) as unknown as SearchHit[]
   return rows
+}
+
+/**
+ * The one statement every search runs, exposed so a test can ask SQLite how it
+ * intends to execute it. The SHAPE is the fix (see the file header), and a test
+ * that reads the plan is the only way to keep a later "cleanup" from quietly
+ * restoring the 60-second version.
+ */
+export function searchSql(kinds: readonly string[] = []): string {
+  const kindFilter = kinds.length > 0
+    ? ` AND r.kind IN (${kinds.map(() => '?').join(',')})`
+    : ''
+  return (
+    `WITH hits AS MATERIALIZED (SELECT rowid FROM search WHERE search MATCH ? LIMIT ?)
+     SELECT r.name, r.path, r.kind, r.symbol_id AS symbolId, r.file_id AS fileId,
+            sym.line AS line
+       FROM hits
+       JOIN search_rows r ON r.id = hits.rowid
+       LEFT JOIN symbols sym ON sym.id = r.symbol_id
+      WHERE r.workspace_id = ?${kindFilter}
+      LIMIT ?`)
 }

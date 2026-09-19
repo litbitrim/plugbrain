@@ -13,7 +13,7 @@
  *   plugbrain planet history [workspaceId]    files the planet no longer has
  *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
- *   plugbrain notes search <text>             prose search across the vault, with snippets
+ *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
  *   plugbrain notes read <path>               one note with links, backlinks and properties
  *   plugbrain notes write <path> --from <f>   save with a version check
  *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
@@ -26,9 +26,8 @@ import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
 import { listPlanet, planetHistory, registerPlanet, workspaceIdFor } from './planet.ts'
 import {
-  backlinksOf, listNotes, noteGraph, queryNotes, readNote, writeNote,
+  backlinksOf, listNotes, noteGraph, queryNotes, readNote, searchNotesWithLines, writeNote,
 } from './notes/vault.ts'
-import { searchNotes } from './notes/search.ts'
 import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import * as intel from './intel/index.ts'
@@ -250,13 +249,18 @@ function notesSearch(args: string[]): void {
     console.error('usage: plugbrain notes search <text> [--limit <n>] [--json]')
     process.exit(1)
   }
-  const result = searchNotes(db, singlePlanetId(), text, {
+  // `--lines` opens each hit so the reader can be sent to the passage, not
+  // just to the file: that is the difference between a search and a search you
+  // can act on.
+  const withLines = args.includes('--lines')
+  const result = searchNotesWithLines(db, singlePlanetId(), notesAgent(), text, {
     limit: Number(flagValue(args, '--limit') ?? 50),
+    lines: withLines,
   })
   if (asJson) return jsonOut(result)
   console.log(`${result.total} note(s) contain '${result.query}'`)
   for (const hit of result.hits) {
-    console.log(`  ${hit.path}`)
+    console.log(`  ${hit.path}${hit.line === null ? '' : `:${hit.line}`}`)
     if (hit.snippet !== null) console.log(`      ${hit.snippet}`)
   }
 }

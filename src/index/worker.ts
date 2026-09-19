@@ -20,6 +20,7 @@ import { workerData } from 'node:worker_threads'
 import { openStore } from '../store/schema.ts'
 import { indexPlanetWorkspace } from '../planet.ts'
 import { failRun, finishRun, writeRunState, type RunState } from './runs.ts'
+import { reclaimWal } from './runner.ts'
 
 export interface WorkerPayload {
   workspaceId: string
@@ -59,8 +60,9 @@ try {
     },
   })
 
-  db.close()
   finishRun(state, result)
+  reclaimWal(db)
+  db.close()
 } catch (error) {
   // The reason a run failed is the most valuable thing it produces; it goes to
   // the same place the progress went, so no caller has to guess.

@@ -64,8 +64,27 @@ export interface RunState {
   result: IndexResult | null
 }
 
-/** How long without a heartbeat before a run counts as dead. */
-export const STALE_AFTER_MS = 120_000
+/**
+ * How long without a heartbeat before a run counts as dead, per phase.
+ *
+ * A heartbeat only happens when the indexer reports progress, and the indexer
+ * is synchronous — during the final COMMIT nothing can report anything at all.
+ * On a planet whose previous generation left a multi-gigabyte WAL that commit
+ * includes a full checkpoint and takes minutes. Calling such a run dead after
+ * two quiet minutes lets a second run start, which then fails with "database is
+ * locked" and hides the state of the one that is still working.
+ * So the window follows the phase: the quiet phases get the long one.
+ */
+export const STALE_AFTER_MS = 300_000
+
+/** Quiet phases: publishing commits, and there is nothing to report while it does. */
+export const STALE_AFTER_PUBLISH_MS = 20 * 60_000
+
+export function staleAfterFor(phase: RunPhase): number {
+  return phase === 'publish' || phase === 'done' || phase === 'failed'
+    ? STALE_AFTER_PUBLISH_MS
+    : STALE_AFTER_MS
+}
 
 export class IndexRunBusy extends Error {
   readonly state: RunState
@@ -184,7 +203,7 @@ export function appraiseRun(
   }
   const heartbeatAgeMs = now - Date.parse(state.heartbeatAt)
   const finished = state.finishedAt !== null
-  const stale = !finished && heartbeatAgeMs > (options.staleAfterMs ?? STALE_AFTER_MS)
+  const stale = !finished && heartbeatAgeMs > (options.staleAfterMs ?? staleAfterFor(state.phase))
   const fraction = state.total > 0 ? Math.min(1, state.processed / state.total) : null
   return { state, running: !finished && !stale, finished, stale, heartbeatAgeMs, fraction }
 }

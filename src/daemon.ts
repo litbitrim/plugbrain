@@ -21,9 +21,12 @@
  *    minutes long; doing it in line would take the API down with it.
  */
 import { watch, type FSWatcher } from 'node:fs'
+import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { indexPlanetWorkspace } from './planet.ts'
 import { IndexRunBusy, startIndexRun } from './index/runner.ts'
+import { isNeverIndexedDir } from './indexer/scan.ts'
+import { storeHome } from './index/runs.ts'
 
 /** Wait this long after the last change before re-indexing a workspace. */
 const DEBOUNCE_MS = 4000
@@ -36,7 +39,30 @@ const DISCOVERY_MS = 15_000
 /** When another run holds the lock, come back in this long. */
 const BUSY_RETRY_MS = 10_000
 
-const NOISE = /[\\/](node_modules|\.git|dist|build|out|coverage|\.plugbrain|\.codegraph|\.env)[\\/]?/
+/**
+ * Is this watcher event about something the indexer would never read?
+ *
+ * The rule is the INDEXER's own `isNeverIndexedDir`, applied per path segment,
+ * so the watcher and the walk can never disagree about what counts as noise.
+ * The earlier version was a regular expression that required a separator IN
+ * FRONT of the name, which quietly failed for the very first segment — and the
+ * first segment is exactly where a brain store inside the planet lives
+ * (`.plugbrain-test\...`). The consequence was a brain that re-indexed all
+ * 183 000 files every time it wrote its own progress file: a loop that never
+ * ended and blamed nobody.
+ *
+ * The store home is excluded explicitly as well, because it can be called
+ * anything at all: wherever the brain keeps its data, writing that data is not
+ * a change to the vault.
+ */
+export function isNoisePath(filename: string | null, home = storeHome()): boolean {
+  if (filename === null) return false
+  const segments = filename.split(/[\\/]+/).filter(segment => segment !== '')
+  if (segments.some(segment => isNeverIndexedDir(segment))) return true
+  const abs = resolve(filename)
+  const store = resolve(home)
+  return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
+}
 
 export interface DaemonHandle {
   stop(): void
@@ -140,7 +166,7 @@ export function startDaemon(db: DatabaseSync, options: DaemonOptions = {}): Daem
       if (watchers.has(ws.id)) continue
       try {
         const watcher = watch(ws.root, { recursive: true }, (_event, filename) => {
-          if (filename && NOISE.test(String(filename))) return
+          if (isNoisePath(filename === null ? null : String(filename))) return
           schedule(ws, `changed: ${filename ?? 'unknown'}`)
         })
         watcher.on('error', err => log(`[daemon] watch error on ${ws.name}: ${err.message}`))

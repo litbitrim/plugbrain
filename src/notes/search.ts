@@ -32,6 +32,11 @@ export interface NoteHit {
   snippet: string | null
   /** FTS5 bm25: lower is a better match. Reported, never asserted to be sane. */
   score: number
+  /**
+   * Line of the first matching passage, 1-based, or null when it was not
+   * asked for (the file has to be read for this, and reading is not free).
+   */
+  line: number | null
 }
 
 export interface NoteSearchResult {
@@ -44,6 +49,31 @@ export interface NoteSearchResult {
 const SNIPPET_MARK = ['\u0002', '\u0003']
 
 const titleOf = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/i, '')
+
+/**
+ * The literal terms of a search, in the form that can be found in the file.
+ *
+ * A hit with a snippet tells a reader WHAT matched but not WHERE, and "open the
+ * note at the passage" needs the line. The terms are lowercased and split the
+ * same way a reader would read them, so the text the index matched can be found
+ * again in the file itself instead of in a copy.
+ */
+export function termsOf(query: string): string[] {
+  const cleaned = query.replace(/["']/g, ' ').trim().toLowerCase()
+  const candidates: string[] = []
+  for (const token of cleaned.split(/\s+/)) {
+    if (token.length === 0) continue
+    // The token itself first: `path/to/note.md:12` is found as written when the
+    // file contains it, and only then does a looser reading get a chance.
+    candidates.push(token)
+    for (const part of token.split(/[^\p{L}\p{N}_.\-]+/u)) {
+      if (part.length >= 2 && part !== token) candidates.push(part)
+    }
+  }
+  // One-letter terms are dropped: they match nearly every line, so a "line"
+  // derived from one would be a guess dressed up as a location.
+  return [...new Set(candidates.filter(term => term.length >= 2))]
+}
 
 /**
  * Search the prose of a planet's notes.
@@ -88,6 +118,19 @@ export function searchNotes(
         .split(/\s+/).join(' ')
         .trim(),
       score: row.score,
+      line: null,
     })),
   }
+}
+
+/** Where the first matching term sits in a note, 1-based, or null. */
+export function lineOf(content: string, query: string): number | null {
+  const terms = termsOf(query)
+  if (terms.length === 0) return null
+  const lines = content.split('\n')
+  for (let index = 0; index < lines.length; index += 1) {
+    const lower = lines[index].toLowerCase()
+    for (const term of terms) if (lower.includes(term)) return index + 1
+  }
+  return null
 }

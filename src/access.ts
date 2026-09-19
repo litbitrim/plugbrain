@@ -17,6 +17,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
 import { checkWriteFencing } from './coord/leases.ts'
+import { searchWorkspace } from './store/search.ts'
 import type { Action } from './store/schema.ts'
 
 export interface Workspace { id: string; name: string; root: string }
@@ -303,23 +304,28 @@ export function writeFile(
 
 export interface SearchHit { name: string; path: string; kind: string; line: number | null }
 
-/** Search the index. This is how an agent finds code instead of walking a disk. */
+/**
+ * Search the index. This is how an agent finds code instead of walking a disk.
+ *
+ * The query shape lives in `store/search.ts` and is the whole point of it: the
+ * obvious join here (`FROM search JOIN search_rows ON … WHERE MATCH …`) plans as
+ * an index scan over every row of the workspace with an FTS probe per row, and
+ * on the real planet that is 60 seconds in the daemon's event loop — during
+ * which nothing else is answered. Routing through the canonical search keeps
+ * the FTS match first and takes 19 ms on the same data.
+ */
 export function search(
   db: DatabaseSync, workspaceId: string, agentId: string, query: string, limit = 40,
 ): SearchHit[] {
   const workspace = requireWorkspace(db, workspaceId)
   requireAgent(db, agentId)
-  const cleaned = query.trim().replace(/["']/g, '')
-  if (cleaned === '') return []
-  const rows = db.prepare(
-    `SELECT r.name, r.path, r.kind, sym.line
-       FROM search f
-       JOIN search_rows r ON r.id = f.rowid
-       LEFT JOIN symbols sym ON sym.id = r.symbol_id
-      WHERE f.search MATCH ? AND r.workspace_id = ?
-      LIMIT ?`
-  ).all(`${cleaned}*`, workspace.id, limit) as SearchHit[]
-  record(db, workspace, `search:${cleaned}`, agentId, 'search', `${rows.length} hits`)
+  // An empty query matches nothing and is not worth a row in the ledger.
+  if (query.trim() === '') return []
+  const hits = searchWorkspace(db, workspace.id, query, { limit })
+  const rows: SearchHit[] = hits.map(hit => ({
+    name: hit.name, path: hit.path, kind: hit.kind, line: hit.line,
+  }))
+  record(db, workspace, `search:${query.trim()}`, agentId, 'search', `${rows.length} hits`)
   return rows
 }
 

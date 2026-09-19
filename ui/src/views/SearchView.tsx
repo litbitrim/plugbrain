@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react'
-import { searchAgent, queryNotes, type SearchHit, type NoteQueryResult } from '../lib/brain-client'
+import {
+  searchAgent, searchNoteText, queryNotes,
+  type SearchHit, type NoteQueryResult, type NoteTextHit,
+} from '../lib/brain-client'
 
 interface SearchViewProps {
   workspaceId: string
   onSelectHit: (path: string, line?: number | null) => void
 }
 
-type SearchMode = 'code' | 'notes'
+type SearchMode = 'code' | 'notes' | 'prose'
 
 export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps) {
-  const [mode, setMode] = useState<SearchMode>('code')
+  // A search is worth linking to: `?view=search&mode=prose&q=…` is a link a
+  // person can send to a colleague, and it opens the same search they ran.
+  const [mode, setMode] = useState<SearchMode>(() => {
+    const wanted = new URLSearchParams(window.location.search).get('mode')
+    return wanted === 'notes' || wanted === 'prose' ? wanted : 'code'
+  })
   const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '')
   const [hits, setHits] = useState<SearchHit[]>([])
   const [noteHits, setNoteHits] = useState<NoteQueryResult['notes']>([])
+  const [proseHits, setProseHits] = useState<NoteTextHit[]>([])
+  const [proseTotal, setProseTotal] = useState(0)
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchedQuery, setSearchedQuery] = useState('')
@@ -25,21 +36,33 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
 
     setLoading(true)
     setError('')
+    setElapsedMs(null)
+    const started = performance.now()
     try {
       if (activeMode === 'code') {
         const results = await searchAgent(workspaceId, q)
         setHits(results)
         setNoteHits([])
+        setProseHits([])
+      } else if (activeMode === 'prose') {
+        const result = await searchNoteText(workspaceId, q)
+        setProseHits(result.hits || [])
+        setProseTotal(result.total ?? 0)
+        setHits([])
+        setNoteHits([])
       } else {
         const noteResult = await queryNotes(workspaceId, q)
         setNoteHits(noteResult.notes || [])
         setHits([])
+        setProseHits([])
       }
+      setElapsedMs(Math.round(performance.now() - started))
       setSearchedQuery(q)
     } catch (err: any) {
       setError(err?.message || `Fehler bei der Suche (${activeMode})`)
       setHits([])
       setNoteHits([])
+      setProseHits([])
     } finally {
       setLoading(false)
     }
@@ -49,7 +72,7 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
   useEffect(() => {
     const qFromUrl = new URLSearchParams(window.location.search).get('q')
     if (qFromUrl && workspaceId) {
-      void handleSearch(undefined, qFromUrl)
+      void handleSearch(undefined, qFromUrl, mode)
     }
   }, [workspaceId])
 
@@ -58,9 +81,13 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
       <div className="search-view__header">
         <div className="search-view__title">
           <span className="search-view__icon">🔍</span>
-          <strong>{mode === 'code' ? 'Agent Code- & Symbolsuche' : 'Notizen- & Property-Abfrage'}</strong>
+          <strong>
+            {mode === 'code' ? 'Agent Code- & Symbolsuche'
+              : mode === 'prose' ? 'Notiz-Volltextsuche' : 'Notizen- & Property-Abfrage'}
+          </strong>
           <span className="search-view__endpoint mono">
-            {mode === 'code' ? '/api/agent/search' : '/api/notes/query'}
+            {mode === 'code' ? '/api/agent/search'
+              : mode === 'prose' ? '/api/notes/search' : '/api/notes/query'}
           </span>
         </div>
 
@@ -86,6 +113,17 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
           >
             Notizen & Properties (Bases)
           </button>
+          <button
+            type="button"
+            className={`tb ${mode === 'prose' ? 'on' : ''}`}
+            onClick={() => {
+              setMode('prose')
+              if (!query.trim()) setQuery('Gateway Owner')
+              handleSearch(undefined, query.trim() || 'Gateway Owner', 'prose')
+            }}
+          >
+            Notiz-Volltext
+          </button>
         </div>
       </div>
 
@@ -97,7 +135,9 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
             placeholder={
               mode === 'code'
                 ? 'Symbol, Variable, Klasse, Datei (z. B. authKey) …'
-                : 'Bases-Filter: typ=gate UND stand=offen oder typ=mission …'
+                : mode === 'prose'
+                  ? 'Satz oder Stichwörter aus dem Notiztext (z. B. Gateway Owner) …'
+                  : 'Bases-Filter: typ=gate UND stand=offen oder typ=mission …'
             }
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -122,10 +162,19 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
               hits.length === 0
                 ? `Keine Code-Treffer für "${searchedQuery}" im Brain-Index`
                 : `${hits.length} Treffer für "${searchedQuery}":`
+            ) : mode === 'prose' ? (
+              proseHits.length === 0
+                ? `Kein Notiztext enthält "${searchedQuery}"`
+                : `${proseTotal} Notiz(en) im Text, ${proseHits.length} angezeigt`
             ) : (
               noteHits.length === 0
                 ? `Keine Notizen entsprechen dem Filter "${searchedQuery}"`
                 : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
+            )}
+            {elapsedMs !== null && (
+              <span className="search-results-time mono" style={{ marginLeft: '8px', opacity: .7 }}>
+                {elapsedMs} ms
+              </span>
             )}
           </div>
         )}
@@ -147,6 +196,27 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
                 </div>
                 <div className="search-hit-path mono" title={hit.path}>
                   📄 {hit.path}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : mode === 'prose' ? (
+          <div className="search-hits-list">
+            {proseHits.map(hit => (
+              <div
+                key={`${hit.path}-${hit.line ?? 0}`}
+                className="search-hit-card"
+                onClick={() => onSelectHit(hit.path, hit.line)}
+              >
+                <div className="search-hit-card__head">
+                  <span className="search-hit-name">{hit.title}</span>
+                  {hit.line !== null && (
+                    <span className="search-hit-line mono">Zeile {hit.line}</span>
+                  )}
+                </div>
+                {hit.snippet && <div className="search-hit-snippet">{hit.snippet}</div>}
+                <div className="search-hit-path mono" title={hit.path} style={{ marginTop: '4px' }}>
+                  📝 {hit.path}
                 </div>
               </div>
             ))}

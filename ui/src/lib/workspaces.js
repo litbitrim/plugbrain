@@ -32,12 +32,30 @@ export async function galaxy() {
 }
 
 /**
+ * What `/api/index/progress` answers, as far as the UI reads it.
+ *
+ * Typed here because the progress line is the only thing a user sees while a
+ * vault indexes, and an untyped callback made the caller pass `any` into it.
+ *
+ * @typedef {{ running: boolean, stale: boolean, finished: boolean, summary: string,
+ *   run: null | { phase: string, mode: string, processed: number, total: number,
+ *     scanned: number, startedAt: string, finishedAt: string | null,
+ *     ok: boolean | null, error: string | null,
+ *     result: null | { files: number, symbols: number, edges: number, ms: number } } }} IndexReport
+ */
+
+/**
  * Make a folder a vault and give it a first index.
  *
  * Two calls on purpose: registration is idempotent identity (the same folder
  * is always the same workspace), indexing is work that can fail on its own. A
  * registered-but-unindexed vault is a real state and must not look like one
  * that simply has nothing to show.
+ *
+ * @param {string} root
+ * @param {string | undefined} name
+ * @param {(report: IndexReport) => void} [onProgress]
+ * @returns {Promise<string>} the workspace id
  */
 export async function openVault(root, name, onProgress) {
   const register = await fetch('/api/workspaces', {
@@ -63,6 +81,8 @@ export async function openVault(root, name, onProgress) {
  * The counters come from the daemon, which reads them from the run state the
  * indexer itself keeps current — nothing here estimates, and a phase that has
  * no total yet says so instead of showing a bar that pretends to know.
+ *
+ * @param {IndexReport} report
  */
 export function describeProgress(report) {
   const run = report?.run
@@ -84,7 +104,12 @@ export function describeProgress(report) {
   return `Indexiert: ${phase} ${run.processed}${total}${percent} — ${seconds} s`
 }
 
-/** Fetch the daemon's view of the current run for one workspace. */
+/**
+ * Fetch the daemon's view of the current run for one workspace.
+ *
+ * @param {string} id
+ * @returns {Promise<IndexReport | null>}
+ */
 export async function indexProgress(id) {
   const response = await fetch(`/api/index/progress?workspace=${encodeURIComponent(id)}`)
   if (!response.ok) return null
@@ -121,6 +146,9 @@ export async function watchIndexRun(id, onProgress) {
  * A daemon that answers 202 is saying "started, not finished": the counters
  * then come from the progress route. A daemon that answers with a result has
  * indexed in line (no store path configured) and there is nothing to watch.
+ *
+ * @param {string} id
+ * @param {(report: IndexReport) => void} [onProgress]
  */
 export async function reindexWorkspace(id, onProgress) {
   const response = await fetch('/api/reindex', {

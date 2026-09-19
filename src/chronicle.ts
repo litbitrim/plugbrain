@@ -25,6 +25,7 @@ import { join } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { readTrace, type StoredTraceEvent, type TraceEventType } from './trace.ts'
 import { requireWorkspace } from './access.ts'
+import { searchWorkspace } from './store/search.ts'
 
 const SCHEMA = `
 -- Append-only. Nothing derived may UPDATE or DELETE a row here; that is the
@@ -209,16 +210,17 @@ export function buildContextPack(
   // the goal, ranked by how connected their file is.
   const terms = goal.toLowerCase().split(/[^a-z0-9_]+/i).filter(t => t.length > 2).slice(0, 6)
   const hits = new Map<string, { path: string; hash: string | null; why: string[] }>()
+  // Through the canonical search: the join written out here was the plan that
+  // takes a minute on a real planet, and a context pack is built mid-turn.
+  const hashOfFile = db.prepare('SELECT hash FROM files WHERE id = ?')
   for (const term of terms) {
-    const rows = db.prepare(
-      `SELECT r.path, r.name, r.kind, fi.hash
-         FROM search m
-         JOIN search_rows r ON r.id = m.rowid
-         LEFT JOIN files fi ON fi.id = r.file_id
-        WHERE m.search MATCH ? AND r.workspace_id = ? LIMIT 40`
-    ).all(`${term}*`, workspaceId) as { path: string; name: string; kind: string; hash: string | null }[]
+    const rows = searchWorkspace(db, workspaceId, term, { limit: 40 })
     for (const row of rows) {
-      const entry = hits.get(row.path) ?? { path: row.path, hash: row.hash, why: [] }
+      const cached = hits.get(row.path)
+      const hash = cached?.hash ?? (row.fileId === null
+        ? null
+        : (hashOfFile.get(row.fileId) as { hash: string | null } | undefined)?.hash ?? null)
+      const entry = cached ?? { path: row.path, hash, why: [] }
       if (entry.why.length < 4) entry.why.push(`${row.kind} ${row.name}`)
       hits.set(row.path, entry)
     }

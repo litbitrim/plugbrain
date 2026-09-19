@@ -4,7 +4,7 @@ import { folderName } from './lib/workspace-name.js'
 import {
   describeProgress, galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace,
 } from './lib/workspaces.js'
-import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId } from './lib/brain-client'
+import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId, resetAgentAttachments } from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
 import QueueView from './views/QueueView'
@@ -184,10 +184,38 @@ export default function App() {
     }
   }
 
+  // Show what the brain is doing even when the run was not started here.
+  //
+  // The daemon indexes on its own after a burst of changes; a user who edits a
+  // note and sees nothing happen has no way to tell "saved and indexed" from
+  // "nothing happened". The daemon publishes its progress, so it is displayed —
+  // and only while it is real: no run means no line, not a zero.
+  useEffect(() => {
+    if (!workspaceId) return
+    let alive = true
+    let timer: ReturnType<typeof setTimeout>
+    const poll = async (): Promise<void> => {
+      try {
+        const response = await fetch(`/api/index/progress?workspace=${encodeURIComponent(workspaceId)}`)
+        if (response.ok) {
+          const report = await response.json()
+          if (!alive) return
+          if (report?.running) setVaultProgress(describeProgress(report))
+          else setVaultProgress(current => (current.startsWith('Indexiert:') ? '' : current))
+        }
+      } catch { /* the next tick tries again */ }
+      if (alive) timer = setTimeout(() => void poll(), 1500)
+    }
+    void poll()
+    return () => { alive = false; clearTimeout(timer) }
+  }, [workspaceId])
+
   const handleSaveToken = (e: React.FormEvent) => {
     e.preventDefault()
     setStoredToken(tokenInput.trim())
     setStoredAgentId(agentInput.trim())
+    resetAgentAttachments()
+    setAttempt(value => value + 1)
     setTokenModalOpen(false)
   }
 
@@ -308,7 +336,15 @@ export default function App() {
 
   const indexed = snapshot?.graph.nodes.length ?? graphFiles.length
   const edgeCount = snapshot?.graph.edges.length ?? 0
-  const state = error ? 'getrennt (offline)' : (snapshot || graphFiles.length > 0) ? (snapshot?.coverage?.complete ?? true ? 'live' : 'Index unvollständig') : 'lädt …'
+  // "Is the brain current?" is a question about the INDEX, not about how much of
+  // it this view happens to draw. A cropped picture used to be labelled
+  // "Index unvollständig", which reads as a broken brain on every large vault.
+  const indexBehind = snapshot?.coverage ? !snapshot.coverage.indexComplete : false
+  const state = error
+    ? 'getrennt (offline)'
+    : (snapshot || graphFiles.length > 0)
+      ? (indexBehind ? `${snapshot?.coverage?.staleFiles ?? 0} Datei(en) warten auf den Index` : 'live')
+      : 'lädt …'
 
   // Extract real files for Explorer (graphFiles prioritized for instant responsiveness)
   const fileNodes = useMemo(() => {
@@ -376,6 +412,12 @@ export default function App() {
       )}
       <span className="live-status__figures">
         <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
+        {snapshot?.coverage && snapshot.coverage.totalFiles > snapshot.coverage.shownFiles && (
+          <span className="live-status__sample"
+            title={`Ausschnitt: ${snapshot.coverage.shownFiles} von ${snapshot.coverage.totalFiles} Dateien des Index`}>
+            {' '}· Ausschnitt aus {snapshot.coverage.totalFiles} Dateien
+          </span>
+        )}
       </span>
       <span className={error ? 'live-status__state is-bad' : 'live-status__state'}>{state}</span>
 

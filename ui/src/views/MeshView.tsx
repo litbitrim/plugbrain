@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { createSwarm } from '../lib/mesh/swarm.js'
 import { createAgentMesh } from '../lib/mesh/mesh.js'
 import {
@@ -25,6 +25,32 @@ interface MeshViewProps {
  * Clicking an agent displays their current task, checkout, active claims,
  * and latest tool and file events.
  */
+/**
+ * The panels the swarm ENGINE paints into.
+ *
+ * They are deliberately NOT on screen. The engine is a visualiser and its
+ * readouts are simulated: throughput, lead time, utilisation per stage and
+ * "messages in transit" are computed from the fleet it is animating, not from
+ * the ledger. Showing them beside a roster of REAL agents made the two
+ * indistinguishable — the headline numbers of this view were invented.
+ *
+ * So the engine keeps painting (it needs somewhere to write), that somewhere is
+ * hidden, and everything a reader sees is rendered from the daemon below.
+ */
+function EnginePanels({ tally, stats, verdict }: {
+  tally: RefObject<HTMLDivElement | null>
+  stats: RefObject<HTMLDivElement | null>
+  verdict: RefObject<HTMLDivElement | null>
+}) {
+  return (
+    <div aria-hidden="true" data-engine-panels="hidden-simulated-metrics" style={{ display: 'none' }}>
+      <div id="tally" ref={tally}></div>
+      <div id="stats" ref={stats}></div>
+      <div id="verdict" ref={verdict}></div>
+    </div>
+  )
+}
+
 export default function MeshView({ tasks, workspaceId, onSelectFile }: MeshViewProps) {
   const glow = useRef<HTMLCanvasElement>(null)
   const field = useRef<HTMLCanvasElement>(null)
@@ -190,16 +216,21 @@ export default function MeshView({ tasks, workspaceId, onSelectFile }: MeshViewP
 
   return (
     <>
-      <canvas id="glow" ref={glow}></canvas>
-      <canvas id="field" ref={field}></canvas>
+      <canvas id="glow" ref={glow} aria-hidden="true"></canvas>
+      <canvas id="field" ref={field} aria-hidden="true"></canvas>
+
+      {/* The engine writes its simulated readouts here; nothing of it is shown. */}
+      <EnginePanels tally={tally} stats={stats} verdict={verdict} />
 
       <div className="ov" id="hud">
         <h1><i></i>Agent Mesh<em>Swarm Coordination</em></h1>
-        <div className="tally" id="tally" ref={tally}>
+        {/* Real numbers, or an honest statement that there is nothing to show. */}
+        <div className="tally" id="swarm-tally">
           {agents.length > 0 ? (
             <span style={{ fontSize: '13px', color: 'var(--text)' }}>
               <b style={{ color: 'var(--accent)' }}>{agents.length} Agenten</b> ({activeCount} aktiv · {idleCount} idle · {deadCount} tot) ·{' '}
-              <b style={{ color: '#e0a355' }}>{leases.length} Claims</b>
+              <b style={{ color: '#e0a355' }}>{leases.length} Claims</b> ·{' '}
+              <b>{tasks.length} Tasks in der Queue</b>
             </span>
           ) : (
             'Keine aktiven Swarm-Agenten registriert'
@@ -532,8 +563,16 @@ export default function MeshView({ tasks, workspaceId, onSelectFile }: MeshViewP
           ))}
         </div>
         <span className="sp"></span>
-        <div id="stats" ref={stats}></div>
-        <div id="verdict" ref={verdict}>—</div>
+        {/* The ledger has no throughput or lead-time measurement, and inventing
+            one next to real agents is exactly the confusion this view had. */}
+        <div id="swarm-stats" style={{ fontSize: '11px', color: 'var(--faint)', lineHeight: 1.5 }}>
+          Durchsatz, Lead Time und Auslastung: <b>nicht vorhanden</b> — das Ledger
+          misst sie nicht. Was gemessen ist: Agenten, Claims, Tasks und die
+          Dateiereignisse unten.
+        </div>
+        <div id="swarm-verdict" style={{ fontSize: '11px', color: 'var(--faint)' }}>
+          {leases.length === 0 ? 'Keine offenen Claims' : `${leases.length} offene Claims`}
+        </div>
       </div>
 
       <div id="tip">Klicke auf einen Agenten in der Liste oder im Mesh, um Tasks, Claims und Chronik anzuzeigen</div>

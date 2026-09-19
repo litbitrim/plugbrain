@@ -4,7 +4,17 @@
 export type Snapshot = {
   workspace: { id: string; name: string; canonicalPath: string }
   graph: { nodes: any[]; edges: any[] }
-  coverage?: { complete: boolean; truncated: boolean; errors: string[] }
+  coverage?: {
+    /** The snapshot shows every file of the index (false = a sample of it). */
+    complete: boolean
+    /** Every file the index holds is indexed (false = the brain is behind). */
+    indexComplete: boolean
+    totalFiles: number
+    shownFiles: number
+    staleFiles: number
+    truncated: boolean
+    errors: string[]
+  }
   updatedAt: string
 }
 

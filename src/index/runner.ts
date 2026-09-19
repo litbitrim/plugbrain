@@ -82,6 +82,7 @@ export function runIndexInProcess(
       },
     })
     finishRun(state, result)
+    reclaimWal(db)
     return result
   } catch (error) {
     failRun(state, error)
@@ -132,6 +133,20 @@ export function startIndexRun(
   // file already carries the failure, so the promise is only a convenience.
   done.catch(() => undefined)
   return { state, done }
+}
+
+/**
+ * Give the disk space back after a run.
+ *
+ * A full generation is one transaction, so its WAL can be as large as the index
+ * itself and stays that size after the commit — the file is reusable but the
+ * blocks are not free, and the next commit has to checkpoint through them. A
+ * truncating checkpoint after the run drops it back to nothing. If a reader is
+ * still holding a read mark the checkpoint simply does not happen, which is not
+ * an error and must not fail the run: the space returns at the next chance.
+ */
+export function reclaimWal(db: DatabaseSync): void {
+  try { db.exec('PRAGMA wal_checkpoint(TRUNCATE)') } catch { /* a busy checkpoint is not a failure */ }
 }
 
 /** Convenience for a caller that only wants the outcome. */

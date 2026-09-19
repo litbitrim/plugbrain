@@ -31,6 +31,7 @@ import { hashOf, insideNoteRoot } from '../indexer/scan.ts'
 import {
   conditionsOf, loadFacts, matches, parseQuery, QueryError, renderQuery, type Predicate,
 } from './query.ts'
+import { lineOf, searchNotes, type NoteHit, type NoteSearchResult } from './search.ts'
 
 /** A write was refused because the note changed after it was read. */
 export class NoteConflictError extends Error {
@@ -83,6 +84,33 @@ export class NoteGeneratedError extends Error {
       'overwritten by the next tracker run; pass allowGenerated to write anyway')
     this.name = 'NoteGeneratedError'
   }
+}
+
+/**
+ * Prose search plus the line of the first match.
+ *
+ * The search itself answers "which notes talk about this"; the line is what
+ * makes the answer clickable. It costs one read per returned hit, which is why
+ * it is opt-in and capped: a caller that only wants to know WHICH notes matched
+ * should not pay for opening them.
+ */
+export function searchNotesWithLines(
+  db: DatabaseSync, workspaceId: string, agentId: string, query: string,
+  options: { limit?: number; lines?: boolean } = {},
+): NoteSearchResult {
+  const result = searchNotes(db, workspaceId, query, { ...(options.limit === undefined ? {} : { limit: options.limit }) })
+  if (options.lines !== true) return result
+  const hits: NoteHit[] = result.hits.map(hit => {
+    try {
+      const content = access.readFile(db, workspaceId, agentId, hit.path).content
+      return { ...hit, line: lineOf(content, query) }
+    } catch {
+      // A note the search knows and the disk no longer has is not a reason to
+      // fail the whole search; the hit simply has no line.
+      return hit
+    }
+  })
+  return { ...result, hits }
 }
 
 export interface NotePropertyView { key: string; value: string; raw: string; isLink: boolean; line: number }

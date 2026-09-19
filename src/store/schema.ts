@@ -118,6 +118,13 @@ CREATE INDEX IF NOT EXISTS idx_edges_ws ON edges(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_edges_src ON edges(src_symbol);
 CREATE INDEX IF NOT EXISTS idx_edges_dst ON edges(dst_symbol);
 CREATE INDEX IF NOT EXISTS idx_edges_kind ON edges(kind);
+-- The by-file indexes. idx_edges_src is about SYMBOLS, and a file's edges are
+-- deleted and rebuilt by FILE — on a planet with 11 million edges that lookup
+-- had no index at all and every refreshed file cost a full table scan: measured
+-- 1 468 ms for one COUNT, and saving a single note took 5 seconds because of it.
+-- Incremental runs pay the same cost once per 200-file chunk.
+CREATE INDEX IF NOT EXISTS idx_edges_ws_src_file ON edges(workspace_id, src_file);
+CREATE INDEX IF NOT EXISTS idx_edges_ws_dst_file ON edges(workspace_id, dst_file);
 
 -- Every agent that has ever touched a workspace, and the colour the views
 -- paint its files in. The colour is assigned once and never reused, so a
@@ -326,6 +333,10 @@ CREATE TABLE IF NOT EXISTS search_rows (
   file_id      INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_search_rows_ws ON search_rows(workspace_id);
+-- Re-parsing one file deletes ITS rows. With only idx_search_rows_ws that delete
+-- scans every row of the workspace: measured 677 ms on 3.38 million rows, paid
+-- by every save and by every file of a full run.
+CREATE INDEX IF NOT EXISTS idx_search_rows_ws_file ON search_rows(workspace_id, file_id);
 
 CREATE VIRTUAL TABLE IF NOT EXISTS search USING fts5(
   name, path, kind,
@@ -399,6 +410,10 @@ CREATE TABLE IF NOT EXISTS file_refs (
 CREATE INDEX IF NOT EXISTS idx_file_refs_file ON file_refs(file_id);
 CREATE INDEX IF NOT EXISTS idx_file_refs_ws ON file_refs(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_file_refs_target ON file_refs(workspace_id, target);
+-- Re-parsing a file asks for ITS refs. With only the two single-column indexes
+-- the planner scans every ref of the workspace: measured 955 ms for one note on
+-- the real planet, which was most of the remaining save latency.
+CREATE INDEX IF NOT EXISTS idx_file_refs_ws_file ON file_refs(workspace_id, file_id);
 
 CREATE TABLE IF NOT EXISTS file_imports (
   id           INTEGER PRIMARY KEY,
@@ -411,6 +426,9 @@ CREATE TABLE IF NOT EXISTS file_imports (
 );
 CREATE INDEX IF NOT EXISTS idx_file_imports_file ON file_imports(file_id);
 CREATE INDEX IF NOT EXISTS idx_file_imports_ws ON file_imports(workspace_id);
+-- Same shape as idx_file_refs_ws_file: the resolver reads the imports of the
+-- files it is re-resolving, never all of them.
+CREATE INDEX IF NOT EXISTS idx_file_imports_ws_file ON file_imports(workspace_id, file_id);
 
 -- Ownership keyed by PATH as well as file id. file_owner.file_id cascades away
 -- whenever a file row is deleted; this table is what makes attribution survive
