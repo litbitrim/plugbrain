@@ -42,6 +42,21 @@ import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
+
+/**
+ * Where the served UI lives. A source run has it at ../ui-dist relative to
+ * src/; a standalone bundle has it beside the bundle itself.
+ */
+function resolveUiRoot(): string {
+  const candidates = [
+    join(import.meta.dirname, 'ui-dist'),
+    join(import.meta.dirname, '..', 'ui-dist'),
+  ]
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate
+  }
+  return candidates[candidates.length - 1]!
+}
 const DB_FILE = join(HOME, 'plugbrain.db')
 
 const db = openStore(DB_FILE)
@@ -646,7 +661,11 @@ switch (command) {
   }
   case 'serve': {
     const port = Number(args[0] ?? 4310)
-    const uiRoot = join(import.meta.dirname, '..', 'ui-dist')
+    // ui-dist has to be found both from src/ (a source run) and from next to a
+    // built bundle (a standalone install), so resolve by candidate instead of
+    // assuming one layout. Without the first candidate the bundled daemon
+    // serves an empty UI, because import.meta.dirname then points at dist/.
+    const uiRoot = resolveUiRoot()
     // The daemon runs inside serve by default: a brain that is only correct
     // when a human remembers to re-index is not a system of record. It gets
     // the store path so its runs happen in a worker instead of in the event

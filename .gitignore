@@ -5,3 +5,5 @@ node_modules/
 *.db-shm
 artifacts/
 .claude/
+
+dist/

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "description": "PlugBrain — standalone workspace indexer: real AST code intelligence with three renderings of one graph.",
-  "bin": { "plugbrain": "./src/cli.ts" },
+  "bin": {
+    "plugbrain": "./src/cli.ts"
+  },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "index": "node --experimental-strip-types src/cli.ts index",
@@ -12,9 +14,13 @@
     "status": "node --experimental-strip-types src/cli.ts status",
     "build:ui": "npm --prefix ui run build",
     "backup": "node --experimental-strip-types src/cli.ts backup",
-    "restore": "node --experimental-strip-types src/cli.ts restore"
+    "restore": "node --experimental-strip-types src/cli.ts restore",
+    "build:standalone": "node scripts/build-standalone.mjs"
   },
   "dependencies": {
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
   }
 }
