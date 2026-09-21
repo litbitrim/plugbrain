@@ -67,6 +67,7 @@ import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
 import { evaluateClaim } from '../projections/conflicts.ts'
+import { meshSnapshot, meshTimeline } from '../projections/mesh.ts'
 import { ingestTraceEvents, ensureTraceSchema } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
@@ -426,6 +427,37 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/agents') {
       access.requireWorkspace(db, ws)
       return json(res, { ok: true, agents: agentsOf(db, ws) })
+    }
+
+    // ── Agent Mesh: one trace-backed projection, never a registry fallback ──
+    //
+    // The registry can describe a configured identity, but it cannot prove a
+    // process ran. The Mesh intentionally reads only the append-only trace so
+    // it either names the evidence behind an edge/node or has nothing to show.
+    if (p === '/api/mesh') {
+      access.requireWorkspace(db, ws)
+      return json(res, { ok: true, mesh: meshSnapshot(db, ws) })
+    }
+
+    if (p === '/api/mesh/timeline') {
+      access.requireWorkspace(db, ws)
+      // Number(null) is 0, which would accidentally reduce an omitted limit to
+      // one entry after meshTimeline's lower-bound clamp.
+      const rawLimit = q.get('limit')
+      const parsedLimit = rawLimit === null || rawLimit.trim() === '' ? Number.NaN : Number(rawLimit)
+      const value = (name: 'agentId' | 'taskId' | 'workerId'): string | undefined => {
+        const raw = q.get(name)?.trim()
+        return raw === undefined || raw === '' ? undefined : raw
+      }
+      return json(res, {
+        ok: true,
+        timeline: meshTimeline(db, ws, {
+          agentId: value('agentId'),
+          taskId: value('taskId'),
+          workerId: value('workerId'),
+          limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+        }),
+      })
     }
 
     if (p === '/api/tracks') {
@@ -1226,10 +1258,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         return json(res, { ok: false, error: `agent '${agentId}' not found` }, 404)
       }
 
-      const isDead = coord.isAgentDead(db, agentId)
-      const lastHbMs = agentRow.last_heartbeat ? new Date(agentRow.last_heartbeat).getTime() : 0
-      const isIdle = (Date.now() - lastHbMs) > 15000 && !isDead
-      const state = isDead ? 'dead' : isIdle ? 'idle' : 'active'
+      // Use the registry's heartbeat-only result. `last_seen` is not a
+      // heartbeat and must not turn an old row into a plausible active/idle
+      // process in an inspection response.
+      const presence = coord.getAgentPresence(db, { workspaceId, agentId })[0]
+      const state = presence?.presence ?? 'unproven'
 
       const leases = coord.listActiveLeases(db, workspaceId, agentId)
 

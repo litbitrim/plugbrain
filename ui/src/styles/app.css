@@ -324,18 +324,9 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   background: color-mix(in srgb, canvas 88%, transparent);
 }
 
-/* The mesh engine positions its canvases and HUD with `position: fixed`, which
-   would put them under the status bar. A transform makes this wrapper the
-   containing block for fixed descendants, so the whole view is offset once
-   instead of overriding every rule the engine owns. */
-.brain-view-mesh { top: 52px; transform: translateZ(0); overflow: hidden; }
-
-/* Real agent ids are longer than the simulation's "A7", so the roster name must
-   clip rather than wrap into the row below it. */
-.brain-view-mesh .ag .nm {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  max-width: 104px; display: inline-block; vertical-align: bottom;
-}
+/* Mesh is now a trace projection, not a fixed-canvas simulation. It must be
+   able to scroll through every observed node and evidence row. */
+.brain-view-mesh { top: 52px; overflow: auto; background: #0a0b0d; }
 
 /* Timelapse scrubber. Pinned above the view so all three renderings are read
    at the same instant; "jetzt" means the live present, not the end of a clip. */

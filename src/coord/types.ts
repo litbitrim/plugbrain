@@ -2,7 +2,11 @@
  * Types and contracts for Swarm Coordination (M4).
  */
 
-export type PresenceState = 'active' | 'idle' | 'dead'
+/**
+ * `unproven` is deliberately distinct from `dead`: no observed heartbeat says
+ * nothing about whether a process exists.
+ */
+export type PresenceState = 'active' | 'idle' | 'dead' | 'unproven'
 
 export interface AgentRegistration {
   id: string
@@ -15,7 +19,8 @@ export interface AgentRegistration {
   checkoutId?: string | null
   taskId?: string | null
   missionId?: string | null
-  lastHeartbeat: string
+  /** Null means the registry has no observed heartbeat; it is not liveness proof. */
+  lastHeartbeat: string | null
   heartbeatTtlMs: number
   presence: PresenceState
   isExpired: boolean

@@ -142,7 +142,10 @@ export function getAgentPresence(db: DatabaseSync, options?: { workspaceId?: str
   const params: unknown[] = []
 
   if (options?.workspaceId) {
-    sql += ' AND (workspace_id = ? OR workspace_id IS NULL)'
+    // An unbound legacy identity does not belong to every workspace. Letting
+    // it bleed into a scoped roster turns old metadata into a fictional local
+    // agent, especially in the Mesh.
+    sql += ' AND workspace_id = ?'
     params.push(options.workspaceId)
   }
   if (options?.agentId) {
@@ -156,13 +159,18 @@ export function getAgentPresence(db: DatabaseSync, options?: { workspaceId?: str
   const now = Date.now()
 
   return rows.map((row) => {
-    const hbStr = row.last_heartbeat ?? row.last_seen
-    const hbMs = Date.parse(hbStr)
+    // `last_seen` is metadata activity, not a heartbeat. Falling back to it
+    // silently converted a historical registry row into a live-ish agent.
+    const hbStr = row.last_heartbeat
+    const hbMs = hbStr === null ? Number.NaN : Date.parse(hbStr)
     const ttl = row.heartbeat_ttl_ms && row.heartbeat_ttl_ms > 0 ? row.heartbeat_ttl_ms : 60000
-    const isExpired = Number.isFinite(hbMs) ? (now - hbMs > ttl) : false
+    const hasObservedHeartbeat = Number.isFinite(hbMs)
+    const isExpired = hasObservedHeartbeat && (now - hbMs > ttl)
 
     let presence: PresenceState
-    if (isExpired) {
+    if (!hasObservedHeartbeat) {
+      presence = 'unproven'
+    } else if (isExpired) {
       presence = 'dead'
     } else if (row.task_id) {
       presence = 'active'

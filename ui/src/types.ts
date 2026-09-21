@@ -18,6 +18,65 @@ export type Snapshot = {
   updatedAt: string
 }
 
+/**
+ * The trace-only Mesh projection returned by `/api/mesh`.
+ *
+ * These types deliberately contain no inferred process state. A worker has a
+ * proof only when the trace supplied one, and an empty projection stays empty.
+ */
+export type MeshNodeKind = 'agent' | 'task' | 'worker' | 'worktree' | 'file' | 'artifact' | 'route'
+export type MeshEdgeKind =
+  | 'assigned' | 'leased' | 'claimed' | 'changed' | 'read'
+  | 'produced' | 'prepared-for' | 'reviewed' | 'routed' | 'ran'
+export type MeshProvenance = 'live' | 'recovered' | 'historical-import'
+export type WorkerProof = 'process-started' | 'proof-unavailable' | 'finished'
+
+export type MeshNode = {
+  id: string
+  kind: MeshNodeKind
+  label: string
+  firstSeen: string
+  lastSeen: string
+  provenance: MeshProvenance
+  proof?: WorkerProof
+  detail: Record<string, string | number | null>
+  eventCount: number
+}
+
+export type MeshEdge = {
+  id: string
+  kind: MeshEdgeKind
+  from: string
+  to: string
+  firstSeen: string
+  lastSeen: string
+  provenance: MeshProvenance
+  evidence: string[]
+  count: number
+}
+
+export type MeshSnapshot = {
+  schema: 1
+  workspaceId: string
+  nodes: MeshNode[]
+  edges: MeshEdge[]
+  totals: Record<string, number>
+  unprovenWorkers: Array<{ workerId: string; taskId: string | null; reason: string }>
+  legend: Record<string, string>
+}
+
+export type MeshTimelineEntry = {
+  eventId: string
+  type: string
+  occurredAt: string
+  agentId: string | null
+  taskId: string | null
+  workerId: string | null
+  fileRefs: string[]
+  provenance: MeshProvenance
+  summary: string
+}
+
 /** A PlugBoard ledger task, as /api/plugboard/tasks returns it. */
 export type BoardTask = {
   id: string

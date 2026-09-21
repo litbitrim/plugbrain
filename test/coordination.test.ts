@@ -236,6 +236,41 @@ test('M4: dead agent (expired heartbeat) does not block claims or writes permane
   }
 })
 
+test('M4: scoped presence excludes unbound agents and never treats last_seen as a heartbeat', async () => {
+  const f = await createCoordFixture()
+  try {
+    // This gives the legacy rows below all M4 columns without giving either a
+    // real heartbeat. `registerAgent` represents old identity metadata only.
+    coord.registerSwarmAgent(f.db, { agentId: 'scoped-agent', workspaceId: f.workspaceId })
+    registerAgent(f.db, 'legacy-unbound', 'Legacy Unbound')
+    registerAgent(f.db, 'legacy-no-heartbeat', 'Legacy No Heartbeat')
+    const recent = new Date().toISOString()
+    f.db.prepare(`
+      UPDATE agents
+         SET workspace_id = NULL, task_id = 'historic-task', last_heartbeat = NULL, last_seen = ?
+       WHERE id = 'legacy-unbound'
+    `).run(recent)
+    f.db.prepare(`
+      UPDATE agents
+         SET workspace_id = ?, task_id = 'historic-task', last_heartbeat = NULL, last_seen = ?
+       WHERE id = 'legacy-no-heartbeat'
+    `).run(f.workspaceId, recent)
+
+    const scoped = coord.getAgentPresence(f.db, { workspaceId: f.workspaceId })
+    assert.equal(scoped.some(agent => agent.id === 'legacy-unbound'), false,
+      'an unbound legacy identity must not leak into every workspace roster')
+
+    const legacy = scoped.find(agent => agent.id === 'legacy-no-heartbeat')
+    assert.ok(legacy, 'the exact workspace row should remain inspectable')
+    assert.equal(legacy?.lastHeartbeat, null)
+    assert.equal(legacy?.presence, 'unproven',
+      'recent last_seen must not be misrepresented as a heartbeat or live process')
+    assert.equal(legacy?.isExpired, false, 'absence of a heartbeat is not proof that the agent died')
+  } finally {
+    await f.cleanup()
+  }
+})
+
 test('M4: expired lease cannot write (fencing violation)', async () => {
   const f = await createCoordFixture()
   try {

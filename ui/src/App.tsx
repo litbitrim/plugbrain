@@ -5,7 +5,9 @@ import {
   describeProgress, galaxy, lastWorkspace, nextDaemonProgress, rememberWorkspace, openVault, reindexWorkspace,
   workspaceIdForRoot,
 } from './lib/workspaces.js'
-import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId, resetAgentAttachments } from './lib/brain-client'
+import {
+  fetchMesh, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId, resetAgentAttachments,
+} from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
 import QueueView from './views/QueueView'
@@ -13,7 +15,7 @@ import SourceView from './views/SourceView'
 import ExplorerView from './views/ExplorerView'
 import SearchView from './views/SearchView'
 import ContextPackView from './views/ContextPackView'
-import type { BoardTask, QueueTask, Snapshot, ViewId } from './types'
+import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
@@ -23,7 +25,7 @@ const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'search', label: 'Suche', hint: 'Code- & Symbolsuche über /api/agent/search' },
   { id: 'packs', label: 'Packs', hint: 'Context-Pack-Inspector' },
   { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
-  { id: 'mesh', label: 'Mesh', hint: 'Agenten und Zustände aus dem PlugBoard-Ledger' },
+  { id: 'mesh', label: 'Mesh', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
   { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
 ]
 
@@ -48,9 +50,8 @@ function initialWorkspace(): string {
 
 export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
-  const [tasks, setTasks] = useState<BoardTask[]>([])
+  const [mesh, setMesh] = useState<MeshSnapshot | null>(null)
   const [queue, setQueue] = useState<{ depth: number; tasks: QueueTask[] }>({ depth: 0, tasks: [] })
-  const [boardReachable, setBoardReachable] = useState(true)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [view, setView] = useState<ViewId>(initialView)
@@ -291,7 +292,6 @@ export default function App() {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout>
     let previous = ''
-    let previousTasks = ''
     const requested = workspaceId || undefined
     async function refresh() {
       try {
@@ -312,25 +312,19 @@ export default function App() {
         if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause))
       }
 
-      try {
-        const board = await fetch(
-          '/api/agents' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''),
-          { signal: controller.signal })
-        if (!board.ok) throw new Error(String(board.status))
-        const payload = await board.json()
-        const roster: { id: string; name: string; color: string; actions: number; filesTouched: number }[] =
-          Array.isArray(payload?.agents) ? payload.agents : []
-        const next: BoardTask[] = roster.map(a => ({
-          id: a.id,
-          title: a.name,
-          assignedAgentId: a.name,
-          status: a.filesTouched > 0 ? 'RUNNING' : a.actions > 0 ? 'REVIEW' : 'PLANNED',
-        }))
-        const signature = JSON.stringify(next)
-        if (signature !== previousTasks) { setTasks(next); previousTasks = signature }
-        setBoardReachable(true)
-      } catch {
-        if (!controller.signal.aborted) setBoardReachable(false)
+      // Mesh is a direct Core projection, not an activity-derived Board roster.
+      // In particular, a historical file count never becomes a running task.
+      if (requested) {
+        try {
+          const next = await fetchMesh(requested)
+          if (!controller.signal.aborted) setMesh(next)
+        } catch {
+          // Do not retain or substitute an old roster when the projection is
+          // unavailable. The Mesh view states that its evidence is unavailable.
+          if (!controller.signal.aborted) setMesh(null)
+        }
+      } else if (!controller.signal.aborted) {
+        setMesh(null)
       }
 
       try {
@@ -687,7 +681,7 @@ export default function App() {
 
         {view === 'mesh' && (
           <div className="brain-view brain-view-mesh">
-            <MeshView tasks={tasks} workspaceId={workspaceId} onSelectFile={handleOpenSource} />
+            <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} />
             {selectedSource && (
               <div className="atlas-source-overlay">
                 <SourceView

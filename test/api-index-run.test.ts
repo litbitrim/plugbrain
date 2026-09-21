@@ -18,6 +18,7 @@ import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { workspaceIdFor } from '../src/planet.ts'
 import { beginRun, removeRunState, writeRunState } from '../src/index/runs.ts'
+import { ingestTraceEvents } from '../src/trace.ts'
 
 /** Run states of these tests live under a throwaway PLUGBRAIN_HOME. */
 const home = mkdtempSync(join(tmpdir(), 'plugbrain-api-run-home-'))
@@ -29,6 +30,7 @@ interface Fixture {
   dir: string
   root: string
   dbFile: string
+  db: ReturnType<typeof openStore>
   workspaceId: string
   handle: ServerHandle
   baseUrl: string
@@ -55,7 +57,7 @@ async function createFixture(files: number): Promise<Fixture> {
   const authKey = 'test-token-index-run'
   const handle = await serve({ db, dbFile, uiRoot: null, authKey, requireAuth: true }, 0)
   return {
-    dir, root, dbFile, workspaceId, handle, authKey,
+    dir, root, dbFile, db, workspaceId, handle, authKey,
     baseUrl: `http://127.0.0.1:${handle.port}`,
     cleanup: async () => {
       await handle.close()
@@ -194,6 +196,72 @@ test('the routes the local UI depends on all answer with real data', async () =>
       workspaceId: fx.workspaceId, agentId: 'api-run-agent', name: 'Run Agent',
     })
     assert.equal(registered.status, 200, `register failed: ${JSON.stringify(await registered.clone().json())}`)
+
+    // The Mesh ignores this registry row until authority-confirmed trace
+    // events exist. A worker reference without worker.started stays explicitly
+    // unproven instead of becoming a running simulated agent.
+    const observedAt = new Date().toISOString()
+    const ingested = ingestTraceEvents(fx.db, [
+      {
+        schema: 1, eventId: 'mesh-assigned', source: 'operator', sourceSequence: 1,
+        runtimeInstanceId: 'runtime-api-mesh', workspaceId: fx.workspaceId,
+        taskId: 'task-api-mesh', agentId: 'trace-agent', type: 'task.assigned',
+        occurredAt: observedAt, observedAt,
+        provenance: { mode: 'live', authorityRef: 'operator:/events/mesh-assigned', confidence: 'authoritative' },
+      },
+      {
+        schema: 1, eventId: 'mesh-unproven-worker', source: 'operator', sourceSequence: 2,
+        runtimeInstanceId: 'runtime-api-mesh', workspaceId: fx.workspaceId,
+        taskId: 'task-api-mesh', workerId: 'worker-no-start', type: 'worker.heartbeat',
+        occurredAt: observedAt, observedAt,
+        provenance: { mode: 'live', authorityRef: 'operator:/events/mesh-unproven-worker', confidence: 'authoritative' },
+      },
+    ], { knownWorkspaceIds: new Set([fx.workspaceId]) })
+    assert.equal(ingested.inserted, 2)
+
+    const meshResponse = await fetch(`${fx.baseUrl}/api/mesh?${workspace}`)
+    assert.equal(meshResponse.status, 200)
+    const mesh = await meshResponse.json() as {
+      ok: boolean
+      mesh: {
+        workspaceId: string
+        nodes: Array<{ id: string; proof?: string }>
+        unprovenWorkers: Array<{ workerId: string }>
+      }
+    }
+    assert.equal(mesh.ok, true)
+    assert.equal(mesh.mesh.workspaceId, fx.workspaceId)
+    assert.ok(mesh.mesh.nodes.some(node => node.id === 'agent:trace-agent'))
+    assert.equal(mesh.mesh.nodes.some(node => node.id === 'agent:api-run-agent'), false,
+      'a registry-only agent must never appear in the trace Mesh')
+    assert.equal(mesh.mesh.nodes.find(node => node.id === 'worker:worker-no-start')?.proof, 'proof-unavailable')
+    assert.deepEqual(mesh.mesh.unprovenWorkers.map(worker => worker.workerId), ['worker-no-start'])
+
+    const meshTimeline = await (await fetch(
+      `${fx.baseUrl}/api/mesh/timeline?${workspace}&workerId=worker-no-start&limit=12`,
+    )).json() as { ok: boolean; timeline: Array<{ eventId: string; workerId: string | null }> }
+    assert.equal(meshTimeline.ok, true)
+    assert.deepEqual(meshTimeline.timeline.map(event => event.eventId), ['mesh-unproven-worker'])
+    assert.equal(meshTimeline.timeline[0].workerId, 'worker-no-start')
+
+    const defaultMeshTimeline = await (await fetch(
+      `${fx.baseUrl}/api/mesh/timeline?${workspace}`,
+    )).json() as { ok: boolean; timeline: Array<{ eventId: string }> }
+    assert.equal(defaultMeshTimeline.ok, true)
+    assert.deepEqual(defaultMeshTimeline.timeline.map(event => event.eventId), [
+      'mesh-assigned', 'mesh-unproven-worker',
+    ], 'an omitted limit keeps the projection default instead of silently returning one row')
+
+    const blankLimitTimeline = await (await fetch(
+      `${fx.baseUrl}/api/mesh/timeline?${workspace}&limit=`,
+    )).json() as { ok: boolean; timeline: Array<{ eventId: string }> }
+    assert.equal(blankLimitTimeline.ok, true)
+    assert.deepEqual(blankLimitTimeline.timeline.map(event => event.eventId), [
+      'mesh-assigned', 'mesh-unproven-worker',
+    ], 'a blank limit is treated like an omitted limit, not like zero')
+
+    const unknownMesh = await fetch(`${fx.baseUrl}/api/mesh?workspace=ws-not-registered`)
+    assert.equal(unknownMesh.status, 403, 'the Mesh endpoint must not reveal another workspace')
 
     const search = await (await post(fx, '/api/agent/search', {
       workspace: fx.workspaceId, agentId: 'api-run-agent', query: 'mod3',

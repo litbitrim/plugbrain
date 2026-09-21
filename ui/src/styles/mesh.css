@@ -174,3 +174,66 @@ body{background:var(--bg);color:var(--ink);font-size:12.5px;
 .mf-warn{background:var(--warn)} .mf-bad{background:var(--bad)}
 
 @media (max-width:1080px){#mesh-feed,#mesh-panel,#mesh-toggle{display:none}}
+
+/* ── Trace-backed Core Mesh ────────────────────────────────────────────────
+   These elements deliberately avoid the simulator's canvas/roster classes.
+   A long, real trace is a readable list of evidence; a missing one remains an
+   explicit empty state rather than a field of animated stand-ins. */
+.mesh-trace {
+  box-sizing: border-box; min-height: 100%; max-width: 1480px; margin: 0 auto;
+  padding: 24px; color: var(--ink); font-family: var(--mono); line-height: 1.5;
+}
+.mesh-trace--empty { display: grid; align-content: center; justify-items: start; gap: 10px; }
+.mesh-trace--empty h2, .mesh-trace__header h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.mesh-trace--empty p, .mesh-trace__header p { margin: 0; color: var(--muted); max-width: 760px; }
+.mesh-trace__muted { color: var(--faint) !important; }
+.mesh-trace__header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 20px; }
+.mesh-trace__header h2 span { color: var(--faint); font-size: 10px; font-weight: 400; letter-spacing: .13em; text-transform: uppercase; }
+.mesh-trace__totals { display: flex; gap: 18px; margin: 0; }
+.mesh-trace__totals div { min-width: 78px; }
+.mesh-trace__totals dt { color: var(--faint); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.mesh-trace__totals dd { margin: 2px 0 0; color: var(--ink); font-size: 20px; font-variant-numeric: tabular-nums; }
+.mesh-trace__notice { border: 1px solid color-mix(in srgb, var(--warn) 42%, var(--line)); background: color-mix(in srgb, var(--warn) 7%, transparent); padding: 12px 14px; margin-bottom: 16px; color: var(--muted); }
+.mesh-trace__notice strong { color: var(--warn); }
+.mesh-trace__notice ul { margin: 7px 0 0; padding-left: 18px; }
+.mesh-trace__grid { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr); gap: 16px; }
+.mesh-trace__panel, .mesh-trace__detail { border: 1px solid var(--line); background: color-mix(in srgb, var(--panel) 92%, transparent); }
+.mesh-trace__panel h3 { margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.mesh-trace__panel h3 span { color: var(--ink); float: right; font-variant-numeric: tabular-nums; }
+.mesh-trace__nodes, .mesh-trace__edges { list-style: none; padding: 0; margin: 0; }
+.mesh-trace__nodes li + li, .mesh-trace__edges li + li { border-top: 1px solid var(--line-soft); }
+.mesh-trace__node { width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 76px minmax(100px, 1fr) auto; gap: 5px 10px; text-align: left; padding: 10px 12px; border: 0; color: inherit; background: transparent; cursor: pointer; font: inherit; }
+.mesh-trace__node:hover, .mesh-trace__node.is-selected { background: var(--accent-soft); }
+.mesh-trace__kind, .mesh-trace__edge-kind { color: var(--accent); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.mesh-trace__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesh-trace__events, .mesh-trace__provenance { color: var(--faint); font-size: 10px; }
+.mesh-trace__proof { grid-column: 2 / -1; color: var(--muted); font-size: 10px; }
+.mesh-trace__edges li { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto minmax(0, 1fr); gap: 5px 8px; padding: 10px 12px; color: var(--muted); }
+.mesh-trace__edges li > span:not(.mesh-trace__edge-kind) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mesh-trace__edges small { grid-column: 2 / -1; color: var(--faint); overflow-wrap: anywhere; }
+.mesh-trace__detail { margin-top: 16px; padding: 14px; }
+.mesh-trace__detail-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.mesh-trace__detail-head h3 { margin: 3px 0 0; font-size: 15px; font-family: inherit; overflow-wrap: anywhere; }
+.mesh-trace__detail-head button, .mesh-trace__source { color: var(--ink); background: transparent; border: 1px solid var(--line); cursor: pointer; font: inherit; }
+.mesh-trace__detail-head button { font-size: 18px; width: 30px; height: 30px; }
+.mesh-trace__detail dl { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); margin: 14px 0; font-size: 11px; }
+.mesh-trace__detail dl div { display: contents; }
+.mesh-trace__detail dt, .mesh-trace__detail dd { border-bottom: 1px solid var(--line-soft); padding: 6px 0; overflow-wrap: anywhere; }
+.mesh-trace__detail dt { color: var(--faint); }
+.mesh-trace__detail dd { margin: 0; color: var(--muted); }
+.mesh-trace__source { padding: 7px 10px; border-radius: var(--r-sm); }
+.mesh-trace__source:hover { border-color: var(--accent); }
+.mesh-trace__timeline { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.mesh-trace__timeline h4 { margin: 0 0 7px; color: var(--muted); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.mesh-trace__timeline p { color: var(--faint); margin: 0; }
+.mesh-trace__timeline ol { list-style: none; padding: 0; margin: 8px 0 0; }
+.mesh-trace__timeline li { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 7px; padding: 5px 0; color: var(--muted); font-size: 10px; }
+.mesh-trace__timeline code { color: var(--accent); }
+.mesh-trace__timeline time { color: var(--faint); }
+.mesh-trace__timeline span { overflow-wrap: anywhere; }
+@media (max-width: 800px) {
+  .mesh-trace { padding: 16px; }
+  .mesh-trace__header, .mesh-trace__totals { flex-direction: column; }
+  .mesh-trace__grid { grid-template-columns: 1fr; }
+  .mesh-trace__timeline li { grid-template-columns: 1fr; gap: 1px; }
+}

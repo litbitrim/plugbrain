@@ -3,6 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
+import type { MeshSnapshot, MeshTimelineEntry } from '../types'
 
 export interface GalaxyPlanet {
   id: string
@@ -177,6 +178,39 @@ export async function fetchGraph(workspaceId: string, limit = 2000): Promise<any
   const res = await fetch(`/api/graph?workspace=${encodeURIComponent(workspaceId)}&limit=${limit}`)
   if (!res.ok) throw new Error(`Graph HTTP ${res.status}`)
   return res.json()
+}
+
+/**
+ * Read the one authoritative Mesh projection. This intentionally has no
+ * roster, agent-presence, or historical-activity fallback: absent trace
+ * evidence must remain absent in the UI.
+ */
+export async function fetchMesh(workspaceId: string): Promise<MeshSnapshot> {
+  const res = await fetch(`/api/mesh?workspace=${encodeURIComponent(workspaceId)}`)
+  if (!res.ok) throw new Error(`Mesh HTTP ${res.status}`)
+  const data = await res.json()
+  const mesh = data?.mesh as MeshSnapshot | undefined
+  if (!data?.ok || !mesh || mesh.workspaceId !== workspaceId
+    || !Array.isArray(mesh.nodes) || !Array.isArray(mesh.edges)) {
+    throw new Error('Mesh-Projektion unvollständig oder für einen anderen Workspace')
+  }
+  return mesh
+}
+
+export async function fetchMeshTimeline(
+  workspaceId: string,
+  filter: { agentId?: string; taskId?: string; workerId?: string; limit?: number } = {},
+): Promise<MeshTimelineEntry[]> {
+  const params = new URLSearchParams({ workspace: workspaceId })
+  if (filter.agentId) params.set('agentId', filter.agentId)
+  if (filter.taskId) params.set('taskId', filter.taskId)
+  if (filter.workerId) params.set('workerId', filter.workerId)
+  if (filter.limit !== undefined) params.set('limit', String(filter.limit))
+  const res = await fetch(`/api/mesh/timeline?${params}`)
+  if (!res.ok) throw new Error(`Mesh-Zeitleiste HTTP ${res.status}`)
+  const data = await res.json()
+  if (!data?.ok || !Array.isArray(data.timeline)) throw new Error('Mesh-Zeitleiste unvollständig')
+  return data.timeline as MeshTimelineEntry[]
 }
 
 export async function fetchProvenance(workspaceId: string, path: string): Promise<FileProvenance> {
@@ -369,9 +403,9 @@ export interface AgentPresenceItem {
   checkoutId?: string | null
   taskId?: string | null
   missionId?: string | null
-  lastHeartbeat: string
+  lastHeartbeat: string | null
   heartbeatTtlMs: number
-  presence: 'active' | 'idle' | 'dead'
+  presence: 'active' | 'idle' | 'dead' | 'unproven'
   isExpired: boolean
 }
 
@@ -418,7 +452,7 @@ export interface AgentInspectResult {
     checkoutId?: string | null
     taskId?: string | null
     missionId?: string | null
-    state: 'active' | 'idle' | 'dead'
+    state: 'active' | 'idle' | 'dead' | 'unproven'
     lastHeartbeat?: string | null
     heartbeatTtlMs?: number
   }
