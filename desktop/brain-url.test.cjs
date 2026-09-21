@@ -117,6 +117,7 @@ test('the NSIS source refuses arbitrary folders and never recursively removes th
   assert.match(packager, /UNSIGNED_NOT_FOR_PUBLIC_RELEASE/);
   assert.match(packager, /captureSourceState/);
   assert.match(packager, /dirtyPorcelainSha256/);
+  assert.match(packager, /generatedOutputExcluded/);
   assert.match(packager, /node\.exe is deleted and verified separately/);
   assert.match(packager, /process\.arch !== 'x64'/);
   assert.match(

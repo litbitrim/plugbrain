@@ -88,6 +88,7 @@ writeFileSync(provenanceFile, `${JSON.stringify({
   bytes: statSync(output).size,
   head: source.head,
   dirty: source.dirty,
+  generatedOutputExcluded: source.generatedOutputExcluded,
   dirtyPorcelainSha256: source.dirtyPorcelainSha256,
   source,
   standaloneManifest: {
