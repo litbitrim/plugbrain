@@ -8,7 +8,7 @@
     "plugbrain": "./src/cli.ts"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts desktop/*.test.cjs",
     "index": "node --experimental-strip-types src/cli.ts index",
     "serve": "node --experimental-strip-types src/cli.ts serve",
     "status": "node --experimental-strip-types src/cli.ts status",
