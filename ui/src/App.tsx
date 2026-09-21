@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createAtlasModel } from './lib/atlas.js'
 import { folderName } from './lib/workspace-name.js'
 import {
-  describeProgress, galaxy, lastWorkspace, rememberWorkspace, openVault, reindexWorkspace,
+  describeProgress, galaxy, lastWorkspace, nextDaemonProgress, rememberWorkspace, openVault, reindexWorkspace,
+  workspaceIdForRoot,
 } from './lib/workspaces.js'
 import { getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId, resetAgentAttachments } from './lib/brain-client'
 import CityView from './views/CityView'
@@ -37,8 +38,11 @@ function initialView(): ViewId {
 }
 
 function initialWorkspace(): string {
-  const fromUrl = new URLSearchParams(location.search).get('workspace')
-  if (fromUrl) return fromUrl
+  const params = new URLSearchParams(location.search)
+  // An explicit id is authoritative. A root has to be resolved against the
+  // actual galaxy below; it must never leak into an API `workspace` argument.
+  if (params.has('workspace')) return params.get('workspace') ?? ''
+  if (params.has('workspaceRoot')) return ''
   return lastWorkspace()
 }
 
@@ -51,6 +55,10 @@ export default function App() {
   const [attempt, setAttempt] = useState(0)
   const [view, setView] = useState<ViewId>(initialView)
   const [workspaceId, setWorkspaceId] = useState<string>(initialWorkspace)
+  const urlWorkspaceRoot = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.has('workspace') ? null : params.get('workspaceRoot')
+  }, [])
   const [planets, setPlanets] = useState<Planet[]>([])
   const [vaultOpen, setVaultOpen] = useState(false)
   const [vaultPath, setVaultPath] = useState('')
@@ -92,6 +100,7 @@ export default function App() {
     const url = new URL(location.href)
     if (id) url.searchParams.set('workspace', id)
     else url.searchParams.delete('workspace')
+    if (id) url.searchParams.delete('workspaceRoot')
     history.replaceState(null, '', url.toString())
   }
 
@@ -129,6 +138,14 @@ export default function App() {
       .then(list => {
         if (!alive) return
         setPlanets(list)
+        if (!workspaceId && urlWorkspaceRoot !== null) {
+          const resolved = workspaceIdForRoot(list, urlWorkspaceRoot)
+          // A supplied root only ever opens its exact registered planet. An
+          // unmatched root deliberately stays on the known-vault landing view
+          // instead of registering a path or substituting another workspace.
+          if (resolved) applyWorkspace(resolved)
+          return
+        }
         if (!workspaceId && list.length > 0) {
           const newest = [...list].sort((a, b) =>
             (b.indexedAt ?? '').localeCompare(a.indexedAt ?? ''))[0]
@@ -200,8 +217,7 @@ export default function App() {
         if (response.ok) {
           const report = await response.json()
           if (!alive) return
-          if (report?.running) setVaultProgress(describeProgress(report))
-          else setVaultProgress(current => (current.startsWith('Indexiert:') ? '' : current))
+          setVaultProgress(current => nextDaemonProgress(report, current))
         }
       } catch { /* the next tick tries again */ }
       if (alive) timer = setTimeout(() => void poll(), 1500)

@@ -73,21 +73,47 @@ test('a second run is refused with the holder and how far it has got', () => {
   removeRunState('ws-run-unit-2')
 })
 
-test('a run that stopped sending heartbeats is quiet, not running — and can be taken over', () => {
+test('a quiet run whose owner is gone is recoverable and can be taken over', () => {
   const stale = beginRun('ws-run-unit-3')
   writeRunState({
     ...stale,
     heartbeatAt: new Date(Date.now() - 10 * 60_000).toISOString(),
     phase: 'write',
   })
-  const appraisal = appraiseRun('ws-run-unit-3')
+  const appraisal = appraiseRun('ws-run-unit-3', { isProcessAlive: () => false })
   assert.equal(appraisal.running, false)
   assert.equal(appraisal.stale, true)
+  assert.equal(appraisal.ownerAlive, false)
+  assert.equal(appraisal.recoverable, true)
   assert.match(describeRun(appraisal), /went quiet/)
   // A dead process must not lock the vault forever.
-  const taken = beginRun('ws-run-unit-3')
+  const taken = beginRun('ws-run-unit-3', { isProcessAlive: () => false })
   assert.notEqual(taken.runId, stale.runId)
   removeRunState('ws-run-unit-3')
+})
+
+test('a quiet run whose owner is alive stays visible and cannot be clobbered', () => {
+  const quiet = beginRun('ws-run-unit-live-owner')
+  writeRunState({
+    ...quiet,
+    heartbeatAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+    phase: 'classify',
+  })
+  // `beginRun` records this test process as owner, so this exercises the real
+  // operating-system liveness check rather than only a test double.
+  const appraisal = appraiseRun('ws-run-unit-live-owner')
+  assert.equal(appraisal.running, false, 'quiet is not reported as forward progress')
+  assert.equal(appraisal.stale, true, 'the UI must show that progress went quiet')
+  assert.equal(appraisal.quiet, true)
+  assert.equal(appraisal.ownerAlive, true)
+  assert.equal(appraisal.recoverable, false)
+  assert.match(describeRun(appraisal), /retaining its lock/)
+  assert.throws(
+    () => beginRun('ws-run-unit-live-owner'),
+    IndexRunBusy,
+    'a live process remains the owner even when its last progress tick is old',
+  )
+  removeRunState('ws-run-unit-live-owner')
 })
 
 test('a finished run keeps its result readable, and a failed one keeps its reason', () => {
@@ -222,6 +248,28 @@ test('a worker that cannot do the run records why, instead of failing silently',
   assert.equal(appraisal.running, false, 'a failed run must not look busy forever')
   removeRunState(workspaceId)
   rmSync(scratch, { recursive: true, force: true, maxRetries: 10 })
+})
+
+test('a synchronous worker-construction failure terminally releases its acquired lock', () => {
+  const workspaceId = 'ws-run-worker-construction-failure'
+  try {
+    assert.throws(
+      () => startIndexRun(workspaceId, {
+        dbFile: join(tmpdir(), 'unused-brain.db'),
+        workerFactory: () => { throw new Error('simulated worker construction failure') },
+      }),
+      /simulated worker construction failure/,
+    )
+    const failed = readRunState(workspaceId)
+    assert.equal(failed?.ok, false)
+    assert.ok(failed?.finishedAt, 'the acquired run must be terminal before startIndexRun throws')
+    assert.match(failed?.error ?? '', /simulated worker construction failure/)
+    assert.equal(appraiseRun(workspaceId).finished, true)
+    assert.doesNotThrow(() => beginRun(workspaceId),
+      'the live daemon PID must not retain a lock after worker construction fails')
+  } finally {
+    removeRunState(workspaceId)
+  }
 })
 
 test('a second run over an unchanged workspace does no work and says so', () => {

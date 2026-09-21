@@ -297,6 +297,23 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   ensureTraceSchema(db)
   const serverInstanceId = ctx.instanceId ?? ('inst-' + randomUUID().slice(0, 12))
 
+  /** The same lock truth for every endpoint that can start an index run. */
+  function busyIndexResponse(error: IndexRunBusy): Record<string, unknown> {
+    const appraisal = appraiseRun(error.state.workspaceId)
+    return {
+      ok: false,
+      busy: true,
+      error: error.message,
+      run: error.state,
+      running: appraisal.running,
+      stale: appraisal.stale,
+      quiet: appraisal.quiet,
+      ownerAlive: appraisal.ownerAlive,
+      recoverable: appraisal.recoverable,
+      summary: describeRun(appraisal),
+    }
+  }
+
   /**
    * Start an index run and answer at once.
    *
@@ -321,7 +338,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (error instanceof IndexRunBusy) {
         // Not an error the caller caused: say who holds the lock and how far
         // the other run has got, so the answer is actionable.
-        json(res, { ok: false, busy: true, error: error.message, run: error.state }, 409)
+        json(res, busyIndexResponse(error), 409)
         return
       }
       throw error
@@ -783,7 +800,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         return json(res, { ok: true, registered, started: true, run: run.state }, 202)
       } catch (error) {
         if (error instanceof IndexRunBusy) {
-          return json(res, { ok: false, busy: true, error: error.message, run: error.state }, 409)
+          return json(res, { ...busyIndexResponse(error), registered }, 409)
         }
         throw error
       }
@@ -1407,6 +1424,9 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         workspace: target,
         running: appraisal.running,
         stale: appraisal.stale,
+        quiet: appraisal.quiet,
+        ownerAlive: appraisal.ownerAlive,
+        recoverable: appraisal.recoverable,
         finished: appraisal.finished,
         heartbeatAgeMs: appraisal.heartbeatAgeMs,
         fraction: appraisal.fraction,

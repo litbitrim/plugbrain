@@ -15,9 +15,12 @@
  * Both have to be answerable from a SECOND process — the CLI while the server
  * runs — which is the other reason this cannot live in process memory.
  *
- * A run whose heartbeat stopped is reported as STALE, never as running: a
- * crashed process must not block the vault forever, and it must not be
- * pretended to be alive either.
+ * A quiet heartbeat alone does not prove that an owner died.  Long synchronous
+ * classify/commit work can be unable to publish a tick for minutes while the
+ * owning process still holds SQLite's write lock.  A quiet run is therefore
+ * only recoverable once its owner is gone; otherwise it stays visibly quiet
+ * and protected instead of being overwritten by a second writer.  Quiet is
+ * never presented as forward progress.
  */
 import {
   existsSync, mkdirSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync,
@@ -65,7 +68,7 @@ export interface RunState {
 }
 
 /**
- * How long without a heartbeat before a run counts as dead, per phase.
+ * How long without a heartbeat before a run counts as quiet, per phase.
  *
  * A heartbeat only happens when the indexer reports progress, and the indexer
  * is synchronous — during the final COMMIT nothing can report anything at all.
@@ -73,7 +76,8 @@ export interface RunState {
  * includes a full checkpoint and takes minutes. Calling such a run dead after
  * two quiet minutes lets a second run start, which then fails with "database is
  * locked" and hides the state of the one that is still working.
- * So the window follows the phase: the quiet phases get the long one.
+ * So the window follows the phase: the quiet phases get the long one.  The
+ * recorded owner still has to be absent before quiet becomes recoverable.
  */
 export const STALE_AFTER_MS = 300_000
 
@@ -102,6 +106,24 @@ export class IndexRunBusy extends Error {
   }
 }
 
+/**
+ * Return whether a process still owns a run.
+ *
+ * `kill(pid, 0)` asks the operating system without delivering a signal.  An
+ * access-denied answer is deliberately treated as alive: a process we cannot
+ * inspect is not evidence that it died, and taking its SQLite writer lock
+ * would be the unsafe direction.  Only an explicit ESRCH permits recovery.
+ */
+export function isProcessAlive(pid: number): boolean {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return false
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== 'ESRCH'
+  }
+}
+
 /** The store home, resolved the same way the CLI resolves it. */
 export function storeHome(): string {
   return process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
@@ -111,8 +133,29 @@ export function runDir(): string {
   return join(storeHome(), 'runs')
 }
 
+const safeWorkspaceId = (workspaceId: string): string =>
+  workspaceId.replace(/[^a-zA-Z0-9._-]/g, '_')
+
 const statePath = (workspaceId: string): string =>
-  join(runDir(), `${workspaceId.replace(/[^a-zA-Z0-9._-]/g, '_')}.json`)
+  join(runDir(), `${safeWorkspaceId(workspaceId)}.json`)
+
+// A `.pending` sidecar is deliberately not a `.json` file: listRunStates()
+// enumerates the latter for user-visible run history, and a retained change is
+// control state rather than a completed/running index run.
+const pendingPath = (workspaceId: string): string =>
+  join(runDir(), `${safeWorkspaceId(workspaceId)}.pending`)
+
+/** A real filesystem change that arrived while another run held SQLite. */
+export interface PendingReindex {
+  workspaceId: string
+  runId: string
+  reason: string
+  recordedAt: string
+  /** A filesystem event arrived after this owner began its own replacement. */
+  followUp: boolean
+  /** Automatic post-owner attempts that ended in failure. */
+  failureCount: number
+}
 
 /** Read one run state, or null when there is none or it is unreadable. */
 export function readRunState(workspaceId: string): RunState | null {
@@ -152,7 +195,22 @@ export function listRunStates(): RunState[] {
 export function writeRunState(state: RunState): void {
   const target = statePath(state.workspaceId)
   mkdirSync(runDir(), { recursive: true })
-  const payload = JSON.stringify(state, null, 2)
+  writeJsonAtomically(target, state)
+}
+
+/** Persist a dirty-while-busy marker so a daemon restart cannot lose it. */
+export function writePendingReindex(pending: PendingReindex): void {
+  mkdirSync(runDir(), { recursive: true })
+  writeJsonAtomically(pendingPath(pending.workspaceId), pending)
+}
+
+/** Forget the marker only after its replacement run completed successfully. */
+export function removePendingReindex(workspaceId: string): void {
+  try { unlinkSync(pendingPath(workspaceId)) } catch { /* nothing to remove */ }
+}
+
+function writeJsonAtomically(target: string, value: unknown): void {
+  const payload = JSON.stringify(value, null, 2)
   const tmp = `${target}.${process.pid}.tmp`
   for (let attempt = 0; attempt < 12; attempt += 1) {
     writeFileSync(tmp, payload, 'utf8')
@@ -187,34 +245,90 @@ export interface RunAppraisal {
   finished: boolean
   /** A run that claims to be active but has gone quiet. */
   stale: boolean
+  /** The recorded owner is still present, even if its heartbeat is quiet. */
+  ownerAlive: boolean
+  /** Progress has gone quiet, but recovery may still be unsafe. */
+  quiet: boolean
+  /** The owner is absent, so replacing this quiet run is safe. */
+  recoverable: boolean
   heartbeatAgeMs: number
   /** 0..1 while the total is known; null when it is not. */
   fraction: number | null
 }
 
+/** Read a retained filesystem change, if a previous daemon persisted one. */
+export function readPendingReindex(workspaceId: string): PendingReindex | null {
+  try {
+    const pending = JSON.parse(readFileSync(pendingPath(workspaceId), 'utf8')) as PendingReindex
+    if (pending.workspaceId !== workspaceId || typeof pending.runId !== 'string' ||
+      typeof pending.reason !== 'string' || typeof pending.recordedAt !== 'string') return null
+    // Markers written before `followUp` existed already mean "an event arrived
+    // during this owner", so treating the missing field as true is conservative
+    // and keeps an upgrade/restart from dropping that event.
+    return {
+      ...pending,
+      followUp: pending.followUp !== false,
+      failureCount: Number.isSafeInteger(pending.failureCount) && pending.failureCount >= 0
+        ? pending.failureCount : 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+export interface RunAppraisalOptions {
+  now?: number
+  staleAfterMs?: number
+  /** Injectable only so regression tests never need to manufacture a PID. */
+  isProcessAlive?: (pid: number) => boolean
+}
+
 /** Read the state and say honestly what it means. */
 export function appraiseRun(
-  workspaceId: string, options: { now?: number; staleAfterMs?: number } = {},
+  workspaceId: string, options: RunAppraisalOptions = {},
 ): RunAppraisal {
   const now = options.now ?? Date.now()
   const state = readRunState(workspaceId)
   if (state === null) {
-    return { state: null, running: false, finished: false, stale: false, heartbeatAgeMs: -1, fraction: null }
+    return {
+      state: null, running: false, finished: false, stale: false,
+      ownerAlive: false, quiet: false, recoverable: false, heartbeatAgeMs: -1, fraction: null,
+    }
   }
   const heartbeatAgeMs = now - Date.parse(state.heartbeatAt)
   const finished = state.finishedAt !== null
-  const stale = !finished && heartbeatAgeMs > (options.staleAfterMs ?? staleAfterFor(state.phase))
+  const quiet = !finished && heartbeatAgeMs > (options.staleAfterMs ?? staleAfterFor(state.phase))
+  const ownerAlive = !finished && (options.isProcessAlive ?? isProcessAlive)(state.pid)
+  // A quiet file remains visibly stale, but only becomes recoverable after its
+  // recorded owner is gone.  Otherwise a second run could clobber a long
+  // commit/classify phase that still holds the database writer lock.
+  const stale = quiet
+  const recoverable = quiet && !ownerAlive
   const fraction = state.total > 0 ? Math.min(1, state.processed / state.total) : null
-  return { state, running: !finished && !stale, finished, stale, heartbeatAgeMs, fraction }
+  return {
+    state,
+    // Quiet is not forward progress.  Callers get an explicit stale result
+    // rather than a false "running" success while the lock stays protected.
+    running: !finished && !quiet,
+    finished,
+    stale,
+    ownerAlive,
+    quiet,
+    recoverable,
+    heartbeatAgeMs,
+    fraction,
+  }
 }
 
 /** Take the lock for a run, or refuse with the reason it is already taken. */
 export function beginRun(
   workspaceId: string,
-  options: { full?: boolean; now?: number; staleAfterMs?: number } = {},
+  options: { full?: boolean } & RunAppraisalOptions = {},
 ): RunState {
   const appraisal = appraiseRun(workspaceId, options)
-  if (appraisal.running && appraisal.state !== null) {
+  // A fresh heartbeat or a quiet but still-live owner keeps the lock.  Only a
+  // quiet state whose owner has exited is safe for a replacement run.
+  if (appraisal.state !== null && !appraisal.finished && !appraisal.recoverable) {
     throw new IndexRunBusy(appraisal.state, appraisal.heartbeatAgeMs)
   }
   const now = new Date(options.now ?? Date.now()).toISOString()
@@ -295,6 +409,10 @@ export function describeRun(appraisal: RunAppraisal): string {
     return `indexing ${state.workspaceId}: ${state.phase} ${state.processed}/${state.total || '?'}${pct}`
   }
   if (appraisal.stale) {
+    if (appraisal.ownerAlive) {
+      return `index run for ${state.workspaceId} went quiet in phase ${state.phase} ` +
+        `(pid ${state.pid} is still alive; retaining its lock until that owner finishes or stops)`
+    }
     return `index run for ${state.workspaceId} went quiet in phase ${state.phase} ` +
       `(pid ${state.pid}, last sign of life ${Math.round(appraisal.heartbeatAgeMs / 1000)} s ago)`
   }

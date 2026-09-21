@@ -13,6 +13,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { isNoisePath, startDaemon } from '../src/daemon.ts'
+import {
+  IndexRunBusy, beginRun, failRun, finishRun, readPendingReindex, readRunState, removePendingReindex, removeRunState,
+} from '../src/index/runs.ts'
+import { IndexRunStartFailed } from '../src/index/runner.ts'
 import { workspaceIdFor } from '../src/planet.ts'
 
 /** Run states of these tests belong to a throwaway store home, not to a real one. */
@@ -20,6 +24,15 @@ const home = mkdtempSync(join(tmpdir(), 'plugbrain-daemon-home-'))
 process.env.PLUGBRAIN_HOME = home
 
 const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+
+async function eventually(assertion: () => boolean, timeoutMs = 1_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (assertion()) return
+    await sleep(10)
+  }
+  assert.ok(assertion(), `condition did not become true within ${timeoutMs} ms`)
+}
 
 interface Fixture { dir: string; dbFile: string; db: ReturnType<typeof openStore>; cleanup: () => void }
 
@@ -150,5 +163,297 @@ test('the daemon can be asked to look again from another module, and stops clean
     daemon.refresh()
     assert.deepEqual(daemon.watching(), [],
       'a stopped daemon must not reopen a watcher when it is refreshed')
+  } finally { fx.cleanup() }
+})
+
+test('a busy owner gets one recheck, then retains the change until it ends', async () => {
+  const fx = fixture()
+  const lines: string[] = []
+  try {
+    const id = addWorkspace(fx, 'busy-vault')
+    const holder = beginRun(id)
+    let attempts = 0
+    let releaseHolder = false
+    const result = {
+      scanned: 1, files: 1, parsed: 1, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
+      skipped: 0, ms: 1, generation: 1, mode: 'incremental' as const,
+      changed: { added: 0, modified: 1, renamed: 0, deleted: 0, unchanged: 0 },
+      reparsed: 1, reresolved: 0,
+    }
+    const daemon = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: line => lines.push(line),
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        attempts += 1
+        if (!releaseHolder) throw new IndexRunBusy(holder, 0)
+        const replacement = beginRun(id)
+        finishRun(replacement, result)
+        return { state: replacement, done: Promise.resolve({ state: replacement, result }) }
+      },
+    })
+    try {
+      writeFileSync(join(fx.dir, 'busy-vault', 'trigger.md'), '# trigger\n')
+      await eventually(() => lines.some(line => line.includes('rechecking once')))
+      await eventually(() => lines.some(line => line.includes('retaining this change until it ends')))
+      await sleep(50)
+      const attemptsBeforeRelease = attempts
+      assert.equal(lines.filter(line => line.includes('rechecking once')).length, 1,
+        `same run must be rechecked only once: ${lines.join(' | ')}`)
+      assert.ok(attemptsBeforeRelease >= 2,
+        `expected the original attempt and one recheck, saw ${attemptsBeforeRelease}`)
+
+      // A file event may land after the owner has already snapshotted disk.
+      // It must not be forgotten just because the bounded recheck found the
+      // same owner still holding SQLite.
+      releaseHolder = true
+      finishRun(holder, result)
+      await eventually(() => attempts > attemptsBeforeRelease)
+      assert.equal(attempts, attemptsBeforeRelease + 1,
+        `owner completion must trigger exactly one retained re-index, saw ${attempts}`)
+    } finally { daemon.stop() }
+    removeRunState(id)
+    removePendingReindex(id)
+  } finally { fx.cleanup() }
+})
+
+test('a retained direct filesystem change survives a daemon restart', async () => {
+  const fx = fixture()
+  const lines: string[] = []
+  try {
+    const id = addWorkspace(fx, 'restart-busy-vault')
+    const holder = beginRun(id)
+    const result = {
+      scanned: 1, files: 1, parsed: 1, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
+      skipped: 0, ms: 1, generation: 1, mode: 'incremental' as const,
+      changed: { added: 0, modified: 1, renamed: 0, deleted: 0, unchanged: 0 },
+      reparsed: 1, reresolved: 0,
+    }
+    const first = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: line => lines.push(line),
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => { throw new IndexRunBusy(holder, 0) },
+    })
+    try {
+      writeFileSync(join(fx.dir, 'restart-busy-vault', 'trigger.md'), '# trigger\n')
+      await eventually(() => lines.some(line => line.includes('retaining this change until it ends')))
+    } finally { first.stop() }
+
+    assert.equal(readPendingReindex(id)?.runId, holder.runId,
+      'stopping the daemon must not erase a direct filesystem change held behind a live owner')
+
+    let releaseHolder = false
+    let replacementAttempts = 0
+    const second = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: line => lines.push(line),
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        replacementAttempts += 1
+        if (!releaseHolder) throw new IndexRunBusy(holder, 0)
+        const replacement = beginRun(id)
+        finishRun(replacement, result)
+        return { state: replacement, done: Promise.resolve({ state: replacement, result }) }
+      },
+    })
+    try {
+      await sleep(30)
+      assert.equal(replacementAttempts, 0, 'restart observes the owner before it attempts another writer')
+      releaseHolder = true
+      finishRun(holder, result)
+      await eventually(() => replacementAttempts === 1)
+      await eventually(() => readPendingReindex(id) === null)
+    } finally { second.stop() }
+    removeRunState(id)
+    removePendingReindex(id)
+  } finally { fx.cleanup() }
+})
+
+test('a direct event during a replacement survives its success and a normal restart', async () => {
+  const fx = fixture()
+  try {
+    const id = addWorkspace(fx, 'replacement-event-vault')
+    const holder = beginRun(id)
+    const result = {
+      scanned: 1, files: 1, parsed: 1, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
+      skipped: 0, ms: 1, generation: 1, mode: 'incremental' as const,
+      changed: { added: 0, modified: 1, renamed: 0, deleted: 0, unchanged: 0 },
+      reparsed: 1, reresolved: 0,
+    }
+    let holderReleased = false
+    let firstAttempts = 0
+    let replacement: ReturnType<typeof beginRun> | null = null
+    let resolveReplacement: ((outcome: { state: ReturnType<typeof beginRun>; result: typeof result }) => void) | null = null
+    const first = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: () => {},
+      delays: { debounceMs: 100, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        firstAttempts += 1
+        if (!holderReleased) throw new IndexRunBusy(holder, 0)
+        replacement = beginRun(id)
+        const done = new Promise<{ state: ReturnType<typeof beginRun>; result: typeof result }>(resolve => {
+          resolveReplacement = resolve
+        })
+        return { state: replacement, done }
+      },
+    })
+    try {
+      writeFileSync(join(fx.dir, 'replacement-event-vault', 'initial.md'), '# initial\n')
+      await eventually(() => firstAttempts >= 2)
+      holderReleased = true
+      finishRun(holder, result)
+      await eventually(() => replacement !== null)
+      const b = replacement
+      assert.ok(b !== null)
+
+      // B has accepted the original retained change. This second write happens
+      // after B could have snapshotted disk and must be durable before its
+      // debounced callback gets a chance to start C.
+      writeFileSync(join(fx.dir, 'replacement-event-vault', 'after-b.md'), '# after B\n')
+      await eventually(() => {
+        const pending = readPendingReindex(id)
+        return pending?.runId === b.runId && pending.followUp === true
+      })
+      finishRun(b, result)
+      resolveReplacement?.({ state: b, result })
+      // Let the completion handler schedule C, but stop before the zero-delay
+      // timer runs. A normal restart must still discover the durable marker.
+      await Promise.resolve()
+    } finally { first.stop() }
+
+    const pending = readPendingReindex(id)
+    assert.equal(pending?.runId, replacement?.runId)
+    assert.equal(pending?.followUp, true,
+      'a change received during B must outlive B success and daemon shutdown')
+    assert.equal(firstAttempts, 3, 'C must not have begun before the normal restart')
+
+    let recoveryAttempts = 0
+    const second = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: () => {},
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        recoveryAttempts += 1
+        const replacement = beginRun(id)
+        finishRun(replacement, result)
+        return { state: replacement, done: Promise.resolve({ state: replacement, result }) }
+      },
+    })
+    try {
+      await eventually(() => recoveryAttempts === 1)
+      await eventually(() => readPendingReindex(id) === null)
+    } finally { second.stop() }
+    removeRunState(id)
+    removePendingReindex(id)
+  } finally { fx.cleanup() }
+})
+
+test('a synchronous replacement start failure keeps the retained change recoverable', async () => {
+  const fx = fixture()
+  const lines: string[] = []
+  try {
+    const id = addWorkspace(fx, 'construction-failure-vault')
+    const holder = beginRun(id)
+    const result = {
+      scanned: 1, files: 1, parsed: 1, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
+      skipped: 0, ms: 1, generation: 1, mode: 'incremental' as const,
+      changed: { added: 0, modified: 1, renamed: 0, deleted: 0, unchanged: 0 },
+      reparsed: 1, reresolved: 0,
+    }
+    let holderReleased = false
+    let attempts = 0
+    let startFailures = 0
+    const daemon = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: line => lines.push(line),
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        attempts += 1
+        if (!holderReleased) throw new IndexRunBusy(holder, 0)
+        if (startFailures === 0) {
+          startFailures += 1
+          const failed = beginRun(id)
+          const error = new Error('simulated worker construction failure')
+          failRun(failed, error)
+          throw new IndexRunStartFailed(failed, error)
+        }
+        const replacement = beginRun(id)
+        finishRun(replacement, result)
+        return { state: replacement, done: Promise.resolve({ state: replacement, result }) }
+      },
+    })
+    try {
+      writeFileSync(join(fx.dir, 'construction-failure-vault', 'trigger.md'), '# trigger\n')
+      await eventually(() => attempts >= 2)
+      await eventually(() => lines.some(line => line.includes('retaining this change until it ends')))
+      holderReleased = true
+      finishRun(holder, result)
+      assert.equal(readRunState(id)?.finishedAt !== null, true)
+      await eventually(() => attempts >= 4)
+      assert.ok(attempts >= 4, 'the construction failure must schedule one bounded retained recovery')
+      await eventually(() => readPendingReindex(id) === null)
+    } finally { daemon.stop() }
+    removeRunState(id)
+    removePendingReindex(id)
+  } finally { fx.cleanup() }
+})
+
+test('a failed post-owner replacement retains the change for one bounded recovery', async () => {
+  const fx = fixture()
+  try {
+    const id = addWorkspace(fx, 'failed-replacement-vault')
+    const holder = beginRun(id)
+    const result = {
+      scanned: 1, files: 1, parsed: 1, symbols: 0, edges: 0, unresolved: 0, ambiguous: 0,
+      skipped: 0, ms: 1, generation: 1, mode: 'incremental' as const,
+      changed: { added: 0, modified: 1, renamed: 0, deleted: 0, unchanged: 0 },
+      reparsed: 1, reresolved: 0,
+    }
+    let stage: 'busy' | 'fail' | 'succeed' = 'busy'
+    let attempts = 0
+    let rejectReplacement: ((error: Error) => void) | null = null
+    let failedState: ReturnType<typeof beginRun> | null = null
+    const daemon = startDaemon(fx.db, {
+      dbFile: fx.dbFile,
+      timers: false,
+      log: () => {},
+      delays: { debounceMs: 5, minIntervalMs: 0, busyRetryMs: 5, busyMonitorMs: 5 },
+      startRun: () => {
+        attempts += 1
+        if (stage === 'busy') throw new IndexRunBusy(holder, 0)
+        if (stage === 'fail') {
+          failedState = beginRun(id)
+          const done = new Promise<never>((_resolve, reject) => { rejectReplacement = reject })
+          return { state: failedState, done }
+        }
+        const replacement = beginRun(id)
+        finishRun(replacement, result)
+        return { state: replacement, done: Promise.resolve({ state: replacement, result }) }
+      },
+    })
+    try {
+      writeFileSync(join(fx.dir, 'failed-replacement-vault', 'trigger.md'), '# trigger\n')
+      await eventually(() => attempts >= 2)
+      stage = 'fail'
+      finishRun(holder, result)
+      await eventually(() => failedState !== null)
+      assert.equal(readPendingReindex(id)?.runId, failedState?.runId,
+        'the marker must remain while the post-owner worker has only accepted, not completed')
+      stage = 'succeed'
+      failRun(failedState as ReturnType<typeof beginRun>, new Error('simulated worker failure'))
+      rejectReplacement?.(new Error('simulated worker failure'))
+      await eventually(() => attempts >= 4)
+      await eventually(() => readPendingReindex(id) === null)
+    } finally { daemon.stop() }
+    removeRunState(id)
+    removePendingReindex(id)
   } finally { fx.cleanup() }
 })

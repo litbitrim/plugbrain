@@ -9,7 +9,7 @@
  * "already running since …, phase …, 40 % done" instead of silently scanning
  * the same 150 000 files a second time.
  */
-import { Worker } from 'node:worker_threads'
+import { Worker, type WorkerOptions } from 'node:worker_threads'
 import type { DatabaseSync } from 'node:sqlite'
 import { indexPlanetWorkspace } from '../planet.ts'
 import type { IndexProgress } from '../indexer/index.ts'
@@ -32,11 +32,24 @@ export interface RunOptions {
   throttleMs?: number
   /** A second listener, for a caller that wants to print progress as it runs. */
   onProgress?: IndexProgress
+  /** Test seam for a synchronous worker-construction failure. */
+  workerFactory?: (filename: URL, options: WorkerOptions) => Worker
 }
 
 export interface RunOutcome {
   state: RunState
   result: IndexResult | null
+}
+
+/** A worker could not be constructed after this run acquired its lock. */
+export class IndexRunStartFailed extends Error {
+  readonly state: RunState
+
+  constructor(state: RunState, cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause))
+    this.name = 'IndexRunStartFailed'
+    this.state = state
+  }
 }
 
 /**
@@ -101,7 +114,7 @@ export function startIndexRun(
   workspaceId: string, options: RunOptions & { dbFile: string },
 ): { state: RunState; done: Promise<RunOutcome> } {
   const state = beginRun(workspaceId, { ...(options.full === true ? { full: true } : {}) })
-  const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+  const workerOptions: WorkerOptions = {
     workerData: {
       workspaceId,
       dbFile: options.dbFile,
@@ -109,7 +122,20 @@ export function startIndexRun(
       state,
       throttleMs: options.throttleMs ?? DEFAULT_THROTTLE_MS,
     },
-  })
+  }
+  let worker: Worker
+  try {
+    worker = (options.workerFactory ?? ((filename, config) => new Worker(filename, config)))(
+      new URL('./worker.ts', import.meta.url), workerOptions,
+    )
+  } catch (error) {
+    // The state is written before constructing the worker so competing starts
+    // cannot race.  Construction can still throw synchronously (for example a
+    // loader or resource failure); terminally record that case or this live
+    // daemon PID would retain a quiet lock forever.
+    failRun(state, error)
+    throw new IndexRunStartFailed(state, error)
+  }
 
   const done = new Promise<RunOutcome>((resolve, reject) => {
     // A crash of the worker THREAD itself (a load error, an out-of-memory kill)

@@ -32,12 +32,50 @@ export async function galaxy() {
 }
 
 /**
+ * Make a URL-supplied filesystem root comparable with a registered planet.
+ *
+ * Brain's UI is deliberately the only place a `workspaceRoot` URL parameter
+ * is translated into an API workspace id. Every API call below receives the
+ * durable id, never a filesystem path.
+ */
+export function normalizeWorkspaceRoot(root) {
+  if (typeof root !== 'string') return ''
+  const supplied = root.trim()
+  if (supplied === '') return ''
+  // Windows drive and UNC roots are case-insensitive. Preserve POSIX spelling
+  // and case: `/srv/Brain` and `/srv/brain` can legitimately be distinct.
+  const windows = /^[a-zA-Z]:[\\/]/.test(supplied) || /^[\\/]{2}/.test(supplied)
+  if (windows) {
+    const slashed = supplied.replace(/\\/g, '/')
+    // Keep UNC's leading `//` intact instead of turning it into a POSIX root.
+    const compact = slashed.startsWith('//')
+      ? `//${slashed.slice(2).replace(/\/{2,}/g, '/')}`
+      : slashed.replace(/\/{2,}/g, '/')
+    const rootPath = compact === '//' || /^[a-zA-Z]:\/$/.test(compact)
+      ? compact
+      : compact.replace(/\/+$/, '')
+    return rootPath.toLowerCase()
+  }
+  return supplied === '/' ? supplied : supplied.replace(/\/+$/, '')
+}
+
+/** Return a registered workspace id for an exact normalized root, or empty. */
+export function workspaceIdForRoot(planets, requestedRoot) {
+  const normalized = normalizeWorkspaceRoot(requestedRoot)
+  if (!normalized || !Array.isArray(planets)) return ''
+  return planets.find(planet =>
+    typeof planet?.id === 'string' && normalizeWorkspaceRoot(planet.root) === normalized,
+  )?.id ?? ''
+}
+
+/**
  * What `/api/index/progress` answers, as far as the UI reads it.
  *
  * Typed here because the progress line is the only thing a user sees while a
  * vault indexes, and an untyped callback made the caller pass `any` into it.
  *
- * @typedef {{ running: boolean, stale: boolean, finished: boolean, summary: string,
+ * @typedef {{ running: boolean, stale: boolean, quiet: boolean, ownerAlive: boolean,
+ *   recoverable: boolean, finished: boolean, summary: string,
  *   run: null | { phase: string, mode: string, processed: number, total: number,
  *     scanned: number, startedAt: string, finishedAt: string | null,
  *     ok: boolean | null, error: string | null,
@@ -87,6 +125,12 @@ export async function openVault(root, name, onProgress) {
 export function describeProgress(report) {
   const run = report?.run
   if (!run) return 'Kein Indexlauf bekannt.'
+  if (report.stale) {
+    if (report.ownerAlive && !report.recoverable) {
+      return 'Indexlauf ohne neuen Fortschritt; der Owner-Prozess läuft noch. Die Sperre bleibt geschützt.'
+    }
+    return 'Indexlauf ohne neuen Fortschritt; der frühere Owner ist nicht mehr aktiv. Er kann erneut gestartet werden.'
+  }
   const seconds = Math.max(0, Math.round((Date.now() - Date.parse(run.startedAt)) / 1000))
   const phase = {
     starting: 'startet', scan: 'sammelt Dateien', classify: 'vergleicht',
@@ -102,6 +146,18 @@ export function describeProgress(report) {
   const total = run.total > 0 ? `/${run.total}` : ''
   const percent = run.total > 0 ? ` (${Math.round((run.processed / run.total) * 100)} %)` : ''
   return `Indexiert: ${phase} ${run.processed}${total}${percent} — ${seconds} s`
+}
+
+/**
+ * Merge a daemon poll into the status line without leaving a resolved quiet
+ * warning visible forever. User-started progress lines keep ownership until
+ * their own request finishes.
+ */
+export function nextDaemonProgress(report, current) {
+  if (report?.running || report?.stale) return describeProgress(report)
+  return current.startsWith('Indexiert:') || current.startsWith('Indexlauf ohne neuen Fortschritt;')
+    ? ''
+    : current
 }
 
 /**
@@ -121,9 +177,9 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 /**
  * Watch a started run until it ends.
  *
- * A run that went quiet is reported as quiet, never as still working: the
- * daemon writes a heartbeat, and a heartbeat that stopped means the process is
- * gone, not that the work is slow.
+ * A run that went quiet is never reported as forward progress.  A live owner
+ * remains protected because it can still hold SQLite during a long synchronous
+ * phase; a quiet dead owner is explicitly recoverable instead.
  */
 export async function watchIndexRun(id, onProgress) {
   for (;;) {
@@ -132,7 +188,12 @@ export async function watchIndexRun(id, onProgress) {
     if (report === null) throw new Error('Der Fortschritt ist nicht abrufbar.')
     onProgress?.(report)
     if (report.running) continue
-    if (report.stale) throw new Error('Der Indexlauf ist verstummt — kein Lebenszeichen mehr.')
+    if (report.stale) {
+      if (report.ownerAlive && !report.recoverable) {
+        throw new Error('Der Indexlauf meldet keinen neuen Fortschritt, aber der Owner-Prozess läuft noch. Die Sperre bleibt geschützt; nach Ende oder Neustart des Owners erneut indizieren.')
+      }
+      throw new Error('Der Indexlauf ist verstummt und sein Owner ist nicht mehr aktiv. Er kann erneut gestartet werden.')
+    }
     const run = report.run
     if (!run) throw new Error('Kein Indexlauf bekannt.')
     if (run.ok) return run.result
@@ -158,6 +219,12 @@ export async function reindexWorkspace(id, onProgress) {
   })
   const payload = await response.json().catch(() => null)
   if (response.status === 409 && payload?.busy) {
+    if (payload.ownerAlive && !payload.recoverable) {
+      throw new Error('Ein stiller Indexlauf gehört noch einem lebenden Owner-Prozess. Die Sperre bleibt geschützt; nach Ende oder Neustart des Owners erneut indizieren.')
+    }
+    if (payload.recoverable) {
+      throw new Error('Der vorherige Index-Owner ist nicht mehr aktiv. Der Lauf kann erneut gestartet werden.')
+    }
     throw new Error(payload.error ?? 'Ein Indexlauf ist bereits unterwegs.')
   }
   if (!response.ok) throw new Error(`Indizieren: HTTP ${response.status}`)

@@ -17,7 +17,7 @@ import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { workspaceIdFor } from '../src/planet.ts'
-import { beginRun, removeRunState } from '../src/index/runs.ts'
+import { beginRun, removeRunState, writeRunState } from '../src/index/runs.ts'
 
 /** Run states of these tests live under a throwaway PLUGBRAIN_HOME. */
 const home = mkdtempSync(join(tmpdir(), 'plugbrain-api-run-home-'))
@@ -212,5 +212,63 @@ test('the routes the local UI depends on all answer with real data', async () =>
     assert.equal(timeline.ok, true)
     assert.ok(Array.isArray(timeline.events))
     assert.ok(timeline.bounds !== undefined)
+  } finally { await fx.cleanup() }
+})
+
+test('index progress distinguishes a quiet live owner from a recoverable dead owner', async () => {
+  const fx = await createFixture(1)
+  try {
+    const heartbeatAt = new Date(Date.now() - 10 * 60_000).toISOString()
+    const live = beginRun(fx.workspaceId)
+    writeRunState({ ...live, phase: 'classify', heartbeatAt })
+
+    const liveReport = await (await fetch(
+      `${fx.baseUrl}/api/index/progress?workspace=${encodeURIComponent(fx.workspaceId)}`,
+    )).json() as {
+      running: boolean; stale: boolean; quiet: boolean; ownerAlive: boolean; recoverable: boolean; summary: string
+    }
+    assert.equal(liveReport.running, false, 'quiet work is not presented as forward progress')
+    assert.equal(liveReport.stale, true)
+    assert.equal(liveReport.quiet, true)
+    assert.equal(liveReport.ownerAlive, true, 'the current test process owns this run')
+    assert.equal(liveReport.recoverable, false, 'a live SQLite owner cannot be replaced')
+    assert.match(liveReport.summary, /still alive/)
+
+    const liveBusy = await post(fx, '/api/reindex', { workspace: fx.workspaceId })
+    const liveBusyReport = await liveBusy.json() as {
+      busy: boolean; running: boolean; stale: boolean; quiet: boolean; ownerAlive: boolean; recoverable: boolean; summary: string
+    }
+    assert.equal(liveBusy.status, 409)
+    assert.equal(liveBusyReport.busy, true)
+    assert.equal(liveBusyReport.running, false)
+    assert.equal(liveBusyReport.stale, true)
+    assert.equal(liveBusyReport.quiet, true)
+    assert.equal(liveBusyReport.ownerAlive, true)
+    assert.equal(liveBusyReport.recoverable, false)
+    assert.match(liveBusyReport.summary, /still alive/)
+
+    const livePlanetBusy = await post(fx, '/api/planet/scan', { workspace: fx.workspaceId })
+    const livePlanetBusyReport = await livePlanetBusy.json() as {
+      busy: boolean; quiet: boolean; ownerAlive: boolean; recoverable: boolean; summary: string
+    }
+    assert.equal(livePlanetBusy.status, 409)
+    assert.equal(livePlanetBusyReport.busy, true)
+    assert.equal(livePlanetBusyReport.quiet, true)
+    assert.equal(livePlanetBusyReport.ownerAlive, true)
+    assert.equal(livePlanetBusyReport.recoverable, false)
+    assert.match(livePlanetBusyReport.summary, /still alive/)
+
+    removeRunState(fx.workspaceId)
+    const dead = beginRun(fx.workspaceId)
+    writeRunState({ ...dead, phase: 'classify', heartbeatAt, pid: 999_999_999 })
+    const deadReport = await (await fetch(
+      `${fx.baseUrl}/api/index/progress?workspace=${encodeURIComponent(fx.workspaceId)}`,
+    )).json() as {
+      running: boolean; stale: boolean; ownerAlive: boolean; recoverable: boolean
+    }
+    assert.equal(deadReport.running, false)
+    assert.equal(deadReport.stale, true)
+    assert.equal(deadReport.ownerAlive, false)
+    assert.equal(deadReport.recoverable, true, 'a quiet owner that exited can be replaced')
   } finally { await fx.cleanup() }
 })
