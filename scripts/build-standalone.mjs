@@ -15,7 +15,7 @@
  * resolveUiRoot() in src/cli.ts looks beside the bundle first for exactly this.
  */
 import { build } from 'esbuild'
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
@@ -25,6 +25,13 @@ const packageRoot = join(here, '..')
 const manifest = JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8'))
 const dist = join(packageRoot, 'dist')
 mkdirSync(dist, { recursive: true })
+
+// The portable Windows bundle owns the exact Node runtime that executes it.
+// A JavaScript bundle alone still depends on whichever `node` happens to be
+// on the user's PATH, which is not a standalone product boundary.
+const runtimeName = process.platform === 'win32' ? 'node.exe' : 'node'
+const runtimePath = join(dist, runtimeName)
+copyFileSync(process.execPath, runtimePath)
 
 await build({
   entryPoints: [join(packageRoot, 'src', 'cli.ts')],
@@ -65,18 +72,23 @@ function copyTree(from, to) {
 
 const uiSource = join(packageRoot, 'ui-dist')
 const uiOut = join(dist, 'ui-dist')
+// Assets use content hashes. Remove only this generated destination before
+// copying, otherwise an old build leaves stale hash-named assets in a later
+// portable payload and an installer needlessly owns bytes it did not build.
+rmSync(uiOut, { recursive: true, force: true })
 const uiFiles = copyTree(uiSource, uiOut)
 if (uiFiles.length === 0) throw new Error('ui-dist is empty; the served UI would be blank')
 
 const digest = path => createHash('sha256').update(readFileSync(path)).digest('hex')
 const WIN_SEP = String.fromCharCode(92) // this toolchain collapses escaped backslashes
-const releasePaths = ['plugbrain.mjs', ...uiFiles.map(f => relative(dist, f).split(WIN_SEP).join('/'))]
+const releasePaths = [runtimeName, 'plugbrain.mjs', ...uiFiles.map(f => relative(dist, f).split(WIN_SEP).join('/'))]
 writeFileSync(join(dist, 'release.json'), `${JSON.stringify({
   schema: 1,
   releaseId: `plugbrain-${manifest.version}`,
   version: manifest.version,
   platform: process.platform,
   arch: process.arch,
+  runtime: { path: runtimeName, version: process.version },
   files: Object.fromEntries(releasePaths.map(p => [p, { sha256: digest(join(dist, p)) }])),
   signature: { type: 'none', status: 'UNSIGNED_NOT_FOR_PUBLIC_RELEASE' },
 }, null, 2)}\n`)

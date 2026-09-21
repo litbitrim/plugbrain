@@ -50,7 +50,8 @@ test('redirect and navigation handlers actively deny an external target', () => 
 test('desktop launcher fails closed rather than adopting an unrelated Core', () => {
   const launcher = readFileSync(join(__dirname, 'launch.cmd'), 'utf8');
   assert.match(launcher, /dist\\plugbrain\.mjs/);
-  assert.match(launcher, /Get-Command node/);
+  assert.match(launcher, /dist\\node\.exe/);
+  assert.doesNotMatch(launcher, /Get-Command node/);
   assert.match(launcher, /TcpListener/);
   assert.match(launcher, /PLUGBRAIN_CORE_PID/);
   assert.match(launcher, /OwningProcess -eq \$pid/);
@@ -95,4 +96,27 @@ test('PowerShell Start-Process delivers the quoted spaced bundle as one actual N
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('the NSIS source refuses arbitrary folders and never recursively removes them', () => {
+  const nsis = readFileSync(join(__dirname, 'PlugBrain.nsi'), 'utf8');
+  const packager = readFileSync(join(__dirname, '..', 'scripts', 'package-nsis.mjs'), 'utf8');
+  assert.match(nsis, /Function \.onVerifyInstDir/);
+  assert.match(nsis, /\.plugbrain-install\.marker/);
+  assert.match(nsis, /Choose a new empty folder/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" 0 \+2/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\*\.\*" 0 \+2/);
+  assert.match(nsis, /Delete "\$INSTDIR\\dist\\node\.exe"/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" \+2 0/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\dist\\node\.exe" 0 \+2/);
+  assert.match(nsis, /PlugBrain Core is still running or its runtime is locked/);
+  assert.match(nsis, /!include "\.\.\\release\\PlugBrain-owned-files\.nsh"/);
+  assert.doesNotMatch(nsis, /RMDir \/r/);
+  assert.match(packager, /PlugBrain-owned-files\.nsh/);
+  assert.match(packager, /node\.exe is deleted and verified separately/);
+  assert.match(packager, /process\.arch !== 'x64'/);
+  assert.match(
+    readFileSync(join(__dirname, '..', 'scripts', 'build-standalone.mjs'), 'utf8'),
+    /rmSync\(uiOut, \{ recursive: true, force: true \}\)/,
+  );
 });

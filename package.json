@@ -15,7 +15,9 @@
     "build:ui": "npm --prefix ui run build",
     "backup": "node --experimental-strip-types src/cli.ts backup",
     "restore": "node --experimental-strip-types src/cli.ts restore",
-    "build:standalone": "node scripts/build-standalone.mjs"
+    "build:standalone": "node scripts/build-standalone.mjs",
+    "verify:standalone": "node scripts/verify-standalone.mjs",
+    "package:nsis": "node scripts/package-nsis.mjs"
   },
   "dependencies": {
     "typescript": "^5.9.3"

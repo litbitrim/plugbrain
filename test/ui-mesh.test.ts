@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { fetchMesh, fetchMeshTimeline } from '../ui/src/lib/brain-client.ts'
+import { fetchMesh, fetchMeshTimeline, getStoredToken } from '../ui/src/lib/brain-client.ts'
 
 const UI_ROOT = join(import.meta.dirname, '..', 'ui', 'src')
 
@@ -47,6 +47,41 @@ test('the UI Mesh client accepts only an exact, complete Core projection', async
     assert.match(requested, /workerId=worker-1/)
   } finally {
     globalThis.fetch = originalFetch
+  }
+})
+
+test('a current daemon session preempts a stale local browser token', () => {
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const originalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  const storage = new Map<string, string>([['plugbrain.auth_token', 'stale-browser-token']])
+  const localStorage = {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => { storage.set(key, value) },
+  }
+  const setWindow = (search: string, token?: string) => {
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { location: { search }, __PLUGBRAIN__: token ? { token } : undefined },
+    })
+  }
+  try {
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: localStorage })
+
+    setWindow('', 'current-daemon-session')
+    assert.equal(getStoredToken(), 'current-daemon-session')
+
+    setWindow('?token=explicit-url-token', 'current-daemon-session')
+    assert.equal(getStoredToken(), 'explicit-url-token')
+    assert.equal(storage.get('plugbrain.auth_token'), 'explicit-url-token')
+
+    setWindow('', undefined)
+    storage.clear()
+    assert.equal(getStoredToken(), '')
+  } finally {
+    if (originalWindow) Object.defineProperty(globalThis, 'window', originalWindow)
+    else Reflect.deleteProperty(globalThis, 'window')
+    if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage)
+    else Reflect.deleteProperty(globalThis, 'localStorage')
   }
 })
 

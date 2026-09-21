@@ -83,8 +83,9 @@ const TOKEN_KEY = 'plugbrain.auth_token'
 const AGENT_KEY = 'plugbrain.agent_id'
 
 // The daemon hands the shell its own session when it serves index.html, so the
-// vault works on first load without anyone pasting a key. Whatever the page was
-// explicitly configured with still wins.
+// vault works on first load without anyone pasting a key. An explicit URL token
+// is a one-load override; otherwise the current daemon session beats any stale
+// browser-local token left behind by an earlier Core.
 declare global {
   interface Window { __PLUGBRAIN__?: { token?: string } }
 }
@@ -98,19 +99,25 @@ function injectedToken(): string {
 }
 
 export function getStoredToken(): string {
+  let fromUrl = ''
   try {
-    const fromUrl = new URLSearchParams(window.location.search).get('token')
-    if (fromUrl) {
-      localStorage.setItem(TOKEN_KEY, fromUrl)
-      return fromUrl
-    }
-    const stored = localStorage.getItem(TOKEN_KEY)
-    if (stored) return stored
-    const injected = injectedToken()
-    if (injected) return injected
-    return 'plug-atlas-test-token-20260917'
+    fromUrl = new URLSearchParams(window.location.search).get('token')?.trim() ?? ''
   } catch {
-    return injectedToken() || 'plug-atlas-test-token-20260917'
+    // A static/offline shell may not expose window.location. It can still use
+    // an injected local session or an intentionally saved manual token.
+  }
+  if (fromUrl) {
+    setStoredToken(fromUrl)
+    return fromUrl
+  }
+
+  const injected = injectedToken()
+  if (injected) return injected
+
+  try {
+    return localStorage.getItem(TOKEN_KEY)?.trim() ?? ''
+  } catch {
+    return ''
   }
 }
 

@@ -1,16 +1,16 @@
 @echo off
 setlocal
 rem This launcher starts exactly one local Core and opens its browser UI only
-rem after that child owns port 4310 and serves /api/health. It intentionally
-rem needs Node.js: the current Core bundle is JavaScript, not a bundled runtime.
+rem after that child owns port 4310 and serves /api/health. The portable
+rem bundle owns the Node runtime; it never adopts a machine-wide node command.
 set "PLUGBRAIN_BUNDLE=%~dp0..\dist\plugbrain.mjs"
+set "PLUGBRAIN_RUNTIME=%~dp0..\dist\node.exe"
 if not exist "%PLUGBRAIN_BUNDLE%" (
   echo PlugBrain Core bundle is missing: "%PLUGBRAIN_BUNDLE%"
   exit /b 1
 )
-powershell -NoProfile -Command "try { $null = (Get-Command node -ErrorAction Stop).Source; exit 0 } catch { exit 1 }"
-if errorlevel 1 (
-  echo Node.js is required to launch this PlugBrain Core bundle.
+if not exist "%PLUGBRAIN_RUNTIME%" (
+  echo PlugBrain owned runtime is missing: "%PLUGBRAIN_RUNTIME%"
   exit /b 1
 )
 rem Refuse a possibly stale or unrelated server rather than treating its 200 as ours.
@@ -22,7 +22,7 @@ if errorlevel 1 (
 rem Start-Process joins ArgumentList into a command line. Quote the bundle
 rem ourselves so an installed path such as C:\Program Files\PlugBrain stays
 rem one Node argv value. Windows paths cannot contain a double quote.
-for /f %%P in ('powershell -NoProfile -Command "$node = (Get-Command node -ErrorAction Stop).Source; $bundleArgument = [string][char]34 + $env:PLUGBRAIN_BUNDLE + [char]34; $child = Start-Process -FilePath $node -ArgumentList @($bundleArgument, 'serve') -WindowStyle Hidden -PassThru; [Console]::Write($child.Id)"') do set "PLUGBRAIN_CORE_PID=%%P"
+for /f %%P in ('powershell -NoProfile -Command "$node = $env:PLUGBRAIN_RUNTIME; $bundleArgument = [string][char]34 + $env:PLUGBRAIN_BUNDLE + [char]34; $child = Start-Process -FilePath $node -ArgumentList @($bundleArgument, 'serve') -WindowStyle Hidden -PassThru; [Console]::Write($child.Id)"') do set "PLUGBRAIN_CORE_PID=%%P"
 if not defined PLUGBRAIN_CORE_PID (
   echo PlugBrain Core could not be started.
   exit /b 1
