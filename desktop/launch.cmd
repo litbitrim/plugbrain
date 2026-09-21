@@ -13,6 +13,13 @@ if not exist "%PLUGBRAIN_RUNTIME%" (
   echo PlugBrain owned runtime is missing: "%PLUGBRAIN_RUNTIME%"
   exit /b 1
 )
+rem A Core that already answers - the PLUG runtime keeps the installed one
+rem running - is simply opened; only an idle port gets a Core from here.
+powershell -NoProfile -Command "try { $r = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:4310/api/health' -TimeoutSec 2; if ($r.StatusCode -eq 200 -and $r.Content -match '\"ok\":true') { exit 0 } else { exit 1 } } catch { exit 1 }"
+if not errorlevel 1 (
+  start "PlugBrain" "http://127.0.0.1:4310/"
+  exit /b 0
+)
 rem Refuse a possibly stale or unrelated server rather than treating its 200 as ours.
 powershell -NoProfile -Command "try { $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 4310); $listener.Start(); $listener.Stop(); exit 0 } catch { exit 2 }"
 if errorlevel 1 (
