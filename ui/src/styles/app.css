@@ -491,6 +491,38 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   gap: 12px;
   margin-top: 24px;
 }
+.brain-selection-modal { max-width: 640px; }
+.brain-selection-modal__hint {
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.brain-selection-list {
+  display: grid;
+  gap: 7px;
+  max-height: min(42vh, 360px);
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.brain-selection-list legend { color: var(--faint); font-size: 11px; padding: 0 4px; }
+.brain-selection-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.brain-selection-list label:hover { background: var(--card-bg); }
+.brain-selection-list label.is-retired { cursor: not-allowed; opacity: .52; }
+.brain-selection-list input { margin-top: 3px; }
+.brain-selection-list span { display: grid; gap: 2px; min-width: 0; }
+.brain-selection-list strong { font: 600 12px var(--font-mono, ui-monospace, monospace); color: var(--fg); }
+.brain-selection-list small { font: 10px var(--font-mono, ui-monospace, monospace); color: var(--faint); overflow-wrap: anywhere; }
 
 /* ── Workbench Layout & Split ────────────────────────────────────────── */
 .brain-workspace-layout {

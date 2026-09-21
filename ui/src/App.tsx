@@ -6,7 +6,8 @@ import {
   workspaceIdForRoot,
 } from './lib/workspaces.js'
 import {
-  fetchMesh, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId, resetAgentAttachments,
+  fetchMesh, fetchPlanetInventory, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
+  resetAgentAttachments, setPlanetCheckoutSelection, type PlanetInventory,
 } from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
@@ -87,6 +88,11 @@ export default function App() {
   const [tokenModalOpen, setTokenModalOpen] = useState(false)
   const [tokenInput, setTokenInput] = useState(getStoredToken())
   const [agentInput, setAgentInput] = useState(getStoredAgentId())
+  const [selectionModalOpen, setSelectionModalOpen] = useState(false)
+  const [planetInventory, setPlanetInventory] = useState<PlanetInventory | null>(null)
+  const [selectionDraft, setSelectionDraft] = useState<string[]>([])
+  const [selectionBusy, setSelectionBusy] = useState(false)
+  const [selectionError, setSelectionError] = useState('')
 
   useEffect(() => {
     try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ }
@@ -243,6 +249,54 @@ export default function App() {
     resetAgentAttachments()
     setAttempt(value => value + 1)
     setTokenModalOpen(false)
+  }
+
+  const openSelection = async (): Promise<void> => {
+    if (!workspaceId || selectionBusy) return
+    setSelectionBusy(true)
+    setSelectionError('')
+    try {
+      const inventory = await fetchPlanetInventory(workspaceId)
+      setPlanetInventory(inventory)
+      // An empty draft is intentional when the operator has not selected any
+      // code roots yet. The UI never turns inventory into a select-all default.
+      setSelectionDraft([...inventory.indexSelection.checkoutIds])
+      setSelectionModalOpen(true)
+    } catch (cause) {
+      setSelectionError(cause instanceof Error ? cause.message : String(cause))
+      setSelectionModalOpen(true)
+    } finally {
+      setSelectionBusy(false)
+    }
+  }
+
+  const toggleCheckout = (checkoutId: string): void => {
+    setSelectionDraft(current => current.includes(checkoutId)
+      ? current.filter(id => id !== checkoutId)
+      : [...current, checkoutId])
+  }
+
+  const saveSelection = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault()
+    if (!workspaceId || selectionBusy) return
+    setSelectionBusy(true)
+    setSelectionError('')
+    try {
+      const inventory = await setPlanetCheckoutSelection(workspaceId, selectionDraft)
+      setPlanetInventory(inventory)
+      setSelectionDraft([...inventory.indexSelection.checkoutIds])
+      setVaultDone(
+        inventory.indexSelection.checkoutIds.length === 0
+          ? 'Code-Auswahl gespeichert: bewusst keine Code-Checkouts aktiv.'
+          : `Code-Auswahl gespeichert: ${inventory.indexSelection.checkoutIds.length} Checkout(s) aktiv.`,
+      )
+      setSelectionModalOpen(false)
+      setAttempt(value => value + 1)
+    } catch (cause) {
+      setSelectionError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setSelectionBusy(false)
+    }
   }
 
   const vaultForm = (
@@ -429,6 +483,14 @@ export default function App() {
           {vaultOpen ? 'Schließen' : 'Vault öffnen'}
         </button>
       )}
+      {workspaceId && (
+        <button type="button" className="brain-vault-toggle"
+          onClick={() => void openSelection()}
+          disabled={selectionBusy}
+          title="Aktive Code-Checkouts aus dem Planet-Inventar auswählen">
+          {selectionBusy ? 'Lade Code …' : 'Code-Auswahl'}
+        </button>
+      )}
       <span className="live-status__figures">
         <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
         {snapshot?.coverage && snapshot.coverage.totalFiles > snapshot.coverage.shownFiles && (
@@ -494,6 +556,57 @@ export default function App() {
             <div className="brain-modal__actions">
               <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
               <button type="submit" className="primary">Speichern</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {selectionModalOpen && (
+      <div className="brain-modal-backdrop" onClick={() => !selectionBusy && setSelectionModalOpen(false)}>
+        <div className="brain-modal brain-selection-modal" onClick={e => e.stopPropagation()}>
+          <div className="brain-modal__header">
+            <h3>Aktive Code-Checkouts</h3>
+            <button type="button" className="brain-modal__close" disabled={selectionBusy}
+              onClick={() => setSelectionModalOpen(false)}>✕</button>
+          </div>
+          <p className="brain-selection-modal__hint">
+            Das Inventar bleibt vollständig sichtbar. Nur die hier bewusst markierten Checkout-IDs
+            werden beim nächsten Scan als aktiver Code indexiert.
+          </p>
+          <form onSubmit={saveSelection}>
+            {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
+            {planetInventory === null ? (
+              <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
+            ) : planetInventory.checkouts.length === 0 ? (
+              <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
+            ) : (
+              <fieldset className="brain-selection-list" disabled={selectionBusy}>
+                <legend>Checkout-Inventar</legend>
+                {planetInventory.checkouts.map(checkout => (
+                  <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
+                    <input
+                      type="checkbox"
+                      checked={selectionDraft.includes(checkout.id)}
+                      disabled={checkout.retiredAt !== null}
+                      onChange={() => toggleCheckout(checkout.id)}
+                    />
+                    <span>
+                      <strong>{checkout.relPrefix}</strong>
+                      <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            <p className="brain-selection-modal__hint">
+              Keine Auswahl ist ausdrücklich „notes only“; sie startet keinen leeren Code-Scan.
+            </p>
+            <div className="brain-modal__actions">
+              <button type="button" disabled={selectionBusy} onClick={() => setSelectionModalOpen(false)}>Abbrechen</button>
+              <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
+                {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+              </button>
             </div>
           </form>
         </div>

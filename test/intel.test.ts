@@ -186,14 +186,14 @@ index 1111111..2222222 100644
 @@ -15,5 +15,6 @@
 + // modified line inside startGateway
 `
-    const res = intel.detectChanges(fix.db, { diffText: syntheticDiff })
+    const res = intel.detectChanges(fix.db, { workspaceId: fix.workspaceId, diffText: syntheticDiff })
     assert.equal(res.changedFiles, 1)
     assert.ok(res.changedSymbols.length > 0)
     assert.equal(res.changedSymbols[0].name, 'startGateway')
     assert.equal(res.changedSymbols[0].changeType, 'modified')
 
     // Clean diff returns 0 changed symbols
-    const clean = intel.detectChanges(fix.db, { diffText: '' })
+    const clean = intel.detectChanges(fix.db, { workspaceId: fix.workspaceId, diffText: '' })
     assert.equal(clean.changedFiles, 0)
     assert.equal(clean.changedSymbols.length, 0)
     assert.equal(clean.riskLevel, 'low')
@@ -250,7 +250,7 @@ test('M3: executeCypherQuery parses and executes Cypher and JSON-DSL queries', a
 test('M3: getIntelStatus reports index counts and checkout staleness', async () => {
   const fix = await createIntelFixture()
   try {
-    const status = intel.getIntelStatus(fix.db)
+    const status = intel.getIntelStatus(fix.db, fix.workspaceId)
     assert.equal(status.workspaceId, fix.workspaceId)
     assert.equal(status.files, 3)
     assert.equal(status.symbols, 4)

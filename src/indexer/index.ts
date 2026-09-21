@@ -78,6 +78,67 @@ interface IndexState {
   ambiguous_count: number
 }
 
+/**
+ * A planet inventories every discovered checkout, but only explicitly selected
+ * checkout IDs participate in its live graph. Keep this lookup local instead
+ * of importing `planet.ts`: planet registration already imports this indexer,
+ * and a runtime cycle would make a safety boundary depend on module order.
+ *
+ * `null` means a plain (non-planet) workspace, whose whole root remains in
+ * scope. `[]` means a planet with no persisted selection (or an older database
+ * before that metadata is created), and is intentionally fail-closed.
+ */
+function activeCheckoutIds(db: DatabaseSync, workspaceId: string): string[] | null {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (planet === undefined) return null
+  const tableRows = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)")
+    .all('planet_index_selections', 'planet_index_checkout_selections') as
+    unknown as Array<{ name: string }>
+  const tableNames = new Set(tableRows.map(row => row.name))
+  if (!tableNames.has('planet_index_selections') || !tableNames.has('planet_index_checkout_selections')) {
+    return []
+  }
+  const configured = db.prepare(
+    'SELECT 1 AS present FROM planet_index_selections WHERE planet_id = ?').get(planet.id)
+  if (configured === undefined) return []
+  return (db.prepare(
+    `SELECT c.id FROM checkouts c
+       JOIN planet_index_checkout_selections s
+         ON s.planet_id = c.planet_id AND s.checkout_id = c.id
+      WHERE c.planet_id = ? AND c.retired_at IS NULL
+      ORDER BY c.rel_prefix`).all(planet.id) as unknown as Array<{ id: string }>)
+    .map(row => row.id)
+}
+
+function activeFileScope(
+  db: DatabaseSync,
+  workspaceId: string,
+  checkoutIds: string[] | null,
+  checkoutColumn = 'checkout_id',
+  pathColumn = 'path',
+): { sql: string; params: string[] } {
+  if (checkoutIds === null) return { sql: '1 = 1', params: [] }
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (planet === undefined) return { sql: '1 = 1', params: [] }
+  // A pre-Planet whole-root index may have left Code rows unattributed. Null
+  // attribution is live only for registered note roots, never a blanket pass
+  // for historical Code paths that have not been tombstoned yet.
+  const notes = `(${checkoutColumn} IS NULL AND EXISTS (
+    SELECT 1 FROM note_roots n
+     WHERE n.planet_id = ?
+       AND (${pathColumn} = n.rel_path OR
+         (n.kind <> 'file' AND substr(${pathColumn}, 1, length(n.rel_path) + 1) = n.rel_path || '/'))
+  ))`
+  if (checkoutIds.length === 0) return { sql: notes, params: [planet.id] }
+  return {
+    sql: `(${checkoutColumn} IN (${checkoutIds.map(() => '?').join(', ')}) OR ${notes})`,
+    params: [...checkoutIds, planet.id],
+  }
+}
+
 function readState(db: DatabaseSync, workspaceId: string): IndexState {
   const row = db.prepare(
     `SELECT generation, git_head, file_count, symbol_count, edge_count,
@@ -697,11 +758,13 @@ function writersFor(db: DatabaseSync, workspaceId: string): FileWriters {
  */
 function ownerOf(db: DatabaseSync, workspaceId: string, rel: string):
 { repoId: string | null; checkoutId: string | null } | null {
-  const checkouts = db.prepare(
+  const selectedIds = activeCheckoutIds(db, workspaceId)
+  const checkouts = selectedIds === null || selectedIds.length === 0 ? [] : db.prepare(
     `SELECT c.id, c.repo_id AS repoId, c.rel_prefix AS relPrefix
        FROM checkouts c JOIN planets p ON p.id = c.planet_id
-      WHERE p.workspace_id = ? AND c.retired_at IS NULL`).all(workspaceId) as
-    unknown as Array<{ id: string; repoId: string; relPrefix: string }>
+      WHERE p.workspace_id = ? AND c.retired_at IS NULL
+        AND c.id IN (${selectedIds.map(() => '?').join(', ')})`)
+    .all(workspaceId, ...selectedIds) as unknown as Array<{ id: string; repoId: string; relPrefix: string }>
   let best: { id: string; repoId: string; relPrefix: string } | null = null
   for (const checkout of checkouts) {
     if (rel !== checkout.relPrefix && !rel.startsWith(`${checkout.relPrefix}/`)) continue
@@ -735,9 +798,12 @@ export function refreshFile(db: DatabaseSync, workspaceId: string, relPath: stri
     { id: number; repoId: string | null; checkoutId: string | null } | undefined
 
   // A note that does not exist yet in the graph is a normal case: saving a new
-  // one must make it visible immediately, not on the next full pass.
-  const owner = existing === undefined ? ownerOf(db, workspaceId, rel) : null
-  if (existing === undefined && owner === null) return false
+  // one must make it visible immediately, not on the next full pass. Resolve
+  // ownership even for an existing row: a selection can change after an older
+  // full index, and that historic row must not become live again through this
+  // narrow refresh path.
+  const owner = ownerOf(db, workspaceId, rel)
+  if (owner === null) return false
 
   const abs = resolvePath(workspace.root, ...rel.split('/'))
   let content: string
@@ -855,9 +921,11 @@ interface ImportRow {
 export interface FileCorpusRow { id: number; path: string; checkoutId: string | null }
 
 function loadCorpus(db: DatabaseSync, workspaceId: string): FileCorpusRow[] {
+  const scope = activeFileScope(db, workspaceId, activeCheckoutIds(db, workspaceId))
   return db.prepare(
-    'SELECT id, path, checkout_id AS checkoutId FROM files WHERE workspace_id = ?')
-    .all(workspaceId) as unknown as FileCorpusRow[]
+    `SELECT id, path, checkout_id AS checkoutId FROM files
+      WHERE workspace_id = ? AND ${scope.sql}`)
+    .all(workspaceId, ...scope.params) as unknown as FileCorpusRow[]
 }
 
 function resolveEdges(
@@ -894,16 +962,18 @@ function resolveEdges(
                         raw_target, resolved, line, ambiguous, candidates)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 
+  const fileScope = activeFileScope(
+    db, workspaceId, activeCheckoutIds(db, workspaceId), 'f.checkout_id', 'f.path')
   const globalLookupStmt = db.prepare(
     `SELECT COUNT(*) AS count, MIN(s.id) AS symbolId, MIN(s.file_id) AS fileId
        FROM symbols s JOIN files f ON f.id = s.file_id
-      WHERE f.workspace_id = ? AND s.name = ?`)
+       WHERE f.workspace_id = ? AND s.name = ? AND ${fileScope.sql}`)
 
   const globalCache = new Map<string, { count: number; symbolId: number; fileId: number }>()
   const getGlobal = (name: string) => {
     let hit = globalCache.get(name)
     if (hit === undefined) {
-      const row = globalLookupStmt.get(workspaceId, name) as
+      const row = globalLookupStmt.get(workspaceId, name, ...fileScope.params) as
         { count: number; symbolId: number | null; fileId: number | null } | undefined
       hit = {
         count: Number(row?.count ?? 0),

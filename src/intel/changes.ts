@@ -11,10 +11,62 @@ import type { DetectChangesResult, DiffSymbolChange } from './types.ts'
 import { gitText } from '../indexer/git.ts'
 
 export interface DetectChangesOptions {
+  /** Required authority boundary: a diff may only inspect this workspace. */
+  workspaceId: string
   checkoutPath?: string
   checkoutId?: string
   repoId?: string
   diffText?: string
+}
+
+interface SelectedCheckout {
+  id: string
+  repoId: string
+  path: string
+}
+
+/**
+ * `null` means this store has no planet and therefore keeps the legacy plain
+ * workspace behavior. A planet with missing/unconfigured selection metadata is
+ * deliberately `[]`: historical worktrees must not become a default diff
+ * target merely because they still exist on disk.
+ */
+function selectedCheckouts(db: DatabaseSync, workspaceId: string): SelectedCheckout[] | null {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (planet === undefined) return null
+  const tableRows = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)")
+    .all('planet_index_selections', 'planet_index_checkout_selections') as
+    unknown as Array<{ name: string }>
+  const tables = new Set(tableRows.map(row => row.name))
+  if (!tables.has('planet_index_selections') || !tables.has('planet_index_checkout_selections')) return []
+  return db.prepare(
+    `SELECT c.id, c.repo_id AS repoId, c.path
+       FROM checkouts c
+       JOIN planet_index_selections p ON p.planet_id = c.planet_id
+       JOIN planet_index_checkout_selections s
+         ON s.planet_id = c.planet_id AND s.checkout_id = c.id
+      WHERE c.planet_id = ? AND c.retired_at IS NULL
+      ORDER BY c.rel_prefix`).all(planet.id) as unknown as SelectedCheckout[]
+}
+
+function activeFileScope(checkoutIds: string[] | null, column = 'checkout_id'):
+{ sql: string; params: string[] } {
+  if (checkoutIds === null) return { sql: '1 = 1', params: [] }
+  if (checkoutIds.length === 0) return { sql: '0 = 1', params: [] }
+  return { sql: `${column} IN (${checkoutIds.map(() => '?').join(', ')})`, params: checkoutIds }
+}
+
+function noChanges(checkoutId: string | null = null, repoId: string | null = null): DetectChangesResult {
+  return {
+    checkoutId,
+    repoId,
+    changedFiles: 0,
+    changedSymbols: [],
+    affectedFlows: [],
+    riskLevel: 'low',
+  }
 }
 
 interface ParsedFileHunk {
@@ -74,25 +126,61 @@ export function parseDiffHunks(diffText: string): ParsedFileHunk[] {
  */
 export function detectChanges(
   db: DatabaseSync,
-  options?: DetectChangesOptions
+  options: DetectChangesOptions,
 ): DetectChangesResult {
-  let checkoutPath = options?.checkoutPath
-  let checkoutId = options?.checkoutId
-  let repoId = options?.repoId
+  const workspaceId = options.workspaceId?.trim()
+  if (!workspaceId) throw new Error('workspaceId is required for change detection')
+  const workspace = db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (workspace === undefined) throw new Error(`unknown workspace: ${workspaceId}`)
 
-  if (!checkoutPath && !options?.diffText) {
-    // Look up active checkout from DB
-    const checkoutRow = db
-      .prepare('SELECT id, repo_id, path FROM checkouts WHERE retired_at IS NULL LIMIT 1')
-      .get() as { id: string; repo_id: string; path: string } | undefined
-    if (checkoutRow) {
+  let checkoutPath = options.checkoutPath
+  let checkoutId = options.checkoutId
+  let repoId = options.repoId
+  const active = selectedCheckouts(db, workspaceId)
+
+  if (active !== null) {
+    // A planet without a persisted vector is deliberately not allowed to pick
+    // an arbitrary on-disk checkout. An explicit path/id is not an escape
+    // hatch: it must name one of the selected rows.
+    if (active.length === 0) return noChanges()
+    const candidates = repoId === undefined
+      ? active
+      : active.filter(checkout => checkout.repoId === repoId)
+    if (repoId !== undefined && candidates.length === 0) return noChanges()
+    const selected = checkoutId
+      ? candidates.find(checkout => checkout.id === checkoutId)
+      : checkoutPath
+        ? candidates.find(checkout => resolve(checkout.path).toLowerCase() === resolve(checkoutPath!).toLowerCase())
+        : undefined
+    if ((checkoutId || checkoutPath) && selected === undefined) return noChanges()
+    if (selected !== undefined) {
+      checkoutId = selected.id
+      repoId = selected.repoId
+      checkoutPath = selected.path
+    }
+  }
+
+  if (!checkoutPath && !options.diffText) {
+    // The no-argument route is allowed to pick only the first persisted
+    // selection. Plain workspaces retain their earlier fallback because they
+    // have no Planet checkout inventory at all.
+    const checkoutRow = active === null
+      ? db.prepare(
+        `SELECT c.id, c.repo_id AS repoId, c.path
+           FROM checkouts c JOIN planets p ON p.id = c.planet_id
+          WHERE p.workspace_id = ? AND c.retired_at IS NULL
+          ORDER BY c.rel_prefix LIMIT 1`)
+        .get(workspaceId) as { id: string; repoId: string; path: string } | undefined
+      : (repoId === undefined ? active[0] : active.find(checkout => checkout.repoId === repoId))
+    if (checkoutRow !== undefined) {
       checkoutId = checkoutRow.id
-      repoId = checkoutRow.repo_id
+      repoId = checkoutRow.repoId
       checkoutPath = checkoutRow.path
     }
   }
 
-  let diffText = options?.diffText
+  let diffText = options.diffText
   if (!diffText && checkoutPath) {
     const absPath = resolve(checkoutPath)
     const trackedDiff =
@@ -102,18 +190,12 @@ export function detectChanges(
     diffText = trackedDiff
   }
 
-  if (!diffText || !diffText.trim()) {
-    return {
-      checkoutId: checkoutId ?? null,
-      repoId: repoId ?? null,
-      changedFiles: 0,
-      changedSymbols: [],
-      affectedFlows: [],
-      riskLevel: 'low',
-    }
-  }
+  if (!diffText || !diffText.trim()) return noChanges(checkoutId ?? null, repoId ?? null)
 
   const parsedHunks = parseDiffHunks(diffText)
+  const selectedIds = active === null ? null : active.map(checkout => checkout.id)
+  const fileScope = activeFileScope(selectedIds)
+  const callerScope = activeFileScope(selectedIds, 'f.checkout_id')
   const changedSymbols: DiffSymbolChange[] = []
   const seenSymbolIds = new Set<number>()
   const affectedFlowsMap = new Map<string, Set<string>>()
@@ -125,10 +207,12 @@ export function detectChanges(
     const fileRow = db
       .prepare(
         `SELECT id, path FROM files
-          WHERE LOWER(path) = ? OR LOWER(path) LIKE ?
+          WHERE workspace_id = ? AND (${fileScope.sql})
+            AND (LOWER(path) = ? OR LOWER(path) LIKE ?)
           LIMIT 1`
       )
-      .get(normHunkPath, `%/${normHunkPath}`) as { id: number; path: string } | undefined
+      .get(workspaceId, ...fileScope.params, normHunkPath, `%/${normHunkPath}`) as
+        { id: number; path: string } | undefined
 
     if (!fileRow) continue
 
@@ -170,11 +254,13 @@ export function detectChanges(
         const callers = db
           .prepare(
             `SELECT s.name as caller_name
-               FROM edges e
+              FROM edges e
                JOIN symbols s ON e.src_symbol = s.id
-              WHERE e.dst_symbol = ? AND e.kind = 'calls'`
+               JOIN files f ON f.id = e.src_file
+              WHERE e.workspace_id = ? AND e.dst_symbol = ? AND e.kind = 'calls'
+                AND ${callerScope.sql}`
           )
-          .all(sym.id) as unknown as Array<{ caller_name: string }>
+          .all(workspaceId, sym.id, ...callerScope.params) as unknown as Array<{ caller_name: string }>
 
         for (const caller of callers) {
           const flowLabel = `${caller.caller_name} -> ${sym.name}`

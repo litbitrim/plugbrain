@@ -29,9 +29,13 @@ import * as access from '../src/access.ts'
 import { openStore } from '../src/store/schema.ts'
 import { isSecretPath, isSkippedDir, walk } from '../src/indexer/scan.ts'
 import {
-  checkoutIdFor, discoverCheckouts, indexPlanetWorkspace, listPlanet, planetHistory,
-  planetIdFor, readCheckout, registerPlanet, repoIdFor, scopeRoots, workspaceIdFor,
+  checkoutIdFor, discoverCheckouts, getPlanetIndexSelection, indexPlanetWorkspace, listPlanet, planetHistory,
+  planetIdFor, readCheckout, registerPlanet as registerPlanetRaw, repoIdFor, scopeRoots,
+  setPlanetIndexSelection, workspaceIdFor,
 } from '../src/planet.ts'
+import { refreshFile } from '../src/indexer/index.ts'
+import { getIntelStatus } from '../src/intel/status.ts'
+import { detectChanges } from '../src/intel/changes.ts'
 
 const HAS_GIT = ((): boolean => {
   try { execFileSync('git', ['--version'], { stdio: 'ignore' }); return true } catch { return false }
@@ -126,6 +130,15 @@ const searchHits = (db: DatabaseSync, workspaceId: string, term: string): string
       WHERE m.search MATCH ? AND r.workspace_id = ?`).all(`${term}*`, workspaceId) as
     Array<{ path: string }>).map(row => row.path)
 
+/** Existing index tests opt into every checkout they create; production never does this implicitly. */
+function registerPlanet(db: DatabaseSync, root: string, name?: string) {
+  const registered = registerPlanetRaw(db, root, name)
+  const allCheckoutIds = discoverCheckouts(join(registered.root, 'Code'), registered.planetId)
+    .map(checkout => checkout.checkoutId)
+  setPlanetIndexSelection(db, registered.workspaceId, allCheckoutIds)
+  return registered
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Identity
 // ─────────────────────────────────────────────────────────────────────────────
@@ -191,6 +204,78 @@ test('linked worktrees of one repo are one repo and separate checkouts', { skip:
     // Same commit, different state: the two checkouts must not collapse.
     assert.notEqual(after.revision, readCheckout(join(fx.codeDir, 'alpha--feature')).revision)
   } finally { fx.cleanup() }
+})
+
+test('a planet inventories every checkout but indexes only a persisted explicit selection', { skip: skipGit }, () => {
+  const fx = planetFixture('planet-selection')
+  let reopened: DatabaseSync | null = null
+  try {
+    const main = makeRepo(fx.codeDir, 'alpha', { 'src/x.ts': 'export const live = true\n' })
+    const historic = join(fx.codeDir, 'alpha--historic')
+    git(main, ['worktree', 'add', '-q', '-b', 'historic', historic])
+
+    const registered = registerPlanetRaw(fx.db, fx.planetRoot)
+    assert.equal(registered.checkouts, 2, 'both on-disk checkouts are inventoried')
+    assert.equal(registered.selectionConfigured, false)
+    assert.equal(registered.selectedCheckouts, 0)
+    assert.deepEqual(getPlanetIndexSelection(fx.db, fx.workspaceId), {
+      configured: false, checkoutIds: [], updatedAt: null,
+    })
+    assert.deepEqual(scopeRoots(fx.db, fx.workspaceId), [], 'unconfigured Code is never an implicit index root')
+    assert.throws(() => indexPlanetWorkspace(fx.db, fx.workspaceId), /no persisted canonical selection/)
+
+    const inventory = listPlanet(fx.db, fx.workspaceId)
+    const primary = inventory.checkouts.find(checkout => checkout.relPrefix === 'Code/alpha')
+    const old = inventory.checkouts.find(checkout => checkout.relPrefix === 'Code/alpha--historic')
+    assert.ok(primary && old)
+    assert.equal(primary!.indexSelected, false)
+    assert.equal(old!.indexSelected, false)
+
+    // Select both once to create historic graph data, then explicitly narrow to
+    // the primary. The stale row must not be reactivated through refresh,
+    // status, or default change detection before the next full index removes it.
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [primary!.id, old!.id])
+    indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
+    assert.equal(pathCount(fx.db, fx.workspaceId, 'Code/alpha--historic/src/x.ts'), 1)
+
+    const selected = setPlanetIndexSelection(fx.db, fx.workspaceId, [primary!.id])
+    assert.equal(selected.configured, true)
+    assert.deepEqual(selected.checkoutIds, [primary!.id])
+    assert.deepEqual(scopeRoots(fx.db, fx.workspaceId)!.map(root => root.prefix), ['Code/alpha'])
+    const narrowed = listPlanet(fx.db, fx.workspaceId)
+    const narrowedOld = narrowed.checkouts.find(checkout => checkout.id === old!.id)!
+    assert.equal(narrowedOld.indexSelected, false)
+    assert.equal(narrowedOld.selectedAt, null, 'deselection is distinct from checkout retirement')
+
+    write(historic, 'src/x.ts', 'export const historicChange = true\n')
+    assert.equal(refreshFile(fx.db, fx.workspaceId, 'Code/alpha--historic/src/x.ts'), false,
+      'a stale unselected row cannot re-enter through single-file refresh')
+    const status = getIntelStatus(fx.db, fx.workspaceId)
+    assert.equal(status.checkouts, 1)
+    assert.equal(status.files, 1, 'status excludes stale graph rows from deselected checkouts')
+    assert.equal(status.dirtyCheckouts, 0, 'unselected dirt cannot make the active Brain stale')
+    const changes = detectChanges(fx.db, { workspaceId: fx.workspaceId, checkoutPath: historic })
+    assert.equal(changes.checkoutId, null)
+    assert.equal(changes.changedFiles, 0, 'explicit historical path is not a selection bypass')
+    const changesById = detectChanges(fx.db, {
+      workspaceId: fx.workspaceId, checkoutId: old!.id, diffText: 'diff --git a/src/x.ts b/src/x.ts',
+    })
+    assert.equal(changesById.checkoutId, null)
+    assert.equal(changesById.changedFiles, 0, 'explicit historical id is not a selection bypass')
+
+    // A restart reads the same persisted vector. No live daemon or production
+    // store is involved: this is a temporary test database only.
+    fx.db.close()
+    reopened = openStore(fx.dbFile)
+    assert.deepEqual(getPlanetIndexSelection(reopened, fx.workspaceId).checkoutIds, [primary!.id])
+    assert.deepEqual(scopeRoots(reopened, fx.workspaceId)!.map(root => root.prefix), ['Code/alpha'])
+    const reconciled = indexPlanetWorkspace(reopened, fx.workspaceId)
+    assert.equal(reconciled.changed.deleted, 1, 'the next selected scan tombstones the old graph row')
+    assert.equal(pathCount(reopened, fx.workspaceId, 'Code/alpha--historic/src/x.ts'), 0)
+  } finally {
+    try { reopened?.close() } catch { /* already closed */ }
+    fx.cleanup()
+  }
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

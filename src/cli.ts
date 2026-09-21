@@ -8,6 +8,8 @@
  *   plugbrain serve [port]             run the API + UI daemon
  *
  *   plugbrain planet register [path] [name]   register a planet, discover its repos
+ *   plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]
+ *                                             persist the explicit active Code roots
  *   plugbrain planet scan [workspaceId]       refresh revisions, then index
  *   plugbrain planet status [workspaceId]     repos, checkouts, revisions, counts
  *   plugbrain planet history [workspaceId]    files the planet no longer has
@@ -24,7 +26,10 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
-import { listPlanet, planetHistory, registerPlanet, workspaceIdFor } from './planet.ts'
+import {
+  assertPlanetIndexSelectionConfigured, listPlanet, planetHistory, registerPlanet,
+  setPlanetIndexSelection, workspaceIdFor,
+} from './planet.ts'
 import {
   backlinksOf, listNotes, noteGraph, queryNotes, readNote, searchNotesWithLines, writeNote,
 } from './notes/vault.ts'
@@ -145,6 +150,14 @@ function planetScan(only?: string): void {
   if (!row) { console.error(`unknown workspace: ${planet}`); process.exit(2) }
   const registered = registerPlanet(db, row.root, row.name)
   console.log(`planet ${registered.name}: ${registered.repos} repos, ${registered.checkouts} checkouts`)
+  try {
+    assertPlanetIndexSelectionConfigured(db, row.id)
+  } catch (error) {
+    console.error(
+      `refusing to scan ${row.id}: ${error instanceof Error ? error.message : String(error)}\n` +
+      `  plugbrain planet select ${row.id} --checkout <checkoutId>`)
+    process.exit(2)
+  }
   reportIndex(row.name, runIndexInProcess(db, row.id, { onProgress: progressPrinter(row.name) }))
 }
 
@@ -183,6 +196,56 @@ function singlePlanetId(): string {
   return rows[0].id
 }
 
+/** A non-Planet Intel command still needs one explicit workspace authority. */
+function singleWorkspaceId(): string {
+  const rows = db.prepare('SELECT id FROM workspaces ORDER BY created_at LIMIT 2').all() as
+    Array<{ id: string }>
+  if (rows.length === 0) { console.error('no workspace registered'); process.exit(2) }
+  if (rows.length > 1) {
+    console.error('several workspaces registered — pass --workspace <workspaceId>:')
+    for (const row of rows) console.error(`  ${row.id}`)
+    process.exit(2)
+  }
+  return rows[0].id
+}
+
+/** Persist only inventory IDs — never a path or inferred all-checkouts vector. */
+function planetSelect(args: string[]): void {
+  const first = args[0]
+  const workspaceId = first !== undefined && !first.startsWith('--') ? first : singlePlanetId()
+  const rest = first !== undefined && !first.startsWith('--') ? args.slice(1) : args
+  const checkoutIds: string[] = []
+  for (let i = 0; i < rest.length; i += 1) {
+    const arg = rest[i]
+    if (arg === '--json') continue
+    if (arg.startsWith('--checkout=')) {
+      const id = arg.slice('--checkout='.length).trim()
+      if (id) checkoutIds.push(id)
+      continue
+    }
+    if (arg === '--checkout') {
+      const id = rest[i + 1]?.trim()
+      if (!id || id.startsWith('--')) {
+        console.error('usage: plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]')
+        process.exit(1)
+      }
+      checkoutIds.push(id)
+      i += 1
+      continue
+    }
+    console.error(`unknown planet select argument: ${arg}`)
+    process.exit(1)
+  }
+  if (checkoutIds.length === 0) {
+    console.error('refusing to infer Code roots; pass one or more inventory checkout IDs with --checkout')
+    process.exit(1)
+  }
+  const selection = setPlanetIndexSelection(db, workspaceId, checkoutIds)
+  if (args.includes('--json')) return jsonOut({ workspace: workspaceId, selection })
+  console.log(`selected ${selection.checkoutIds.length} canonical checkout(s) for ${workspaceId}`)
+  for (const id of selection.checkoutIds) console.log(`  ${id}`)
+}
+
 function planetStatus(only?: string): void {
   const id = only ?? singlePlanetId()
   const view = listPlanet(db, id)
@@ -190,6 +253,10 @@ function planetStatus(only?: string): void {
   console.log(`  workspace ${view.workspaceId}`)
   console.log(`  root      ${view.root}`)
   console.log(`  indexed   ${view.indexedAt ?? 'never'}  generation ${view.index.generation}`)
+  console.log(
+    `  selection ${view.indexSelection.configured
+      ? `${view.indexSelection.checkoutIds.length} explicit checkout(s)`
+      : 'UNCONFIGURED — inventory is not active Code'}`)
   console.log(
     `  totals    repos ${view.totals.repos}  checkouts ${view.totals.activeCheckouts} active` +
     ` (${view.totals.checkouts} known)  files ${view.totals.files}` +
@@ -213,7 +280,7 @@ function planetStatus(only?: string): void {
       console.log(
         `    ${co.relPrefix}  ${co.branch ?? '(detached)'} ${(co.head ?? '').slice(0, 10)}` +
         `  ${dirty}  ${co.revision ?? ''}  files ${co.files}  symbols ${co.symbols}` +
-        (co.retiredAt ? '  [retired]' : ''))
+        (co.retiredAt ? '  [retired]' : co.indexSelected ? '  [selected]' : '  [inventory]'))
     }
   }
 }
@@ -464,7 +531,8 @@ function intelImpact(args: string[]): void {
 
 function intelDetectChanges(args: string[]): void {
   const path = flagValue(args, '--path') ?? undefined
-  const result = intel.detectChanges(db, { checkoutPath: path })
+  const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
+  const result = intel.detectChanges(db, { workspaceId, checkoutPath: path })
   if (args.includes('--json')) {
     jsonOut(result)
   } else {
@@ -501,7 +569,8 @@ function intelCypher(args: string[]): void {
 }
 
 function intelStatus(args: string[]): void {
-  const result = intel.getIntelStatus(db)
+  const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
+  const result = intel.getIntelStatus(db, workspaceId)
   if (args.includes('--json')) {
     jsonOut(result)
   } else {
@@ -605,11 +674,12 @@ switch (command) {
   case 'planet': {
     const [step, ...rest] = args
     if (step === 'register') planetRegister(rest[0], rest[1])
+    else if (step === 'select') planetSelect(rest)
     else if (step === 'scan') planetScan(rest[0])
     else if (step === 'status') planetStatus(rest[0])
     else if (step === 'history') planetLog(rest[0])
     else {
-      console.error('usage: plugbrain planet <register|scan|status|history> [path|workspaceId]')
+      console.error('usage: plugbrain planet <register|select|scan|status|history> [path|workspaceId]')
       process.exit(1)
     }
     break
@@ -725,7 +795,8 @@ switch (command) {
     console.log(
       'usage: plugbrain <register|index|progress|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
       '       plugbrain progress [workspaceId]\n' +
-      '       plugbrain planet <register|scan|status|history> [path|workspaceId]\n' +
+      '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
+      '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +

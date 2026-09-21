@@ -107,6 +107,7 @@ export const MCP_TOOLS = [
     inputSchema: {
       type: 'object',
       properties: {
+        workspaceId: { type: 'string', description: 'Workspace ID (required when the server is not bound to one)' },
         diffText: { type: 'string', description: 'Unified diff text to analyze' },
         checkoutId: { type: 'string', description: 'Optional checkout ID' },
         checkoutPath: { type: 'string', description: 'Optional checkout path on disk' },
@@ -306,13 +307,18 @@ export class McpServer {
   private getWorkspaceId(args?: Record<string, unknown>): string {
     const ws = (args?.workspaceId as string | undefined) ?? this.defaultWorkspaceId
     if (!ws) {
-      const firstWs = this.db.prepare('SELECT id FROM workspaces LIMIT 1').get() as { id: string } | undefined
-      if (firstWs) {
-        this.defaultWorkspaceId = firstWs.id
-        return firstWs.id
+      const rows = this.db.prepare('SELECT id FROM workspaces ORDER BY created_at LIMIT 2').all() as
+        Array<{ id: string }>
+      if (rows.length !== 1) {
+        throw new Error(
+          rows.length === 0
+            ? 'workspaceId is required: no workspace is registered'
+            : 'workspaceId is required: multiple workspaces are registered')
       }
-      throw new Error('workspaceId is required')
+      this.defaultWorkspaceId = rows[0].id
+      return rows[0].id
     }
+    access.requireWorkspace(this.db, ws)
     return ws
   }
 
@@ -421,10 +427,13 @@ export class McpServer {
         }
 
         case 'detect_changes': {
+          const workspaceId = this.getWorkspaceId(args)
           const diffText = args.diffText ? String(args.diffText) : undefined
           const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
           const checkoutPath = args.checkoutPath ? String(args.checkoutPath) : undefined
-          const result = intel.detectChanges(this.db, { diffText, checkoutId, checkoutPath })
+          const result = intel.detectChanges(this.db, {
+            workspaceId, diffText, checkoutId, checkoutPath,
+          })
           return { ok: true, result }
         }
 

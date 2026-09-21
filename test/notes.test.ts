@@ -32,7 +32,9 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { test } from 'node:test'
 import * as access from '../src/access.ts'
-import { indexPlanetWorkspace, registerPlanet, workspaceIdFor } from '../src/planet.ts'
+import {
+  discoverCheckouts, indexPlanetWorkspace, registerPlanet, setPlanetIndexSelection, workspaceIdFor,
+} from '../src/planet.ts'
 import { refreshFile } from '../src/indexer/index.ts'
 import { openStore } from '../src/store/schema.ts'
 import {
@@ -368,6 +370,7 @@ test('M2: the note scope is walked, and the dot-folders and code are not', () =>
   try {
     const planet = registerPlanet(fx.db, fx.planetRoot, 'plugpt')
     assert.equal(planet.workspaceId, fx.workspaceId)
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
 
     const listed = listNotes(fx.db, fx.workspaceId, { limit: 100 })
@@ -389,7 +392,11 @@ test('M2: the note scope is walked, and the dot-folders and code are not', () =>
 test('M2: links, backlinks and properties agree with an independent reference parser', () => {
   const fx = noteFixture()
   try {
-    registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    const planet = registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    // This cross-scope acceptance deliberately includes the one code checkout;
+    // the production contract requires that choice to be explicit.
+    setPlanetIndexSelection(fx.db, fx.workspaceId,
+      discoverCheckouts(join(fx.planetRoot, 'Code'), planet.planetId).map(checkout => checkout.checkoutId))
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
     access.registerAgent(fx.db, 'test-reader', 'test reader')
 
@@ -475,6 +482,7 @@ test('M2: typ=gate UND stand=offen returns exactly the open gates', () => {
   const fx = noteFixture()
   try {
     registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
 
     const result = queryNotes(fx.db, fx.workspaceId, 'typ=gate UND stand=offen')
@@ -524,6 +532,7 @@ test('M2: full-text search finds a sentence in the middle of a note', () => {
   const fx = noteFixture()
   try {
     registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
 
     const hit = searchNotes(fx.db, fx.workspaceId, 'Zwischenbericht')
@@ -549,6 +558,7 @@ test('M2: a note edited on disk is current after a reindex, and a save is curren
   const fx = noteFixture()
   try {
     registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
     access.registerAgent(fx.db, 'test-reader', 'test reader')
 
@@ -602,6 +612,7 @@ test('M2: an edit conflict is detected and nothing is overwritten', () => {
   const fx = noteFixture()
   try {
     registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
     const agent = 'test-writer'
     access.registerAgent(fx.db, agent, 'test writer')
@@ -654,6 +665,7 @@ test('M2: the graph carries type colour groups, filters and a focus', () => {
   const fx = noteFixture()
   try {
     registerPlanet(fx.db, fx.planetRoot, 'plugpt')
+    setPlanetIndexSelection(fx.db, fx.workspaceId, [])
     indexPlanetWorkspace(fx.db, fx.workspaceId, { full: true })
 
     const graph = noteGraph(fx.db, fx.workspaceId, { limit: 100 })

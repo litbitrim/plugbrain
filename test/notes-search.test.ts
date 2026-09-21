@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import * as access from '../src/access.ts'
-import { indexPlanetWorkspace, registerPlanet, workspaceIdFor } from '../src/planet.ts'
+import { indexPlanetWorkspace, registerPlanet, setPlanetIndexSelection, workspaceIdFor } from '../src/planet.ts'
 import { openStore } from '../src/store/schema.ts'
 import { searchNotesWithLines } from '../src/notes/vault.ts'
 import { lineOf, searchNotes, termsOf } from '../src/notes/search.ts'
@@ -53,7 +53,8 @@ function fixture(): Fixture {
 
   const db = openStore(join(dir, 'brain.db'))
   const workspaceId = workspaceIdFor(root)
-  registerPlanet(db, root, 'plugpt')
+  const planet = registerPlanet(db, root, 'plugpt')
+  setPlanetIndexSelection(db, planet.workspaceId, [])
   indexPlanetWorkspace(db, workspaceId, { full: true })
   access.registerAgent(db, AGENT, 'search reader')
   return {

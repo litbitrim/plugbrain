@@ -21,8 +21,8 @@
  *      different states if one of them is dirty, and the brain has to be able
  *      to say which one it is looking at.
  *
- *   3. THE WALK IS ONE WALK.  Every active checkout becomes an index root with
- *      a planet-relative prefix; `indexWorkspace` then produces a single
+ *   3. THE WALK IS ONE WALK.  Every selected, non-retired checkout becomes an
+ *      index root with a planet-relative prefix; `indexWorkspace` then produces a single
  *      generation over all of them. Same transaction, same publish, same
  *      incremental cost — a planet is not a federation of separate indexes.
  */
@@ -142,6 +142,243 @@ export interface DiscoveredCheckout extends CheckoutFacts {
 }
 
 /**
+ * The tables below deliberately separate two facts that used to be conflated:
+ * a checkout discovered under `Code/` is inventory, while a checkout selected
+ * by an operator is an active index root. `retired_at` remains reserved for a
+ * checkout that disappeared from disk; it must never be used as a shortcut for
+ * hiding an old-but-still-present worktree.
+ *
+ * This lives beside planet registration rather than in the initial schema so
+ * an older store widens safely on its next registration. Until that happens a
+ * missing selection table is interpreted as *no selected code roots*, never as
+ * permission to resume indexing every historical checkout.
+ */
+const INDEX_SELECTION_CONFIG_TABLE = 'planet_index_selections'
+const INDEX_SELECTION_CHECKOUT_TABLE = 'planet_index_checkout_selections'
+
+interface IndexSelectionState {
+  configured: boolean
+  updatedAt: string | null
+  selectedAtByCheckoutId: Map<string, string>
+}
+
+function hasIndexSelectionTables(db: DatabaseSync): boolean {
+  const rows = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?)")
+    .all(INDEX_SELECTION_CONFIG_TABLE, INDEX_SELECTION_CHECKOUT_TABLE) as
+    unknown as Array<{ name: string }>
+  const names = new Set(rows.map(row => row.name))
+  return names.has(INDEX_SELECTION_CONFIG_TABLE) && names.has(INDEX_SELECTION_CHECKOUT_TABLE)
+}
+
+function ensureIndexSelectionTables(db: DatabaseSync): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ${INDEX_SELECTION_CONFIG_TABLE} (
+      planet_id     TEXT PRIMARY KEY REFERENCES planets(id) ON DELETE CASCADE,
+      configured_at TEXT NOT NULL,
+      updated_at    TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS ${INDEX_SELECTION_CHECKOUT_TABLE} (
+      planet_id  TEXT NOT NULL REFERENCES planets(id) ON DELETE CASCADE,
+      checkout_id TEXT NOT NULL REFERENCES checkouts(id) ON DELETE CASCADE,
+      selected_at TEXT NOT NULL,
+      PRIMARY KEY (planet_id, checkout_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_planet_index_checkout_selections_checkout
+      ON ${INDEX_SELECTION_CHECKOUT_TABLE}(checkout_id);
+  `)
+}
+
+function indexSelectionState(db: DatabaseSync, planetId: string): IndexSelectionState {
+  if (!hasIndexSelectionTables(db)) {
+    return { configured: false, updatedAt: null, selectedAtByCheckoutId: new Map() }
+  }
+  const config = db.prepare(
+    `SELECT updated_at AS updatedAt FROM ${INDEX_SELECTION_CONFIG_TABLE} WHERE planet_id = ?`)
+    .get(planetId) as { updatedAt: string } | undefined
+  if (config === undefined) {
+    return { configured: false, updatedAt: null, selectedAtByCheckoutId: new Map() }
+  }
+  const selectedAtByCheckoutId = new Map<string, string>()
+  for (const row of db.prepare(
+    `SELECT checkout_id AS checkoutId, selected_at AS selectedAt
+       FROM ${INDEX_SELECTION_CHECKOUT_TABLE} WHERE planet_id = ? ORDER BY checkout_id`)
+    .all(planetId) as unknown as Array<{ checkoutId: string; selectedAt: string }>) {
+    selectedAtByCheckoutId.set(row.checkoutId, row.selectedAt)
+  }
+  return { configured: true, updatedAt: config.updatedAt, selectedAtByCheckoutId }
+}
+
+export interface PlanetIndexSelection {
+  /** False until an operator explicitly persisted a canonical selection. */
+  configured: boolean
+  /** Only on-disk (non-retired) selected checkout ids are returned here. */
+  checkoutIds: string[]
+  updatedAt: string | null
+}
+
+function selectionForPlanet(db: DatabaseSync, planetId: string): PlanetIndexSelection {
+  const state = indexSelectionState(db, planetId)
+  if (!state.configured) return { configured: false, checkoutIds: [], updatedAt: null }
+  const active = db.prepare(
+    `SELECT c.id FROM checkouts c
+       JOIN ${INDEX_SELECTION_CHECKOUT_TABLE} s
+         ON s.planet_id = c.planet_id AND s.checkout_id = c.id
+      WHERE c.planet_id = ? AND c.retired_at IS NULL
+      ORDER BY c.rel_prefix`).all(planetId) as unknown as Array<{ id: string }>
+  return { configured: true, checkoutIds: active.map(row => row.id), updatedAt: state.updatedAt }
+}
+
+/** Read the persisted canonical selection without mutating an older database. */
+export function getPlanetIndexSelection(db: DatabaseSync, workspaceId: string): PlanetIndexSelection {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (!planet) throw new Error(`workspace is not a planet: ${workspaceId}`)
+  return selectionForPlanet(db, planet.id)
+}
+
+/**
+ * The live Code scope for one workspace.
+ *
+ * `null` means the workspace is not a Planet and retains the legacy whole-root
+ * scope. An empty array means it is a Planet but has no active code checkout:
+ * either no operator has configured it yet, or the operator explicitly chose
+ * notes-only indexing. Consumers that project files must keep those two cases
+ * apart so a historical checkout cannot become visible merely because its old
+ * rows have not been tombstoned by the next scan.
+ */
+export function selectedCheckoutIdsForWorkspace(
+  db: DatabaseSync,
+  workspaceId: string,
+): string[] | null {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  return planet === undefined ? null : selectionForPlanet(db, planet.id).checkoutIds
+}
+
+export interface ActivePlanetFileScope {
+  sql: string
+  params: string[]
+}
+
+/**
+ * SQL predicate for a live Planet projection.
+ *
+ * A legacy pre-Planet whole-root index can contain Code rows with
+ * `checkout_id IS NULL`. Treating every null row as a note would leak those
+ * historical files after an operator narrows selection. Null rows are live
+ * only when their path is inside a currently registered note root. The column
+ * names are supplied by internal callers only; all values remain bound.
+ */
+export function activePlanetFileScope(
+  db: DatabaseSync,
+  workspaceId: string,
+  checkoutColumn = 'checkout_id',
+  pathColumn = 'path',
+): ActivePlanetFileScope {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (planet === undefined) return { sql: '1 = 1', params: [] }
+  const selection = selectionForPlanet(db, planet.id)
+  const notes = `(${checkoutColumn} IS NULL AND EXISTS (
+    SELECT 1 FROM note_roots n
+     WHERE n.planet_id = ?
+       AND (${pathColumn} = n.rel_path OR
+         (n.kind <> 'file' AND substr(${pathColumn}, 1, length(n.rel_path) + 1) = n.rel_path || '/'))
+  ))`
+  if (selection.checkoutIds.length === 0) return { sql: notes, params: [planet.id] }
+  return {
+    sql: `(${checkoutColumn} IN (${selection.checkoutIds.map(() => '?').join(', ')}) OR ${notes})`,
+    params: [...selection.checkoutIds, planet.id],
+  }
+}
+
+/**
+ * Refuse an index start before a worker is created when a Planet has never had
+ * an explicit operator decision. An explicitly empty selection is valid: it
+ * says "notes only" and may still index registered note roots. Plain
+ * workspaces return null because they have no checkout inventory to select.
+ */
+export function assertPlanetIndexSelectionConfigured(
+  db: DatabaseSync,
+  workspaceId: string,
+): PlanetIndexSelection | null {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (planet === undefined) return null
+  const selection = selectionForPlanet(db, planet.id)
+  if (!selection.configured) {
+    throw new Error(
+      `planet ${workspaceId} has no persisted canonical selection — select checkout IDs before indexing it`)
+  }
+  // A deliberate notes-only selection is valid, but it is not enough to start
+  // a worker if this Planet has no note roots either. Detect it here, before a
+  // queue-backed caller can honestly answer 202.
+  if (scopeRoots(db, workspaceId)?.length === 0) {
+    throw new Error(
+      `planet ${workspaceId} has no selected checkouts or note roots — select checkout IDs before indexing it`)
+  }
+  return selection
+}
+
+/**
+ * Replace a planet's canonical code roots with explicit checkout IDs.
+ *
+ * A caller must register first, list the inventory, and choose from that list.
+ * We accept an empty list as an explicit "notes only for now" choice, but never
+ * infer a replacement from checkout names or from whatever happens to be under
+ * `Code/`. The function only changes selection metadata; it never starts an
+ * index run or deletes any existing graph data.
+ */
+export function setPlanetIndexSelection(
+  db: DatabaseSync,
+  workspaceId: string,
+  checkoutIds: readonly string[],
+): PlanetIndexSelection {
+  const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
+    { id: string } | undefined
+  if (!planet) throw new Error(`workspace is not a planet: ${workspaceId}`)
+  ensureIndexSelectionTables(db)
+
+  const unique = [...new Set(checkoutIds)]
+  if (unique.length > 900) throw new Error('too many checkout ids in one selection')
+  if (unique.some(id => id.trim() === '')) throw new Error('checkout ids must not be empty')
+  if (unique.length > 0) {
+    const placeholders = unique.map(() => '?').join(', ')
+    const active = db.prepare(
+      `SELECT id FROM checkouts
+        WHERE planet_id = ? AND retired_at IS NULL AND id IN (${placeholders})`)
+      .all(planet.id, ...unique) as unknown as Array<{ id: string }>
+    if (active.length !== unique.length) {
+      const known = new Set(active.map(row => row.id))
+      const invalid = unique.filter(id => !known.has(id))
+      throw new Error(`selection contains unknown or retired checkout ids: ${invalid.join(', ')}`)
+    }
+  }
+
+  const now = new Date().toISOString()
+  db.exec('SAVEPOINT replace_planet_index_selection')
+  try {
+    db.prepare(
+      `INSERT INTO ${INDEX_SELECTION_CONFIG_TABLE} (planet_id, configured_at, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(planet_id) DO UPDATE SET updated_at = excluded.updated_at`)
+      .run(planet.id, now, now)
+    db.prepare(`DELETE FROM ${INDEX_SELECTION_CHECKOUT_TABLE} WHERE planet_id = ?`).run(planet.id)
+    const insert = db.prepare(
+      `INSERT INTO ${INDEX_SELECTION_CHECKOUT_TABLE} (planet_id, checkout_id, selected_at)
+       VALUES (?, ?, ?)`)
+    for (const checkoutId of unique) insert.run(planet.id, checkoutId, now)
+    db.exec('RELEASE SAVEPOINT replace_planet_index_selection')
+  } catch (error) {
+    db.exec('ROLLBACK TO SAVEPOINT replace_planet_index_selection')
+    db.exec('RELEASE SAVEPOINT replace_planet_index_selection')
+    throw error
+  }
+  return selectionForPlanet(db, planet.id)
+}
+
+/**
  * Every git checkout directly under `codeDir`, one entry per folder.
  *
  * `.git` may be a directory (a clone) or a file (a linked worktree); both mean
@@ -226,8 +463,13 @@ export interface RegisteredPlanet {
   /** False when this planet already existed — registering twice is one identity. */
   created: boolean
   repos: number
+  /** All on-disk checkout rows currently inventoried, selected or not. */
   checkouts: number
   noteRoots: number
+  /** False until a caller has persisted a canonical Code selection. */
+  selectionConfigured: boolean
+  /** Number of selected checkouts that are still present on disk. */
+  selectedCheckouts: number
 }
 
 /**
@@ -258,6 +500,12 @@ export function registerPlanet(db: DatabaseSync, root: string, name?: string): R
     `INSERT INTO planets (id, workspace_id, name, root, created_at) VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET name = excluded.name`
   ).run(planetId, workspaceId, label, absRoot, now)
+
+  // Registering inventories the current filesystem but deliberately does not
+  // select any checkout. A caller must make that canonical choice through
+  // `setPlanetIndexSelection`; otherwise a stale worktree becomes a live index
+  // root merely by still existing under Code/.
+  ensureIndexSelectionTables(db)
 
   const discovered = discoverCheckouts(join(absRoot, 'Code'), planetId)
 
@@ -328,11 +576,14 @@ export function registerPlanet(db: DatabaseSync, root: string, name?: string): R
     `SELECT (SELECT COUNT(*) FROM repos WHERE planet_id = ?) AS repos,
             (SELECT COUNT(*) FROM checkouts WHERE planet_id = ? AND retired_at IS NULL) AS checkouts`)
     .get(planetId, planetId) as { repos: number; checkouts: number }
+  const selection = selectionForPlanet(db, planetId)
 
   return {
     planetId, workspaceId, name: label, root: absRoot, created,
     repos: Number(counts.repos), checkouts: Number(counts.checkouts),
     noteRoots: noteRoots.length,
+    selectionConfigured: selection.configured,
+    selectedCheckouts: selection.checkoutIds.length,
   }
 }
 
@@ -350,6 +601,10 @@ export interface CheckoutView {
   revision: string | null
   isPrimary: boolean
   retiredAt: string | null
+  /** True only when this on-disk checkout is in the persisted canonical selection. */
+  indexSelected: boolean
+  /** When this checkout entered the current selection; null after deselection. */
+  selectedAt: string | null
   /** Files of this checkout that are in the index. */
   files: number
   symbols: number
@@ -368,10 +623,11 @@ export interface PlanetView {
   }>
   checkouts: CheckoutView[]
   totals: {
-    repos: number; checkouts: number; activeCheckouts: number
+    repos: number; checkouts: number; activeCheckouts: number; selectedCheckouts: number
     files: number; symbols: number; edges: number
     unresolved: number; ambiguous: number
   }
+  indexSelection: PlanetIndexSelection
   index: {
     generation: number
     lastSuccessAt: string | null
@@ -439,6 +695,12 @@ function buildPlanetView(
   // The queries below are written against the workspace id; it is the row's own
   // id, which is what the caller asked for.
   const workspaceId = ws.id
+  const selectionState = planet === null
+    ? { configured: false, updatedAt: null, selectedAtByCheckoutId: new Map<string, string>() }
+    : indexSelectionState(db, planet.id)
+  const indexSelection = planet === null
+    ? { configured: false, checkoutIds: [], updatedAt: null }
+    : selectionForPlanet(db, planet.id)
   const repoRows = db.prepare(
     `SELECT r.id, r.name, r.common_dir AS commonDir, r.remote_url AS remoteUrl,
             (SELECT COUNT(*) FROM checkouts c WHERE c.repo_id = r.id AND c.retired_at IS NULL) AS checkouts,
@@ -464,14 +726,19 @@ function buildPlanetView(
             c.dirty_count AS dirtyCount, c.revision, c.is_primary AS isPrimary,
             c.retired_at AS retiredAt
        FROM checkouts c JOIN repos r ON r.id = c.repo_id
-      WHERE c.planet_id = ? ORDER BY r.name, c.rel_prefix`).all(planet?.id ?? '') as
-    Array<Omit<CheckoutView, 'isPrimary' | 'files' | 'symbols'> & { isPrimary: number }>)
-    .map(row => ({
-      ...row,
-      isPrimary: row.isPrimary === 1,
-      files: fileCounts.get(row.id) ?? 0,
-      symbols: symbolCounts.get(row.id) ?? 0,
-    }))
+       WHERE c.planet_id = ? ORDER BY r.name, c.rel_prefix`).all(planet?.id ?? '') as
+    Array<Omit<CheckoutView, 'isPrimary' | 'indexSelected' | 'selectedAt' | 'files' | 'symbols'> & { isPrimary: number }>)
+    .map(row => {
+      const selectedAt = selectionState.selectedAtByCheckoutId.get(row.id) ?? null
+      return {
+        ...row,
+        isPrimary: row.isPrimary === 1,
+        indexSelected: row.retiredAt === null && selectedAt !== null,
+        selectedAt,
+        files: fileCounts.get(row.id) ?? 0,
+        symbols: symbolCounts.get(row.id) ?? 0,
+      }
+    })
 
   const state = db.prepare(
     `SELECT generation, file_count AS fileCount, symbol_count AS symbolCount,
@@ -524,12 +791,14 @@ function buildPlanetView(
       repos: repoRows.length,
       checkouts: checkouts.length,
       activeCheckouts: checkouts.filter(c => c.retiredAt === null).length,
+      selectedCheckouts: checkouts.filter(c => c.indexSelected).length,
       files: Number(state?.fileCount ?? 0),
       symbols: Number(state?.symbolCount ?? 0),
       edges: Number(state?.edgeCount ?? 0),
       unresolved: Number(state?.unresolved ?? 0),
       ambiguous: Number(state?.ambiguous ?? 0),
     },
+    indexSelection,
     index: {
       generation: Number(state?.generation ?? 0),
       lastSuccessAt: state?.lastSuccessAt ?? null,
@@ -553,16 +822,24 @@ function buildPlanetView(
  * The index roots of a planet, or `null` when this workspace is not one.
  *
  * `null` and `[]` are different answers on purpose: `null` means "not a
- * planet, walk the workspace root", `[]` means "a planet whose checkouts have
- * all been retired", which must be refused rather than indexed.
+ * planet, walk the workspace root", `[]` means "a planet without selected
+ * checkouts or note roots", which must be refused rather than indexed.
  */
 export function scopeRoots(db: DatabaseSync, workspaceId: string): IndexRoot[] | null {
   const planet = db.prepare('SELECT id, root FROM planets WHERE workspace_id = ?').get(workspaceId) as
     { id: string; root: string } | undefined
   if (!planet) return null
-  const rows = db.prepare(
-    `SELECT id, repo_id AS repoId, path, rel_prefix AS relPrefix FROM checkouts
-      WHERE planet_id = ? AND retired_at IS NULL ORDER BY rel_prefix`).all(planet.id) as
+  const selection = indexSelectionState(db, planet.id)
+  // Inventory stays comprehensive, but Code roots only exist after a caller
+  // has persisted an explicit canonical selection. An old database without the
+  // selection tables is deliberately equivalent to an unconfigured selection.
+  const rows = !selection.configured ? [] : db.prepare(
+    `SELECT c.id, c.repo_id AS repoId, c.path, c.rel_prefix AS relPrefix
+       FROM checkouts c
+       JOIN ${INDEX_SELECTION_CHECKOUT_TABLE} s
+         ON s.planet_id = c.planet_id AND s.checkout_id = c.id
+      WHERE c.planet_id = ? AND c.retired_at IS NULL
+      ORDER BY c.rel_prefix`).all(planet.id) as
     Array<{ id: string; repoId: string; path: string; relPrefix: string }>
   const checkouts: IndexRoot[] = rows.map(row => ({
     abs: row.path,
@@ -606,11 +883,12 @@ export function indexPlanetWorkspace(
   const ws = db.prepare('SELECT id, root FROM workspaces WHERE id = ?').get(workspaceId) as
     { id: string; root: string } | undefined
   if (!ws) throw new Error(`unknown workspace: ${workspaceId}`)
+  assertPlanetIndexSelectionConfigured(db, workspaceId)
   const roots = scopeRoots(db, workspaceId)
   if (roots === null) return indexWorkspace(db, workspaceId, ws.root, options)
   if (roots.length === 0) {
     throw new Error(
-      `planet ${workspaceId} has no active checkouts — register the planet before indexing it`)
+      `planet ${workspaceId} has no selected checkouts or note roots — select canonical checkouts before indexing it`)
   }
   return indexWorkspace(db, workspaceId, ws.root, { ...options, roots })
 }

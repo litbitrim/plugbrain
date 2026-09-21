@@ -121,6 +121,27 @@ export function getStoredToken(): string {
   }
 }
 
+/** Inventory is intentionally broader than the active Code selection. */
+export interface PlanetCheckoutInventory {
+  id: string
+  relPrefix: string
+  branch: string | null
+  head: string | null
+  retiredAt: string | null
+  indexSelected: boolean
+}
+
+export interface PlanetInventory {
+  workspaceId: string
+  planetId: string
+  indexSelection: {
+    configured: boolean
+    checkoutIds: string[]
+    updatedAt: string | null
+  }
+  checkouts: PlanetCheckoutInventory[]
+}
+
 /** True while the page is running on the daemon's own injected session. */
 export function hasInjectedSession(): boolean {
   return injectedToken() !== ''
@@ -173,6 +194,37 @@ export async function fetchGalaxy(): Promise<GalaxyPlanet[]> {
   const data = await res.json()
   if (!data?.ok || !Array.isArray(data.planets)) throw new Error('Galaxie unvollständig')
   return data.planets
+}
+
+/** Read discoverable checkout inventory; this never activates a checkout. */
+export async function fetchPlanetInventory(workspaceId: string): Promise<PlanetInventory> {
+  const res = await fetch(`/api/planet?workspace=${encodeURIComponent(workspaceId)}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.error ?? `Planet inventory HTTP ${res.status}`)
+  }
+  const data = await res.json()
+  if (!data?.ok || !data.planet || !Array.isArray(data.planet.checkouts)) {
+    throw new Error('Planet-Inventar unvollständig')
+  }
+  return data.planet as PlanetInventory
+}
+
+/** Persist exactly the IDs consciously checked by the operator. */
+export async function setPlanetCheckoutSelection(
+  workspaceId: string,
+  checkoutIds: string[],
+): Promise<PlanetInventory> {
+  const res = await fetch('/api/planet/selection', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ workspace: workspaceId, checkoutIds }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok || !data.planet) {
+    throw new Error(data?.error ?? `Code-Auswahl HTTP ${res.status}`)
+  }
+  return data.planet as PlanetInventory
 }
 
 export async function fetchGitState(workspaceId: string): Promise<GitState> {

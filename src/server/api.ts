@@ -15,7 +15,8 @@ import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
-  indexPlanetWorkspace, listWorkspaceView, noteRootRows, planetHistory, registerPlanet,
+  activePlanetFileScope, assertPlanetIndexSelectionConfigured, indexPlanetWorkspace,
+  listWorkspaceView, noteRootRows, planetHistory, registerPlanet, setPlanetIndexSelection,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 
@@ -147,29 +148,89 @@ function clampLimit(raw: string | null, fallback: number, ceiling: number): numb
 }
 
 /**
+ * Scope a live file projection to an operator's persisted Planet selection.
+ * Plain workspaces have no Planet inventory and retain their single-root
+ * behavior. For an unconfigured or notes-only Planet, only unattributed notes
+ * are live; stale rows from discovered Code checkouts remain inventory, never
+ * projection data.
+ */
+function liveFileScope(
+  db: DatabaseSync, workspaceId: string, checkoutColumn = 'checkout_id', pathColumn = 'path',
+) {
+  return activePlanetFileScope(db, workspaceId, checkoutColumn, pathColumn)
+}
+
+/** Counts for all externally visible live projections, never raw store totals. */
+function liveProjectionCounts(db: DatabaseSync, workspaceId: string): {
+  files: number; symbols: number; edges: number; stale: number
+} {
+  const files = liveFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
+  const source = liveFileScope(db, workspaceId, 'src.checkout_id', 'src.path')
+  const destination = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
+  const count = (sql: string, ...params: unknown[]): number => Number(
+    (db.prepare(sql).get(...params) as { c: number } | undefined)?.c ?? 0)
+  return {
+    files: count(`SELECT COUNT(*) c FROM files f WHERE f.workspace_id = ? AND ${files.sql}`,
+      workspaceId, ...files.params),
+    symbols: count(
+      `SELECT COUNT(*) c FROM symbols s JOIN files f ON f.id = s.file_id
+        WHERE f.workspace_id = ? AND ${files.sql}`,
+      workspaceId, ...files.params),
+    edges: count(
+      `SELECT COUNT(*) c FROM edges e
+        JOIN files src ON src.id = e.src_file
+        LEFT JOIN files dst ON dst.id = e.dst_file
+       WHERE e.workspace_id = ? AND ${source.sql}
+         AND (e.dst_file IS NULL OR (${destination.sql}))`,
+      workspaceId, ...source.params, ...destination.params),
+    stale: count(
+      `SELECT COUNT(*) c FROM files f
+        WHERE f.workspace_id = ? AND f.indexed_at IS NULL AND ${files.sql}`,
+      workspaceId, ...files.params),
+  }
+}
+
+/** Resolve a read's workspace only when that answer is genuinely unambiguous. */
+function requiredIntelWorkspace(db: DatabaseSync, requested: string): string | null {
+  const explicit = requested.trim()
+  if (explicit) {
+    access.requireWorkspace(db, explicit)
+    return explicit
+  }
+  const known = db.prepare('SELECT id FROM workspaces ORDER BY created_at LIMIT 2').all() as
+    Array<{ id: string }>
+  if (known.length === 1) return known[0].id
+  return null
+}
+
+/** Refuse before a background index worker is created when selection is absent. */
+function ensurePlanetIndexCanStart(db: DatabaseSync, workspaceId: string, res: ServerResponse): boolean {
+  try {
+    assertPlanetIndexSelectionConfigured(db, workspaceId)
+    return true
+  } catch (error) {
+    json(res, {
+      ok: false,
+      workspace: workspaceId,
+      error: error instanceof Error ? error.message : String(error),
+      planet: listWorkspaceView(db, workspaceId),
+    }, 409)
+    return false
+  }
+}
+
+/**
  * The unified graph projection. Nodes carry the colour of the agent that owns
  * them, so agent tracks are visible in the Atlas, the City and the Planet
  * without any of them re-deriving attribution.
  */
 function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: string | null) {
-  // Selection is assembled from three cheap indexed queries and ranked in JS.
-  // Doing it with correlated subqueries in ORDER BY re-scans 630k edges once
-  // per file and hangs the request outright — measured, not theorised.
-  const touched = new Set(
-    (db.prepare(
-      `SELECT DISTINCT path FROM activity
-        WHERE workspace_id = ? AND agent_id IS NOT NULL AND (? IS NULL OR at <= ?)`
-    ).all(workspaceId, until ?? null, until ?? null) as { path: string }[]).map(r => r.path))
-
-  const degree = new Map<number, number>()
-  for (const row of db.prepare(
-    `SELECT src_file AS f, COUNT(*) c FROM edges
-      WHERE workspace_id = ? AND kind = 'imports' AND src_file IS NOT NULL GROUP BY src_file`
-  ).all(workspaceId) as { f: number; c: number }[]) degree.set(row.f, row.c)
-  for (const row of db.prepare(
-    `SELECT dst_file AS f, COUNT(*) c FROM edges
-      WHERE workspace_id = ? AND kind = 'imports' AND dst_file IS NOT NULL GROUP BY dst_file`
-  ).all(workspaceId) as { f: number; c: number }[]) degree.set(row.f, (degree.get(row.f) ?? 0) + row.c)
+  // All ranking and graph queries share this scope. A selection change takes
+  // effect before the next scan tombstones old rows, so a historical checkout
+  // cannot remain visible just because its last graph is still stored.
+  const filesScope = liveFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
+  const sourceScope = liveFileScope(db, workspaceId, 'src.checkout_id', 'src.path')
+  const destinationScope = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
 
   const all = db.prepare(
     `SELECT f.id, f.path, f.lang, f.loc, f.ext,
@@ -177,11 +238,37 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
        FROM files f
        LEFT JOIN file_owner o ON o.file_id = f.id
        LEFT JOIN agents a ON a.id = o.agent_id
-      WHERE f.workspace_id = ?`
-  ).all(workspaceId) as {
+      WHERE f.workspace_id = ? AND ${filesScope.sql}`
+  ).all(workspaceId, ...filesScope.params) as {
     id: number; path: string; lang: string | null; loc: number; ext: string
     agentId: string | null; agentColor: string | null; agentName: string | null; ownedAt: string | null
   }[]
+
+  // Selection is assembled from indexed queries and ranked in JS. Doing this
+  // with correlated subqueries in ORDER BY re-scans the edge set once per file
+  // and hangs the request outright on a real Planet.
+  const touched = new Set(
+    (db.prepare(
+      `SELECT DISTINCT ac.path FROM activity ac
+        JOIN files f ON f.workspace_id = ac.workspace_id AND f.path = ac.path
+       WHERE ac.workspace_id = ? AND ac.agent_id IS NOT NULL AND ${filesScope.sql}
+         AND (? IS NULL OR ac.at <= ?)`
+    ).all(workspaceId, ...filesScope.params, until ?? null, until ?? null) as
+      { path: string }[]).map(row => row.path))
+
+  const imports = db.prepare(
+    `SELECT e.src_file AS src, e.dst_file AS dst FROM edges e
+      JOIN files src ON src.id = e.src_file
+      JOIN files dst ON dst.id = e.dst_file
+     WHERE e.workspace_id = ? AND e.kind = 'imports' AND e.resolved = 1
+       AND ${sourceScope.sql} AND ${destinationScope.sql}`
+  ).all(workspaceId, ...sourceScope.params, ...destinationScope.params) as
+    Array<{ src: number; dst: number }>
+  const degree = new Map<number, number>()
+  for (const edge of imports) {
+    degree.set(edge.src, (degree.get(edge.src) ?? 0) + 1)
+    degree.set(edge.dst, (degree.get(edge.dst) ?? 0) + 1)
+  }
 
   // Rank: agent-owned first, then anything an agent touched, then real code by
   // how connected it is. A slice full of untouched markdown has no edges and
@@ -198,10 +285,13 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   // been, not only what it changed.
   const readerRows = db.prepare(
     `SELECT ac.path, ac.agent_id AS agentId, ag.color, ag.name, MAX(ac.at) AS at
-       FROM activity ac JOIN agents ag ON ag.id = ac.agent_id
-      WHERE ac.workspace_id = ? AND ac.action = 'read' AND (? IS NULL OR ac.at <= ?)
+       FROM activity ac
+       JOIN agents ag ON ag.id = ac.agent_id
+       JOIN files f ON f.workspace_id = ac.workspace_id AND f.path = ac.path
+      WHERE ac.workspace_id = ? AND ac.action = 'read' AND ${filesScope.sql}
+        AND (? IS NULL OR ac.at <= ?)
       GROUP BY ac.path, ac.agent_id`
-  ).all(workspaceId, until ?? null, until ?? null) as
+  ).all(workspaceId, ...filesScope.params, until ?? null, until ?? null) as
     { path: string; agentId: string; color: string; name: string; at: string }[]
   const readersByPath = new Map<string, { id: string; name: string; color: string; at: string }[]>()
   for (const r of readerRows) {
@@ -211,11 +301,7 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   }
 
   const ids = new Set(files.map(f => f.id))
-  const edges = (db.prepare(
-    `SELECT kind, src_file AS src, dst_file AS dst FROM edges
-      WHERE workspace_id = ? AND kind = 'imports' AND resolved = 1 AND dst_file IS NOT NULL`
-  ).all(workspaceId) as { kind: string; src: number; dst: number }[])
-    .filter(e => ids.has(e.src) && ids.has(e.dst))
+  const edges = imports.filter(edge => ids.has(edge.src) && ids.has(edge.dst))
 
   return {
     truncated: all.length > files.length,
@@ -229,14 +315,16 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
       agent: f.agentId ? { id: f.agentId, name: f.agentName, color: f.agentColor, at: f.ownedAt } : null,
       readers: readersByPath.get(f.path) ?? [],
     })),
-    edges: edges.map(e => ({ source: `file:${e.src}`, target: `file:${e.dst}`, kind: e.kind })),
+    edges: edges.map(e => ({ source: `file:${e.src}`, target: `file:${e.dst}`, kind: 'imports' })),
   }
 }
 
 /** Symbol-level graph for one file — the Surface level of the contract. */
 function symbolsOf(db: DatabaseSync, workspaceId: string, path: string) {
-  const file = db.prepare('SELECT id FROM files WHERE workspace_id = ? AND path = ?')
-    .get(workspaceId, path) as { id: number } | undefined
+  const scope = liveFileScope(db, workspaceId)
+  const file = db.prepare(
+    `SELECT id FROM files WHERE workspace_id = ? AND ${scope.sql} AND path = ?`)
+    .get(workspaceId, ...scope.params, path) as { id: number } | undefined
   if (!file) return { path, symbols: [], calls: [] }
   const symbols = db.prepare(
     `SELECT id, name, kind, line, end_line AS endLine, exported, container
@@ -327,6 +415,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
   function startIndex(
     workspaceId: string, full: boolean, res: ServerResponse,
   ): void {
+    if (!ensurePlanetIndexCanStart(db, workspaceId, res)) return
     const dbFile = ctx.dbFile
     if (dbFile === undefined || dbFile === null || dbFile === '') {
       json(res, { ok: true, started: false, result: indexPlanetWorkspace(db, workspaceId, { full }) })
@@ -406,14 +495,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       return json(res, {
         ok: true,
         planets: rows.map(w => {
-          const files = (db.prepare('SELECT COUNT(*) c FROM files WHERE workspace_id = ?').get(w.id) as { c: number }).c
-          const symbols = (db.prepare(
-            'SELECT COUNT(*) c FROM symbols WHERE file_id IN (SELECT id FROM files WHERE workspace_id = ?)')
-            .get(w.id) as { c: number }).c
-          const edges = (db.prepare('SELECT COUNT(*) c FROM edges WHERE workspace_id = ?').get(w.id) as { c: number }).c
-          const stale = (db.prepare(
-            'SELECT COUNT(*) c FROM files WHERE workspace_id = ? AND indexed_at IS NULL').get(w.id) as { c: number }).c
-          return { ...w, files, symbols, edges, stale, agents: agentsOf(db, w.id) }
+          const counts = liveProjectionCounts(db, w.id)
+          return { ...w, ...counts, agents: agentsOf(db, w.id) }
         }),
       })
     }
@@ -471,13 +554,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // carried on every node so a track shows up in whichever view is open.
     if (p === '/api/atlas/snapshot') {
       const w = access.requireWorkspace(db, ws)
-      const totalFiles = Number((db.prepare(
-        'SELECT COUNT(*) c FROM files WHERE workspace_id = ?').get(ws) as { c: number }).c)
+      const counts = liveProjectionCounts(db, ws)
+      const totalFiles = counts.files
       // Files written but not yet re-read: the honest measure of "how far behind
       // is the brain", the same one the daemon's sweep and the briefing use.
-      const staleFiles = Number((db.prepare(
-        'SELECT COUNT(*) c FROM files WHERE workspace_id = ? AND indexed_at IS NULL')
-        .get(ws) as { c: number }).c)
+      const staleFiles = counts.stale
       // The City draws the whole workspace, so the file scan must not stay at a
       // demo-sized number. Measured on plugharness (7 800 files, 132 954
       // symbols): limit=900 → 67 ms, limit=8000 → 111 ms. The file scan is not
@@ -815,14 +896,50 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       }
     }
 
+    // Inventory is not activation. The operator must choose checkout IDs from
+    // `/api/planet` and persist that exact vector before Code enters the live
+    // Brain. This mutation is authenticated and deliberately accepts IDs only:
+    // a path cannot be smuggled in as a second, untracked root.
+    if (p === '/api/planet/selection' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const id = String(body.workspace ?? ws).trim()
+      if (!id) return json(res, { ok: false, error: 'workspace is required' }, 400)
+      access.requireWorkspace(db, id)
+      if (!Array.isArray(body.checkoutIds) || body.checkoutIds.some(value => typeof value !== 'string')) {
+        return json(res, { ok: false, error: 'checkoutIds must be an array of checkout IDs' }, 400)
+      }
+      try {
+        const selection = setPlanetIndexSelection(
+          db, id, body.checkoutIds.map(value => value.trim()))
+        return json(res, {
+          ok: true,
+          workspace: id,
+          selection,
+          // Return current inventory in the same authoritative reply so a UI
+          // can paint exactly what became active without making up state.
+          planet: listWorkspaceView(db, id),
+        })
+      } catch (error) {
+        return json(res, {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        }, 400)
+      }
+    }
+
     if (p === '/api/planet/scan' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
       const id = String(body.workspace ?? ws).trim()
       const w = access.requireWorkspace(db, id)
-      // Refresh the revision vectors first: a scan IS the act of looking again,
-      // and reporting yesterday's branch beside today's index would be a lie.
-      const registered = registerPlanet(db, w.root, w.name)
+      const isPlanet = db.prepare('SELECT 1 AS present FROM planets WHERE workspace_id = ?').get(id) !== undefined
+      // A caller that deliberately registered a Planet gets a refreshed vector
+      // before each scan. A plain workspace remains plain: silently converting
+      // every old vault into an unconfigured Planet would make this compatibility
+      // route refuse work that has no checkout inventory to select.
+      const registered = isPlanet ? registerPlanet(db, w.root, w.name) : null
+      if (isPlanet && !ensurePlanetIndexCanStart(db, id, res)) return
       if (ctx.dbFile === undefined || ctx.dbFile === null || ctx.dbFile === '') {
         const result = indexPlanetWorkspace(db, id, { full: body.full === true })
         return json(res, { ok: true, registered, started: false, result })
@@ -1471,7 +1588,14 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
 
     // ── Code Intelligence (M3: GitNexus Parity) ──────────────────────────
     if (p === '/api/intel/status') {
-      return json(res, { ok: true, status: intel.getIntelStatus(db) })
+      const workspaceId = requiredIntelWorkspace(db, ws)
+      if (workspaceId === null) {
+        return json(res, {
+          ok: false,
+          error: 'workspace is required for Intel status when zero or multiple workspaces are registered',
+        }, 400)
+      }
+      return json(res, { ok: true, status: intel.getIntelStatus(db, workspaceId) })
     }
 
     if (p === '/api/intel/context') {
@@ -1508,11 +1632,21 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
 
     if (p === '/api/intel/detect_changes' || p === '/api/intel/detect-changes') {
       const body = req.method === 'POST' ? await readBody(req) : {}
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? ws))
+      if (workspaceId === null) {
+        return json(res, {
+          ok: false,
+          error: 'workspace is required for change detection when zero or multiple workspaces are registered',
+        }, 400)
+      }
       const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutPath = (body.checkoutPath as string | undefined) ?? q.get('path') ?? undefined
       const diffText = (body.diffText as string | undefined)
-      return json(res, { ok: true, result: intel.detectChanges(db, { checkoutId, repoId, checkoutPath, diffText }) })
+      return json(res, {
+        ok: true,
+        result: intel.detectChanges(db, { workspaceId, checkoutId, repoId, checkoutPath, diffText }),
+      })
     }
 
     if (p === '/api/intel/cypher' && (req.method === 'POST' || req.method === 'GET')) {
