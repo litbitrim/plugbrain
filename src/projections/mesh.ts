@@ -206,7 +206,10 @@ export function meshSnapshot(db: DatabaseSync, workspaceId: string): MeshSnapsho
       && (row.type === 'worktree.leased' || row.type === 'worktree.recovered')) {
       builder.edge('leased', task, worktree, at, mode, row.event_id)
     }
-    if (task !== null && worker !== null) {
+    // A task only "ran" on a worker once the append-only trace observed its
+    // process start. A heartbeat can prove a handle was referenced, not that
+    // it ever executed work.
+    if (task !== null && worker !== null && row.type === 'worker.started') {
       builder.edge('ran', task, worker, at, mode, row.event_id)
     }
     if (route !== null && worker !== null) {
@@ -280,6 +283,14 @@ export interface TimelineEntry {
   summary: string
 }
 
+/** SQLite LIMIT accepts an integer only; keep the public track bounded too. */
+function boundedTimelineLimit(value: number | undefined): number {
+  const requested = typeof value === 'number' && Number.isFinite(value)
+    ? Math.floor(value)
+    : 200
+  return Math.min(2000, Math.max(1, requested))
+}
+
 /** A bounded, ordered track for one agent, task or worker. */
 export function meshTimeline(
   db: DatabaseSync,
@@ -292,7 +303,7 @@ export function meshTimeline(
   if (filter.agentId !== undefined) { where.push('agent_id = ?'); params.push(filter.agentId) }
   if (filter.taskId !== undefined) { where.push('task_id = ?'); params.push(filter.taskId) }
   if (filter.workerId !== undefined) { where.push('worker_id = ?'); params.push(filter.workerId) }
-  const limit = Math.min(2000, Math.max(1, filter.limit ?? 200))
+  const limit = boundedTimelineLimit(filter.limit)
 
   return (db.prepare(
     `SELECT event_id, type, occurred_at, agent_id, task_id, worker_id,

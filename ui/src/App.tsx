@@ -92,6 +92,15 @@ export default function App() {
     try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ }
   }, [view])
 
+  useEffect(() => {
+    if (view !== 'mesh') return
+    // Mesh has a current trace contract, not a historical-snapshot contract.
+    // Do not leave a global time cursor implying that its current evidence is
+    // a reconstruction of a past point in time.
+    setPlaying(false)
+    setUntil(null)
+  }, [view])
+
   const untilRef = useRef<string | null>(null)
   useEffect(() => { untilRef.current = until }, [until])
 
@@ -491,7 +500,7 @@ export default function App() {
       </div>
     )}
 
-    {bounds && (view === 'atlas' || view === 'city' || view === 'mesh') && (
+    {bounds && (view === 'atlas' || view === 'city') && (
       <div className="brain-timelapse">
         <button type="button" onClick={() => setPlaying(p => !p)} title="Wachstum abspielen">
           {playing ? '❚❚' : '▶'}

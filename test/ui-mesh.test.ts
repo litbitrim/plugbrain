@@ -66,3 +66,14 @@ test('the visible Mesh route contains no simulator or historical agent fallback'
   assert.doesNotMatch(view, /fetchAgentInspect/)
   assert.doesNotMatch(view, /<canvas/)
 })
+
+test('Mesh does not share Atlas and City\'s historical timelapse cursor', () => {
+  const app = readFileSync(join(UI_ROOT, 'App.tsx'), 'utf8')
+
+  assert.match(app, /view === 'atlas' \|\| view === 'city'/)
+  assert.doesNotMatch(app, /view === 'atlas' \|\| view === 'city' \|\| view === 'mesh'/)
+  assert.match(
+    app,
+    /if \(view !== 'mesh'\) return[\s\S]*?setPlaying\(false\)[\s\S]*?setUntil\(null\)/,
+  )
+})

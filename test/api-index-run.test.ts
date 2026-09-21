@@ -252,6 +252,16 @@ test('the routes the local UI depends on all answer with real data', async () =>
       'mesh-assigned', 'mesh-unproven-worker',
     ], 'an omitted limit keeps the projection default instead of silently returning one row')
 
+    const fractionalMeshTimelineResponse = await fetch(
+      `${fx.baseUrl}/api/mesh/timeline?${workspace}&limit=1.5`,
+    )
+    assert.equal(fractionalMeshTimelineResponse.status, 200)
+    const fractionalMeshTimeline = await fractionalMeshTimelineResponse.json() as {
+      ok: boolean; timeline: Array<{ eventId: string }>
+    }
+    assert.equal(fractionalMeshTimeline.ok, true)
+    assert.deepEqual(fractionalMeshTimeline.timeline.map(event => event.eventId), ['mesh-assigned'])
+
     const blankLimitTimeline = await (await fetch(
       `${fx.baseUrl}/api/mesh/timeline?${workspace}&limit=`,
     )).json() as { ok: boolean; timeline: Array<{ eventId: string }> }

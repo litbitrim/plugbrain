@@ -396,6 +396,15 @@ test('mesh: a worker with no observed start is proof-unavailable, never running'
     assert.equal(mesh.unprovenWorkers.length, 1)
     assert.equal(mesh.unprovenWorkers[0].workerId, 'w-ghost')
     assert.match(mesh.unprovenWorkers[0].reason, /registry entry is not a running process/)
+    assert.equal(
+      mesh.edges.some(edge => edge.kind === 'ran' && edge.to === 'worker:w-ghost'),
+      false,
+      'a heartbeat-only worker was rendered as having run a task',
+    )
+    const observedStart = mesh.edges.find(edge => edge.kind === 'ran' && edge.to === 'worker:w-real')
+    assert.ok(observedStart, 'an observed worker.started event did not create its ran edge')
+    assert.equal(observedStart.from, 'task:task-2')
+    assert.deepEqual(observedStart.evidence, ['m3'])
   } finally { fx.cleanup() }
 })
 
