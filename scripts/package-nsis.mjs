@@ -4,12 +4,14 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { captureSourceState } from './source-state.mjs'
 
 const root = join(import.meta.dirname, '..')
 const makensis = process.env.PLUGBRAIN_MAKENSIS?.trim()
 const installer = join(root, 'desktop', 'PlugBrain.nsi')
 const output = join(root, 'release', 'PlugBrain-0.1.0-win-x64.exe')
 const ownedFiles = join(root, 'release', 'PlugBrain-owned-files.nsh')
+const provenanceFile = `${output}.provenance.json`
 
 if (process.platform !== 'win32') throw new Error('PlugBrain NSIS packaging is Windows-only')
 if (process.arch !== 'x64') {
@@ -19,6 +21,10 @@ if (!makensis) {
   throw new Error('PLUGBRAIN_MAKENSIS must name the explicitly selected makensis.exe')
 }
 if (!existsSync(makensis)) throw new Error(`PLUGBRAIN_MAKENSIS does not exist: ${makensis}`)
+
+// Capture source identity before build/package outputs can modify dist/ or
+// release/.  Only generated release output is excluded from this predicate.
+const source = captureSourceState(root)
 
 execFileSync(process.execPath, [join(root, 'scripts', 'build-standalone.mjs')], { cwd: root, stdio: 'inherit' })
 execFileSync(process.execPath, [join(root, 'scripts', 'verify-standalone.mjs')], { cwd: root, stdio: 'inherit' })
@@ -70,4 +76,24 @@ execFileSync(makensis, [installer], { cwd: root, stdio: 'inherit' })
 if (!existsSync(output)) throw new Error(`NSIS did not produce ${output}`)
 const sha256 = createHash('sha256').update(readFileSync(output)).digest('hex')
 writeFileSync(`${output}.sha256`, `${sha256}  ${output.split(/[\\/]/).pop()}\n`, 'utf8')
+const standaloneManifest = join(root, 'dist', 'release.json')
+if (!existsSync(standaloneManifest)) throw new Error('standalone release manifest is missing after package build')
+writeFileSync(provenanceFile, `${JSON.stringify({
+  schemaVersion: 1,
+  schema: 1,
+  product: 'PlugBrain',
+  artifactName: output.split(/[\\/]/).pop(),
+  candidate: output.split(/[\\/]/).pop(),
+  sha256,
+  bytes: statSync(output).size,
+  head: source.head,
+  dirty: source.dirty,
+  dirtyPorcelainSha256: source.dirtyPorcelainSha256,
+  source,
+  standaloneManifest: {
+    path: 'dist/release.json',
+    sha256: createHash('sha256').update(readFileSync(standaloneManifest)).digest('hex'),
+  },
+  signature: { type: 'none', status: 'UNSIGNED_NOT_FOR_PUBLIC_RELEASE' },
+}, null, 2)}\n`, 'utf8')
 console.log(`PlugBrain NSIS candidate: ${output}\nSHA-256: ${sha256}`)

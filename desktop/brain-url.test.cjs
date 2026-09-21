@@ -113,6 +113,10 @@ test('the NSIS source refuses arbitrary folders and never recursively removes th
   assert.match(nsis, /!include "\.\.\\release\\PlugBrain-owned-files\.nsh"/);
   assert.doesNotMatch(nsis, /RMDir \/r/);
   assert.match(packager, /PlugBrain-owned-files\.nsh/);
+  assert.match(packager, /\.provenance\.json/);
+  assert.match(packager, /UNSIGNED_NOT_FOR_PUBLIC_RELEASE/);
+  assert.match(packager, /captureSourceState/);
+  assert.match(packager, /dirtyPorcelainSha256/);
   assert.match(packager, /node\.exe is deleted and verified separately/);
   assert.match(packager, /process\.arch !== 'x64'/);
   assert.match(

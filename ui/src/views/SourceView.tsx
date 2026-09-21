@@ -9,6 +9,7 @@ import {
   type FileProvenance,
   type BacklinkItem,
 } from '../lib/brain-client'
+import { sourceReadWithin } from './source-load'
 
 interface SourceViewProps {
   workspaceId: string
@@ -36,39 +37,46 @@ export default function SourceView({
     let alive = true
     setLoading(true)
     setFileData(null)
+    setGitState(null)
+    setProv(null)
     setBacklinks([])
 
-    // Parallel fetch: file content, git info, provenance, and backlinks
-    Promise.allSettled([
-      readAgentFile(workspaceId, path),
-      fetchGitState(workspaceId),
-      fetchProvenance(workspaceId, path),
-      fetchBacklinks(workspaceId, path),
-    ]).then(([readRes, gitRes, provRes, blRes]) => {
-      if (!alive) return
-      if (readRes.status === 'fulfilled') {
-        setFileData(readRes.value)
-      } else {
+    // The file is the primary user action. Git/provenance/backlink snapshots
+    // enrich it, but a slow repository inspection must never leave the source
+    // pane in a permanent loading state after the file itself is available.
+    void sourceReadWithin(readAgentFile(workspaceId, path))
+      .then(result => {
+        if (!alive) return
+        setFileData(result)
+        setLoading(false)
+      })
+      .catch(reason => {
+        if (!alive) return
         setFileData({
           ok: false,
           path,
           content: '',
           bytes: 0,
           lang: null,
-          error: String(readRes.reason?.message ?? readRes.reason),
+          error: String(reason?.message ?? reason),
         })
-      }
+        setLoading(false)
+      })
 
-      if (gitRes.status === 'fulfilled') {
-        setGitState(gitRes.value)
-      }
-      if (provRes.status === 'fulfilled') {
-        setProv(provRes.value)
-      }
-      if (blRes.status === 'fulfilled') {
-        setBacklinks(blRes.value)
-      }
-      setLoading(false)
+    void fetchGitState(workspaceId).then(result => {
+      if (alive) setGitState(result)
+    }).catch(() => {
+      // Git metadata is optional. The source file remains actionable without it.
+    })
+    void fetchProvenance(workspaceId, path).then(result => {
+      if (alive) setProv(result)
+    }).catch(() => {
+      // The source pane shows the file even when no provenance has been recorded.
+    })
+    void fetchBacklinks(workspaceId, path).then(result => {
+      if (alive) setBacklinks(result)
+    }).catch(() => {
+      // Notes can be unavailable for a code file without invalidating the source.
     })
 
     return () => {
