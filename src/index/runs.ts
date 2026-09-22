@@ -44,6 +44,12 @@ export interface RunChanged {
 export interface RunState {
   workspaceId: string
   runId: string
+  /**
+   * The caller's job name, when it gave one. A repeat of the same key must be
+   * answered with THIS run instead of starting a second one, and it lives in
+   * the state file so a restart cannot turn a replay into a duplicate run.
+   */
+  idempotencyKey: string | null
   /** Who runs it: the process that owns the lock. */
   pid: number
   startedAt: string
@@ -323,7 +329,7 @@ export function appraiseRun(
 /** Take the lock for a run, or refuse with the reason it is already taken. */
 export function beginRun(
   workspaceId: string,
-  options: { full?: boolean } & RunAppraisalOptions = {},
+  options: { full?: boolean; idempotencyKey?: string } & RunAppraisalOptions = {},
 ): RunState {
   const appraisal = appraiseRun(workspaceId, options)
   // A fresh heartbeat or a quiet but still-live owner keeps the lock.  Only a
@@ -335,6 +341,7 @@ export function beginRun(
   const state: RunState = {
     workspaceId,
     runId: `run-${randomUUID().slice(0, 12)}`,
+    idempotencyKey: options.idempotencyKey ?? null,
     pid: process.pid,
     startedAt: now,
     heartbeatAt: now,

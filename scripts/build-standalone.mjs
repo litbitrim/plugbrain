@@ -33,6 +33,25 @@ const runtimeName = process.platform === 'win32' ? 'node.exe' : 'node'
 const runtimePath = join(dist, runtimeName)
 copyFileSync(process.execPath, runtimePath)
 
+/**
+ * The banner both bundles need.
+ *
+ * The brain parses TypeScript when it indexes, so src/indexer/ast.ts pulls in
+ * the real TS compiler -- a CommonJS bundle that reads __filename and
+ * __dirname. Those do not exist in ESM scope, and without them the daemon dies
+ * at startup with ReferenceError: __filename is not defined.
+ */
+const esmBanner = {
+  js: [
+    "import { createRequire as __pbCreateRequire } from 'node:module';",
+    "import { fileURLToPath as __pbFileURLToPath } from 'node:url';",
+    "import { dirname as __pbDirname } from 'node:path';",
+    'const require = __pbCreateRequire(import.meta.url);',
+    'const __filename = __pbFileURLToPath(import.meta.url);',
+    'const __dirname = __pbDirname(__filename);',
+  ].join(' '),
+}
+
 await build({
   entryPoints: [join(packageRoot, 'src', 'cli.ts')],
   bundle: true,
@@ -40,20 +59,26 @@ await build({
   format: 'esm',
   target: 'node22',
   outfile: join(dist, 'plugbrain.mjs'),
-  banner: {
-    // The brain parses TypeScript when it indexes, so src/indexer/ast.ts pulls in
-    // the real TS compiler -- a CommonJS bundle that reads __filename and
-    // __dirname. Those do not exist in ESM scope, and without them the daemon
-    // dies at startup with ReferenceError: __filename is not defined.
-    js: [
-      "import { createRequire as __pbCreateRequire } from 'node:module';",
-      "import { fileURLToPath as __pbFileURLToPath } from 'node:url';",
-      "import { dirname as __pbDirname } from 'node:path';",
-      'const require = __pbCreateRequire(import.meta.url);',
-      'const __filename = __pbFileURLToPath(import.meta.url);',
-      'const __dirname = __pbDirname(__filename);',
-    ].join(' '),
-  },
+  banner: esmBanner,
+})
+
+/**
+ * The index worker, as its OWN file next to the bundle.
+ *
+ * A run happens in a worker thread, and the parent finds it by resolving
+ * `./worker.mjs` against its own `import.meta.url`. Bundling only cli.ts left
+ * that path unbuilt, so every run in an installed product started a thread that
+ * died with "Cannot find module ...\dist\worker.ts" -- the index never happened
+ * and the product looked merely busy. Two entries, one payload.
+ */
+await build({
+  entryPoints: [join(packageRoot, 'src', 'index', 'worker.ts')],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node22',
+  outfile: join(dist, 'worker.mjs'),
+  banner: esmBanner,
 })
 
 // Recursive copy: ui-dist carries assets/ and fonts/ subdirectories.
@@ -81,7 +106,10 @@ if (uiFiles.length === 0) throw new Error('ui-dist is empty; the served UI would
 
 const digest = path => createHash('sha256').update(readFileSync(path)).digest('hex')
 const WIN_SEP = String.fromCharCode(92) // this toolchain collapses escaped backslashes
-const releasePaths = [runtimeName, 'plugbrain.mjs', ...uiFiles.map(f => relative(dist, f).split(WIN_SEP).join('/'))]
+const releasePaths = [
+  runtimeName, 'plugbrain.mjs', 'worker.mjs',
+  ...uiFiles.map(f => relative(dist, f).split(WIN_SEP).join('/')),
+]
 writeFileSync(join(dist, 'release.json'), `${JSON.stringify({
   schema: 1,
   releaseId: `plugbrain-${manifest.version}`,
@@ -92,4 +120,4 @@ writeFileSync(join(dist, 'release.json'), `${JSON.stringify({
   files: Object.fromEntries(releasePaths.map(p => [p, { sha256: digest(join(dist, p)) }])),
   signature: { type: 'none', status: 'UNSIGNED_NOT_FOR_PUBLIC_RELEASE' },
 }, null, 2)}\n`)
-console.log(`plugbrain bundle + ${uiFiles.length} ui files`)
+console.log(`plugbrain bundle + index worker + ${uiFiles.length} ui files`)

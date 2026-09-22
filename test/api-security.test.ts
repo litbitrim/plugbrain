@@ -20,6 +20,7 @@ import { DatabaseSync } from 'node:sqlite'
 import * as access from '../src/access.ts'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
+import { indexPlanetWorkspace } from '../src/planet.ts'
 
 interface Fixture {
   dir: string
@@ -295,13 +296,21 @@ test('FO-3: Authenticated authorized agent lifecycle: attach -> write -> read ->
     const readData = await readRes.json() as { ok: boolean; content: string }
     assert.match(readData.content, /function add/)
 
-    // Re-index to populate search
+    // Re-index to populate search.
+    //
+    // This fixture is served WITHOUT a store path, where a request may no
+    // longer index in line: doing so blocks every route for the length of the
+    // run, which is exactly the hang the busy contract exists to end. The
+    // refusal is typed (501) and the index is then run through the same entry
+    // point the worker uses, so the search below still has a real generation.
     const reindexRes = await fetch(`${fx.baseUrl}/api/reindex`, {
       method: 'POST',
       headers: authHeaders,
       body: JSON.stringify({ workspace: fx.workspaceId }),
     })
-    assert.strictEqual(reindexRes.status, 200)
+    assert.strictEqual(reindexRes.status, 501)
+    const inLineIndex = indexPlanetWorkspace(fx.db, fx.workspaceId)
+    assert.ok(inLineIndex.files > 0, 'the fixture must hold an indexed generation')
 
     // Search for symbol
     const searchRes = await fetch(`${fx.baseUrl}/api/agent/search`, {

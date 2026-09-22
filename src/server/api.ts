@@ -15,7 +15,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
-  activePlanetFileScope, assertPlanetIndexSelectionConfigured, indexPlanetWorkspace,
+  activePlanetFileScope, assertPlanetIndexSelectionConfigured, getPlanetIndexSelection,
   listWorkspaceView, noteRootRows, planetHistory, registerPlanet, setPlanetIndexSelection,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
@@ -67,16 +67,21 @@ function withLocalSession(html: string, ctx: Ctx): string {
 import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
+import { cityDelta, citySnapshot } from '../projections/city.ts'
 import { evaluateClaim } from '../projections/conflicts.ts'
 import { meshSnapshot, meshTimeline } from '../projections/mesh.ts'
+import { searchWorkspace } from '../store/search.ts'
 import { ingestTraceEvents, ensureTraceSchema } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
 import * as coord from '../coord/index.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
-import { IndexRunBusy, startIndexRun } from '../index/runner.ts'
-import { appraiseRun, describeRun, listRunStates, readRunState } from '../index/runs.ts'
+import { IndexRunBusy, IndexWorkerUnavailable, startIndexRun } from '../index/runner.ts'
+import {
+  appraiseRun, describeRun, listRunStates, readPendingReindex, readRunState,
+  type RunAppraisal, type RunState,
+} from '../index/runs.ts'
 import { refreshDaemon } from '../daemon.ts'
 
 const MIME: Record<string, string> = {
@@ -203,6 +208,215 @@ function requiredIntelWorkspace(db: DatabaseSync, requested: string): string | n
   return null
 }
 
+/**
+ * The index state a reader may act on, in the Board contract's own words.
+ *
+ * Read routes must answer DURING a run, so every fact here is cheap: two small
+ * queries and one run-state file, never a count over the whole store. The word
+ * is derived in this order and the reason names the fact that produced it, so a
+ * caller never has to guess why it was told `stale`:
+ *
+ *   1. a run is active (running, or quiet while its owner still holds SQLite)
+ *   2. no complete generation was ever published
+ *   3. the newest outcome is a failure
+ *   4. a filesystem change is retained but not yet indexed
+ *   5. a complete generation is published and nothing is retained
+ *
+ * "Active" deliberately includes a QUIET run whose recorded owner is still
+ * alive: it still holds the writer lock, and calling that `ready` would invite
+ * a caller to write into a database that cannot take it.
+ */
+export type IndexState = 'unindexed' | 'indexing' | 'ready' | 'stale' | 'error'
+
+export interface IndexStateReport {
+  indexState: IndexState
+  /** The fact behind the word, as a sentence. */
+  indexReason: string
+  indexGeneration: number
+  indexLastSuccessAt: string | null
+  indexFailure: { at: string | null; reason: string | null } | null
+  indexProgress: Record<string, unknown> | null
+}
+
+function runProgress(appraisal: RunAppraisal): Record<string, unknown> {
+  const state = appraisal.state as RunState
+  return {
+    jobId: state.runId,
+    workspaceId: state.workspaceId,
+    phase: state.phase,
+    mode: state.mode,
+    processed: state.processed,
+    total: state.total,
+    scanned: state.scanned,
+    symbols: state.symbols,
+    edges: state.edges,
+    generation: state.generation,
+    fraction: appraisal.fraction,
+    runningSince: state.startedAt,
+    heartbeatAt: state.heartbeatAt,
+    quiet: appraisal.quiet,
+    ownerAlive: appraisal.ownerAlive,
+  }
+}
+
+/**
+ * Does this store have that table at all?
+ *
+ * `git_state` is created lazily by the indexer's git pass, so a store that has
+ * never run one has no such table — and a plain `SELECT` from it answers 500
+ * where the honest answer is "nothing captured yet".
+ */
+function tableExists(db: DatabaseSync, name: string): boolean {
+  return db.prepare(
+    "SELECT 1 AS present FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(name) !== undefined
+}
+
+/** The run that currently owns this store, or null. Cheap and store-wide. */
+function activeWriterRun(): { state: RunState; appraisal: RunAppraisal } | null {
+  for (const state of listRunStates()) {
+    const appraisal = appraiseRun(state.workspaceId)
+    if (appraisal.state === null || appraisal.finished) continue
+    // A quiet run whose owner is gone no longer holds the lock, so it is not a
+    // reason to refuse anything.
+    if (appraisal.recoverable) continue
+    return { state: appraisal.state, appraisal }
+  }
+  return null
+}
+
+export function indexStateOf(db: DatabaseSync, workspaceId: string): IndexStateReport {
+  const active = activeWriterRun()
+  const row = db.prepare(
+    `SELECT generation, last_success_at AS lastSuccessAt, last_failure_at AS lastFailureAt,
+            failure_reason AS failureReason
+       FROM workspace_index_state WHERE workspace_id = ?`)
+    .get(workspaceId) as {
+      generation: number; lastSuccessAt: string | null
+      lastFailureAt: string | null; failureReason: string | null
+    } | undefined
+  const generation = Number(row?.generation ?? 0)
+  const failure = row?.lastFailureAt === null || row?.lastFailureAt === undefined
+    ? null
+    : { at: row.lastFailureAt, reason: row.failureReason ?? null }
+  const base = {
+    indexGeneration: generation,
+    indexLastSuccessAt: row?.lastSuccessAt ?? null,
+    indexFailure: failure,
+  }
+
+  if (active !== null) {
+    const same = active.state.workspaceId === workspaceId
+    return {
+      ...base,
+      indexState: same ? 'indexing' : (generation === 0 ? 'unindexed' : 'ready'),
+      indexReason: same
+        ? 'an index run for this workspace is in progress; these are the last published numbers'
+        : `an index run for ${active.state.workspaceId} holds the store's writer lock; these are the last published numbers for this workspace`,
+      indexProgress: runProgress(active.appraisal),
+    }
+  }
+  if (generation === 0) {
+    return {
+      ...base,
+      indexState: 'unindexed',
+      indexReason: failure === null
+        ? 'no complete generation has been published for this workspace'
+        : `no complete generation has been published; the last attempt failed: ${failure.reason ?? 'unknown reason'}`,
+      indexProgress: null,
+    }
+  }
+  if (failure !== null && (base.indexLastSuccessAt === null || failure.at !== null && failure.at > base.indexLastSuccessAt)) {
+    return {
+      ...base,
+      indexState: 'error',
+      indexReason: `the last index attempt failed (${failure.reason ?? 'unknown reason'}); the previous complete generation still stands`,
+      indexProgress: null,
+    }
+  }
+  const pending = readPendingReindex(workspaceId)
+  if (pending !== null) {
+    return {
+      ...base,
+      indexState: 'stale',
+      indexReason: `a filesystem change (${pending.reason}) arrived while a run held the store and is not indexed yet`,
+      indexProgress: null,
+    }
+  }
+  return {
+    ...base,
+    indexState: 'ready',
+    indexReason: 'a complete generation is published and no change is waiting to be indexed',
+    indexProgress: null,
+  }
+}
+
+/**
+ * Refuse a store-writing request instead of waiting on SQLite's writer lock.
+ *
+ * An index run is one transaction, so it holds that lock for its whole length —
+ * on a real planet, minutes. `busy_timeout` is 15 s, so today such a request
+ * hangs for 15 s and then answers 500 without a reason. Answering 503 at once,
+ * with the holder named and the progress attached, is both faster and honest.
+ *
+ * Read routes are deliberately NOT gated: WAL lets them read the last committed
+ * generation while the writer works.
+ */
+function refuseWhileStoreIsBusy(res: ServerResponse): boolean {
+  const active = activeWriterRun()
+  if (active === null) return false
+  const appraisal = active.appraisal
+  json(res, {
+    ok: false,
+    status: 'busy',
+    busy: true,
+    jobId: active.state.runId,
+    runningSince: active.state.startedAt,
+    workspace: active.state.workspaceId,
+    reason: `an index run for ${active.state.workspaceId} is already in progress ` +
+      `(phase ${active.state.phase}, ${active.state.processed}/${active.state.total || '?'} files, ` +
+      `job ${active.state.runId}); this request would wait for that run's writer lock`,
+    progress: runProgress(appraisal),
+    retryAfterMs: 1000,
+  }, 503)
+  return true
+}
+
+/**
+ * Routes whose handler writes to SQLite. `/api/reindex` and `/api/planet/scan`
+ * are absent on purpose: they have their own, richer busy contract (409 with
+ * the holder and its progress) and must keep it.
+ */
+const STORE_WRITING_ROUTES = new Set([
+  '/api/notes/write',
+  '/api/planet/register',
+  '/api/planet/selection',
+  '/api/awareness',
+  '/api/agent/awareness',
+  '/api/context/pack',
+  '/api/agent/attach',
+  '/api/agent/read',
+  '/api/agent/write',
+  '/api/agent/register',
+  '/api/agent/heartbeat',
+  '/api/agent/claim',
+  '/api/agent/release',
+  '/api/agent/message',
+  '/api/agent/inbox',
+  '/api/agent/inbox/ack',
+  '/api/agent/search',
+  '/api/backup',
+  '/api/queue',
+  '/api/queue/claim',
+  '/api/queue/deliver',
+  '/api/workspaces',
+])
+
+function isStoreWritingRequest(method: string | undefined, path: string): boolean {
+  if (method !== 'POST') return false
+  return STORE_WRITING_ROUTES.has(path) || path.startsWith('/api/mission/')
+}
+
 /** Refuse before a background index worker is created when selection is absent. */
 function ensurePlanetIndexCanStart(db: DatabaseSync, workspaceId: string, res: ServerResponse): boolean {
   try {
@@ -319,13 +533,30 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   }
 }
 
-/** Symbol-level graph for one file — the Surface level of the contract. */
-function symbolsOf(db: DatabaseSync, workspaceId: string, path: string) {
+/**
+ * Symbol-level graph for one file — the Surface level of the contract.
+ *
+ * A file may be named by its workspace-relative `path` or by its stable
+ * `fileId`. The id is what a caller that already read `/api/files` holds, and
+ * it survives a rename, so it is the better handle for a projection that
+ * remembers what it was looking at.
+ */
+function symbolsOf(
+  db: DatabaseSync, workspaceId: string, path: string, fileId: number | null = null,
+) {
   const scope = liveFileScope(db, workspaceId)
-  const file = db.prepare(
-    `SELECT id FROM files WHERE workspace_id = ? AND ${scope.sql} AND path = ?`)
-    .get(workspaceId, ...scope.params, path) as { id: number } | undefined
-  if (!file) return { path, symbols: [], calls: [] }
+  const file = fileId === null
+    ? db.prepare(`SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND path = ?`)
+      .get(workspaceId, ...scope.params, path) as { id: number; path: string } | undefined
+    : db.prepare(`SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND id = ?`)
+      .get(workspaceId, ...scope.params, fileId) as { id: number; path: string } | undefined
+  if (!file) {
+    // An id that names no file is not the same answer as a file without
+    // symbols: say so, instead of returning an empty file that looks indexed.
+    return fileId === null
+      ? { path, fileId: null, known: false, symbols: [], calls: [] }
+      : { path: null, fileId, known: false, symbols: [], calls: [] }
+  }
   const symbols = db.prepare(
     `SELECT id, name, kind, line, end_line AS endLine, exported, container
        FROM symbols WHERE file_id = ? ORDER BY line`).all(file.id)
@@ -335,7 +566,219 @@ function symbolsOf(db: DatabaseSync, workspaceId: string, path: string) {
        FROM edges e LEFT JOIN symbols s ON s.id = e.src_symbol
       WHERE e.workspace_id = ? AND e.src_file = ? AND e.kind IN ('calls','references','extends','implements')
       ORDER BY e.line LIMIT 500`).all(workspaceId, file.id)
-  return { path, symbols, calls }
+  return { path: file.path, fileId: file.id, known: true, symbols, calls }
+}
+
+/**
+ * The file inventory of a workspace, paginated and scoped, with the LOC the
+ * index measured — the `BrainFiles` projection of the Board contract.
+ *
+ * Only rows inside the active Planet selection are listed, through the same
+ * `liveFileScope` every other projection uses: a stale checkout the operator
+ * deselected must not reappear here just because its rows are still stored.
+ */
+function filesOf(
+  db: DatabaseSync, workspaceId: string,
+  options: { prefix: string; limit: number; offset: number },
+) {
+  const scope = liveFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
+  // `LIKE` with an escaped prefix, so a path containing `%` or `_` is matched
+  // literally instead of turning into a wildcard.
+  const escaped = options.prefix.replace(/[\\%_]/g, character => `\\${character}`)
+  const filter = options.prefix === '' ? '' : " AND f.path LIKE ? ESCAPE '\\'"
+  const params: unknown[] = [workspaceId, ...scope.params]
+  if (options.prefix !== '') params.push(`${escaped}%`)
+
+  const total = Number((db.prepare(
+    `SELECT COUNT(*) AS c FROM files f WHERE f.workspace_id = ? AND ${scope.sql}${filter}`)
+    .get(...params) as { c: number }).c)
+
+  const entries = db.prepare(
+    `SELECT f.id AS fileId, f.path, f.ext, f.lang, f.loc, f.generation,
+            f.repo_id AS repoId, f.checkout_id AS checkoutId,
+            o.agent_id AS ownerAgentId
+       FROM files f
+       LEFT JOIN file_owner o ON o.file_id = f.id
+      WHERE f.workspace_id = ? AND ${scope.sql}${filter}
+      ORDER BY f.path ASC LIMIT ? OFFSET ?`)
+    .all(...params, options.limit, options.offset)
+
+  const tombstones = db.prepare(
+    `SELECT path, reason, generation, deleted_at AS deletedAt FROM file_tombstones
+      WHERE workspace_id = ? ORDER BY path ASC`).all(workspaceId)
+
+  return {
+    prefix: options.prefix,
+    limit: options.limit,
+    offset: options.offset,
+    total,
+    returned: entries.length,
+    truncated: options.offset + entries.length < total,
+    entries,
+    tombstones,
+  }
+}
+
+/**
+ * Every edge touching one file, in the shape `BrainEdge` asks for.
+ *
+ * `direction` is `out` (this file is the source), `in` (this file is the
+ * target) or `both`, and the scope is applied to BOTH ends: an edge that points
+ * into a deselected checkout is not part of this planet's graph, which is the
+ * same rule `/api/graph` applies.
+ */
+function edgesOf(
+  db: DatabaseSync, workspaceId: string,
+  options: {
+    fileId: number | null; path: string; direction: 'in' | 'out' | 'both'
+    kind: string | null; resolved: boolean | null; limit: number; offset: number
+  },
+) {
+  const sourceScope = liveFileScope(db, workspaceId, 'src.checkout_id', 'src.path')
+  const destinationScope = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
+
+  let fileId = options.fileId
+  let path = options.path
+  if (fileId === null) {
+    const scope = liveFileScope(db, workspaceId)
+    const row = db.prepare(
+      `SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND path = ?`)
+      .get(workspaceId, ...scope.params, path) as { id: number; path: string } | undefined
+    if (row === undefined) return { fileId: null, path, known: false, edges: [], total: 0 }
+    fileId = row.id
+    path = row.path
+  } else {
+    const scope = liveFileScope(db, workspaceId)
+    const row = db.prepare(
+      `SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND id = ?`)
+      .get(workspaceId, ...scope.params, fileId) as { id: number; path: string } | undefined
+    if (row === undefined) return { fileId, path: null, known: false, edges: [], total: 0 }
+    path = row.path
+  }
+
+  const direction = options.direction === 'in'
+    ? 'e.dst_file = ?'
+    : options.direction === 'out'
+      ? 'e.src_file = ?'
+      : '(e.src_file = ? OR e.dst_file = ?)'
+  const directionParams = options.direction === 'both' ? [fileId, fileId] : [fileId]
+  const kindFilter = options.kind === null ? '' : ' AND e.kind = ?'
+  const resolvedFilter = options.resolved === null ? '' : ' AND e.resolved = ?'
+  const params: unknown[] = [workspaceId, ...sourceScope.params, ...destinationScope.params]
+  params.push(...directionParams)
+  if (options.kind !== null) params.push(options.kind)
+  if (options.resolved !== null) params.push(options.resolved ? 1 : 0)
+
+  const where = `e.workspace_id = ? AND ${sourceScope.sql}
+      AND (e.dst_file IS NULL OR (${destinationScope.sql}))
+      AND ${direction}${kindFilter}${resolvedFilter}`
+  const joins = `FROM edges e
+      JOIN files src ON src.id = e.src_file
+      LEFT JOIN files dst ON dst.id = e.dst_file`
+  const total = Number((db.prepare(`SELECT COUNT(*) AS c ${joins} WHERE ${where}`)
+    .get(...params) as { c: number }).c)
+  const edges = db.prepare(
+    `SELECT e.id AS edgeId, e.kind, e.src_symbol AS srcSymbol, e.src_file AS srcFile,
+            e.dst_symbol AS dstSymbol, e.dst_file AS dstFile, e.raw_target AS rawTarget,
+            e.resolved, e.ambiguous, e.candidates, e.line
+       ${joins} WHERE ${where}
+      ORDER BY e.line IS NULL, e.line ASC, e.id ASC LIMIT ? OFFSET ?`)
+    .all(...params, options.limit, options.offset)
+  return {
+    fileId,
+    path,
+    known: true,
+    direction: options.direction,
+    total,
+    returned: edges.length,
+    truncated: options.offset + edges.length < total,
+    edges,
+  }
+}
+
+/**
+ * What changed between two published generations.
+ *
+ * `changed` is exact: a file row records the generation that wrote it, so
+ * `files.generation > from` names every path the walk re-read. Deletions and
+ * renames come from the tombstone table, which records the reason. A rename's
+ * destination is only reported when exactly ONE changed file carries that
+ * tombstone's content hash; when several do, the answer is `to: null` with
+ * `resolved: false`, because guessing would invent a move that did not happen.
+ *
+ * What the store CANNOT say is whether a changed path is new or edited: a row
+ * is UPDATEd in place, which is exactly what preserves its id and therefore its
+ * owner. `added`/`modified` are therefore reported as `null` under
+ * `unavailable`, never as two plausible-looking lists.
+ */
+function changesOf(db: DatabaseSync, workspaceId: string, fromGeneration: number) {
+  const scope = liveFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
+  const state = db.prepare(
+    'SELECT generation FROM workspace_index_state WHERE workspace_id = ?')
+    .get(workspaceId) as { generation: number } | undefined
+  const toGeneration = Number(state?.generation ?? 0)
+
+  const changed = db.prepare(
+    `SELECT f.id AS fileId, f.path, f.ext, f.lang, f.loc, f.generation, f.hash
+       FROM files f
+      WHERE f.workspace_id = ? AND ${scope.sql} AND f.generation > ?
+      ORDER BY f.path ASC`)
+    .all(workspaceId, ...scope.params, fromGeneration) as Array<{
+      fileId: number; path: string; ext: string; lang: string | null
+      loc: number; generation: number; hash: string | null
+    }>
+
+  const tombstones = db.prepare(
+    `SELECT path, reason, generation, deleted_at AS deletedAt FROM file_tombstones
+      WHERE workspace_id = ? AND generation > ? ORDER BY path ASC`)
+    .all(workspaceId, fromGeneration) as Array<{
+      path: string; reason: string; generation: number; deletedAt: string
+    }>
+
+  const livePaths = new Set((db.prepare(
+    'SELECT path FROM files WHERE workspace_id = ?').all(workspaceId) as
+    Array<{ path: string }>).map(row => row.path))
+  const byHash = new Map<string, string[]>()
+  for (const row of changed) {
+    if (row.hash === null) continue
+    const list = byHash.get(row.hash)
+    if (list === undefined) byHash.set(row.hash, [row.path])
+    else list.push(row.path)
+  }
+
+  const deleted: string[] = []
+  const renamed: Array<{ from: string; to: string | null; resolved: boolean; at: string }> = []
+  for (const tomb of tombstones) {
+    if (tomb.reason === 'renamed') {
+      const candidates = (db.prepare(
+        'SELECT hash FROM file_tombstones WHERE workspace_id = ? AND path = ?')
+        .get(workspaceId, tomb.path) as { hash: string | null } | undefined)?.hash ?? null
+      const matches = candidates === null ? undefined : byHash.get(candidates)
+      renamed.push({
+        from: tomb.path,
+        to: matches?.length === 1 ? matches[0] : null,
+        resolved: matches?.length === 1,
+        at: tomb.deletedAt,
+      })
+      continue
+    }
+    if (!livePaths.has(tomb.path)) deleted.push(tomb.path)
+  }
+
+  return {
+    fromGeneration,
+    toGeneration,
+    changed: changed.map(({ hash: _hash, ...rest }) => rest),
+    deleted,
+    renamed,
+    tombstones,
+    unavailable: {
+      added: null,
+      modified: null,
+      reason: 'a changed row is updated in place, so the store records WHICH generation wrote a path, ' +
+        'not whether the path is new; /api/files (prefix + tombstones) is the honest source for that',
+    },
+  }
 }
 
 /** The temporal projection: the swarm's activity as an ordered track. */
@@ -391,7 +834,15 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     const appraisal = appraiseRun(error.state.workspaceId)
     return {
       ok: false,
+      status: 'busy',
       busy: true,
+      // The three fields a caller needs to be idempotent without guessing:
+      // which run holds the lock, since when, and how far it has got.
+      jobId: error.state.runId,
+      runningSince: error.state.startedAt,
+      reason: error.message,
+      progress: appraisal.state === null ? null : runProgress(appraisal),
+      retryAfterMs: 1000,
       error: error.message,
       run: error.state,
       running: appraisal.running,
@@ -408,27 +859,51 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
    *
    * Indexing a real planet is minutes of CPU work, so the request must not be
    * the thing that waits: the run writes its own state file, and
-   * `GET /api/index/progress` reports it. Without a configured store path (a
-   * library or test context) there is nowhere for a worker to open its own
-   * connection, so that case indexes in line — correct, just not concurrent.
+   * `GET /api/index/progress` reports it. A run without a store path to open a
+   * worker connection on cannot be started at all — see below.
    */
   function startIndex(
-    workspaceId: string, full: boolean, res: ServerResponse,
+    workspaceId: string, full: boolean, res: ServerResponse, idempotencyKey = '',
   ): void {
     if (!ensurePlanetIndexCanStart(db, workspaceId, res)) return
     const dbFile = ctx.dbFile
     if (dbFile === undefined || dbFile === null || dbFile === '') {
-      json(res, { ok: true, started: false, result: indexPlanetWorkspace(db, workspaceId, { full }) })
+      // No store path: a worker has nowhere to open its own connection. This
+      // used to index IN LINE, which takes the event loop down for the whole
+      // run — the very hang this work exists to end. It now refuses, typed,
+      // before anything is touched.
+      json(res, {
+        ok: false,
+        status: 'unavailable',
+        started: false,
+        error: 'no store path configured for this server: a background index run needs a "dbFile", ' +
+          'and indexing in the request loop would make every route unreachable for the length of the run. ' +
+          'Start the daemon with a store path (the CLI always has one), or index from the CLI.',
+      }, 501)
       return
     }
     try {
-      const run = startIndexRun(workspaceId, { dbFile, full })
-      json(res, { ok: true, started: true, run: run.state }, 202)
+      const run = startIndexRun(workspaceId, {
+        dbFile, full, ...(idempotencyKey === '' ? {} : { idempotencyKey }),
+      })
+      json(res, { ok: true, started: true, jobId: run.state.runId, run: run.state }, 202)
     } catch (error) {
       if (error instanceof IndexRunBusy) {
         // Not an error the caller caused: say who holds the lock and how far
         // the other run has got, so the answer is actionable.
         json(res, busyIndexResponse(error), 409)
+        return
+      }
+      if (error instanceof IndexWorkerUnavailable) {
+        // A packaging fault, not a busy brain and not a failed run: nothing was
+        // attempted and no lock was taken.
+        json(res, {
+          ok: false,
+          status: 'unavailable',
+          started: false,
+          error: error.message,
+          tried: error.tried,
+        }, 501)
         return
       }
       throw error
@@ -469,7 +944,22 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     const q = url.searchParams
     const ws = q.get('workspace') ?? ''
 
-    if (p === '/api/health') return json(res, { ok: true, at: new Date().toISOString() })
+    // A store-writing request must not queue up behind an index run's writer
+    // lock: it answers 503 with the holder and the progress instead of hanging
+    // in `busy_timeout` and then failing without a reason.
+    if (isStoreWritingRequest(req.method, p) && refuseWhileStoreIsBusy(res)) return
+
+    if (p === '/api/health') {
+      // The one route that must answer no matter what: it says whether an index
+      // run is holding the store, so a caller can tell "busy" from "gone".
+      const active = activeWriterRun()
+      return json(res, {
+        ok: true,
+        at: new Date().toISOString(),
+        indexState: active === null ? 'idle' : 'indexing',
+        indexing: active === null ? null : runProgress(active.appraisal),
+      })
+    }
 
     // ── Live mesh events (SSE stream) ────────────────────────────────────
     if (p === '/api/live/events' && req.method === 'GET') {
@@ -492,11 +982,22 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/galaxy') {
       const rows = db.prepare('SELECT id, name, root, indexed_at AS indexedAt FROM workspaces').all() as
         { id: string; name: string; root: string; indexedAt: string | null }[]
+      // One shared answer for the whole store: whether the store is being
+      // written, and by which workspace. Asking per planet would re-read every
+      // run state file once per planet.
+      const active = activeWriterRun()
       return json(res, {
         ok: true,
+        indexState: active === null ? 'idle' : 'indexing',
+        indexing: active === null ? null : runProgress(active.appraisal),
         planets: rows.map(w => {
           const counts = liveProjectionCounts(db, w.id)
-          return { ...w, ...counts, agents: agentsOf(db, w.id) }
+          return {
+            ...w,
+            ...counts,
+            ...indexStateOf(db, w.id),
+            agents: agentsOf(db, w.id),
+          }
         }),
       })
     }
@@ -504,7 +1005,12 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // ── Planet: one workspace, coloured by agent ─────────────────────────
     if (p === '/api/graph') {
       access.requireWorkspace(db, ws)
-      return json(res, { ok: true, workspace: ws, ...graphOf(db, ws, Number(q.get('limit') ?? 1200)) })
+      return json(res, {
+        ok: true,
+        workspace: ws,
+        ...indexStateOf(db, ws),
+        ...graphOf(db, ws, Number(q.get('limit') ?? 1200)),
+      })
     }
 
     if (p === '/api/agents') {
@@ -519,7 +1025,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // it either names the evidence behind an edge/node or has nothing to show.
     if (p === '/api/mesh') {
       access.requireWorkspace(db, ws)
-      return json(res, { ok: true, mesh: meshSnapshot(db, ws) })
+      return json(res, { ok: true, ...indexStateOf(db, ws), mesh: meshSnapshot(db, ws) })
     }
 
     if (p === '/api/mesh/timeline') {
@@ -534,6 +1040,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       }
       return json(res, {
         ok: true,
+        ...indexStateOf(db, ws),
         timeline: meshTimeline(db, ws, {
           agentId: value('agentId'),
           taskId: value('taskId'),
@@ -545,7 +1052,9 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
 
     if (p === '/api/tracks') {
       access.requireWorkspace(db, ws)
-      return json(res, { ok: true, tracks: tracksOf(db, ws, Number(q.get('limit') ?? 200)) })
+      return json(res, {
+        ok: true, ...indexStateOf(db, ws), tracks: tracksOf(db, ws, Number(q.get('limit') ?? 200)),
+      })
     }
 
     // ── Atlas/City snapshot ──────────────────────────────────────────────
@@ -623,6 +1132,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       }
 
       return json(res, {
+        ...indexStateOf(db, ws),
         workspace: { id: w.id, name: w.name, canonicalPath: w.root },
         graph: { nodes, edges },
         // Two different facts, kept apart on purpose.
@@ -860,7 +1370,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         // Every registered workspace answers here, planet or not: a vault that
         // is one plain folder has counts too, and "not a planet" is not an
         // answer to "what does this workspace hold".
-        return json(res, { ok: true, planet: listWorkspaceView(db, target) })
+        return json(res, {
+          ok: true,
+          ...indexStateOf(db, target),
+          planet: listWorkspaceView(db, target),
+        })
       } catch (error) {
         return json(res, {
           ok: false,
@@ -941,15 +1455,29 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const registered = isPlanet ? registerPlanet(db, w.root, w.name) : null
       if (isPlanet && !ensurePlanetIndexCanStart(db, id, res)) return
       if (ctx.dbFile === undefined || ctx.dbFile === null || ctx.dbFile === '') {
-        const result = indexPlanetWorkspace(db, id, { full: body.full === true })
-        return json(res, { ok: true, registered, started: false, result })
+        // Same refusal as `/api/reindex`: a request may not index in line, or
+        // the whole surface is dark for the length of the run.
+        return json(res, {
+          ok: false,
+          status: 'unavailable',
+          registered,
+          started: false,
+          error: 'no store path configured for this server: a background index run needs a "dbFile", ' +
+            'and indexing in the request loop would make every route unreachable for the length of the run.',
+        }, 501)
       }
       try {
         const run = startIndexRun(id, { dbFile: ctx.dbFile, full: body.full === true })
-        return json(res, { ok: true, registered, started: true, run: run.state }, 202)
+        return json(res, { ok: true, registered, started: true, jobId: run.state.runId, run: run.state }, 202)
       } catch (error) {
         if (error instanceof IndexRunBusy) {
           return json(res, { ...busyIndexResponse(error), registered }, 409)
+        }
+        if (error instanceof IndexWorkerUnavailable) {
+          return json(res, {
+            ok: false, status: 'unavailable', registered, started: false,
+            error: error.message, tried: error.tried,
+          }, 501)
         }
         throw error
       }
@@ -958,8 +1486,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // ── git: branch, worktrees, commits ──────────────────────────────────
     if (p === '/api/git') {
       access.requireWorkspace(db, ws)
-      const row = db.prepare('SELECT * FROM git_state WHERE workspace_id = ?').get(ws) as
-        Record<string, unknown> | undefined
+      const row = tableExists(db, 'git_state')
+        ? db.prepare('SELECT * FROM git_state WHERE workspace_id = ?').get(ws) as
+          Record<string, unknown> | undefined
+        : undefined
       if (!row) return json(res, { ok: true, isRepo: false, note: 'no git state captured yet' })
       return json(res, {
         ok: true,
@@ -989,17 +1519,27 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       ).all(ws, Number(q.get('limit') ?? 5000))
       const bounds = db.prepare(
         `SELECT MIN(at) AS first, MAX(at) AS last FROM activity WHERE workspace_id = ?`).get(ws)
-      return json(res, { ok: true, events, bounds })
+      return json(res, { ok: true, ...indexStateOf(db, ws), events, bounds })
     }
 
     // ── Surface: one artifact, all the way down ──────────────────────────
     if (p === '/api/symbols') {
       access.requireWorkspace(db, ws)
-      return json(res, { ok: true, ...symbolsOf(db, ws, q.get('path') ?? '') })
+      const fileIdRaw = Number(q.get('fileId'))
+      const fileId = Number.isSafeInteger(fileIdRaw) && fileIdRaw > 0 ? fileIdRaw : null
+      return json(res, {
+        ok: true,
+        ...indexStateOf(db, ws),
+        ...symbolsOf(db, ws, q.get('path') ?? '', fileId),
+      })
     }
 
     if (p === '/api/provenance') {
-      return json(res, { ok: true, ...access.fileProvenance(db, ws, q.get('path') ?? '') })
+      return json(res, {
+        ok: true,
+        ...(ws === '' ? {} : indexStateOf(db, ws)),
+        ...access.fileProvenance(db, ws, q.get('path') ?? ''),
+      })
     }
 
     // ── Awareness & Context Pack endpoints (FO-4 & CP01-014) ────────────
@@ -1555,9 +2095,32 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const body = await readBody(req)
       const id = String(body.workspace ?? ws).trim()
       access.requireWorkspace(db, id)
+      // Idempotency, when the caller names the job. A replay of the same key
+      // must never start a second run: it is answered with the run that key
+      // already refers to, which is why the key lives in the run state file
+      // and survives a restart of the daemon.
+      const key = typeof body.idempotencyKey === 'string' ? body.idempotencyKey.trim() : ''
+      if (key !== '') {
+        const prior = readRunState(id)
+        if (prior !== null && prior.idempotencyKey === key) {
+          const appraisal = appraiseRun(id)
+          return json(res, {
+            ok: appraisal.finished,
+            started: false,
+            idempotent: true,
+            status: appraisal.finished ? 'finished' : 'busy',
+            jobId: prior.runId,
+            runningSince: prior.startedAt,
+            reason: `idempotency key '${key}' already names run ${prior.runId}`,
+            summary: describeRun(appraisal),
+            run: prior,
+            progress: appraisal.finished ? null : runProgress(appraisal),
+          }, appraisal.finished ? 200 : 409)
+        }
+      }
       // A planet reindexes through its checkout roots, never by walking the
       // whole planet folder — that would pull in every worktree unlabelled.
-      return startIndex(id, body.full === true, res)
+      return startIndex(id, body.full === true, res, key)
     }
 
     // ── Index runs: is anything happening, and how far has it got? ─────────
@@ -1566,12 +2129,25 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/index/progress' && req.method === 'GET') {
       const target = String(q.get('workspace') ?? '').trim()
       if (target === '') {
-        return json(res, { ok: true, runs: listRunStates().map(state => appraiseRun(state.workspaceId)) })
+        const runs = listRunStates().map(state => appraiseRun(state.workspaceId))
+        const active = runs.find(appraisal =>
+          appraisal.state !== null && !appraisal.finished && !appraisal.recoverable)
+        return json(res, {
+          ok: true,
+          indexState: active === undefined ? 'idle' : 'indexing',
+          indexing: active === undefined || active.state === null
+            ? null : runProgress(active),
+          runs,
+        })
       }
       const appraisal = appraiseRun(target)
       return json(res, {
         ok: true,
+        ...indexStateOf(db, target),
         workspace: target,
+        // The job name a second caller needs to recognise this run as its own.
+        jobId: appraisal.state?.runId ?? null,
+        runningSince: appraisal.state?.startedAt ?? null,
         running: appraisal.running,
         stale: appraisal.stale,
         quiet: appraisal.quiet,
@@ -1586,6 +2162,168 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       })
     }
 
+    // ── Brain read routes (0.1.1) ────────────────────────────────────────
+    // What the Board contract asks for and the Core did not publish: the file
+    // inventory with LOC, the edges of one file, an open search, the delta
+    // between two generations and the City projection. All of them are reads,
+    // all of them are scoped by the active Planet selection, and all of them
+    // answer while an index run works.
+    if (p === '/api/files' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      const limit = clampLimit(q.get('limit'), 200, 5000)
+      const offsetRaw = Number(q.get('offset'))
+      const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? Math.floor(offsetRaw) : 0
+      const files = filesOf(db, w.id, {
+        prefix: String(q.get('prefix') ?? '').trim().replace(/^\/+/, ''),
+        limit, offset,
+      })
+
+      // The git facts a file list is read against. `gitMainCommit` is the
+      // primary checkout's head when the workspace is a Planet, otherwise the
+      // workspace's own repository head; both are absent rather than guessed
+      // when the folder is not a repository.
+      const gitState = tableExists(db, 'git_state') ? db.prepare(
+        'SELECT is_repo AS isRepo, head, branch FROM git_state WHERE workspace_id = ?')
+        .get(w.id) as { isRepo: number; head: string | null; branch: string | null } | undefined
+        : undefined
+      const primary = db.prepare(
+        `SELECT c.path, c.branch, c.head FROM checkouts c
+           JOIN planets pl ON pl.id = c.planet_id
+          WHERE pl.workspace_id = ? AND c.is_primary = 1 AND c.retired_at IS NULL
+          LIMIT 1`).get(w.id) as
+        { path: string; branch: string | null; head: string | null } | undefined
+      // A workspace that is one plain folder is not a planet and has no
+      // selection; asking for one throws, and "not a planet" is a fact, not an
+      // error, so it is answered as `planet: false`.
+      const isPlanet = db.prepare('SELECT 1 AS present FROM planets WHERE workspace_id = ?').get(w.id) !== undefined
+      const selection = isPlanet
+        ? { planet: true, ...getPlanetIndexSelection(db, w.id) }
+        : { planet: false, configured: false, checkoutIds: [] as string[], updatedAt: null }
+      const checkouts = selection.checkoutIds.length === 0 ? [] : db.prepare(
+        `SELECT id, path, branch, head FROM checkouts
+          WHERE id IN (${selection.checkoutIds.map(() => '?').join(',')})
+          ORDER BY rel_prefix ASC`)
+        .all(...selection.checkoutIds) as Array<{ id: string; path: string; branch: string | null; head: string | null }>
+
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        workspaceRoot: w.root,
+        ...indexStateOf(db, w.id),
+        files: {
+          ...files,
+          gitMainCommit: primary?.head ?? (gitState?.isRepo === 1 ? gitState.head : null),
+          activeWorktree: checkouts.length === 1
+            ? { path: checkouts[0].path, branch: checkouts[0].branch, head: checkouts[0].head }
+            : null,
+          selection,
+        },
+      })
+    }
+
+    if (p === '/api/edges' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      const fileIdRaw = Number(q.get('fileId'))
+      const fileId = Number.isSafeInteger(fileIdRaw) && fileIdRaw > 0 ? fileIdRaw : null
+      const path = String(q.get('path') ?? '').trim()
+      if (fileId === null && path === '') {
+        return json(res, { ok: false, error: 'fileId or path is required' }, 400)
+      }
+      const directionRaw = q.get('direction')
+      const direction = directionRaw === 'in' || directionRaw === 'out' ? directionRaw : 'both'
+      const resolvedRaw = q.get('resolved')
+      const resolved = resolvedRaw === '1' || resolvedRaw === 'true' ? true
+        : resolvedRaw === '0' || resolvedRaw === 'false' ? false : null
+      const limit = clampLimit(q.get('limit'), 200, 2000)
+      const offsetRaw = Number(q.get('offset'))
+      const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? Math.floor(offsetRaw) : 0
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        ...indexStateOf(db, w.id),
+        edges: edgesOf(db, w.id, {
+          fileId, path, direction, kind: q.get('kind')?.trim() || null, resolved, limit, offset,
+        }),
+      })
+    }
+
+    if (p === '/api/search' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      const query = String(q.get('q') ?? q.get('query') ?? '').trim()
+      if (query === '') return json(res, { ok: false, error: 'q is required' }, 400)
+      const kinds = (q.get('kind') ?? '').split(',').map(kind => kind.trim()).filter(Boolean)
+      const limit = clampLimit(q.get('limit'), 50, 500)
+      // The canonical search (store/search.ts) keeps the FTS match first; this
+      // route only narrows the ANSWER to the active Planet selection, so a hit
+      // in a deselected checkout cannot leak into the planet's surface.
+      const hits = searchWorkspace(db, w.id, query, { limit, ...(kinds.length === 0 ? {} : { kinds }) })
+      const scope = liveFileScope(db, w.id, 'f.checkout_id', 'f.path')
+      const ids = hits.map(hit => hit.fileId).filter((id): id is number => id !== null)
+      const allowed = new Set<number>(ids.length === 0 ? [] : (db.prepare(
+        `SELECT f.id FROM files f WHERE f.workspace_id = ? AND ${scope.sql}
+          AND f.id IN (${ids.map(() => '?').join(',')})`)
+        .all(w.id, ...scope.params, ...ids) as Array<{ id: number }>).map(row => row.id))
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        ...indexStateOf(db, w.id),
+        query,
+        hits: hits.filter(hit => hit.fileId === null || allowed.has(hit.fileId)),
+      })
+    }
+
+    if (p === '/api/changes' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      const state = db.prepare(
+        'SELECT generation FROM workspace_index_state WHERE workspace_id = ?')
+        .get(w.id) as { generation: number } | undefined
+      const toGeneration = Number(state?.generation ?? 0)
+      const fromRaw = Number(q.get('from') ?? q.get('fromGeneration'))
+      if (q.get('from') === null && q.get('fromGeneration') === null && toGeneration === 0) {
+        return json(res, {
+          ok: false,
+          error: 'this workspace has no published generation yet; pass ?from=<generation> or index it first',
+        }, 409)
+      }
+      const from = Number.isFinite(fromRaw) && fromRaw >= 0
+        ? Math.floor(fromRaw)
+        : Math.max(0, toGeneration - 1)
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        ...indexStateOf(db, w.id),
+        changes: changesOf(db, w.id, from),
+      })
+    }
+
+    if (p === '/api/city' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      const heightMetric = q.get('height') === 'loc' ? 'loc' as const : 'symbols' as const
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        ...indexStateOf(db, w.id),
+        city: citySnapshot(db, w.id, { heightMetric }),
+      })
+    }
+
+    if (p === '/api/city/delta' && req.method === 'GET') {
+      const w = access.requireWorkspace(db, ws)
+      // `Number(null)` is 0, so an omitted `from` would silently mean "since the
+      // beginning" and answer a delta nobody asked for.
+      const raw = q.get('from') ?? q.get('fromGeneration')
+      const from = raw === null || raw.trim() === '' ? Number.NaN : Number(raw)
+      if (!Number.isFinite(from) || from < 0) {
+        return json(res, { ok: false, error: 'from=<generation> is required' }, 400)
+      }
+      return json(res, {
+        ok: true,
+        workspace: w.id,
+        ...indexStateOf(db, w.id),
+        delta: cityDelta(db, w.id, Math.floor(from)),
+      })
+    }
+
     // ── Code Intelligence (M3: GitNexus Parity) ──────────────────────────
     if (p === '/api/intel/status') {
       const workspaceId = requiredIntelWorkspace(db, ws)
@@ -1595,7 +2333,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
           error: 'workspace is required for Intel status when zero or multiple workspaces are registered',
         }, 400)
       }
-      return json(res, { ok: true, status: intel.getIntelStatus(db, workspaceId) })
+      return json(res, {
+        ok: true,
+        ...indexStateOf(db, workspaceId),
+        status: intel.getIntelStatus(db, workspaceId),
+      })
     }
 
     if (p === '/api/intel/context') {
@@ -1627,7 +2369,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
       const workspaceId = ((body.workspace as string | undefined) ?? ws) || undefined
-      return json(res, { ok: true, result: intel.conceptSearch(db, query, { limit, repoId, checkoutId, workspaceId }) })
+      return json(res, {
+        ok: true,
+        ...(workspaceId === undefined || workspaceId === '' ? {} : indexStateOf(db, workspaceId)),
+        result: intel.conceptSearch(db, query, { limit, repoId, checkoutId, workspaceId }),
+      })
     }
 
     if (p === '/api/intel/detect_changes' || p === '/api/intel/detect-changes') {
@@ -1645,6 +2391,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const diffText = (body.diffText as string | undefined)
       return json(res, {
         ok: true,
+        ...indexStateOf(db, workspaceId),
         result: intel.detectChanges(db, { workspaceId, checkoutId, repoId, checkoutPath, diffText }),
       })
     }
@@ -1656,6 +2403,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const limit = Number(body.limit ?? q.get('limit') ?? 50)
       return json(res, { ok: true, result: intel.executeCypherQuery(db, query, { limit }) })
     }
+
+    // An unknown API path is a 404 in JSON. Falling through to the UI shell
+    // answered a missing route with 200 HTML, which makes a client's
+    // `response.json()` throw and hides the fact that nothing was wired.
+    if (p.startsWith('/api/')) return json(res, { ok: false, error: `no route: ${p}` }, 404)
 
     // ── static UI ────────────────────────────────────────────────────────
     if (ctx.uiRoot) {

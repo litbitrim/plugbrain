@@ -9,6 +9,8 @@
  * "already running since …, phase …, 40 % done" instead of silently scanning
  * the same 150 000 files a second time.
  */
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { Worker, type WorkerOptions } from 'node:worker_threads'
 import type { DatabaseSync } from 'node:sqlite'
 import { indexPlanetWorkspace } from '../planet.ts'
@@ -22,6 +24,69 @@ import {
 export { IndexRunBusy }
 export type { RunState }
 
+/**
+ * Where the worker entry can live, in the order it is looked for.
+ *
+ * The bundled product and the TypeScript source need different files, and the
+ * URL is resolved against `import.meta.url`, which points at `dist/plugbrain.mjs`
+ * in a build and at `src/index/runner.ts` in a checkout. The first candidate is
+ * the BUNDLED worker (build-standalone.mjs emits it), the last one is the source
+ * file. Without this list a packaged Core built its runs against a path that was
+ * never produced — `Cannot find module …\dist\worker.ts` — which is a run that
+ * silently does nothing while the product looks healthy.
+ */
+export const WORKER_CANDIDATES = ['worker.mjs', 'worker.js', 'worker.ts'] as const
+
+export interface WorkerResolution {
+  /** The worker entry to run, or null when no candidate exists. */
+  url: URL | null
+  /** Every path that was looked at, so a refusal can name them all. */
+  tried: string[]
+}
+
+/**
+ * Find the index worker. `$PLUGBRAIN_WORKER` wins, then the candidates beside
+ * this module. Pure filesystem probing: nothing is constructed or executed here,
+ * so the caller can refuse BEFORE it takes the run lock.
+ */
+export function resolveIndexWorker(override = process.env.PLUGBRAIN_WORKER): WorkerResolution {
+  const tried: string[] = []
+  const named = override?.trim()
+  if (named !== undefined && named !== '') {
+    const url = new URL(`file://${named.replace(/\\/g, '/')}`)
+    tried.push(named)
+    if (existsSync(fileURLToPath(url))) return { url, tried }
+  }
+  for (const candidate of WORKER_CANDIDATES) {
+    const url = new URL(`./${candidate}`, import.meta.url)
+    const path = fileURLToPath(url)
+    tried.push(path)
+    if (existsSync(path)) return { url, tried }
+  }
+  return { url: null, tried }
+}
+
+/**
+ * No worker entry could be found, so no run may be started in one.
+ *
+ * This is deliberately NOT the same answer as "the run failed": it is a
+ * packaging fault, nothing was attempted, and the lock was never taken. A
+ * caller must be able to tell the two apart, or a broken payload looks like a
+ * busy brain.
+ */
+export class IndexWorkerUnavailable extends Error {
+  readonly tried: string[]
+
+  constructor(tried: string[]) {
+    super(
+      'index worker not found: no background indexer is packaged next to this build\n' +
+      tried.map(path => `  looked for ${path}`).join('\n'),
+    )
+    this.name = 'IndexWorkerUnavailable'
+    this.tried = tried
+  }
+}
+
 /** How often a running index rewrites its state file. */
 export const DEFAULT_THROTTLE_MS = 400
 
@@ -30,6 +95,19 @@ export interface RunOptions {
   /** The store file. Without it a worker cannot open its own connection. */
   dbFile?: string
   throttleMs?: number
+  /**
+   * A caller-chosen job name. A repeat with the same key must not start a
+   * second run: the route is idempotent, and the key is written into the run
+   * state so the answer survives a restart.
+   */
+  idempotencyKey?: string
+  /** Where the worker entry is, when it is not the packaged default. */
+  workerPath?: string
+  /**
+   * A resolution the caller already made, so a test (or an embedder) can state
+   * what the platform found instead of re-probing the filesystem.
+   */
+  workerResolution?: WorkerResolution
   /** A second listener, for a caller that wants to print progress as it runs. */
   onProgress?: IndexProgress
   /** Test seam for a synchronous worker-construction failure. */
@@ -113,7 +191,19 @@ export function runIndexInProcess(
 export function startIndexRun(
   workspaceId: string, options: RunOptions & { dbFile: string },
 ): { state: RunState; done: Promise<RunOutcome> } {
-  const state = beginRun(workspaceId, { ...(options.full === true ? { full: true } : {}) })
+  // Resolve the worker BEFORE the lock is taken: a missing payload must not
+  // leave a run state behind that a later caller mistakes for a real run.
+  // An injected factory is a test seam and supplies its own worker.
+  const resolution = options.workerResolution ?? (options.workerFactory !== undefined
+    ? { url: new URL('./worker.ts', import.meta.url), tried: [] as string[] }
+    : resolveIndexWorker(options.workerPath))
+  if (resolution.url === null) throw new IndexWorkerUnavailable(resolution.tried)
+
+  const state = beginRun(workspaceId, {
+    ...(options.full === true ? { full: true } : {}),
+    ...(options.idempotencyKey === undefined || options.idempotencyKey === ''
+      ? {} : { idempotencyKey: options.idempotencyKey }),
+  })
   const workerOptions: WorkerOptions = {
     workerData: {
       workspaceId,
@@ -126,7 +216,7 @@ export function startIndexRun(
   let worker: Worker
   try {
     worker = (options.workerFactory ?? ((filename, config) => new Worker(filename, config)))(
-      new URL('./worker.ts', import.meta.url), workerOptions,
+      resolution.url, workerOptions,
     )
   } catch (error) {
     // The state is written before constructing the worker so competing starts

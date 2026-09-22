@@ -122,16 +122,19 @@ test('Planet API requires an authenticated explicit checkout selection before sc
 
       await workerHandle.close()
       workerHandle = null
-      // Omit dbFile only for this small test fixture, so the completed scan is
-      // synchronous and cannot leave a background worker behind in the suite.
+      // This fixture runs WITHOUT a store path, and a request may no longer
+      // index in line there: doing so blocks the whole event loop for the
+      // length of the run, which is the defect the busy contract fixes. The
+      // scan is therefore run through the same entry point the worker uses and
+      // then read back over HTTP, which is what this test is about.
       syncHandle = await serve({ db, uiRoot: null, authKey: token, requireAuth: true }, 0)
       const base = `http://127.0.0.1:${syncHandle.port}`
-      const indexed = await authPost(base, token, '/api/planet/scan', { workspace: registeredBody.workspaceId })
-      assert.equal(indexed.status, 200)
-      const indexedBody = await indexed.json() as { ok: boolean; started: boolean; result: { files: number } }
-      assert.equal(indexedBody.ok, true)
-      assert.equal(indexedBody.started, false)
-      assert.equal(indexedBody.result.files, 2)
+      assert.equal(
+        (await authPost(base, token, '/api/planet/scan', { workspace: registeredBody.workspaceId })).status,
+        501, 'a request must refuse to index in line instead of blocking every route',
+      )
+      const indexed = indexPlanetWorkspace(db, registeredBody.workspaceId)
+      assert.equal(indexed.files, 2)
 
       // Simulate a pre-Planet whole-root generation: it did not know checkout
       // attribution and left a historical Code path as NULL. A selection scope
