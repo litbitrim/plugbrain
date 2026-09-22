@@ -20,10 +20,10 @@ UninstPage instfiles
 ; never overlays an arbitrary user folder or upgrades an existing tree in
 ; place: an upgrade must first be explicitly uninstalled after its Core stops.
 Function .onVerifyInstDir
-  IfFileExists "$INSTDIR\.plugbrain-install.marker" 0 +2
+  IfFileExists "$INSTDIR\.plugbrain-install.marker" 0 +3
     MessageBox MB_OK|MB_ICONSTOP "An existing PlugBrain installation was found here. Close PlugBrain and uninstall that installation before continuing."
     Abort
-  IfFileExists "$INSTDIR\*.*" 0 +2
+  IfFileExists "$INSTDIR\*.*" 0 +3
     MessageBox MB_OK|MB_ICONSTOP "Choose a new empty folder. PlugBrain will never merge with an existing folder."
     Abort
 FunctionEnd
@@ -51,7 +51,7 @@ SectionEnd
 
 Section "Uninstall"
   ; Refuse to act on a folder that was not created by this installer.
-  IfFileExists "$INSTDIR\.plugbrain-install.marker" +2 0
+  IfFileExists "$INSTDIR\.plugbrain-install.marker" +3 0
     MessageBox MB_OK|MB_ICONSTOP "This folder is not a verified PlugBrain installation. Nothing was removed."
     Abort
 
@@ -59,7 +59,7 @@ Section "Uninstall"
   ; touching any other payload file, so a running service cannot yield a
   ; partially deleted product tree.
   Delete "$INSTDIR\dist\node.exe"
-  IfFileExists "$INSTDIR\dist\node.exe" 0 +2
+  IfFileExists "$INSTDIR\dist\node.exe" 0 +3
     MessageBox MB_OK|MB_ICONSTOP "PlugBrain Core is still running or its runtime is locked. Close it and run uninstall again."
     Abort
 
