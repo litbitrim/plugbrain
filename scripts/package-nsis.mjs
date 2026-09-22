@@ -9,13 +9,16 @@ import { captureSourceState } from './source-state.mjs'
 const root = join(import.meta.dirname, '..')
 const makensis = process.env.PLUGBRAIN_MAKENSIS?.trim()
 const installer = join(root, 'desktop', 'PlugBrain.nsi')
-const output = join(root, 'release', 'PlugBrain-0.1.0-win-x64.exe')
+// The artifact name follows package.json, so a version bump cannot leave a
+// mislabelled installer behind: the release identity is written in one place.
+const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version
+const output = join(root, 'release', `PlugBrain-${version}-win-x64.exe`)
 const ownedFiles = join(root, 'release', 'PlugBrain-owned-files.nsh')
 const provenanceFile = `${output}.provenance.json`
 
 if (process.platform !== 'win32') throw new Error('PlugBrain NSIS packaging is Windows-only')
 if (process.arch !== 'x64') {
-  throw new Error(`PlugBrain 0.1.0 NSIS packaging supports win-x64 only; refusing host runtime ${process.arch}`)
+  throw new Error(`PlugBrain ${version} NSIS packaging supports win-x64 only; refusing host runtime ${process.arch}`)
 }
 if (!makensis) {
   throw new Error('PLUGBRAIN_MAKENSIS must name the explicitly selected makensis.exe')
