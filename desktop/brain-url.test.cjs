@@ -104,11 +104,13 @@ test('the NSIS source refuses arbitrary folders and never recursively removes th
   assert.match(nsis, /Function \.onVerifyInstDir/);
   assert.match(nsis, /\.plugbrain-install\.marker/);
   assert.match(nsis, /Choose a new empty folder/);
-  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" 0 \+2/);
-  assert.match(nsis, /IfFileExists "\$INSTDIR\\\*\.\*" 0 \+2/);
+  // Each check guards MessageBox + Abort, so its pass branch must jump +3; +2 lands on the Abort.
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" 0 \+3/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\*\.\*" 0 \+3/);
   assert.match(nsis, /Delete "\$INSTDIR\\dist\\node\.exe"/);
-  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" \+2 0/);
-  assert.match(nsis, /IfFileExists "\$INSTDIR\\dist\\node\.exe" 0 \+2/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\\.plugbrain-install\.marker" \+3 0/);
+  assert.match(nsis, /IfFileExists "\$INSTDIR\\dist\\node\.exe" 0 \+3/);
+  assert.doesNotMatch(nsis, /IfFileExists [^\n]* \+2/);
   assert.match(nsis, /PlugBrain Core is still running or its runtime is locked/);
   assert.match(nsis, /!include "\.\.\\release\\PlugBrain-owned-files\.nsh"/);
   assert.doesNotMatch(nsis, /RMDir \/r/);
