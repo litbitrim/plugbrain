@@ -78,8 +78,154 @@ export function languageOf(ext: string): string | null {
     case '.mts': case '.cts': return 'typescript'
     case '.js': case '.mjs': case '.cjs': return 'javascript'
     case '.jsx': return 'jsx'
+    case '.py': return 'python'
+    case '.rs': return 'rust'
+    case '.sql': return 'sql'
     default: return null
   }
+}
+
+/**
+ * These extractors intentionally recognise only syntax whose target is written
+ * down in the source. Python/Rust/SQL all have dynamic forms which must remain
+ * unresolved instead of being turned into plausible-looking graph edges.
+ */
+function foreignExtract(path: string, content: string, ext: string): FileExtract | null {
+  const lang = languageOf(ext)
+  if (lang === 'python') return extractPython(content)
+  if (lang === 'rust') return extractRust(content)
+  if (lang === 'sql') return extractSql(content)
+  return null
+}
+
+const foreignBase = (content: string): FileExtract => ({
+  symbols: [], refs: [], imports: [], loc: content.length === 0 ? 0 : content.split('\n').length,
+})
+
+/** Remove comments and string literals before looking for executable names. */
+function codeOnly(line: string, comment: RegExp): string {
+  const withoutComment = line.replace(comment, '')
+  return withoutComment
+    .replace(/'(?:\\.|[^'\\])*'/g, "''")
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+}
+
+function extractPython(content: string): FileExtract {
+  const out = foreignBase(content)
+  const stack: Array<{ indent: number; name: string }> = []
+  const lines = content.split('\n')
+  for (let index = 0; index < lines.length; index += 1) {
+    const raw = lines[index]
+    const lineNo = index + 1
+    const indent = raw.match(/^\s*/)?.[0].replace(/\t/g, '    ').length ?? 0
+    const line = codeOnly(raw, /\s+#.*$/)
+    if (line.trim() === '') continue
+    while (stack.length > 0 && indent <= stack[stack.length - 1].indent) stack.pop()
+    const container = stack.at(-1)?.name ?? null
+
+    const fromImport = line.match(/^\s*from\s+([.\w]+)\s+import\s+(.+)$/)
+    if (fromImport) {
+      const specifier = fromImport[1]
+      for (const part of fromImport[2].replace(/[()]/g, '').split(',')) {
+        const binding = part.trim().match(/^([A-Za-z_]\w*)(?:\s+as\s+([A-Za-z_]\w*))?$/)
+        if (binding) out.imports.push({ specifier, bindings: [{ local: binding[2] ?? binding[1], imported: binding[1] }], line: lineNo })
+      }
+    } else {
+      const imported = line.match(/^\s*import\s+(.+)$/)
+      if (imported) for (const part of imported[1].split(',')) {
+        const binding = part.trim().match(/^([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(?:\s+as\s+([A-Za-z_]\w*))?$/)
+        if (binding) {
+          const local = binding[2] ?? binding[1].split('.')[0]
+          out.imports.push({ specifier: binding[1], bindings: [{ local, imported: '*' }], line: lineNo })
+        }
+      }
+    }
+
+    const declaration = line.match(/^\s*(?:async\s+)?(def|class)\s+([A-Za-z_]\w*)/)
+    if (declaration) {
+      const kind: SymbolKind = declaration[1] === 'class' ? 'class' : container === null ? 'function' : 'method'
+      const name = declaration[2]
+      out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: !name.startsWith('_'), container })
+      if (declaration[1] === 'class') {
+        const bases = line.match(/^\s*class\s+\w+\s*\(([^)]*)\)/)?.[1] ?? ''
+        for (const base of bases.split(',')) {
+          const target = base.trim().match(/^([A-Za-z_]\w*)(?:\.[A-Za-z_]\w*)?$/)?.[1]
+          if (target) out.refs.push({ kind: 'extends', target, receiver: null, from: name, line: lineNo })
+        }
+      }
+      stack.push({ indent, name })
+      continue
+    }
+
+    const calls = codeOnly(line, /\s+#.*$/).matchAll(/\b([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\s*\(/g)
+    for (const hit of calls) {
+      const full = hit[1]
+      if (['if', 'for', 'while', 'with', 'except', 'return', 'print'].includes(full)) continue
+      const dot = full.lastIndexOf('.')
+      out.refs.push({ kind: 'calls', target: dot === -1 ? full : full.slice(dot + 1), receiver: dot === -1 ? null : full.slice(0, dot), from: container, line: lineNo })
+    }
+  }
+  return out
+}
+
+function extractRust(content: string): FileExtract {
+  const out = foreignBase(content)
+  const lines = content.split('\n')
+  let container: string | null = null
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineNo = index + 1
+    const line = codeOnly(lines[index], /\/\/.*$/)
+    const use = line.match(/^\s*use\s+([^;]+);/)
+    if (use) {
+      const path = use[1].trim()
+      const leafs = path.match(/^(.*)::\{([^}]+)\}$/)
+      if (leafs) for (const item of leafs[2].split(',')) {
+        const binding = item.trim().match(/^([A-Za-z_]\w*)(?:\s+as\s+([A-Za-z_]\w*))?$/)
+        if (binding) out.imports.push({ specifier: leafs[1], bindings: [{ local: binding[2] ?? binding[1], imported: binding[1] }], line: lineNo })
+      } else {
+        const binding = path.match(/^(.*)::([A-Za-z_]\w*)(?:\s+as\s+([A-Za-z_]\w*))?$/)
+        if (binding) out.imports.push({ specifier: binding[1], bindings: [{ local: binding[3] ?? binding[2], imported: binding[2] }], line: lineNo })
+      }
+    }
+    const impl = line.match(/^\s*impl(?:<[^>]*>)?\s+(?:[\w:]+\s+for\s+)?([A-Za-z_]\w*)/)
+    if (impl) { container = impl[1]; continue }
+    const declaration = line.match(/^\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?(fn|struct|enum|trait)\s+([A-Za-z_]\w*)/)
+    if (declaration) {
+      const type = declaration[1]
+      const name = declaration[2]
+      const kind: SymbolKind = type === 'fn' ? (container === null ? 'function' : 'method') : type === 'trait' ? 'interface' : type === 'enum' ? 'enum' : 'class'
+      out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: /^\s*pub\b/.test(line), container: type === 'fn' ? container : null })
+      continue
+    }
+    for (const hit of line.matchAll(/\b([A-Za-z_]\w*(?:::[A-Za-z_]\w*)?)\s*!?\s*\(/g)) {
+      const full = hit[1]
+      if (['if', 'while', 'match', 'loop', 'for'].includes(full)) continue
+      const pos = full.lastIndexOf('::')
+      out.refs.push({ kind: 'calls', target: pos === -1 ? full : full.slice(pos + 2), receiver: pos === -1 ? null : full.slice(0, pos), from: container, line: lineNo })
+    }
+  }
+  return out
+}
+
+function extractSql(content: string): FileExtract {
+  const out = foreignBase(content)
+  const lines = content.split('\n')
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineNo = index + 1
+    const line = codeOnly(lines[index], /--.*$/)
+    const definition = line.match(/^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:TABLE|VIEW|FUNCTION|PROCEDURE)\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z_]\w*)/i)
+    if (definition) {
+      const word = line.match(/^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(TABLE|VIEW|FUNCTION|PROCEDURE)/i)?.[1].toLowerCase()
+      const kind: SymbolKind = word === 'function' || word === 'procedure' ? 'function' : 'class'
+      out.symbols.push({ name: definition[1], kind, line: lineNo, endLine: lineNo, exported: true, container: null })
+    }
+    const source = /\b(?:FROM|JOIN|UPDATE|INTO|REFERENCES)\s+([A-Za-z_]\w*)/ig
+    for (const hit of line.matchAll(source)) out.refs.push({ kind: 'references', target: hit[1], receiver: null, from: null, line: lineNo })
+    for (const hit of line.matchAll(/\bCALL\s+([A-Za-z_]\w*)\s*\(/ig)) out.refs.push({ kind: 'calls', target: hit[1], receiver: null, from: null, line: lineNo })
+    const include = line.match(/^\s*(?:\\i|SOURCE)\s+([^\s;]+)\s*;?\s*$/i)
+    if (include) out.imports.push({ specifier: include[1], bindings: [], line: lineNo })
+  }
+  return out
 }
 
 function scriptKindOf(ext: string): ts.ScriptKind {
@@ -158,6 +304,8 @@ function requireBindings(call: ts.CallExpression): ImportBinding[] {
  * file must never abort a workspace index.
  */
 export function extractFromSource(path: string, content: string, ext: string): FileExtract {
+  const foreign = foreignExtract(path, content, ext)
+  if (foreign !== null) return foreign
   const out: FileExtract = { symbols: [], refs: [], imports: [], loc: 0 }
   out.loc = content.length === 0 ? 0 : content.split('\n').length
 
