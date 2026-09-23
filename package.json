@@ -1,6 +1,6 @@
 {
   "name": "plugbrain",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "PlugBrain — standalone workspace indexer: real AST code intelligence with three renderings of one graph.",
