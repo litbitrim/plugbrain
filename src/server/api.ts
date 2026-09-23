@@ -21,6 +21,7 @@ import {
 import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
+import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 
 /**
  * The identity a search is attributed to. A read is a read: the provenance
@@ -186,20 +187,32 @@ function liveProjectionCounts(db: DatabaseSync, workspaceId: string): {
   const destination = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
   const count = (sql: string, ...params: unknown[]): number => Number(
     (db.prepare(sql).get(...params) as { c: number } | undefined)?.c ?? 0)
+  // Files and stale are written by direct writes too, so they stay live.
+  // Symbols and edges only the indexer writes — they come from the memo,
+  // keyed by (workspace, generation, scope) so a poll between index runs is
+  // exact and a selection change never reads another scope's number.
+  const cached = cachedOnce(generationCache('live-projection-counts'),
+    JSON.stringify([workspaceId, publishedGeneration(db, workspaceId),
+      files.sql, files.params, source.sql, source.params,
+      destination.sql, destination.params]),
+    () => ({
+      symbols: count(
+        `SELECT COUNT(*) c FROM symbols s JOIN files f ON f.id = s.file_id
+          WHERE f.workspace_id = ? AND ${files.sql}`,
+        workspaceId, ...files.params),
+      edges: count(
+        `SELECT COUNT(*) c FROM edges e
+          JOIN files src ON src.id = e.src_file
+          LEFT JOIN files dst ON dst.id = e.dst_file
+         WHERE e.workspace_id = ? AND ${source.sql}
+           AND (e.dst_file IS NULL OR (${destination.sql}))`,
+        workspaceId, ...source.params, ...destination.params),
+    }))
   return {
     files: count(`SELECT COUNT(*) c FROM files f WHERE f.workspace_id = ? AND ${files.sql}`,
       workspaceId, ...files.params),
-    symbols: count(
-      `SELECT COUNT(*) c FROM symbols s JOIN files f ON f.id = s.file_id
-        WHERE f.workspace_id = ? AND ${files.sql}`,
-      workspaceId, ...files.params),
-    edges: count(
-      `SELECT COUNT(*) c FROM edges e
-        JOIN files src ON src.id = e.src_file
-        LEFT JOIN files dst ON dst.id = e.dst_file
-       WHERE e.workspace_id = ? AND ${source.sql}
-         AND (e.dst_file IS NULL OR (${destination.sql}))`,
-      workspaceId, ...source.params, ...destination.params),
+    symbols: cached.symbols,
+    edges: cached.edges,
     stale: count(
       `SELECT COUNT(*) c FROM files f
         WHERE f.workspace_id = ? AND f.indexed_at IS NULL AND ${files.sql}`,
@@ -483,19 +496,36 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
     ).all(workspaceId, ...filesScope.params, until ?? null, until ?? null) as
       { path: string }[]).map(row => row.path))
 
-  const imports = db.prepare(
-    `SELECT e.src_file AS src, e.dst_file AS dst FROM edges e
-      JOIN files src ON src.id = e.src_file
-      JOIN files dst ON dst.id = e.dst_file
-     WHERE e.workspace_id = ? AND e.kind = 'imports' AND e.resolved = 1
-       AND ${sourceScope.sql} AND ${destinationScope.sql}`
-  ).all(workspaceId, ...sourceScope.params, ...destinationScope.params) as
-    Array<{ src: number; dst: number }>
-  const degree = new Map<number, number>()
-  for (const edge of imports) {
-    degree.set(edge.src, (degree.get(edge.src) ?? 0) + 1)
-    degree.set(edge.dst, (degree.get(edge.dst) ?? 0) + 1)
-  }
+  // Degree: counted in SQL with GROUP BY and memoized per (workspace,
+  // generation, scope) — never materialized as millions of JS rows. The
+  // scopes in the key keep a selection change honest; the generation covers
+  // every index run.
+  const degree = cachedOnce(generationCache('graph-degree'),
+    JSON.stringify([workspaceId, publishedGeneration(db, workspaceId),
+      sourceScope.sql, sourceScope.params, destinationScope.sql, destinationScope.params]),
+    () => {
+      const map = new Map<number, number>()
+      const bump = (rows: Array<{ id: number; n: number }>): void => {
+        for (const row of rows) map.set(Number(row.id), (map.get(Number(row.id)) ?? 0) + Number(row.n))
+      }
+      bump(db.prepare(
+        `SELECT e.src_file AS id, COUNT(*) AS n FROM edges e
+          JOIN files src ON src.id = e.src_file
+          JOIN files dst ON dst.id = e.dst_file
+         WHERE e.workspace_id = ? AND e.kind = 'imports' AND e.resolved = 1
+           AND ${sourceScope.sql} AND ${destinationScope.sql}
+         GROUP BY e.src_file`
+      ).all(workspaceId, ...sourceScope.params, ...destinationScope.params) as Array<{ id: number; n: number }>)
+      bump(db.prepare(
+        `SELECT e.dst_file AS id, COUNT(*) AS n FROM edges e
+          JOIN files src ON src.id = e.src_file
+          JOIN files dst ON dst.id = e.dst_file
+         WHERE e.workspace_id = ? AND e.kind = 'imports' AND e.resolved = 1
+           AND ${sourceScope.sql} AND ${destinationScope.sql}
+         GROUP BY e.dst_file`
+      ).all(workspaceId, ...sourceScope.params, ...destinationScope.params) as Array<{ id: number; n: number }>)
+      return map
+    })
 
   // Rank: agent-owned first, then anything an agent touched, then real code by
   // how connected it is. A slice full of untouched markdown has no edges and
@@ -527,8 +557,23 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
     if (list) list.push(entry); else readersByPath.set(r.path, [entry])
   }
 
+  // Edges within the selected slice: one index probe per selected file
+  // (idx_edges_ws_src_file) instead of materializing the whole edge set in
+  // JS. The slice is bounded by `limit`, so the probe count is bounded too.
   const ids = new Set(files.map(f => f.id))
-  const edges = imports.filter(edge => ids.has(edge.src) && ids.has(edge.dst))
+  const selectOutgoing = db.prepare(
+    `SELECT e.dst_file AS dst FROM edges e
+      JOIN files dst ON dst.id = e.dst_file
+     WHERE e.workspace_id = ? AND e.src_file = ? AND e.kind = 'imports' AND e.resolved = 1
+       AND ${destinationScope.sql}`
+  )
+  const edges: Array<{ src: number; dst: number }> = []
+  for (const f of files) {
+    for (const row of selectOutgoing.all(workspaceId, f.id, ...destinationScope.params) as
+      Array<{ dst: number }>) {
+      edges.push({ src: f.id, dst: Number(row.dst) })
+    }
+  }
 
   return {
     truncated: all.length > files.length,
@@ -732,13 +777,13 @@ function changesOf(db: DatabaseSync, workspaceId: string, fromGeneration: number
   const toGeneration = Number(state?.generation ?? 0)
 
   const changed = db.prepare(
-    `SELECT f.id AS fileId, f.path, f.ext, f.lang, f.loc, f.generation, f.hash
+    `SELECT f.id AS fileId, f.path, f.ext, f.lang, f.loc, f.generation, f.created_generation, f.hash
        FROM files f
       WHERE f.workspace_id = ? AND ${scope.sql} AND f.generation > ?
       ORDER BY f.path ASC`)
     .all(workspaceId, ...scope.params, fromGeneration) as Array<{
       fileId: number; path: string; ext: string; lang: string | null
-      loc: number; generation: number; hash: string | null
+      loc: number; generation: number; created_generation: number; hash: string | null
     }>
 
   const tombstones = db.prepare(
@@ -778,19 +823,24 @@ function changesOf(db: DatabaseSync, workspaceId: string, fromGeneration: number
     if (!livePaths.has(tomb.path)) deleted.push(tomb.path)
   }
 
+  // Separate changed files into added vs modified using created_generation
+  const added = changed
+    .filter(row => row.created_generation === row.generation)
+    .map(({ hash: _hash, created_generation: _cg, ...rest }) => rest)
+  const modified = changed
+    .filter(row => row.created_generation < row.generation)
+    .map(({ hash: _hash, created_generation: _cg, ...rest }) => rest)
+
   return {
     fromGeneration,
     toGeneration,
-    changed: changed.map(({ hash: _hash, ...rest }) => rest),
+    changed: changed.map(({ hash: _hash, created_generation: _cg, ...rest }) => rest),
+    added,
+    modified,
     deleted,
     renamed,
     tombstones,
-    unavailable: {
-      added: null,
-      modified: null,
-      reason: 'a changed row is updated in place, so the store records WHICH generation wrote a path, ' +
-        'not whether the path is new; /api/files (prefix + tombstones) is the honest source for that',
-    },
+    unavailable: null,
   }
 }
 
