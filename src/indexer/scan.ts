@@ -30,6 +30,7 @@
  * file costs a query rather than a re-parse. That split is what makes editing
  * one file cost one parse instead of a whole workspace.
  */
+import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { extname, join, posix, relative } from 'node:path'
@@ -209,6 +210,41 @@ function acceptFile(root: IndexRoot, abs: string, rel: string, found: WalkedFile
   })
 }
 
+/**
+ * What git itself leaves out of a checkout, as checkout-relative paths.
+ *
+ * The walker's own skip list knows `node_modules`, `dist` and the like by name,
+ * but a repository says what its build output is in `.gitignore`, and the two
+ * disagree: PlugHarness emits every package into `lib/`, which no name rule can
+ * treat as output without breaking repositories where `lib/` is source. Indexed
+ * anyway, those emitted copies made every symbol ambiguous (five candidates for
+ * one function: the source, the bundle, the .js and two .d.ts) and doubled the
+ * file count against GitNexus on the same repository.
+ *
+ * `--others --ignored --directory` lists only untracked paths, so a tracked
+ * file stays indexed even when a pattern matches it, and an ignored directory
+ * comes back as one `dir/` entry instead of every file below it. No git, or a
+ * folder that is not a work tree, means no filter: the old behaviour.
+ */
+export function gitIgnored(checkoutAbs: string): { dirs: Set<string>; files: Set<string> } | null {
+  let out: string
+  try {
+    out = execFileSync('git', ['-C', checkoutAbs, 'ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--directory'], {
+      encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'],
+    })
+  } catch {
+    return null
+  }
+  const dirs = new Set<string>()
+  const files = new Set<string>()
+  for (const entry of out.split('\0')) {
+    if (entry === '') continue
+    if (entry.endsWith('/')) dirs.add(entry.slice(0, -1))
+    else files.add(entry)
+  }
+  return { dirs, files }
+}
+
 function walkInto(
   root: IndexRoot, found: WalkedFile[], counter: { seen: number }, onProgress?: ScanProgress,
 ): void {
@@ -218,6 +254,8 @@ function walkInto(
     counter.seen += 1
     return
   }
+  const ignored = root.kind === 'checkout' ? gitIgnored(root.abs) : null
+  const inRoot = (abs: string): string => relative(root.abs, abs).split('\\').join('/')
   const stack: Array<{ dir: string; depth: number }> = [{ dir: root.abs, depth: 0 }]
   while (stack.length > 0) {
     const { dir, depth } = stack.pop() as { dir: string; depth: number }
@@ -229,11 +267,13 @@ function walkInto(
       if (entry.isDirectory()) {
         if (entry.name.startsWith('.') && root.kind === 'notes') continue
         if (isSkippedDir(entry.name, depth + 1)) continue
+        if (ignored !== null && ignored.dirs.has(inRoot(abs))) continue
         stack.push({ dir: abs, depth: depth + 1 })
         continue
       }
       if (!entry.isFile()) continue
-      const inside = relative(root.abs, abs).split('\\').join('/')
+      const inside = inRoot(abs)
+      if (ignored !== null && ignored.files.has(inside)) continue
       const rel = root.prefix === '' ? inside : `${root.prefix}/${inside}`
       acceptFile(root, abs, rel, found)
       counter.seen += 1

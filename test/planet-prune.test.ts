@@ -224,6 +224,43 @@ test('a prune refuses a missing or empty selection and an unreachable child tabl
   } finally { fx.cleanup() }
 })
 
+test('a checkout is indexed as git sees it: ignored build output stays out, tracked files stay in', { skip: skipGit }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-gitignore-'))
+  const root = join(dir, 'plugpt')
+  const codeDir = join(root, 'Code')
+  mkdirSync(codeDir, { recursive: true })
+  try {
+    const repo = makeRepo(codeDir, 'harness', {
+      '.gitignore': 'lib/\n*.gen.ts\n',
+      'src/core.ts': 'export function ensureCore() { return 1 }\n',
+      'vendor/keep.gen.ts': 'export const tracked = 1\n',
+    })
+    // A tracked file that a pattern matches is still part of the repository.
+    git(repo, ['add', '-f', 'vendor/keep.gen.ts'])
+    git(repo, ['commit', '-q', '-m', 'track a generated file on purpose'])
+    write(repo, 'lib/core.js', 'export function ensureCore() { return 1 }\n')
+    write(repo, 'lib/types/core.d.ts', 'export declare function ensureCore(): number\n')
+    write(repo, 'src/draft.gen.ts', 'export const untrackedGenerated = 1\n')
+    write(repo, 'src/new.ts', 'export const untrackedSource = 1\n')
+    const db = openStore(join(dir, 'brain.db'))
+    try {
+      const registered = registerPlanet(db, root)
+      setPlanetIndexSelection(db, registered.workspaceId,
+        discoverCheckouts(codeDir, registered.planetId).map(c => c.checkoutId))
+      indexPlanetWorkspace(db, registered.workspaceId)
+      const paths = (db.prepare('SELECT path FROM files WHERE checkout_id IS NOT NULL ORDER BY path').all() as
+        Array<{ path: string }>).map(row => row.path)
+      assert.deepEqual(paths, [
+        'Code/harness/src/core.ts',
+        'Code/harness/src/new.ts',
+        'Code/harness/vendor/keep.gen.ts',
+      ])
+      const defs = n(db, "SELECT COUNT(*) AS n FROM symbols WHERE name = 'ensureCore'")
+      assert.equal(defs, 1, 'one definition, not one per emitted copy')
+    } finally { db.close() }
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
 test('a file delete cascades through indexes, and an older store drops its workspace-first edge indexes', () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-edge-index-'))
   const file = join(dir, 'brain.db')
