@@ -12,7 +12,13 @@ import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { indexWorkspace } from '../src/indexer/index.ts'
 import { ingestTraceEvents } from '../src/trace.ts'
-import { assertStableBudget, measureWarmMedian, prioritiseTimingProcess } from './helpers/stable-load-budget.ts'
+import {
+  assertStableBudget,
+  classifyHostLoad,
+  measureHostLoad,
+  measureWarmMedian,
+  prioritiseTimingProcess,
+} from './helpers/stable-load-budget.ts'
 
 const AUTH = 'flake-load-token'
 const CONCURRENCY = 8
@@ -45,6 +51,18 @@ test('FLAKE: Awareness Runtime and FO-3/FO-4 keep their contracts under concurre
       occurredAt: now, observedAt: now, fileRefs: ['src/service.ts'], payload: { mode: 'write' },
       provenance: { mode: 'live', authorityRef: 'flake-test', confidence: 'authoritative' },
     }])
+
+    // This happens before any route measurement. A sustained scheduler stall
+    // here is external host contention, not evidence that a Brain endpoint
+    // missed its budget. The endpoint budget itself is deliberately unchanged.
+    const hostLoad = classifyHostLoad(await measureHostLoad())
+    if (hostLoad.status === 'HOST_OVERLOADED') {
+      t.diagnostic(hostLoad.reason)
+      // A skipped node:test case exits 0 and is indistinguishable from a
+      // green CI run. This is an explicitly non-green environmental outcome,
+      // not a product budget failure; the reason remains machine-readable.
+      throw new Error(hostLoad.reason)
+    }
 
     const awareness = async (): Promise<void> => {
       const responses = await Promise.all(Array.from({ length: CONCURRENCY }, () => post('/api/awareness', {
