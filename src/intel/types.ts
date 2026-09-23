@@ -136,5 +136,7 @@ export interface IntelStatusResult {
     isStale: boolean
     dirtyFiles: number
     untrackedFiles: number
+    /** Checkout-inventory timestamp; read routes never execute Git themselves. */
+    observedAt: string | null
   }
 }

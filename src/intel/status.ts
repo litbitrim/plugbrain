@@ -5,15 +5,14 @@
  * "Indexstatus mit Staleness, die uncommittete Änderungen einschließt"
  */
 import type { DatabaseSync } from 'node:sqlite'
-import { existsSync } from 'node:fs'
 import type { IntelStatusResult } from './types.ts'
-import { gitText } from '../indexer/git.ts'
 import { activePlanetFileScope } from '../planet.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 
 /** Return explicit, on-disk checkout selections for this status workspace. */
 function selectedCheckouts(db: DatabaseSync, planetId: string | null): Array<{
-  id: string; repoId: string; path: string; dirtyHash: string | null; dirtyCount: number
+  id: string; repoId: string; dirtyHash: string | null; dirtyCount: number
+  untrackedCount: number; seenAt: string
 }> {
   if (planetId === null) return []
   const tableRows = db.prepare(
@@ -25,14 +24,16 @@ function selectedCheckouts(db: DatabaseSync, planetId: string | null): Array<{
   if (db.prepare('SELECT 1 AS present FROM planet_index_selections WHERE planet_id = ?')
     .get(planetId) === undefined) return []
   return db.prepare(
-    `SELECT c.id, c.repo_id AS repoId, c.path,
-            c.dirty_hash AS dirtyHash, c.dirty_count AS dirtyCount
+    `SELECT c.id, c.repo_id AS repoId, c.dirty_hash AS dirtyHash,
+            c.dirty_count AS dirtyCount, c.untracked_count AS untrackedCount,
+            c.seen_at AS seenAt
        FROM checkouts c
        JOIN planet_index_checkout_selections s
          ON s.planet_id = c.planet_id AND s.checkout_id = c.id
       WHERE c.planet_id = ? AND c.retired_at IS NULL
       ORDER BY c.rel_prefix`).all(planetId) as unknown as Array<{
-        id: string; repoId: string; path: string; dirtyHash: string | null; dirtyCount: number
+        id: string; repoId: string; dirtyHash: string | null; dirtyCount: number
+        untrackedCount: number; seenAt: string
       }>
 }
 
@@ -89,35 +90,19 @@ export function getIntelStatus(
   const symbolsCount = cached.symbols
   const edgesCount = cached.edges
 
-  let dirtyCheckouts = 0
-  let totalDirtyFiles = 0
-  let totalUntrackedFiles = 0
-
-  for (const checkout of checkouts) {
-    if (!existsSync(checkout.path)) continue
-
-    const porcelain = gitText(checkout.path, ['status', '--porcelain'])
-    if (porcelain && porcelain.trim().length > 0) {
-      const lines = porcelain.split('\n').filter(Boolean)
-      let checkoutDirty = 0
-      let checkoutUntracked = 0
-      for (const line of lines) {
-        if (line.startsWith('??')) {
-          checkoutUntracked++
-        } else {
-          checkoutDirty++
-        }
-      }
-      if (checkoutDirty > 0 || checkoutUntracked > 0) {
-        dirtyCheckouts++
-        totalDirtyFiles += checkoutDirty
-        totalUntrackedFiles += checkoutUntracked
-      }
-    } else if (checkout.dirtyHash || checkout.dirtyCount > 0) {
-      dirtyCheckouts++
-      totalDirtyFiles += checkout.dirtyCount
-    }
-  }
+  // The Planet inventory refresh writes this revision vector during checkout
+  // discovery. Running `git status` for every selected checkout in a polling
+  // read route took tens of seconds on the live Planet, blocked its event
+  // loop, and duplicated inventory work. This is explicitly a *snapshot* at
+  // `staleness.observedAt`; it is exact for that discovered revision and gets
+  // renewed by the normal Planet discovery/index path, not guessed at read
+  // time.
+  const dirtyCheckouts = checkouts.filter(checkout => checkout.dirtyHash !== null || checkout.dirtyCount > 0).length
+  const totalUntrackedFiles = checkouts.reduce((sum, checkout) => sum + checkout.untrackedCount, 0)
+  const totalDirtyFiles = checkouts.reduce(
+    (sum, checkout) => sum + Math.max(0, checkout.dirtyCount - checkout.untrackedCount), 0)
+  const observedAt = checkouts.reduce<string | null>(
+    (latest, checkout) => latest === null || checkout.seenAt > latest ? checkout.seenAt : latest, null)
 
   const isStale = totalDirtyFiles > 0 || totalUntrackedFiles > 0
 
@@ -134,6 +119,7 @@ export function getIntelStatus(
       isStale,
       dirtyFiles: totalDirtyFiles,
       untrackedFiles: totalUntrackedFiles,
+      observedAt,
     },
   }
 }

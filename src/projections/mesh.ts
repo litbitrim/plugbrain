@@ -14,6 +14,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 import { ensureTraceSchema, type ProvenanceMode } from '../trace.ts'
+import { cachedTraceProjection } from '../store/projection-cache.ts'
 
 export type MeshNodeKind =
   | 'agent' | 'task' | 'worker' | 'worktree' | 'file' | 'artifact' | 'route'
@@ -74,6 +75,19 @@ export interface MeshSnapshot {
   /** Workers referenced by the trace with no observed process start. */
   unprovenWorkers: Array<{ workerId: string; taskId: string | null; reason: string }>
   legend: Record<string, string>
+  /** A bounded page over the complete, cached trace projection. */
+  page: {
+    nodeOffset: number
+    nodeLimit: number
+    totalNodes: number
+    returnedNodes: number
+    nodesTruncated: boolean
+    edgeOffset: number
+    edgeLimit: number
+    totalEdges: number
+    returnedEdges: number
+    edgesTruncated: boolean
+  }
 }
 
 export const MESH_LEGEND: Record<string, string> = {
@@ -164,7 +178,26 @@ class MeshBuilder {
  * Events are read in the trace's own deterministic order, so the same events
  * in any arrival order build the same mesh.
  */
-export function meshSnapshot(db: DatabaseSync, workspaceId: string): MeshSnapshot {
+interface CompleteMeshSnapshot extends Omit<MeshSnapshot, 'page'> {}
+
+export interface MeshPageOptions {
+  nodeLimit?: number
+  nodeOffset?: number
+  edgeLimit?: number
+  edgeOffset?: number
+}
+
+function clampPage(value: number | undefined, fallback: number, ceiling: number): number {
+  if (value === undefined || !Number.isFinite(value)) return fallback
+  return Math.max(1, Math.min(ceiling, Math.floor(value)))
+}
+
+function clampOffset(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) return 0
+  return Math.max(0, Math.floor(value))
+}
+
+function buildMeshSnapshot(db: DatabaseSync, workspaceId: string): CompleteMeshSnapshot {
   ensureTraceSchema(db)
   const rows = db.prepare(
     `SELECT event_id, type, occurred_at, agent_id, task_id, worker_id, worktree_id,
@@ -269,6 +302,40 @@ export function meshSnapshot(db: DatabaseSync, workspaceId: string): MeshSnapsho
   for (const edge of edges) totals[edge.kind] = (totals[edge.kind] ?? 0) + 1
 
   return { schema: 1, workspaceId, nodes, edges, totals, unprovenWorkers, legend: MESH_LEGEND }
+}
+
+/**
+ * Read a bounded Mesh page. Folding trace history is cached until a successful
+ * ingestion changes this database/workspace, so a polling projection does not
+ * rebuild the same graph or serialise an unbounded payload every few seconds.
+ */
+export function meshSnapshot(
+  db: DatabaseSync, workspaceId: string, options: MeshPageOptions = {},
+): MeshSnapshot {
+  const complete = cachedTraceProjection(db, workspaceId, () => buildMeshSnapshot(db, workspaceId))
+  const nodeLimit = clampPage(options.nodeLimit, 500, 2_000)
+  const edgeLimit = clampPage(options.edgeLimit, 500, 2_000)
+  const nodeOffset = clampOffset(options.nodeOffset)
+  const edgeOffset = clampOffset(options.edgeOffset)
+  const nodes = complete.nodes.slice(nodeOffset, nodeOffset + nodeLimit)
+  const edges = complete.edges.slice(edgeOffset, edgeOffset + edgeLimit)
+  return {
+    ...complete,
+    nodes,
+    edges,
+    page: {
+      nodeOffset,
+      nodeLimit,
+      totalNodes: complete.nodes.length,
+      returnedNodes: nodes.length,
+      nodesTruncated: nodeOffset + nodes.length < complete.nodes.length,
+      edgeOffset,
+      edgeLimit,
+      totalEdges: complete.edges.length,
+      returnedEdges: edges.length,
+      edgesTruncated: edgeOffset + edges.length < complete.edges.length,
+    },
+  }
 }
 
 export interface TimelineEntry {

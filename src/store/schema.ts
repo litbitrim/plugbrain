@@ -90,6 +90,10 @@ CREATE INDEX IF NOT EXISTS idx_files_ws ON files(workspace_id);
 -- index each one degraded into a scan of the workspace's files on a real
 -- Planet.
 CREATE INDEX IF NOT EXISTS idx_files_ws_path ON files(workspace_id, path);
+-- The Planet file route first narrows to the chosen checkouts and then emits a
+-- path-ordered page. This composite keeps that common selection from sorting
+-- a whole Planet in a temporary B-tree on every poll.
+CREATE INDEX IF NOT EXISTS idx_files_ws_checkout_path ON files(workspace_id, checkout_id, path);
 -- The stale count filters files by indexed_at IS NULL; the partial index
 -- keeps it a scan of only the unindexed rows, which stay a small set.
 CREATE INDEX IF NOT EXISTS idx_files_ws_unindexed ON files(workspace_id) WHERE indexed_at IS NULL;
@@ -184,6 +188,10 @@ CREATE TABLE IF NOT EXISTS checkouts (
   head        TEXT,
   dirty_hash  TEXT,                   -- null when the tree is clean
   dirty_count INTEGER NOT NULL DEFAULT 0,
+  -- The Planet inventory distinguishes tracked changes from untracked files
+  -- once, during discovery. Read routes must not spawn git status for every
+  -- selected checkout on every poll.
+  untracked_count INTEGER NOT NULL DEFAULT 0,
   revision    TEXT,                   -- branch|head|dirty folded into one hash
   is_primary  INTEGER NOT NULL DEFAULT 0,
   seen_at     TEXT NOT NULL,
@@ -595,6 +603,7 @@ function migrateAddedColumns(db: DatabaseSync): void {
   // workspace. Default 0 marks every row written before this column existed as
   // produced by an unknown, older extractor -- which is the truth.
   ensureColumn(db, 'files', 'parse_version', 'INTEGER NOT NULL DEFAULT 0')
+  ensureColumn(db, 'checkouts', 'untracked_count', 'INTEGER NOT NULL DEFAULT 0')
   migrateAddedIndexes(db)
 }
 
@@ -612,6 +621,7 @@ function migrateAddedIndexes(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_files_checkout ON files(checkout_id);
     CREATE INDEX IF NOT EXISTS idx_files_ws_generation ON files(workspace_id, generation);
     CREATE INDEX IF NOT EXISTS idx_files_ws_created_gen ON files(workspace_id, created_generation);
+    CREATE INDEX IF NOT EXISTS idx_files_ws_checkout_path ON files(workspace_id, checkout_id, path);
     CREATE INDEX IF NOT EXISTS idx_file_tombstones_ws_generation ON file_tombstones(workspace_id, generation);
   `)
 }

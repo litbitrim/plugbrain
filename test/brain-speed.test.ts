@@ -12,7 +12,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { openStore } from '../src/store/schema.ts'
-import { ensureTraceSchema } from '../src/trace.ts'
+import { ensureTraceSchema, ingestTraceEvents } from '../src/trace.ts'
 
 const FILES = 50_000
 const TRACE_EVENTS = 2_000
@@ -32,7 +32,7 @@ const percentile = (values: number[], p: number): number => {
   return sorted[index] ?? 0
 }
 
-test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget at 50k files', async () => {
+test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget at 50k files', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-speed-'))
   const db = openStore(join(dir, 'brain.db'))
   let server: ServerHandle | null = null
@@ -74,7 +74,7 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
     try {
       for (let i = 0; i < TRACE_EVENTS; i += 1) {
         const at = new Date(Date.UTC(2026, 8, 23, 0, 0, i)).toISOString()
-        insertTrace.run(`speed-${i}`, i, WS, `task-${i % 200}`, `worker-${i % 200}`, `agent-${i % 20}`, at, at)
+        insertTrace.run(`speed-${i}`, i, WS, `task-${i}`, `worker-${i}`, `agent-${i}`, at, at)
       }
       db.exec('COMMIT')
     } catch (error) {
@@ -98,12 +98,41 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
       files: () => fetch(`${base}/api/files?workspace=${WS}&limit=200&offset=1000`),
       mesh: () => fetch(`${base}/api/mesh?workspace=${WS}`),
     }
+    const p95ByRoute: Record<string, number> = {}
     for (const [route, read] of Object.entries(reads)) {
       const runs: number[] = []
       for (let i = 0; i < 5; i += 1) runs.push(await elapsed(read))
       const p95 = percentile(runs, 95)
+      p95ByRoute[route] = Number(p95.toFixed(1))
       assert.ok(p95 < 1000, `${route} p95 ${p95.toFixed(1)} ms exceeds the 1s Core budget`)
     }
+    const mesh = await (await reads.mesh()).json() as {
+      mesh: { nodes: unknown[]; edges: unknown[]; page: { totalNodes: number; returnedNodes: number; nodesTruncated: boolean } }
+    }
+    assert.equal(mesh.mesh.nodes.length, 500)
+    assert.equal(mesh.mesh.page.returnedNodes, 500)
+    assert.ok(mesh.mesh.page.totalNodes > mesh.mesh.page.returnedNodes)
+    assert.equal(mesh.mesh.page.nodesTruncated, true)
+    ingestTraceEvents(db, [{
+      schema: 1,
+      eventId: 'speed-after-cache',
+      source: 'operator',
+      runtimeInstanceId: 'runtime-speed',
+      workspaceId: WS,
+      taskId: 'task-after-cache',
+      workerId: 'worker-after-cache',
+      agentId: 'agent-after-cache',
+      type: 'worker.started',
+      occurredAt: '2026-09-24T00:00:00.000Z',
+      observedAt: '2026-09-24T00:00:00.000Z',
+      provenance: { mode: 'live', authorityRef: 'bench-after-cache', confidence: 'authoritative' },
+    }], { knownWorkspaceIds: new Set([WS]) })
+    const refreshed = await (await reads.mesh()).json() as {
+      mesh: { page: { totalNodes: number } }
+    }
+    assert.ok(refreshed.mesh.page.totalNodes > mesh.mesh.page.totalNodes,
+      'a committed trace event invalidates the cached Mesh projection')
+    t.diagnostic(`B-SPEED p95 ms (5 local requests, 50k files): ${JSON.stringify(p95ByRoute)}`)
   } finally {
     if (server !== null) await server.close()
     db.close()

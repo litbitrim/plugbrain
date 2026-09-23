@@ -23,6 +23,7 @@
  *   copied into a screenshot, an export and a bug report.
  */
 import type { DatabaseSync } from 'node:sqlite'
+import { invalidateTraceProjection } from './store/projection-cache.ts'
 
 /** Where a fact came from. `import` is historical and always marked as such. */
 export type TraceSource = 'operator' | 'work' | 'brain' | 'git' | 'receipt' | 'import'
@@ -331,6 +332,11 @@ export function ingestTraceEvents(
   } catch (error) {
     db.exec('ROLLBACK')
     throw error
+  }
+  if (result.inserted > 0) {
+    for (const workspaceId of new Set(events.map(event => event.workspaceId))) {
+      invalidateTraceProjection(db, workspaceId)
+    }
   }
   return result
 }

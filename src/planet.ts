@@ -77,7 +77,10 @@ export interface CheckoutFacts {
   head: string | null
   /** Hash of the uncommitted patch; null when the working tree is clean. */
   dirtyHash: string | null
+  /** All changed paths, including untracked paths. */
   dirtyCount: number
+  /** Untracked paths inside dirtyCount. */
+  untrackedCount: number
   /** branch | head | dirty, folded into one string a caller can compare. */
   revision: string
   remoteUrl: string | null
@@ -116,6 +119,7 @@ export function readCheckout(path: string): CheckoutFacts {
 
   const porcelain = gitText(abs, ['status', '--porcelain']) ?? ''
   const changed = porcelain.split('\n').filter(Boolean)
+  const untrackedCount = changed.filter(line => line.startsWith('??')).length
   const diff = gitText(abs, ['diff', 'HEAD', '--no-color', '--no-ext-diff', '--unified=0'])
     ?? (gitText(abs, ['diff', '--cached', '--no-color', '--unified=0']) ?? '')
       + (gitText(abs, ['diff', '--no-color', '--unified=0']) ?? '')
@@ -130,6 +134,7 @@ export function readCheckout(path: string): CheckoutFacts {
     head,
     dirtyHash,
     dirtyCount: changed.length,
+    untrackedCount,
     revision: `rev-${shortHash(`${branch ?? ''}|${head ?? ''}|${dirtyHash ?? 'clean'}`)}`,
     remoteUrl: gitText(abs, ['remote', 'get-url', 'origin']),
   }
@@ -520,12 +525,13 @@ export function registerPlanet(db: DatabaseSync, root: string, name?: string): R
   const insertCheckout = db.prepare(
     `INSERT INTO checkouts
        (id, planet_id, repo_id, name, path, rel_prefix, branch, head,
-        dirty_hash, dirty_count, revision, is_primary, seen_at, retired_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+        dirty_hash, dirty_count, untracked_count, revision, is_primary, seen_at, retired_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
      ON CONFLICT(id) DO UPDATE SET
        repo_id = excluded.repo_id, name = excluded.name, path = excluded.path,
        rel_prefix = excluded.rel_prefix, branch = excluded.branch, head = excluded.head,
        dirty_hash = excluded.dirty_hash, dirty_count = excluded.dirty_count,
+       untracked_count = excluded.untracked_count,
        revision = excluded.revision, is_primary = excluded.is_primary,
        seen_at = excluded.seen_at, retired_at = NULL`)
 
@@ -544,7 +550,7 @@ export function registerPlanet(db: DatabaseSync, root: string, name?: string): R
     insertCheckout.run(
       checkout.checkoutId, planetId, checkout.repoId, checkout.name, checkout.path,
       checkout.relPrefix, checkout.branch, checkout.head, checkout.dirtyHash,
-      checkout.dirtyCount, checkout.revision, isPrimary ? 1 : 0, now)
+      checkout.dirtyCount, checkout.untrackedCount, checkout.revision, isPrimary ? 1 : 0, now)
     seen.add(checkout.checkoutId)
   }
 
@@ -599,6 +605,7 @@ export interface CheckoutView {
   head: string | null
   dirtyHash: string | null
   dirtyCount: number
+  untrackedCount: number
   revision: string | null
   isPrimary: boolean
   retiredAt: string | null
@@ -733,7 +740,8 @@ function buildPlanetView(
   const checkouts: CheckoutView[] = (db.prepare(
     `SELECT c.id, c.repo_id AS repoId, r.name AS repoName, c.name, c.path,
             c.rel_prefix AS relPrefix, c.branch, c.head, c.dirty_hash AS dirtyHash,
-            c.dirty_count AS dirtyCount, c.revision, c.is_primary AS isPrimary,
+            c.dirty_count AS dirtyCount, c.untracked_count AS untrackedCount,
+            c.revision, c.is_primary AS isPrimary,
             c.retired_at AS retiredAt
        FROM checkouts c JOIN repos r ON r.id = c.repo_id
        WHERE c.planet_id = ? ORDER BY r.name, c.rel_prefix`).all(planet?.id ?? '') as
