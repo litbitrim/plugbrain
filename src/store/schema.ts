@@ -73,6 +73,10 @@ CREATE TABLE IF NOT EXISTS files (
   -- unchanged must still be parsed again when the extractor changed, or every
   -- table the new version adds stays empty for the whole workspace.
   parse_version INTEGER NOT NULL DEFAULT 0,
+  -- Every accepted source file is either semantically parsed or retained as an
+  -- honest inventory row. The reason is required when it was not parsed.
+  processing_status TEXT NOT NULL DEFAULT 'inventoried',
+  processing_reason TEXT,
   loc          INTEGER NOT NULL DEFAULT 0,
   indexed_at   TEXT,
   UNIQUE (workspace_id, path)
@@ -571,6 +575,8 @@ function migrateAddedColumns(db: DatabaseSync): void {
   // workspace. Default 0 marks every row written before this column existed as
   // produced by an unknown, older extractor -- which is the truth.
   ensureColumn(db, 'files', 'parse_version', 'INTEGER NOT NULL DEFAULT 0')
+  ensureColumn(db, 'files', 'processing_status', "TEXT NOT NULL DEFAULT 'inventoried'")
+  ensureColumn(db, 'files', 'processing_reason', 'TEXT')
   migrateAddedIndexes(db)
 }
 

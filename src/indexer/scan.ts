@@ -333,7 +333,7 @@ export interface StoredFile {
  *   3 — tags as their own rows (frontmatter tags and `#tags` in prose), and
  *       note prose in `note_body` for full-text search.
  */
-export const PARSE_VERSION = 3
+export const PARSE_VERSION = 4
 
 /**
  * Is `rel` inside the note scope that `prefix` owns?
@@ -462,6 +462,10 @@ export interface ParsedFile {
   rel: string
   ext: string
   lang: string | null
+  /** `parsed` has a language extractor; `inventoried` is deliberately code-free. */
+  processingStatus: 'parsed' | 'inventoried'
+  /** Why a row is inventory-only. Null means semantic extraction ran. */
+  processingReason: string | null
   loc: number
   symbols: Array<{ name: string; kind: string; line: number; endLine: number; exported: boolean; container: string | null }>
   refs: Array<{ kind: string; target: string; receiver: string | null; from: string | null; scope: string; line: number }>
@@ -500,7 +504,7 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
       }
     }
     return {
-      rel, ext, lang, loc: extract.loc,
+      rel, ext, lang, processingStatus: 'parsed', processingReason: null, loc: extract.loc,
       symbols: extract.symbols.map(s => ({ ...s })),
       refs: extract.refs.map(r => ({
         kind: r.kind, target: r.target, receiver: r.receiver, from: r.from, scope: 'code', line: r.line,
@@ -518,7 +522,7 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
       .filter(property => property.key.toLowerCase() === 'tags')
       .map(property => property.value.replace(/^#/, '').toLowerCase()))
     return {
-      rel, ext, lang: null, loc: md.loc,
+      rel, ext, lang: null, processingStatus: 'parsed', processingReason: null, loc: md.loc,
       symbols: md.symbols.map(s => ({ ...s, exported: false, endLine: s.line, container: s.container ?? null })),
       refs: [
         ...md.refs.map(r => ({
@@ -544,7 +548,7 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
     }
   }
   return {
-    rel, ext, lang: null, loc: content.split('\n').length,
+    rel, ext, lang: null, processingStatus: 'inventoried', processingReason: 'no semantic extractor for extension', loc: content.split('\n').length,
     symbols: [], refs: [], imports: [], properties: [], links: [], tags: [], generated: false,
   }
 }
