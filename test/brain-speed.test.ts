@@ -5,6 +5,7 @@
  * files measures parsers and disk throughput, not the read routes under test.
  * Every route still uses the production SQLite schema and HTTP server.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

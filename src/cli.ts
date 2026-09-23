@@ -13,6 +13,11 @@
  *   plugbrain planet scan [workspaceId]       refresh revisions, then index
  *   plugbrain planet status [workspaceId]     repos, checkouts, revisions, counts
  *   plugbrain planet history [workspaceId]    files the planet no longer has
+ *   plugbrain planet prune [workspaceId] [--apply] [--compact] [--batch <n>]
+ *                                             remove the rows of checkouts the selection does not keep
+ *   plugbrain compact                         give freed pages back to the disk (VACUUM)
+ *
+ *   plugbrain plan [status|next|task <M00>|gates]   the master ledger joined with the brain's queue
  *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
  *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
@@ -49,6 +54,8 @@ import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 import { runSwarmCli } from './swarm-cli.ts'
+import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
+import { planTask, planView, type PlanTask } from './plan.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 
@@ -250,6 +257,131 @@ function planetSelect(args: string[]): void {
   for (const id of selection.checkoutIds) console.log(`  ${id}`)
 }
 
+/* ── plan: the master as the fleet sees it ──────────────────────────────── */
+
+function printPlanTask(task: PlanTask, detail = false): void {
+  const queue = task.queue.length === 0 ? '' : `  Queue: ${task.queue.map(ref =>
+    `${ref.state}${ref.claimedBy ? ` (${ref.claimedBy})` : ref.addressedTo ? ` → ${ref.addressedTo}` : ''}`).join(', ')}`
+  console.log(`  ${task.id}  ${task.status.padEnd(12)} ${task.title}${queue}`)
+  if (!detail) return
+  console.log(`    Priorität ${task.priority ?? '-'}  Rolle ${task.ownerRole ?? '-'}  Paket-Gate ${task.packageGate ?? '-'}`)
+  console.log(`    hängt ab von: ${task.dependsOn.join(', ') || '-'}` +
+    (task.blockedBy.length > 0 ? `  (offen: ${task.blockedBy.join(', ')})` : ''))
+  console.log(`    ${task.ready ? 'bereit' : task.startable ? 'startbar (Abhängigkeiten laufen)' : task.done ? 'fertig' : 'wartet'}`)
+  console.log(`    Anforderungen: ${task.requirementIds.join(', ') || '-'}`)
+  console.log(`    Ledger-Gates: ${task.ledgerGates.join(', ') || '-'}`)
+  for (const evidence of task.evidence) console.log(`    Beleg: ${evidence}`)
+  for (const ref of task.queue) console.log(`    Queue ${ref.taskId}: ${ref.state}  ${ref.title}`)
+}
+
+function planCommand(args: string[]): void {
+  const [step = 'status', ...rest] = args
+  const workspaceId = flagValue(rest, '--workspace') ?? singlePlanetId()
+  const json = args.includes('--json')
+  if (step === 'task') {
+    const id = rest.find(arg => !arg.startsWith('--'))
+    if (id === undefined) { console.error('usage: plugbrain plan task <M00>'); process.exit(1) }
+    const task = planTask(db, workspaceId, id)
+    if (json) return jsonOut(task)
+    printPlanTask(task, true)
+    return
+  }
+  const view = planView(db, workspaceId)
+  if (step === 'next') {
+    const limit = Number(flagValue(rest, '--limit') ?? 10)
+    const next = view.next.slice(0, limit)
+    if (json) return jsonOut(next)
+    console.log(`${view.next.length} startbare Master-Aufgabe(n), die ersten ${next.length}:`)
+    for (const task of next) printPlanTask(task)
+    return
+  }
+  if (step === 'gates') {
+    const status = flagValue(rest, '--status')
+    const gates = status === null ? view.gates : view.gates.filter(gate => gate.status === status)
+    if (json) return jsonOut(gates)
+    for (const gate of gates) console.log(`  ${gate.id.padEnd(14)} ${gate.status.padEnd(18)} ${gate.title}`)
+    return
+  }
+  if (step !== 'status') {
+    console.error('usage: plugbrain plan [status|next|task <M00>|gates] [--json]')
+    process.exit(1)
+  }
+  if (json) return jsonOut(view)
+  const p = view.progress
+  console.log(`${view.ledger.master ?? 'Master'}  Ledger ${view.ledger.updated ?? '?'}` +
+    `${view.ledger.ageHours === null ? '' : ` (vor ${view.ledger.ageHours} h, ${view.ledger.updatedBy ?? '?'})`}`)
+  console.log(`  Master-Aufgaben: ${p.tasksDone}/${p.tasksTotal} fertig, ${p.tasksInProgress} in Arbeit` +
+    `  ${Object.entries(view.tasksByStatus).map(([s, n]) => `${s} ${n}`).join(', ')}`)
+  console.log(`  Gates: ${p.gatesVerified}/${p.gatesTotal} voll verifiziert, ${p.gatesPartial} teilweise` +
+    `  ${Object.entries(view.gatesByStatus).map(([s, n]) => `${s} ${n}`).join(', ')}`)
+  for (const dimension of view.dimensions) console.log(`  ${dimension.dimension.padEnd(52)} ${dimension.current}`)
+  console.log(`\nStartbar (${view.next.length}):`)
+  for (const task of view.next.slice(0, 8)) printPlanTask(task)
+  if (view.openDecisions.length > 0) {
+    console.log(`\nOffene Owner-Entscheidungen (${view.openDecisions.length}):`)
+    for (const decision of view.openDecisions) console.log(`  ${decision.ref}  ${decision.decision.slice(0, 110)}`)
+  }
+  if (view.unplanned.length > 0) {
+    console.log(`\nQueue ohne Master-Aufgabe (${view.unplanned.length}):`)
+    for (const ref of view.unplanned) console.log(`  ${ref.taskId}  ${ref.state}  ${ref.title}`)
+  }
+}
+
+const gb = (bytes: number): string => `${(bytes / 1024 ** 3).toFixed(2)} GB`
+
+/** Give the pages a prune freed back to the disk. */
+function compact(): void {
+  process.stdout.write('compacting the store (VACUUM) …\n')
+  const result = compactStore(db, DB_FILE)
+  console.log(`compacted: ${gb(result.beforeBytes)} → ${gb(result.afterBytes)} in ${Math.round(result.ms / 1000)} s`)
+}
+
+/**
+ * Show what a prune would remove, or remove it with --apply.
+ *
+ * A dry run is the default because the plan is the thing to read first: it
+ * names every checkout whose rows go and why, and nothing is touched until the
+ * operator has seen it.
+ */
+function planetPrune(args: string[]): void {
+  const first = args[0]
+  const workspaceId = first !== undefined && !first.startsWith('--') ? first : singlePlanetId()
+  const allowEmptySelection = args.includes('--allow-empty')
+  const plan = planPrune(db, workspaceId, { allowEmptySelection })
+  if (!args.includes('--apply')) {
+    if (args.includes('--json')) return jsonOut(plan)
+    console.log(`prune plan for ${workspaceId}: ${plan.files} file row(s) in ${plan.candidates.length} group(s)`)
+    console.log(`  kept checkouts: ${plan.keptCheckouts.length}`)
+    for (const candidate of plan.candidates) {
+      console.log(`  ${candidate.reason.padEnd(18)} ${String(candidate.files).padStart(7)}  ` +
+        `${candidate.relPrefix ?? '(rows outside every note root)'}`)
+    }
+    console.log('\nnothing removed; run again with --apply')
+    return
+  }
+  let lastPrinted = 0
+  const batch = flagValue(args, '--batch')
+  const result = prunePlanet(db, workspaceId, {
+    allowEmptySelection,
+    batchFiles: batch === null ? undefined : Number(batch),
+    onProgress: tick => {
+      const now = Date.now()
+      if (now - lastPrinted < 2000 && tick.done < tick.total) return
+      lastPrinted = now
+      const percent = tick.overallTotal > 0 ? Math.round((tick.overallDone / tick.overallTotal) * 100) : 100
+      process.stdout.write(`  ${tick.relPrefix ?? '(outside note roots)'}  ${tick.done}/${tick.total}` +
+        `  overall ${tick.overallDone}/${tick.overallTotal} ${percent}%\n`)
+    },
+  })
+  if (args.includes('--json') && !args.includes('--compact')) return jsonOut(result)
+  console.log(`pruned ${result.files} file row(s) in ${Math.round(result.ms / 1000)} s, orphans ${result.orphans}`)
+  for (const [table, rows] of Object.entries(result.deleted).sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${table.padEnd(18)} ${rows}`)
+  }
+  for (const [column, rows] of Object.entries(result.nulled)) console.log(`  ${column.padEnd(18)} ${rows} set to NULL`)
+  if (args.includes('--compact')) compact()
+}
+
 function planetStatus(only?: string): void {
   const id = only ?? singlePlanetId()
   const view = listPlanet(db, id)
@@ -430,8 +562,21 @@ function planetLog(only?: string, limit = 50): void {
   }
 }
 
+/** The free text of a command: every argument that is neither a flag nor a flag's value. */
+function textArgs(args: string[], valued: string[]): string[] {
+  const out: string[] = []
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!
+    if (valued.includes(arg)) { index += 1; continue }
+    if (arg.startsWith('--')) continue
+    out.push(arg)
+  }
+  return out
+}
+
 function intelQuery(args: string[]): void {
-  const query = args.filter(a => !a.startsWith('--')).join(' ')
+  // `query brain core --limit 6` used to search for "brain core 6".
+  const query = textArgs(args, ['--repo', '--limit', '--workspace']).join(' ')
   if (!query) {
     console.error('usage: plugbrain query <search_query> [--repo <name>] [--limit <n>] [--json]')
     process.exit(1)
@@ -683,12 +828,15 @@ switch (command) {
     else if (step === 'scan') planetScan(rest[0])
     else if (step === 'status') planetStatus(rest[0])
     else if (step === 'history') planetLog(rest[0])
+    else if (step === 'prune') planetPrune(rest)
     else {
-      console.error('usage: plugbrain planet <register|select|scan|status|history> [path|workspaceId]')
+      console.error('usage: plugbrain planet <register|select|scan|status|history|prune> [path|workspaceId]')
       process.exit(1)
     }
     break
   }
+  case 'compact': compact(); break
+  case 'plan': planCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)

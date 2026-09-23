@@ -576,7 +576,7 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   }
 
   // Edges within the selected slice: one index probe per selected file
-  // (idx_edges_ws_src_file) instead of materializing the whole edge set in
+  // (idx_edges_src_file) instead of materializing the whole edge set in
   // JS. The slice is bounded by `limit`, so the probe count is bounded too.
   const ids = new Set(files.map(f => f.id))
   const selectOutgoing = db.prepare(

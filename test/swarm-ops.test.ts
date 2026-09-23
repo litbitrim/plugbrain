@@ -12,6 +12,7 @@
  *    whether the host has room for the work;
  *  - the board says who is writing where and who needs the integrator.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync } from 'node:child_process'

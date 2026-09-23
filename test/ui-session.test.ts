@@ -10,6 +10,7 @@
  * These tests pin the whole handoff, not just the string: the injected token is
  * fed back to a mutating route and must actually be accepted.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'

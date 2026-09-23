@@ -1,4 +1,5 @@
 /** Native orchestration contract: one temp planet, two real linked worktrees. */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'

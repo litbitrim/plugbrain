@@ -13,6 +13,7 @@
  * sides of a boundary and with multi-row pairs: MAX must return the true
  * weight (SUM would double the pairs that span a boundary).
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'

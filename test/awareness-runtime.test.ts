@@ -9,6 +9,7 @@
  *    - Tier 3 (Behaviourally Effective): Active conflicting file claims block mutations with 409 Conflict.
  *      When released, the mutation succeeds.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'

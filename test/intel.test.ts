@@ -1,6 +1,7 @@
 /**
  * M3 Tests: Code Intelligence Subsystem (GitNexus Parity).
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
