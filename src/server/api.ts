@@ -1350,7 +1350,14 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!agentId || !note || !name) return json(res, { ok: false, error: 'agentId, note and name are required' }, 400)
       access.requireWorkspace(db, workspaceId)
       access.requireAgent(db, agentId)
-      return json(res, { ok: true, attachment: attachments.writeAttachment(db, workspaceId, agentId, note, name, base64) })
+      try {
+        return json(res, { ok: true, attachment: attachments.writeAttachment(db, workspaceId, agentId, note, name, base64) })
+      } catch (error) {
+        if (error instanceof attachments.AttachmentParentMissingError) {
+          return json(res, { ok: false, error: error.message }, 409)
+        }
+        throw error
+      }
     }
 
     if (p === '/api/notes/export' && req.method === 'GET') {
@@ -1386,6 +1393,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
           ...(typeof body.expectedHash === 'string' ? { expectedHash: body.expectedHash } : {}),
           ...(typeof body.taskId === 'string' ? { taskId: body.taskId } : {}),
           allowGenerated: body.allowGenerated === true,
+          createOnly: body.createOnly === true,
         })
         return json(res, { ok: true, ...result })
       } catch (error) {

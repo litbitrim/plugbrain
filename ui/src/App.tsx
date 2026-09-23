@@ -308,7 +308,7 @@ export default function App() {
           className="brain-vault__path"
           value={vaultPath}
           onChange={event => setVaultPath(event.target.value)}
-          placeholder={'Pfad eines Ordners, z. B. C:\\Notizen\\vault'}
+          placeholder={'Pfad eines Ordners (auch ohne .git), z. B. C:\\Notizen\\vault'}
           spellCheck={false}
           aria-label="Vault-Pfad"
         />
@@ -645,7 +645,7 @@ export default function App() {
       <div className="brain-landing" role="main">
         <h1 className="brain-landing__title">PlugBrain</h1>
         <p className="brain-landing__lead">
-          Ein Ordner als Vault öffnen — der Brain indiziert ihn einmal und hält ihn über den
+          Einen Ordner als Vault öffnen — auch einen Wissensordner ohne <code>.git</code>. Der Brain indiziert ihn einmal und hält ihn über den
           Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
           einem durchsuchbaren Graphen.
         </p>

@@ -13,6 +13,13 @@ import { isNotePath } from './vault.ts'
 
 export interface AttachmentView { name: string; path: string; bytes: number }
 
+export class AttachmentParentMissingError extends Error {
+  constructor(path: string) {
+    super(`attachment parent note '${path}' does not exist; save the note first`)
+    this.name = 'AttachmentParentMissingError'
+  }
+}
+
 function notePath(notePath: string): string {
   const normalized = notePath.replace(/\\/g, '/').replace(/^\/+/, '')
   if (!normalized.toLowerCase().endsWith('.md') || normalized.split('/').some(part => part === '' || part === '.' || part === '..')) {
@@ -42,6 +49,18 @@ function assertNote(db: DatabaseSync, workspaceId: string, note: string): string
   return path
 }
 
+/** Attachments are evidence for an existing note, never a side channel that
+ * creates an orphan directory before the note itself passed its version fence. */
+function assertExistingNote(db: DatabaseSync, workspaceId: string, agentId: string, note: string): string {
+  const path = assertNote(db, workspaceId, note)
+  try {
+    access.readFile(db, workspaceId, agentId, path)
+  } catch {
+    throw new AttachmentParentMissingError(path)
+  }
+  return path
+}
+
 export function listAttachments(db: DatabaseSync, workspaceId: string, note: string): AttachmentView[] {
   const path = assertNote(db, workspaceId, note)
   const workspace = access.requireWorkspace(db, workspaceId)
@@ -64,7 +83,7 @@ export function listAttachments(db: DatabaseSync, workspaceId: string, note: str
 export function writeAttachment(
   db: DatabaseSync, workspaceId: string, agentId: string, note: string, name: string, base64: string,
 ): AttachmentView {
-  const path = assertNote(db, workspaceId, note)
+  const path = assertExistingNote(db, workspaceId, agentId, note)
   const data = Buffer.from(base64, 'base64')
   if (data.byteLength === 0 && base64 !== '') throw new Error('attachment payload is not valid base64')
   if (data.byteLength > 25 * 1024 * 1024) throw new Error('attachment exceeds the 25 MiB local-vault limit')
