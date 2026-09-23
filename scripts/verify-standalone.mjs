@@ -11,6 +11,13 @@ import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { once } from 'node:events'
+import { createRequire } from 'node:module'
+
+// Reuse the locally installed browser toolchain. Packaging verification must
+// not download a browser or rely on an internet connection.
+const require = createRequire(import.meta.url)
+const playwrightRoot = process.env.PLAYWRIGHT_NODE_PATH ?? 'C:/PLUG/plugpt/Code/PlugBrain-GLM/node_modules/playwright'
+const { chromium } = require(playwrightRoot)
 
 const root = join(import.meta.dirname, '..')
 const runtime = join(root, 'dist', process.platform === 'win32' ? 'node.exe' : 'node')
@@ -43,7 +50,7 @@ for (let i = 0; i < 12; i += 1) {
 }
 mkdirSync(join(workspaceRoot, 'Notizen'), { recursive: true })
 writeFileSync(join(workspaceRoot, 'Notizen', 'Alpha.md'), '# Alpha\n\nStandalone Wissenssuche.\n\n[[Entscheidung]]\n', 'utf8')
-writeFileSync(join(workspaceRoot, 'Notizen', 'Entscheidung.md'), '---\ntyp: entscheidung\nstand: entschieden\n---\n\n# Entscheidung\n\n[[Alpha]]\n', 'utf8')
+writeFileSync(join(workspaceRoot, 'Notizen', 'Entscheidung.md'), '---\ntyp: entscheidung\nstand: entschieden\ncode: src/mod0.ts\n---\n\n# Entscheidung\n\n[[Alpha]]\n', 'utf8')
 const AUTH_KEY = 'portable-verify-token'
 
 async function reservePort() {
@@ -82,6 +89,7 @@ const child = spawn(runtime, [bundle, 'serve', String(port)], {
   stdio: 'ignore',
   windowsHide: true,
 })
+let browser
 
 try {
   const health = await waitFor(`http://127.0.0.1:${port}/api/health`)
@@ -105,11 +113,20 @@ try {
     body: JSON.stringify(body),
   })
 
-  const registered = await post('/api/workspaces', { root: workspaceRoot, name: 'portable-verify' })
-  if (registered.status !== 200) {
-    throw new Error(`portable workspace registration answered ${registered.status}: ${await registered.text()}`)
-  }
-  const { workspace } = await registered.json()
+  // This is the same built UI shipped inside dist/. It exercises the first
+  // write without a copied key, then reaches the indexed fixture through the
+  // regular application route rather than through direct fixture setup.
+  browser = await chromium.launch({ headless: true })
+  const page = await browser.newPage()
+  await page.goto(`http://127.0.0.1:${port}`)
+  const handedToken = await page.evaluate(() => window.__PLUGBRAIN__?.token)
+  if (handedToken !== AUTH_KEY) throw new Error('portable UI did not receive the daemon-local session')
+  await page.getByLabel('Vault-Pfad').fill(workspaceRoot)
+  await page.getByRole('button', { name: 'Als Vault öffnen' }).click()
+  await page.waitForFunction(() => new URL(location.href).searchParams.has('workspace'))
+  const workspaceId = new URL(page.url()).searchParams.get('workspace')
+  if (!workspaceId) throw new Error('portable UI did not select its newly opened workspace')
+  const workspace = { id: workspaceId }
 
   const started = await post('/api/reindex', { workspace: workspace.id })
   if (started.status !== 202) {
@@ -143,6 +160,42 @@ try {
     throw new Error(`portable /api/files did not list the indexed fixture: ${JSON.stringify(files).slice(0, 300)}`)
   }
 
+  const uiAttached = await post('/api/agent/attach', { workspace: workspace.id, agentId: 'portable-ui', name: 'Portable UI verifier' })
+  if (uiAttached.status !== 200) throw new Error(`portable UI actor attach answered ${uiAttached.status}`)
+
+  // Full packaged golden path: search, read and save a note; make a second
+  // writer change it; confirm the UI shows its optimistic-lock conflict; then
+  // follow the Wiki relation to a decision and from there to source, graph and
+  // keyboard help. No route here is faked or addressed through a DOM fixture.
+  await page.getByRole('button', { name: 'Wissen' }).click()
+  await page.locator('.notes-workbench').waitFor()
+  await page.locator('.notes-search input').fill('Standalone Wissenssuche')
+  await page.getByRole('button', { name: 'Suchen' }).click()
+  await page.getByText('Standalone Wissenssuche.').waitFor()
+  const editor = page.getByLabel('Notizinhalt')
+  await editor.fill('# Alpha\n\nGespeichert über das paketierte UI.\n\n[[Entscheidung]]\n')
+  await page.getByRole('button', { name: 'Speichern' }).click()
+  await page.getByText('Gespeichert und im Brain indiziert.').waitFor()
+  const before = await (await fetch(`http://127.0.0.1:${port}/api/notes/read?workspace=${encodeURIComponent(workspace.id)}&agentId=portable-ui&path=Notizen%2FAlpha.md`)).json()
+  const external = await post('/api/notes/write', { workspace: workspace.id, agentId: 'portable-ui', path: 'Notizen/Alpha.md', expectedHash: before.note.hash, content: `${before.note.content}\nExtern geändert.\n` })
+  if (external.status !== 200) throw new Error(`portable external note write answered ${external.status}`)
+  await editor.fill('# Alpha\n\nDiese veraltete UI-Änderung darf nicht überschreiben.\n')
+  await page.getByRole('button', { name: 'Speichern' }).click()
+  await page.locator('.notes-conflict').waitFor()
+  await page.locator('.notes-editor__meta section').first().getByRole('button', { name: 'Entscheidung' }).click()
+  await page.locator('.notes-editor__head strong').filter({ hasText: 'Entscheidung' }).waitFor()
+  await page.getByRole('button', { name: /Datei: src\/mod0\.ts/ }).click()
+  await page.locator('.source-header__path').filter({ hasText: 'src/mod0.ts' }).waitFor()
+  await page.getByRole('button', { name: 'Wissen' }).click()
+  await page.getByRole('button', { name: 'Graph' }).click()
+  await page.locator('.knowledge-graph__inspector').waitFor()
+  await page.locator('.knowledge-graph').press('ArrowDown')
+  await page.keyboard.press('?')
+  await page.getByRole('dialog', { name: 'Tastenkürzel' }).waitFor()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Explorer' }).click()
+  await page.getByText('mod0.ts').first().waitFor()
+
   // The packed server must support real knowledge work, not merely serve a
   // graph shell: attach a local actor, find, read, save, then reject a stale
   // second save through the same HTTP route the UI uses.
@@ -162,6 +215,7 @@ try {
 
   console.log(`portable PlugBrain runtime + UI + packaged index worker + knowledge flow healthy on 127.0.0.1:${port}`)
 } finally {
+  if (browser) await browser.close()
   if (child.exitCode === null && !child.killed) child.kill()
   if (child.exitCode === null) await once(child, 'exit')
   rmSync(home, { recursive: true, force: true })
