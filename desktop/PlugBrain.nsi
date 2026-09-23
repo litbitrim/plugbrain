@@ -1,7 +1,7 @@
 Unicode true
 
 !define PRODUCT_NAME "PlugBrain"
-!define PRODUCT_VERSION "0.1.2"
+!define PRODUCT_VERSION "0.2.0"
 !define PRODUCT_PUBLISHER "PLUG"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -33,8 +33,18 @@ Section "PlugBrain Core" SEC_CORE
   File /r "..\dist\*"
   SetOutPath "$INSTDIR\desktop"
   File "launch.cmd"
+  File "autostart.vbs"
+  SetOutPath "$INSTDIR\bin"
+  File "plugbrain.cmd"
   SetOutPath "$INSTDIR"
   File "..\README.md"
+
+  ; The Core at sign-in, hidden, and only when none answers (see autostart.vbs).
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "PlugBrain" 'wscript.exe "$INSTDIR\desktop\autostart.vbs"'
+  ; `plugbrain` on the user's PATH. Per user and idempotent, so no UAC and no
+  ; duplicate entry when the same folder is installed again.
+  nsExec::ExecToLog `powershell -NoProfile -ExecutionPolicy Bypass -Command "$$d='$INSTDIR\bin'; $$p=[Environment]::GetEnvironmentVariable('Path','User'); if ($$null -eq $$p) { $$p='' }; if (-not ($$p -split ';' | Where-Object { $$_ -ieq $$d })) { [Environment]::SetEnvironmentVariable('Path', (($$p.TrimEnd(';') + ';' + $$d).TrimStart(';')), 'User') }"`
+  Pop $0
 
   CreateDirectory "$SMPROGRAMS\PLUG"
   CreateShortCut "$SMPROGRAMS\PLUG\PlugBrain.lnk" "$INSTDIR\desktop\launch.cmd"
@@ -65,6 +75,9 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\PLUG\PlugBrain.lnk"
   RMDir "$SMPROGRAMS\PLUG"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "PlugBrain"
+  nsExec::ExecToLog `powershell -NoProfile -ExecutionPolicy Bypass -Command "$$d='$INSTDIR\bin'; $$p=[Environment]::GetEnvironmentVariable('Path','User'); if ($$null -ne $$p) { [Environment]::SetEnvironmentVariable('Path', (($$p -split ';' | Where-Object { $$_ -and $$_ -ine $$d }) -join ';'), 'User') }"`
+  Pop $0
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PlugBrain"
   DeleteRegKey HKCU "Software\PLUG\PlugBrain"
   ; Generated from the exact dist tree by package-nsis.mjs. It deletes only
@@ -73,5 +86,6 @@ Section "Uninstall"
   Delete "$INSTDIR\.plugbrain-install.marker"
   Delete "$INSTDIR\Uninstall PlugBrain.exe"
   RMDir "$INSTDIR\desktop"
+  RMDir "$INSTDIR\bin"
   RMDir "$INSTDIR"
 SectionEnd
