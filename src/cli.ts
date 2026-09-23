@@ -20,6 +20,9 @@
  *   plugbrain notes write <path> --from <f>   save with a version check
  *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
  *   plugbrain notes backlinks <path>          who points at this note
+ *
+ *   plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …
+ *                                             the fleet's check-in desk (see src/swarm-cli.ts)
  */
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -45,6 +48,7 @@ import type { IndexProgress } from './indexer/index.ts'
 import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
+import { runSwarmCli } from './swarm-cli.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 
@@ -667,6 +671,7 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
+  case 'swarm': process.exitCode = runSwarmCli(db, args, singlePlanetId); break
   case 'progress': {
     progressReport(args[0])
     break
@@ -793,12 +798,13 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <register|index|progress|status|search|attach|read|write|who|agents|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      'usage: plugbrain <register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
       '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
+      '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
       '       plugbrain backup [target_path]\n' +
       '       plugbrain restore <backup_path>')
