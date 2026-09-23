@@ -6,6 +6,7 @@ export interface RenamePreviewOptions {
   name?: string
   repoId?: string
   checkoutId?: string
+  workspaceId?: string
 }
 
 export interface RenamePreview {
@@ -43,6 +44,10 @@ export function previewRename(
   let sql = `SELECT s.id, s.name, s.kind, s.line, f.path, f.repo_id AS repoId, f.checkout_id AS checkoutId
       FROM symbols s JOIN files f ON f.id = s.file_id WHERE 1 = 1`
   const params: unknown[] = []
+  if (options.workspaceId) {
+    sql += ' AND f.workspace_id = ?'
+    params.push(options.workspaceId)
+  }
   if (options.symbolId !== undefined) {
     sql += ' AND s.id = ?'
     params.push(options.symbolId)

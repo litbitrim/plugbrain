@@ -436,30 +436,33 @@ export class McpServer {
         }
 
         case 'query': {
+          const workspaceId = this.getWorkspaceId(args)
           const query = String(args.query ?? '')
           const repoId = args.repoId ? String(args.repoId) : undefined
           const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
           const limit = args.limit ? Number(args.limit) : 25
-          const result = intel.conceptSearch(this.db, query, { repoId, checkoutId, limit })
-          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
+          const result = intel.conceptSearch(this.db, query, { workspaceId, repoId, checkoutId, limit })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
         case 'context': {
+          const workspaceId = this.getWorkspaceId(args)
           const symName = String(args.name ?? '')
           const file = args.file ? String(args.file) : undefined
           const repoId = args.repoId ? String(args.repoId) : undefined
           const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
-          const result = intel.getSymbolContext(this.db, symName, { file, repoId, checkoutId })
-          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
+          const result = intel.getSymbolContext(this.db, symName, { workspaceId, file, repoId, checkoutId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
         case 'impact': {
+          const workspaceId = this.getWorkspaceId(args)
           const target = String(args.target ?? '')
           const direction = (args.direction as 'upstream' | 'downstream' | 'both') ?? 'both'
           const maxDepth = Number(args.maxDepth ?? 3)
           const repoId = args.repoId ? String(args.repoId) : undefined
-          const result = intel.getBlastRadius(this.db, target, { direction, maxDepth, repoId })
-          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
+          const result = intel.getBlastRadius(this.db, target, { workspaceId, direction, maxDepth, repoId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
         case 'detect_changes': {
@@ -482,13 +485,14 @@ export class McpServer {
         }
 
         case 'rename_preview': {
+          const workspaceId = this.getWorkspaceId(args)
           const newName = String(args.newName ?? '')
           const symbolId = typeof args.symbolId === 'number' ? args.symbolId : undefined
           const symbolName = args.name ? String(args.name) : undefined
           const repoId = args.repoId ? String(args.repoId) : undefined
           const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
-          const result = intel.previewRename(this.db, newName, { symbolId, name: symbolName, repoId, checkoutId })
-          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
+          const result = intel.previewRename(this.db, newName, { workspaceId, symbolId, name: symbolName, repoId, checkoutId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
         case 'claim': {

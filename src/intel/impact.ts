@@ -8,6 +8,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import type { BlastRadiusResult, ImpactNode } from './types.ts'
 
 export interface BlastRadiusOptions {
+  workspaceId?: string
   direction?: 'upstream' | 'downstream' | 'both'
   maxDepth?: number
   repoId?: string
@@ -37,9 +38,9 @@ export function getBlastRadius(
       .prepare(
         `SELECT s.id, s.name, f.path as file
            FROM symbols s JOIN files f ON s.file_id = f.id
-          WHERE s.id = ?`
+          WHERE s.id = ?${options?.workspaceId ? ' AND f.workspace_id = ?' : ''}`
       )
-      .get(targetId) as { id: number; name: string; file: string } | undefined
+      .get(targetId, ...(options?.workspaceId ? [options.workspaceId] : [])) as { id: number; name: string; file: string } | undefined
     if (row) initialSymbol = row
   }
 
@@ -48,6 +49,7 @@ export function getBlastRadius(
                  FROM symbols s JOIN files f ON s.file_id = f.id
                 WHERE s.name = ?`
     const params: unknown[] = [targetName]
+    if (options?.workspaceId) { sql += ' AND f.workspace_id = ?'; params.push(options.workspaceId) }
     if (targetFile) {
       sql += ' AND f.path LIKE ?'
       params.push(`%${targetFile.replace(/\\/g, '/')}%`)
@@ -94,8 +96,9 @@ export function getBlastRadius(
           JOIN files f ON s.file_id = f.id
          WHERE e.dst_symbol IN (${placeholders})
            AND e.src_symbol IS NOT NULL
+           ${options?.workspaceId ? 'AND e.workspace_id = ?' : ''}
       `
-      const rows = db.prepare(upstreamSql).all(...currentLevelIds) as unknown as Array<{
+      const rows = db.prepare(upstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : [])) as unknown as Array<{
         id: number
         name: string
         kind: string
@@ -134,8 +137,9 @@ export function getBlastRadius(
           JOIN files f ON s.file_id = f.id
          WHERE e.src_symbol IN (${placeholders})
            AND e.dst_symbol IS NOT NULL
+           ${options?.workspaceId ? 'AND e.workspace_id = ?' : ''}
       `
-      const rows = db.prepare(downstreamSql).all(...currentLevelIds) as unknown as Array<{
+      const rows = db.prepare(downstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : [])) as unknown as Array<{
         id: number
         name: string
         kind: string
