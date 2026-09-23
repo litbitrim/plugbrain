@@ -19,7 +19,8 @@
     "verify:standalone": "node scripts/verify-standalone.mjs",
     "package:nsis": "node scripts/package-nsis.mjs",
     "proof:prevention": "node --experimental-strip-types scripts/proof-prevention.ts",
-    "proof:mcp-parity": "node --experimental-strip-types scripts/compare-gitnexus-parity.ts"
+    "proof:mcp-parity": "node --experimental-strip-types scripts/compare-gitnexus-parity.ts",
+    "verify:gold-corpus-v2": "node --experimental-strip-types scripts/verify-gold-corpus-v2.ts"
   },
   "dependencies": {
     "typescript": "^5.9.3"
