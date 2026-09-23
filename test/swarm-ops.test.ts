@@ -22,7 +22,7 @@ import { openStore } from '../src/store/schema.ts'
 import { registerSwarmAgent, sendMessage, acquireLease } from '../src/coord/index.ts'
 import { enqueueTask } from '../src/queue.ts'
 import {
-  agentsBoard, approveCommit, recordTurn, registerWorkerProfile,
+  agentsBoard, approveCommit, recordTurn, registerWorkerProfile, retireWorker,
 } from '../src/coord/swarm-ops.ts'
 import { admitWork, reportQuota, listQuotas, type HostSnapshot } from '../src/coord/resources.ts'
 
@@ -260,4 +260,20 @@ test('the HTTP API carries the same contract: profile, turn, board, approval and
     await handle.close()
     f.cleanup()
   }
+})
+
+test('a retired worker keeps its history but frees its key and leaves the fleet count', () => {
+  const f = fixture()
+  try {
+    f.worker('legacy-coordinator', { account: 'owner:anthropic', resourceKey: 'claude-legacy' })
+    assert.throws(() => retireWorker(f.db, { agentId: 'legacy-coordinator', reason: ' ' }), /needs a reason/)
+    const retired = retireWorker(f.db, { agentId: 'legacy-coordinator', reason: 'Altagent aus Mission 21.09.' })
+    assert.equal(retired.retired, true)
+    assert.equal(retired.resourceKey, null)
+    const board = agentsBoard(f.db, WS, { host: roomy })
+    const row = board.agents.find(agent => agent.id === 'legacy-coordinator')
+    assert.equal(row?.retired, true)
+    assert.deepEqual(row?.attention, [])
+    f.worker('new-coordinator', { account: 'owner:anthropic', resourceKey: 'claude-legacy' })
+  } finally { f.cleanup() }
 })

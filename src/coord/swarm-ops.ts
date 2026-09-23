@@ -170,6 +170,26 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   return profile
 }
 
+/**
+ * Take a worker off the fleet: it keeps its history and identity, frees its
+ * resource key, and no longer counts as a worker on the board.
+ */
+export function retireWorker(db: DatabaseSync, input: { agentId: string; reason: string }): WorkerProfile {
+  ensureSwarmOpsSchema(db)
+  requireAgent(db, input.agentId)
+  const reason = input.reason.trim().slice(0, MAX_SUMMARY)
+  if (reason === '') throw new AccessDenied('retiring a worker needs a reason')
+  assertNotCredential('reason', reason)
+  const now = new Date().toISOString()
+  db.prepare(`
+    UPDATE agents
+       SET retired_at = ?, resource_key = NULL, turn_state = 'offline', turn_state_at = ?, turn_summary = ?
+     WHERE id = ?
+  `).run(now, now, `retired: ${reason}`, input.agentId)
+  coordEvents.emitLive('agent.retired', { agentId: input.agentId, reason })
+  return profileOf(loadProfile(db, input.agentId))
+}
+
 // ---------------------------------------------------------------------------
 // Turn protocol
 // ---------------------------------------------------------------------------
