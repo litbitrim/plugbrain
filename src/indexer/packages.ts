@@ -11,7 +11,7 @@ import { join, posix } from 'node:path'
 interface PackageManifest {
   name: string
   root: string
-  dependencies: Set<string>
+  dependencies: Map<string, string>
   exports: unknown
   main: string | null
   module: string | null
@@ -70,11 +70,13 @@ export class PackageResolver {
       try {
         const raw = JSON.parse(readFileSync(join(workspaceRoot, ...manifestPath.split('/')), 'utf8')) as Record<string, unknown>
         if (typeof raw.name !== 'string' || raw.name.length === 0) continue
-        const dependencies = new Set<string>()
+        const dependencies = new Map<string, string>()
         for (const field of dependencyFields) {
           const values = raw[field]
           if (values === null || typeof values !== 'object' || Array.isArray(values)) continue
-          for (const key of Object.keys(values as Record<string, unknown>)) dependencies.add(key)
+          for (const [key, value] of Object.entries(values as Record<string, unknown>)) {
+            if (typeof value === 'string') dependencies.set(key, value)
+          }
         }
         const manifest: PackageManifest = {
           name: raw.name, root, dependencies, exports: raw.exports,
@@ -92,9 +94,11 @@ export class PackageResolver {
     const requested = packageNameOf(specifier)
     if (requested === null) return null
     const source = this.owningPackage(fromRel)
-    if (source === null || !source.dependencies.has(requested.name)) return null
+    if (source === null) return null
     const candidates = this.manifests.filter(manifest => manifest.name === requested.name)
     if (candidates.length !== 1) return null // duplicate package identities are ambiguous
+    const declared = source.dependencies.get(requested.name)
+    if (declared === undefined || !this.dependencyBoundaryAllows(source, candidates[0], declared)) return null
     const entry = this.exportedEntry(candidates[0], requested.subpath)
     return entry === null ? null : this.knownEntry(candidates[0].root, entry)
   }
@@ -137,11 +141,43 @@ export class PackageResolver {
   private knownEntry(root: string, entry: string): string | null {
     if (!entry.startsWith('./')) return null
     const base = posix.normalize(root === '' ? entry.slice(2) : `${root}/${entry.slice(2)}`)
-    const candidates = [
-      base, `${base}.ts`, `${base}.tsx`, `${base}.js`, `${base}.jsx`, `${base}.mjs`, `${base}.cjs`,
-      base.replace(/\.js$/i, '.ts'), base.replace(/\.js$/i, '.tsx'),
-      `${base}/index.ts`, `${base}/index.tsx`, `${base}/index.js`, `${base}/index.jsx`,
-    ]
-    return candidates.find(candidate => this.known.has(candidate)) ?? null
+    // Exports point at build products or exact source entries. Do not rewrite
+    // `dist/index.js` to a nearby TypeScript file: that would cross a build
+    // boundary the manifest did not expose.
+    return this.known.has(base) ? base : null
+  }
+
+  private dependencyBoundaryAllows(source: PackageManifest, target: PackageManifest, declared: string): boolean {
+    if (declared.startsWith('workspace:')) {
+      const sourceBoundary = this.workspaceBoundary(source.root)
+      return sourceBoundary !== null && sourceBoundary === this.workspaceBoundary(target.root)
+    }
+    return this.lockfileBoundary(source.root) !== null
+  }
+
+  private workspaceBoundary(root: string): string | null {
+    let dir = root
+    for (;;) {
+      for (const file of ['pnpm-workspace.yaml', 'pnpm-workspace.yml']) {
+        const candidate = dir === '' ? file : `${dir}/${file}`
+        if (this.known.has(candidate)) return dir
+      }
+      if (dir === '') return null
+      const parent = posix.dirname(dir)
+      dir = parent === '.' ? '' : parent
+    }
+  }
+
+  private lockfileBoundary(root: string): string | null {
+    let dir = root
+    for (;;) {
+      for (const file of ['pnpm-lock.yaml', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock']) {
+        const candidate = dir === '' ? file : `${dir}/${file}`
+        if (this.known.has(candidate)) return dir
+      }
+      if (dir === '') return null
+      const parent = posix.dirname(dir)
+      dir = parent === '.' ? '' : parent
+    }
   }
 }
