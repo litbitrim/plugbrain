@@ -376,7 +376,8 @@ export function indexWorkspace(
       const parsed = parseFile(file.rel, file.ext, content)
       const info = writers.insertFile.run(
         workspaceId, file.rel, file.repoId, file.checkoutId, file.ext, parsed.lang,
-        file.size, file.mtime, file.hash, parsed.loc, now, generation, PARSE_VERSION)
+        file.size, file.mtime, file.hash, parsed.loc, now, generation, PARSE_VERSION,
+        parsed.processingStatus, parsed.processingReason)
       const fileId = Number(info.lastInsertRowid)
       const noteText = file.checkoutId === null ? content : null
       writers.writeParse({ ...parsed, fileId }, workspaceId, noteText)
@@ -394,7 +395,7 @@ export function indexWorkspace(
       writers.updateFile.run(
         item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
         item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation,
-        PARSE_VERSION, item.id)
+        PARSE_VERSION, parsed.processingStatus, parsed.processingReason, item.id)
       writers.clearFileGraph(item.id)
       const noteText = item.file.checkoutId === null ? content : null
       writers.writeParse({ ...parsed, fileId: item.id }, workspaceId, noteText)
@@ -420,7 +421,7 @@ export function indexWorkspace(
       writers.updateFile.run(
         item.file.rel, item.file.repoId, item.file.checkoutId, item.file.ext, parsed.lang,
         item.file.size, item.file.mtime, item.hash, parsed.loc, now, generation,
-        PARSE_VERSION, item.id)
+        PARSE_VERSION, parsed.processingStatus, parsed.processingReason, item.id)
       writers.clearFileGraph(item.id)
       const noteText = item.file.checkoutId === null ? content : null
       writers.writeParse({ ...parsed, fileId: item.id }, workspaceId, noteText)
@@ -641,11 +642,11 @@ interface FileWriters {
  */
 function writersFor(db: DatabaseSync, workspaceId: string): FileWriters {
   const insertFile = db.prepare(
-    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation, parse_version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation, parse_version, processing_status, processing_reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   const updateFile = db.prepare(
     `UPDATE files SET path = ?, repo_id = ?, checkout_id = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
-            loc = ?, indexed_at = ?, generation = ?, parse_version = ? WHERE id = ?`)
+            loc = ?, indexed_at = ?, generation = ?, parse_version = ?, processing_status = ?, processing_reason = ? WHERE id = ?`)
   const insertSymbol = db.prepare(
     `INSERT INTO symbols (file_id, name, kind, line, end_line, exported, container)
      VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -846,12 +847,14 @@ export function refreshFile(db: DatabaseSync, workspaceId: string, relPath: stri
     if (existing === undefined) {
       const info = writers.insertFile.run(
         workspaceId, rel, owner?.repoId ?? null, owner?.checkoutId ?? null, extname(rel),
-        parsed.lang, stats.size, stats.mtime.toISOString(), hash, parsed.loc, now, generation)
+        parsed.lang, stats.size, stats.mtime.toISOString(), hash, parsed.loc, now, generation,
+        PARSE_VERSION, parsed.processingStatus, parsed.processingReason)
       row = { id: Number(info.lastInsertRowid), repoId: owner?.repoId ?? null, checkoutId: owner?.checkoutId ?? null }
     } else {
       writers.updateFile.run(
         rel, existing.repoId, existing.checkoutId, extname(rel), parsed.lang, stats.size,
-        stats.mtime.toISOString(), hash, parsed.loc, now, generation, existing.id)
+        stats.mtime.toISOString(), hash, parsed.loc, now, generation, PARSE_VERSION,
+        parsed.processingStatus, parsed.processingReason, existing.id)
       row = existing
     }
     writers.clearFileGraph(row.id)

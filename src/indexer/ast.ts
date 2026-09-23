@@ -219,7 +219,7 @@ function extractSql(content: string): FileExtract {
       const kind: SymbolKind = word === 'function' || word === 'procedure' ? 'function' : 'class'
       out.symbols.push({ name: definition[1], kind, line: lineNo, endLine: lineNo, exported: true, container: null })
     }
-    const source = /\b(?:FROM|JOIN|UPDATE|INTO|REFERENCES)\s+([A-Za-z_]\w*)/ig
+    const source = /\b(?:FROM|JOIN|UPDATE|INTO|REFERENCES|DELETE\s+FROM)\s+([A-Za-z_]\w*)/ig
     for (const hit of line.matchAll(source)) out.refs.push({ kind: 'references', target: hit[1], receiver: null, from: null, line: lineNo })
     for (const hit of line.matchAll(/\bCALL\s+([A-Za-z_]\w*)\s*\(/ig)) out.refs.push({ kind: 'calls', target: hit[1], receiver: null, from: null, line: lineNo })
     const include = line.match(/^\s*(?:\\i|SOURCE)\s+([^\s;]+)\s*;?\s*$/i)
