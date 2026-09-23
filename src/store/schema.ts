@@ -11,7 +11,7 @@
  * writing while the UI and the agent API read concurrently.
  */
 import { DatabaseSync } from 'node:sqlite'
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 /** Node kinds the indexer can produce. Kept narrow on purpose — a kind that
@@ -482,6 +482,13 @@ CREATE TABLE IF NOT EXISTS path_owner (
   at           TEXT NOT NULL,
   PRIMARY KEY (workspace_id, path)
 );
+
+-- Facts about the store itself. 'writer_generation' is the newest writer
+-- generation that opened it for writing; see WRITER_GENERATION in schema.ts.
+CREATE TABLE IF NOT EXISTS store_meta (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 `
 
 interface SqlDefinition { sql: string | null }
@@ -643,15 +650,74 @@ function migrateAddedIndexes(db: DatabaseSync): void {
   `)
 }
 
+/**
+ * Which builds may WRITE a store.
+ *
+ * On 23.09.2026 an installed 0.1.1 Core was still started at every sign-in
+ * against the live planet after 0.2.0 had changed what its rows mean (pruned
+ * checkouts, new edge indexes, a narrowed selection). Its next index run
+ * would have tombstoned 250 000 files one cascade at a time. So a store keeps
+ * the writer generation of the newest build that wrote it, and an older build
+ * opens it read-only and says why instead of writing with the old rules.
+ *
+ * The generation is not the package version. It moves only when a release
+ * changes what stored data means, so a patch build is never locked out of its
+ * own store. Builds from before the fence cannot be stopped by it; that is
+ * what the single installed writer is for (koordination/BRAIN-PROTOKOLL.md).
+ */
+export const WRITER_GENERATION = 2
+
+/** The writer generation recorded in a store, or null for a new or pre-fence store. */
+export function storedWriterGeneration(file: string): number | null {
+  if (!existsSync(file)) return null
+  let probe: DatabaseSync | null = null
+  try {
+    probe = new DatabaseSync(file, { readOnly: true })
+    probe.exec('PRAGMA busy_timeout = 15000;')
+    const table = probe.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'store_meta'").get()
+    if (table === undefined) return null
+    const row = probe.prepare("SELECT value FROM store_meta WHERE key = 'writer_generation'").get() as
+      { value: string } | undefined
+    return row === undefined ? null : Number(row.value)
+  } finally {
+    probe?.close()
+  }
+}
+
+export interface OpenStoreOptions {
+  /** Open read-only on purpose (inspection); skips every migration. */
+  readOnly?: boolean
+  /** The generation this build writes with; tests pass another one. */
+  writerGeneration?: number
+}
+
 /** Open (creating if needed) the PlugBrain database at `file`. */
-export function openStore(file: string): DatabaseSync {
+export function openStore(file: string, options: OpenStoreOptions = {}): DatabaseSync {
   mkdirSync(dirname(file), { recursive: true })
+  const generation = options.writerGeneration ?? WRITER_GENERATION
+  const stored = storedWriterGeneration(file)
+  const fenced = stored !== null && stored > generation
+  if (options.readOnly === true || fenced) {
+    if (fenced) {
+      process.stderr.write(
+        `PlugBrain: this build writes generation ${generation}, but ${file} was last written by generation ` +
+        `${stored}. Opened READ-ONLY; install the current PlugBrain to write.\n`)
+    }
+    const readOnly = new DatabaseSync(file, { readOnly: true })
+    readOnly.exec('PRAGMA busy_timeout = 15000;')
+    return readOnly
+  }
   const db = new DatabaseSync(file)
   try {
     db.exec('PRAGMA busy_timeout = 15000;')
     migrateLegacySearch(db)
     db.exec(SCHEMA)
     migrateAddedColumns(db)
+    db.prepare(
+      `INSERT INTO store_meta (key, value) VALUES ('writer_generation', ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value
+       WHERE CAST(store_meta.value AS INTEGER) < CAST(excluded.value AS INTEGER)`)
+      .run(String(generation))
     return db
   } catch (error) {
     db.close()
