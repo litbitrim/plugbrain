@@ -421,15 +421,15 @@ test('M4: MCP server lists all 13 tools and executes tool calls over JSON-RPC', 
     const initRes = await sendRpc({ id: 1, method: 'initialize' })
     assert.equal(initRes.result.serverInfo.name, 'plugbrain')
 
-    // 2. tools/list: must have exactly 13 tools
+    // 2. tools/list: coordination tools plus the Brain parity read tools.
     const listRes = await sendRpc({ id: 2, method: 'tools/list' })
     const tools = listRes.result.tools as Array<{ name: string }>
-    assert.equal(tools.length, 13, `Expected 13 tools, found ${tools.length}`)
+    assert.equal(tools.length, 15, `Expected 15 tools, found ${tools.length}`)
     const toolNames = tools.map((t) => t.name)
     const expected = [
       'search', 'read', 'context_pack', 'query', 'context', 'impact',
       'detect_changes', 'claim', 'release', 'awareness', 'inbox_read',
-      'message_send', 'heartbeat',
+      'message_send', 'heartbeat', 'cypher', 'rename_preview',
     ]
     for (const exp of expected) {
       assert.ok(toolNames.includes(exp), `Missing MCP tool: ${exp}`)

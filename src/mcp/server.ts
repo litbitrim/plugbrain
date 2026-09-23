@@ -9,6 +9,7 @@ import { buildContextPack } from '../chronicle.ts'
 import * as coord from '../coord/index.ts'
 import * as intel from '../intel/index.ts'
 import { createAwarenessPort } from '../projections/awareness.ts'
+import { mcpProvenance } from './provenance.ts'
 
 export interface McpServerOptions {
   db: DatabaseSync
@@ -69,6 +70,7 @@ export const MCP_TOOLS = [
         query: { type: 'string', description: 'Concept query (e.g. gateway owner, stop flow)' },
         repoId: { type: 'string', description: 'Optional repo ID' },
         checkoutId: { type: 'string', description: 'Optional checkout ID' },
+        workspaceId: { type: 'string', description: 'Optional workspace ID for an explicit revision vector' },
         limit: { type: 'number', description: 'Max results' },
       },
       required: ['query'],
@@ -83,6 +85,8 @@ export const MCP_TOOLS = [
         name: { type: 'string', description: 'Symbol name' },
         file: { type: 'string', description: 'Optional file hint' },
         repoId: { type: 'string', description: 'Optional repository hint' },
+        checkoutId: { type: 'string', description: 'Optional checkout hint' },
+        workspaceId: { type: 'string', description: 'Optional workspace ID for an explicit revision vector' },
       },
       required: ['name'],
     },
@@ -97,6 +101,8 @@ export const MCP_TOOLS = [
         direction: { type: 'string', enum: ['upstream', 'downstream', 'both'], description: 'Analysis direction' },
         maxDepth: { type: 'number', description: 'Depth 1..5 (default 3)' },
         repoId: { type: 'string', description: 'Optional repo ID' },
+        checkoutId: { type: 'string', description: 'Optional checkout ID' },
+        workspaceId: { type: 'string', description: 'Optional workspace ID for an explicit revision vector' },
       },
       required: ['target'],
     },
@@ -112,6 +118,35 @@ export const MCP_TOOLS = [
         checkoutId: { type: 'string', description: 'Optional checkout ID' },
         checkoutPath: { type: 'string', description: 'Optional checkout path on disk' },
       },
+    },
+  },
+  {
+    name: 'cypher',
+    description: 'Run a bounded Cypher-like graph query inside one registered workspace',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Cypher-like query or JSON graph DSL' },
+        workspaceId: { type: 'string', description: 'Workspace ID (required when the server is not bound to one)' },
+        limit: { type: 'number', description: 'Maximum rows (default 50)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'rename_preview',
+    description: 'Read-only preview of a symbol rename; it never writes files',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        newName: { type: 'string', description: 'Replacement identifier' },
+        symbolId: { type: 'number', description: 'Exact indexed symbol ID' },
+        name: { type: 'string', description: 'Symbol name when it is unambiguous in the selected scope' },
+        repoId: { type: 'string', description: 'Optional repository scope' },
+        checkoutId: { type: 'string', description: 'Optional checkout scope' },
+        workspaceId: { type: 'string', description: 'Optional workspace ID for an explicit revision vector' },
+      },
+      required: ['newName'],
     },
   },
   {
@@ -406,15 +441,16 @@ export class McpServer {
           const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
           const limit = args.limit ? Number(args.limit) : 25
           const result = intel.conceptSearch(this.db, query, { repoId, checkoutId, limit })
-          return { ok: true, result }
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
         }
 
         case 'context': {
           const symName = String(args.name ?? '')
           const file = args.file ? String(args.file) : undefined
           const repoId = args.repoId ? String(args.repoId) : undefined
-          const result = intel.getSymbolContext(this.db, symName, { file, repoId })
-          return { ok: true, result }
+          const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
+          const result = intel.getSymbolContext(this.db, symName, { file, repoId, checkoutId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
         }
 
         case 'impact': {
@@ -423,7 +459,7 @@ export class McpServer {
           const maxDepth = Number(args.maxDepth ?? 3)
           const repoId = args.repoId ? String(args.repoId) : undefined
           const result = intel.getBlastRadius(this.db, target, { direction, maxDepth, repoId })
-          return { ok: true, result }
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
         }
 
         case 'detect_changes': {
@@ -434,7 +470,25 @@ export class McpServer {
           const result = intel.detectChanges(this.db, {
             workspaceId, diffText, checkoutId, checkoutPath,
           })
-          return { ok: true, result }
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'cypher': {
+          const workspaceId = this.getWorkspaceId(args)
+          const query = args.query as string | intel.JsonGraphQuery
+          const limit = args.limit ? Number(args.limit) : undefined
+          const result = intel.executeCypherQuery(this.db, query, { limit, workspaceId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'rename_preview': {
+          const newName = String(args.newName ?? '')
+          const symbolId = typeof args.symbolId === 'number' ? args.symbolId : undefined
+          const symbolName = args.name ? String(args.name) : undefined
+          const repoId = args.repoId ? String(args.repoId) : undefined
+          const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
+          const result = intel.previewRename(this.db, newName, { symbolId, name: symbolName, repoId, checkoutId })
+          return { ok: true, result, provenance: mcpProvenance(this.db, name, args) }
         }
 
         case 'claim': {
