@@ -1088,7 +1088,16 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // it either names the evidence behind an edge/node or has nothing to show.
     if (p === '/api/mesh') {
       access.requireWorkspace(db, ws)
-      return json(res, { ok: true, ...indexStateOf(db, ws), mesh: meshSnapshot(db, ws) })
+      const offsetRaw = Number(q.get('offset'))
+      const offset = Number.isFinite(offsetRaw) && offsetRaw > 0 ? Math.floor(offsetRaw) : 0
+      const limit = clampLimit(q.get('limit'), 500, 2_000)
+      return json(res, {
+        ok: true,
+        ...indexStateOf(db, ws),
+        mesh: meshSnapshot(db, ws, {
+          nodeLimit: limit, nodeOffset: offset, edgeLimit: limit, edgeOffset: offset,
+        }),
+      })
     }
 
     if (p === '/api/mesh/timeline') {

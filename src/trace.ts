@@ -23,6 +23,7 @@
  *   copied into a screenshot, an export and a bug report.
  */
 import type { DatabaseSync } from 'node:sqlite'
+import { invalidateTraceProjection } from './store/projection-cache.ts'
 
 /** Where a fact came from. `import` is historical and always marked as such. */
 export type TraceSource = 'operator' | 'work' | 'brain' | 'git' | 'receipt' | 'import'
@@ -146,6 +147,11 @@ CREATE TABLE IF NOT EXISTS trace_events (
   UNIQUE (source, runtime_instance_id, event_id)
 );
 CREATE INDEX IF NOT EXISTS idx_trace_ws ON trace_events(workspace_id, occurred_at);
+-- Mesh orders every trace deterministically by this complete key. Without the
+-- expression index SQLite read the workspace range efficiently but still built
+-- a temporary B-tree for source sequence and event id on every cold snapshot.
+CREATE INDEX IF NOT EXISTS idx_trace_ws_order
+  ON trace_events(workspace_id, occurred_at, COALESCE(source_sequence, 0), event_id);
 CREATE INDEX IF NOT EXISTS idx_trace_task ON trace_events(workspace_id, task_id);
 CREATE INDEX IF NOT EXISTS idx_trace_agent ON trace_events(workspace_id, agent_id);
 CREATE INDEX IF NOT EXISTS idx_trace_worker ON trace_events(workspace_id, worker_id);
@@ -331,6 +337,11 @@ export function ingestTraceEvents(
   } catch (error) {
     db.exec('ROLLBACK')
     throw error
+  }
+  if (result.inserted > 0) {
+    for (const workspaceId of new Set(events.map(event => event.workspaceId))) {
+      invalidateTraceProjection(db, workspaceId)
+    }
   }
   return result
 }
