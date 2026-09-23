@@ -99,6 +99,18 @@ export class PackageResolver {
     return entry === null ? null : this.knownEntry(candidates[0].root, entry)
   }
 
+  /** Package entry files the manifest explicitly exposes to consumers. */
+  entries(): Array<{ packageName: string; path: string }> {
+    const entries: Array<{ packageName: string; path: string }> = []
+    for (const manifest of this.manifests) {
+      const entry = this.exportedEntry(manifest, '')
+      if (entry === null) continue
+      const path = this.knownEntry(manifest.root, entry)
+      if (path !== null) entries.push({ packageName: manifest.name, path })
+    }
+    return entries
+  }
+
   private owningPackage(rel: string): PackageManifest | null {
     let dir = posix.dirname(rel)
     while (dir !== '.' && dir !== '') {

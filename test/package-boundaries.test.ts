@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { indexWorkspace } from '../src/indexer/index.ts'
 import { openStore } from '../src/store/schema.ts'
+import { getImpactSlice, getPackageEntryPoints, getTestCoverage } from '../src/intel/boundaries.ts'
 
 const write = (root: string, rel: string, content: string): void => {
   const path = join(root, ...rel.split('/'))
@@ -59,6 +60,18 @@ test('L2: bare workspace imports cross only declared exports, and test calls map
        WHERE e.workspace_id = ? AND e.kind = 'calls' AND dst.name = 'api' AND src.path LIKE '%/test/%'
     `).get(workspaceId) as { n: number }
     assert.equal(tested.n, 1, 'the graph maps a real test call to its exported symbol')
+
+    const entries = getPackageEntryPoints(db, workspaceId)
+    assert.deepEqual(entries.map(entry => ({ ...entry, symbols: entry.symbols.map(symbol => ({ ...symbol })) })), [{
+      packageName: '@plug/provider', path: 'packages/provider/src/index.ts',
+      symbols: [{ id: entries[0].symbols[0].id, name: 'api', kind: 'function', line: 1 }],
+    }], 'only an explicit package export becomes an entry point')
+    const coverage = getTestCoverage(db, { name: 'api', file: 'provider/src/index.ts' })
+    assert.equal(coverage.status, 'found')
+    assert.deepEqual(coverage.tests.map(item => item.path), ['packages/consumer/test/use.test.ts'])
+    const slice = getImpactSlice(db, { name: 'api', file: 'provider/src/index.ts' }, { direction: 'upstream', maxDepth: 2 })
+    assert.equal(slice.coverage.tests.length, 1)
+    assert.ok(slice.impact.totalImpacted >= 1, 'the review slice retains resolved reverse dependants')
   } finally {
     db.close()
     rmSync(dir, { recursive: true, force: true })

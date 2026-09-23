@@ -2361,6 +2361,23 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       return json(res, { ok: true, result: intel.getBlastRadius(db, target, { direction, maxDepth, repoId, file }) })
     }
 
+    if (p === '/api/intel/entry-points') {
+      const workspaceId = requiredIntelWorkspace(db, ws)
+      if (workspaceId === null) return json(res, { ok: false, error: 'workspace parameter required' }, 400)
+      return json(res, { ok: true, entries: intel.getPackageEntryPoints(db, workspaceId) })
+    }
+
+    if (p === '/api/intel/tests' || p === '/api/intel/impact-slice') {
+      const body = req.method === 'POST' ? await readBody(req) : {}
+      const target = String(body.target ?? body.name ?? q.get('target') ?? q.get('name') ?? '').trim()
+      if (!target) return json(res, { ok: false, error: 'target parameter required' }, 400)
+      const file = String(body.file ?? q.get('file') ?? '').trim() || undefined
+      if (p === '/api/intel/tests') return json(res, { ok: true, result: intel.getTestCoverage(db, { name: target, file }) })
+      const direction = (body.direction ?? q.get('direction') ?? 'both') as 'upstream' | 'downstream' | 'both'
+      const maxDepth = Number(body.maxDepth ?? q.get('maxDepth') ?? 3)
+      return json(res, { ok: true, result: intel.getImpactSlice(db, { name: target, file }, { direction, maxDepth, file }) })
+    }
+
     if (p === '/api/intel/query') {
       const body = req.method === 'POST' ? await readBody(req) : {}
       const query = String(body.query ?? body.q ?? q.get('q') ?? q.get('query') ?? '').trim()
