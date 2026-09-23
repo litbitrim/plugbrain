@@ -17,6 +17,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
 import { checkWriteFencing } from './coord/leases.ts'
+import { ownerOf } from './indexer/index.ts'
 import { searchWorkspace } from './store/search.ts'
 import type { Action } from './store/schema.ts'
 
@@ -296,13 +297,21 @@ export function writeFile(
     .get(workspace.id) as { generation: number } | undefined
   const generation = state?.generation ?? 0
   const createdGen = created ? generation : undefined
+  // On a planet the row has to name the checkout it belongs to. Without it the
+  // file is outside every live projection (the active file scope drops
+  // checkout-less rows that are not notes) until the next full pass, and a
+  // prune takes it for a leftover of the pre-planet layout.
+  const owner = ownerOf(db, workspace.id, rel)
   db.prepare(
-    `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at, generation, created_generation)
-     VALUES (?, ?, ?, NULL, ?, ?, ?, ?, NULL, ?, ?)
+    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at,
+                        generation, created_generation)
+     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, ?, ?)
      ON CONFLICT(workspace_id, path) DO UPDATE SET
+       repo_id = excluded.repo_id, checkout_id = excluded.checkout_id,
        size = excluded.size, mtime = excluded.mtime, hash = excluded.hash,
        loc = excluded.loc, indexed_at = NULL, generation = excluded.generation`
-  ).run(workspace.id, rel, rel.includes('.') ? `.${rel.split('.').pop()}` : '',
+  ).run(workspace.id, rel, owner?.repoId ?? null, owner?.checkoutId ?? null,
+    rel.includes('.') ? `.${rel.split('.').pop()}` : '',
     st.size, st.mtime.toISOString(), hash, loc, generation, createdGen ?? generation)
 
   record(db, workspace, rel, agentId, created ? 'create' : 'write')

@@ -13,6 +13,9 @@
  *   plugbrain planet scan [workspaceId]       refresh revisions, then index
  *   plugbrain planet status [workspaceId]     repos, checkouts, revisions, counts
  *   plugbrain planet history [workspaceId]    files the planet no longer has
+ *   plugbrain planet prune [workspaceId] [--apply] [--compact] [--batch <n>]
+ *                                             remove the rows of checkouts the selection does not keep
+ *   plugbrain compact                         give freed pages back to the disk (VACUUM)
  *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
  *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
@@ -49,6 +52,7 @@ import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 import { runSwarmCli } from './swarm-cli.ts'
+import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 
@@ -248,6 +252,60 @@ function planetSelect(args: string[]): void {
   if (args.includes('--json')) return jsonOut({ workspace: workspaceId, selection })
   console.log(`selected ${selection.checkoutIds.length} canonical checkout(s) for ${workspaceId}`)
   for (const id of selection.checkoutIds) console.log(`  ${id}`)
+}
+
+const gb = (bytes: number): string => `${(bytes / 1024 ** 3).toFixed(2)} GB`
+
+/** Give the pages a prune freed back to the disk. */
+function compact(): void {
+  process.stdout.write('compacting the store (VACUUM) …\n')
+  const result = compactStore(db, DB_FILE)
+  console.log(`compacted: ${gb(result.beforeBytes)} → ${gb(result.afterBytes)} in ${Math.round(result.ms / 1000)} s`)
+}
+
+/**
+ * Show what a prune would remove, or remove it with --apply.
+ *
+ * A dry run is the default because the plan is the thing to read first: it
+ * names every checkout whose rows go and why, and nothing is touched until the
+ * operator has seen it.
+ */
+function planetPrune(args: string[]): void {
+  const first = args[0]
+  const workspaceId = first !== undefined && !first.startsWith('--') ? first : singlePlanetId()
+  const allowEmptySelection = args.includes('--allow-empty')
+  const plan = planPrune(db, workspaceId, { allowEmptySelection })
+  if (!args.includes('--apply')) {
+    if (args.includes('--json')) return jsonOut(plan)
+    console.log(`prune plan for ${workspaceId}: ${plan.files} file row(s) in ${plan.candidates.length} group(s)`)
+    console.log(`  kept checkouts: ${plan.keptCheckouts.length}`)
+    for (const candidate of plan.candidates) {
+      console.log(`  ${candidate.reason.padEnd(18)} ${String(candidate.files).padStart(7)}  ` +
+        `${candidate.relPrefix ?? '(rows outside every note root)'}`)
+    }
+    console.log('\nnothing removed; run again with --apply')
+    return
+  }
+  let lastPrinted = 0
+  const result = prunePlanet(db, workspaceId, {
+    allowEmptySelection,
+    batchFiles: flagValue(args, '--batch') === undefined ? undefined : Number(flagValue(args, '--batch')),
+    onProgress: tick => {
+      const now = Date.now()
+      if (now - lastPrinted < 2000 && tick.done < tick.total) return
+      lastPrinted = now
+      const percent = tick.overallTotal > 0 ? Math.round((tick.overallDone / tick.overallTotal) * 100) : 100
+      process.stdout.write(`  ${tick.relPrefix ?? '(outside note roots)'}  ${tick.done}/${tick.total}` +
+        `  overall ${tick.overallDone}/${tick.overallTotal} ${percent}%\n`)
+    },
+  })
+  if (args.includes('--json') && !args.includes('--compact')) return jsonOut(result)
+  console.log(`pruned ${result.files} file row(s) in ${Math.round(result.ms / 1000)} s, orphans ${result.orphans}`)
+  for (const [table, rows] of Object.entries(result.deleted).sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${table.padEnd(18)} ${rows}`)
+  }
+  for (const [column, rows] of Object.entries(result.nulled)) console.log(`  ${column.padEnd(18)} ${rows} set to NULL`)
+  if (args.includes('--compact')) compact()
 }
 
 function planetStatus(only?: string): void {
@@ -683,12 +741,14 @@ switch (command) {
     else if (step === 'scan') planetScan(rest[0])
     else if (step === 'status') planetStatus(rest[0])
     else if (step === 'history') planetLog(rest[0])
+    else if (step === 'prune') planetPrune(rest)
     else {
-      console.error('usage: plugbrain planet <register|select|scan|status|history> [path|workspaceId]')
+      console.error('usage: plugbrain planet <register|select|scan|status|history|prune> [path|workspaceId]')
       process.exit(1)
     }
     break
   }
+  case 'compact': compact(); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)

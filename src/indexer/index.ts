@@ -758,7 +758,7 @@ function writersFor(db: DatabaseSync, workspaceId: string): FileWriters {
  * the indexer depend on the module that already depends on it. Longest prefix
  * wins, so a checkout inside a note folder is still attributed to the checkout.
  */
-function ownerOf(db: DatabaseSync, workspaceId: string, rel: string):
+export function ownerOf(db: DatabaseSync, workspaceId: string, rel: string):
 { repoId: string | null; checkoutId: string | null } | null {
   const selectedIds = activeCheckoutIds(db, workspaceId)
   const checkouts = selectedIds === null || selectedIds.length === 0 ? [] : db.prepare(
