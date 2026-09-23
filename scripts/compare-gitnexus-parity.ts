@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { basename, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { indexWorkspace } from '../src/indexer/index.ts'
 import { workspaceIdFor } from '../src/planet.ts'
@@ -28,16 +28,51 @@ export interface GitNexusComparisonReceipt {
 const digest = (value: string): string => createHash('sha256').update(value).digest('hex')
 
 function command(commandPath: string, args: string[], cwd: string): { status: number; output: string } {
-  const result = spawnSync(commandPath, args, {
+  // npm exposes Windows CLIs as .cmd files, which Node cannot execute directly
+  // with shell:false. Invoke the command processor explicitly, retaining a
+  // quoted argument boundary instead of relying on Node's shell option.
+  const shimTarget = process.platform === 'win32' && commandPath.toLowerCase().endsWith('.cmd')
+    ? join(dirname(commandPath), 'node_modules', 'gitnexus', 'dist', 'cli', 'index.js')
+    : null
+  const executable = shimTarget !== null && existsSync(shimTarget) ? process.execPath : commandPath
+  const directArgs = shimTarget !== null && existsSync(shimTarget) ? [shimTarget, ...args] : args
+  // This runner's CLI vocabulary is deliberately token-only: paths, symbols,
+  // and the compact Cypher query below contain no shell metacharacters. Refuse
+  // anything else rather than trying to quote untrusted input through cmd.exe.
+  if (process.platform === 'win32' && commandPath.toLowerCase().endsWith('.cmd') && executable === commandPath
+      && [...args, commandPath].some(value => /[\s"&|<>^]/.test(value))) {
+    return { status: 1, output: 'GitNexus comparison command contains unsupported shell characters' }
+  }
+  const commandLine = [commandPath, ...args].join(' ')
+  const executableArgs = executable === commandPath
+    ? directArgs
+    : directArgs
+  const result = spawnSync(executable, executableArgs, {
     cwd,
     encoding: 'utf8',
     windowsHide: true,
-    shell: process.platform === 'win32',
   })
   return {
     status: result.status ?? 1,
     output: `${result.stdout ?? ''}${result.stderr ?? ''}`.trim(),
   }
+}
+
+function gitNexusRepoAlias(binary: string, repo: string): string {
+  const listing = command(binary, ['list'], repo)
+  if (listing.status !== 0) throw new Error(`could not list GitNexus repositories: ${listing.output}`)
+  const lines = listing.output.split(/\r?\n/)
+  const expected = resolve(repo).toLowerCase()
+  for (let i = 0; i < lines.length; i++) {
+    const path = lines[i].trim().replace(/^Path:\s*/, '')
+    if (!lines[i].trimStart().startsWith('Path:') || resolve(path).toLowerCase() !== expected) continue
+    for (let j = i - 1; j >= 0; j--) {
+      const label = lines[j].trim()
+      if (label === '') continue
+      return label.replace(/\s+\(.+\)$/, '')
+    }
+  }
+  throw new Error(`GitNexus has no registered alias for comparison corpus: ${repo}`)
 }
 
 function git(repo: string, args: string[]): string {
@@ -56,15 +91,20 @@ function hasProvenance(value: any): boolean {
 export async function runGitNexusComparison(options: {
   repo?: string
   gitNexusBinary?: string
+  gitNexusRepo?: string
   receiptPath?: string
 } = {}): Promise<GitNexusComparisonReceipt> {
   const repo = resolve(options.repo ?? process.cwd())
   if (!existsSync(join(repo, '.git'))) throw new Error(`comparison corpus is not a git checkout: ${repo}`)
-  const gitNexusBinary = options.gitNexusBinary ?? process.env.GITNEXUS_BIN ?? 'gitnexus'
+  const gitNexusBinary = options.gitNexusBinary ?? process.env.GITNEXUS_BIN
+    ?? (process.platform === 'win32' && process.env.APPDATA
+      ? join(process.env.APPDATA, 'npm', 'gitnexus.cmd')
+      : 'gitnexus')
   const status = command(gitNexusBinary, ['status'], repo)
   if (status.status !== 0) {
     throw new Error(`GitNexus corpus is not indexed: ${status.output || 'gitnexus status failed'}`)
   }
+  const gitNexusRepo = options.gitNexusRepo ?? process.env.GITNEXUS_REPO ?? gitNexusRepoAlias(gitNexusBinary, repo)
 
   const temp = mkdtempSync(join(tmpdir(), 'plugbrain-gitnexus-compare-'))
   const db = openStore(join(temp, 'brain.db'))
@@ -87,11 +127,11 @@ export async function runGitNexusComparison(options: {
       brain: Promise<{ ok: boolean; [key: string]: unknown }>
       gitNexus: string[] | null
     }> = [
-      { name: 'query', brain: Promise.resolve(query), gitNexus: ['query', symbolQuery, '--limit', '5'] },
-      { name: 'context', brain: mcp.executeTool('context', { workspaceId, name: symbolQuery, file: sourceFile }), gitNexus: ['context', symbolQuery, '--file', sourceFile] },
-      { name: 'impact', brain: mcp.executeTool('impact', { workspaceId, target: symbolQuery, direction: 'upstream', maxDepth: 2 }), gitNexus: ['impact', symbolQuery, '--file', sourceFile, '--direction', 'upstream', '--depth', '2'] },
-      { name: 'detect_changes', brain: mcp.executeTool('detect_changes', { workspaceId, diffText }), gitNexus: ['detect-changes', '--scope', 'compare', '--base-ref', 'HEAD~1'] },
-      { name: 'cypher', brain: mcp.executeTool('cypher', { workspaceId, query: 'MATCH (n:Function) RETURN count(n)' }), gitNexus: ['cypher', 'MATCH (n:Function) RETURN count(n)'] },
+      { name: 'query', brain: Promise.resolve(query), gitNexus: ['query', symbolQuery, '--limit', '5', '--repo', gitNexusRepo] },
+      { name: 'context', brain: mcp.executeTool('context', { workspaceId, name: symbolQuery, file: sourceFile }), gitNexus: ['context', symbolQuery, '--file', sourceFile, '--repo', gitNexusRepo] },
+      { name: 'impact', brain: mcp.executeTool('impact', { workspaceId, target: symbolQuery, direction: 'upstream', maxDepth: 2 }), gitNexus: ['impact', symbolQuery, '--file', sourceFile, '--direction', 'upstream', '--depth', '2', '--repo', gitNexusRepo] },
+      { name: 'detect_changes', brain: mcp.executeTool('detect_changes', { workspaceId, diffText }), gitNexus: ['detect-changes', '--scope', 'compare', '--base-ref', 'HEAD~1', '--repo', gitNexusRepo] },
+      { name: 'cypher', brain: mcp.executeTool('cypher', { workspaceId, query: 'MATCH (n:Function) RETURN count(n)' }), gitNexus: ['cypher', 'MATCH (n:Function) RETURN count(n)', '--repo', gitNexusRepo] },
       // GitNexus has no rename-preview CLI/MCP command. The explicit unsupported
       // entry makes this Brain-only read feature visible instead of fabricated.
       { name: 'rename_preview', brain: mcp.executeTool('rename_preview', { workspaceId, symbolId: symbol.id, newName: 'McpServerPreview' }), gitNexus: null },
@@ -115,7 +155,8 @@ export async function runGitNexusComparison(options: {
       gitNexus: { binary: gitNexusBinary, status: 'indexed' },
       questions,
       assertions: {
-        sameQuestionsExecuted: questions.filter(question => question.gitNexus.supported).length === 5,
+        sameQuestionsExecuted: questions.filter(question => question.gitNexus.supported).length === 5
+          && questions.filter(question => question.gitNexus.supported).every(question => question.gitNexus.exitCode === 0),
         brainProvenanceComplete: questions.every(question => hasProvenance({ provenance: question.brain.provenance })),
         renamePreviewReadOnly: questions.find(question => question.name === 'rename_preview')?.brain.ok === true,
       },

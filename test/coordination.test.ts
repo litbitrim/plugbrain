@@ -378,7 +378,7 @@ test('M4: awareness pack reports dependency overlap when another task claims an 
   }
 })
 
-test('M4: MCP server lists all 13 tools and executes tool calls over JSON-RPC', async () => {
+test('M4: MCP server lists all 15 tools and executes tool calls over JSON-RPC', async () => {
   const f = await createCoordFixture()
   try {
     const inStream = new PassThrough()
