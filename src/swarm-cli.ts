@@ -15,7 +15,7 @@
  *   plugbrain swarm release <agent> [<path>...] [--task <id>]
  *   plugbrain swarm board [--git] [--json]
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
- *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--by <agent>]
+ *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
@@ -26,8 +26,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, registerAgent } from './access.ts'
 import { enqueueTask } from './queue.ts'
+import { PLAN_REF, setPlanRef } from './plan.ts'
 import {
-  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, hostSnapshot, listQuotas, recordTurn, releaseLease,
+  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
+  recordTurn, releaseLease,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
@@ -68,7 +70,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
-  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min',
+  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -123,6 +125,10 @@ function printBoard(board: SwarmBoard): void {
 
 export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: () => string): number {
   const [step, ...rest] = args
+  // Every command may be the first one a fresh store sees: `enqueue` used to
+  // fail with "no such column: workspace_id" until some `register` had widened
+  // the agents table.
+  ensureSwarmOpsSchema(db)
   const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
@@ -228,14 +234,20 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'enqueue': {
-      const usage = 'plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--by <agent>]'
+      const usage = 'plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]'
       const by = flag(rest, '--by') ?? INTEGRATOR
       ensureIntegrator(db, workspaceId, by)
+      const title = need(pos.join(' '), usage)
+      // A master task named in the title counts as the link too, so a planner
+      // who writes "M12: …" does not have to repeat it as a flag.
+      const planRef = flag(rest, '--plan') ?? PLAN_REF.exec(title)?.[1] ?? null
       const task = enqueueTask(db, workspaceId, {
-        title: need(pos.join(' '), usage), body: flag(rest, '--body') ?? '',
+        title, body: flag(rest, '--body') ?? '',
         addressedTo: flag(rest, '--to') ?? undefined, requestedBy: by,
       })
-      console.log(`eingereiht ${task.id}: ${task.title}${task.addressed_to ? ` → ${task.addressed_to}` : ''}`)
+      if (planRef !== null) setPlanRef(db, task.id, planRef)
+      console.log(`eingereiht ${task.id}: ${task.title}${task.addressed_to ? ` → ${task.addressed_to}` : ''}` +
+        (planRef === null ? '' : `  [${planRef}]`))
       return 0
     }
     case 'approve': {

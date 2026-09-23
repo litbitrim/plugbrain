@@ -10,6 +10,8 @@ import * as coord from '../coord/index.ts'
 import * as intel from '../intel/index.ts'
 import { createAwarenessPort } from '../projections/awareness.ts'
 import { mcpProvenance } from './provenance.ts'
+import { backlinksOf, queryNotes, readNote, searchNotesWithLines } from '../notes/vault.ts'
+import { planTask, planView } from '../plan.ts'
 
 export interface McpServerOptions {
   db: DatabaseSync
@@ -273,6 +275,74 @@ export const MCP_TOOLS = [
     name: 'swarm_resources',
     description: 'Host disk, RAM and CPU, reported account quotas, and whether there is room for test, build, install or worktree work',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'plan',
+    description: 'The master ledger joined with the brain queue: progress, startable master tasks, one task with '
+      + 'dependencies, gates and queued work, or the gate list',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        view: { type: 'string', enum: ['status', 'next', 'task', 'gates'], description: 'What to return (default status)' },
+        id: { type: 'string', description: 'Master task id for view=task, e.g. M12' },
+        status: { type: 'string', description: 'Gate status filter for view=gates, e.g. OPEN' },
+        limit: { type: 'number', description: 'Max tasks for view=next (default 10)' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+    },
+  },
+  {
+    name: 'notes_search',
+    description: 'Search the prose of the vault notes (the Obsidian replacement); optionally with the matching line',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Words to find' },
+        lines: { type: 'boolean', description: 'Return the line of the first match per note' },
+        limit: { type: 'number', description: 'Max notes (default 20)' },
+        agentId: { type: 'string', description: 'Agent ID attributing the reads' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'notes_read',
+    description: 'Read one note with its properties, outgoing links and backlinks',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Planet-relative note path, e.g. Roadmap/Gates/R7.md' },
+        agentId: { type: 'string', description: 'Agent ID attributing the read' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['path'],
+    },
+  },
+  {
+    name: 'notes_query',
+    description: 'Property query over the notes, e.g. "typ=gate UND stand=offen"',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filter: { type: 'string', description: 'Property filter' },
+        limit: { type: 'number', description: 'Max notes (default 200)' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['filter'],
+    },
+  },
+  {
+    name: 'notes_backlinks',
+    description: 'Every note that links to this one',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Planet-relative note path' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['path'],
+    },
   },
 ] as const
 
@@ -633,6 +703,59 @@ export class McpServer {
             quotas: coord.listQuotas(this.db),
             admission: coord.WORK_KINDS.map(kind => coord.admitWork(kind, host)),
           }
+        }
+
+        case 'plan': {
+          const ws = this.getWorkspaceId(args)
+          const view = String(args.view ?? 'status')
+          if (view === 'task') return { ok: true, task: planTask(this.db, ws, String(args.id ?? '')) }
+          const plan = planView(this.db, ws)
+          if (view === 'next') return { ok: true, next: plan.next.slice(0, Number(args.limit ?? 10)) }
+          if (view === 'gates') {
+            const status = args.status === undefined ? null : String(args.status)
+            return { ok: true, gates: status === null ? plan.gates : plan.gates.filter(gate => gate.status === status) }
+          }
+          // The status view drops the per-task detail; `task` and `next` carry it.
+          return {
+            ok: true,
+            ledger: plan.ledger,
+            progress: plan.progress,
+            tasksByStatus: plan.tasksByStatus,
+            gatesByStatus: plan.gatesByStatus,
+            next: plan.next.slice(0, 10).map(task => ({ id: task.id, title: task.title, status: task.status, queue: task.queue })),
+            openDecisions: plan.openDecisions,
+            dimensions: plan.dimensions,
+            unplanned: plan.unplanned,
+          }
+        }
+
+        case 'notes_search': {
+          const ws = this.getWorkspaceId(args)
+          const agentId = String(args.agentId ?? 'mcp-agent')
+          access.ensureAgent(this.db, agentId)
+          return {
+            ok: true,
+            ...searchNotesWithLines(this.db, ws, agentId, String(args.query ?? ''), {
+              limit: Number(args.limit ?? 20), lines: args.lines === true,
+            }),
+          }
+        }
+
+        case 'notes_read': {
+          const ws = this.getWorkspaceId(args)
+          const agentId = String(args.agentId ?? 'mcp-agent')
+          access.ensureAgent(this.db, agentId)
+          return { ok: true, note: readNote(this.db, ws, agentId, String(args.path ?? '')) }
+        }
+
+        case 'notes_query': {
+          const ws = this.getWorkspaceId(args)
+          return { ok: true, ...queryNotes(this.db, ws, String(args.filter ?? ''), { limit: Number(args.limit ?? 200) }) }
+        }
+
+        case 'notes_backlinks': {
+          const ws = this.getWorkspaceId(args)
+          return { ok: true, backlinks: backlinksOf(this.db, ws, String(args.path ?? '')) }
         }
 
         default:

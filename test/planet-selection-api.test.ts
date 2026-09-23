@@ -3,6 +3,7 @@
  * These routes exercise the same HTTP calls the local Brain UI/CLI consumer
  * uses: inventory first, explicit checkout IDs second, then scan.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'

@@ -3,6 +3,7 @@
  * same server receives competing calls. Timing uses a raised test-process
  * priority, warmups, and a median — never one scheduler outlier.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

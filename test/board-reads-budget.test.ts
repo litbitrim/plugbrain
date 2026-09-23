@@ -9,6 +9,7 @@
  * smaller fixture so the suite catches a regression that reintroduces the
  * per-request recount.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'

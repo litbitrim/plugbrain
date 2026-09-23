@@ -1,3 +1,4 @@
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { createRequire } from 'node:module'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'

@@ -9,6 +9,7 @@
  * 4. Mission gates reject invented reviewers/verifiers and strictly reject string-false values.
  * 5. Authenticated requests with valid tokens succeed.
  */
+import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync, readFileSync } from 'node:fs'

@@ -17,6 +17,8 @@
  *                                             remove the rows of checkouts the selection does not keep
  *   plugbrain compact                         give freed pages back to the disk (VACUUM)
  *
+ *   plugbrain plan [status|next|task <M00>|gates]   the master ledger joined with the brain's queue
+ *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
  *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
  *   plugbrain notes read <path>               one note with links, backlinks and properties
@@ -53,6 +55,7 @@ import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
+import { planTask, planView, type PlanTask } from './plan.ts'
 
 const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
 
@@ -254,6 +257,76 @@ function planetSelect(args: string[]): void {
   for (const id of selection.checkoutIds) console.log(`  ${id}`)
 }
 
+/* ── plan: the master as the fleet sees it ──────────────────────────────── */
+
+function printPlanTask(task: PlanTask, detail = false): void {
+  const queue = task.queue.length === 0 ? '' : `  Queue: ${task.queue.map(ref =>
+    `${ref.state}${ref.claimedBy ? ` (${ref.claimedBy})` : ref.addressedTo ? ` → ${ref.addressedTo}` : ''}`).join(', ')}`
+  console.log(`  ${task.id}  ${task.status.padEnd(12)} ${task.title}${queue}`)
+  if (!detail) return
+  console.log(`    Priorität ${task.priority ?? '-'}  Rolle ${task.ownerRole ?? '-'}  Paket-Gate ${task.packageGate ?? '-'}`)
+  console.log(`    hängt ab von: ${task.dependsOn.join(', ') || '-'}` +
+    (task.blockedBy.length > 0 ? `  (offen: ${task.blockedBy.join(', ')})` : ''))
+  console.log(`    ${task.ready ? 'bereit' : task.startable ? 'startbar (Abhängigkeiten laufen)' : task.done ? 'fertig' : 'wartet'}`)
+  console.log(`    Anforderungen: ${task.requirementIds.join(', ') || '-'}`)
+  console.log(`    Ledger-Gates: ${task.ledgerGates.join(', ') || '-'}`)
+  for (const evidence of task.evidence) console.log(`    Beleg: ${evidence}`)
+  for (const ref of task.queue) console.log(`    Queue ${ref.taskId}: ${ref.state}  ${ref.title}`)
+}
+
+function planCommand(args: string[]): void {
+  const [step = 'status', ...rest] = args
+  const workspaceId = flagValue(rest, '--workspace') ?? singlePlanetId()
+  const json = args.includes('--json')
+  if (step === 'task') {
+    const id = rest.find(arg => !arg.startsWith('--'))
+    if (id === undefined) { console.error('usage: plugbrain plan task <M00>'); process.exit(1) }
+    const task = planTask(db, workspaceId, id)
+    if (json) return jsonOut(task)
+    printPlanTask(task, true)
+    return
+  }
+  const view = planView(db, workspaceId)
+  if (step === 'next') {
+    const limit = Number(flagValue(rest, '--limit') ?? 10)
+    const next = view.next.slice(0, limit)
+    if (json) return jsonOut(next)
+    console.log(`${view.next.length} startbare Master-Aufgabe(n), die ersten ${next.length}:`)
+    for (const task of next) printPlanTask(task)
+    return
+  }
+  if (step === 'gates') {
+    const status = flagValue(rest, '--status')
+    const gates = status === null ? view.gates : view.gates.filter(gate => gate.status === status)
+    if (json) return jsonOut(gates)
+    for (const gate of gates) console.log(`  ${gate.id.padEnd(14)} ${gate.status.padEnd(18)} ${gate.title}`)
+    return
+  }
+  if (step !== 'status') {
+    console.error('usage: plugbrain plan [status|next|task <M00>|gates] [--json]')
+    process.exit(1)
+  }
+  if (json) return jsonOut(view)
+  const p = view.progress
+  console.log(`${view.ledger.master ?? 'Master'}  Ledger ${view.ledger.updated ?? '?'}` +
+    `${view.ledger.ageHours === null ? '' : ` (vor ${view.ledger.ageHours} h, ${view.ledger.updatedBy ?? '?'})`}`)
+  console.log(`  Master-Aufgaben: ${p.tasksDone}/${p.tasksTotal} fertig, ${p.tasksInProgress} in Arbeit` +
+    `  ${Object.entries(view.tasksByStatus).map(([s, n]) => `${s} ${n}`).join(', ')}`)
+  console.log(`  Gates: ${p.gatesVerified}/${p.gatesTotal} voll verifiziert, ${p.gatesPartial} teilweise` +
+    `  ${Object.entries(view.gatesByStatus).map(([s, n]) => `${s} ${n}`).join(', ')}`)
+  for (const dimension of view.dimensions) console.log(`  ${dimension.dimension.padEnd(52)} ${dimension.current}`)
+  console.log(`\nStartbar (${view.next.length}):`)
+  for (const task of view.next.slice(0, 8)) printPlanTask(task)
+  if (view.openDecisions.length > 0) {
+    console.log(`\nOffene Owner-Entscheidungen (${view.openDecisions.length}):`)
+    for (const decision of view.openDecisions) console.log(`  ${decision.ref}  ${decision.decision.slice(0, 110)}`)
+  }
+  if (view.unplanned.length > 0) {
+    console.log(`\nQueue ohne Master-Aufgabe (${view.unplanned.length}):`)
+    for (const ref of view.unplanned) console.log(`  ${ref.taskId}  ${ref.state}  ${ref.title}`)
+  }
+}
+
 const gb = (bytes: number): string => `${(bytes / 1024 ** 3).toFixed(2)} GB`
 
 /** Give the pages a prune freed back to the disk. */
@@ -287,9 +360,10 @@ function planetPrune(args: string[]): void {
     return
   }
   let lastPrinted = 0
+  const batch = flagValue(args, '--batch')
   const result = prunePlanet(db, workspaceId, {
     allowEmptySelection,
-    batchFiles: flagValue(args, '--batch') === undefined ? undefined : Number(flagValue(args, '--batch')),
+    batchFiles: batch === null ? undefined : Number(batch),
     onProgress: tick => {
       const now = Date.now()
       if (now - lastPrinted < 2000 && tick.done < tick.total) return
@@ -749,6 +823,7 @@ switch (command) {
     break
   }
   case 'compact': compact(); break
+  case 'plan': planCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)
