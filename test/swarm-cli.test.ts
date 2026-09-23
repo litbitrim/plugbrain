@@ -67,6 +67,24 @@ test('a worker registers, gets pinged at its turn end, claims work and shows on 
   } finally { b.cleanup() }
 })
 
+test('a worker hands in its claimed task with the evidence path, and only the holder can', () => {
+  const b = brain()
+  try {
+    for (const id of ['wf-m15', 'wf-m16']) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'claude-code', '--account', 'owner:anthropic', '--workspace', b.ws).code, 0)
+    }
+    assert.equal(b.run('swarm', 'enqueue', 'M15: Overlays', '--to', 'wf-m15', '--workspace', b.ws).code, 0)
+    const start = b.run('swarm', 'turn', 'wf-m15', 'start', '--claim', '--workspace', b.ws, '--json')
+    const taskId = (JSON.parse(start.out) as { claimedTask: { id: string } }).claimedTask.id
+    const stranger = b.run('swarm', 'deliver', 'wf-m16', taskId, '--path', 'x/DONE.md', '--workspace', b.ws)
+    assert.equal(stranger.code, 3)
+    assert.match(stranger.err, /held by wf-m15/)
+    const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', 'closeout/M15/DONE.md', '--workspace', b.ws)
+    assert.equal(delivered.code, 0, delivered.err)
+    assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays → closeout\/M15\/DONE\.md/)
+  } finally { b.cleanup() }
+})
+
 test('quotas, resources and admission are available to every worker', () => {
   const b = brain()
   try {
