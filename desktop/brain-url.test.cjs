@@ -149,3 +149,12 @@ test('the installer starts the Core at sign-in hidden and puts the CLI on the us
   // The CLI runs on the owned runtime beside the bundle.
   assert.match(cli, /"%~dp0\.\.\\dist\\node\.exe" "%~dp0\.\.\\dist\\plugbrain\.mjs" %\*/);
 });
+
+test('a silent install or uninstall never opens a dialog', () => {
+  const nsis = readFileSync(join(__dirname, 'PlugBrain.nsi'), 'utf8');
+  // /S suppresses pages, not message boxes: without /SD a "silent" uninstall
+  // that meets a locked runtime waits on a dialog nobody asked for (23.09.2026).
+  const boxes = nsis.split(/\r?\n/).filter(line => line.trim().startsWith('MessageBox'));
+  assert.ok(boxes.length >= 4);
+  for (const box of boxes) assert.match(box, /\/SD IDOK$/, box.trim());
+});

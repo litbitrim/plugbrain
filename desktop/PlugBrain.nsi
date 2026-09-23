@@ -1,7 +1,7 @@
 Unicode true
 
 !define PRODUCT_NAME "PlugBrain"
-!define PRODUCT_VERSION "0.2.1"
+!define PRODUCT_VERSION "0.2.2"
 !define PRODUCT_PUBLISHER "PLUG"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -21,10 +21,10 @@ UninstPage instfiles
 ; place: an upgrade must first be explicitly uninstalled after its Core stops.
 Function .onVerifyInstDir
   IfFileExists "$INSTDIR\.plugbrain-install.marker" 0 +3
-    MessageBox MB_OK|MB_ICONSTOP "An existing PlugBrain installation was found here. Close PlugBrain and uninstall that installation before continuing."
+    MessageBox MB_OK|MB_ICONSTOP "An existing PlugBrain installation was found here. Close PlugBrain and uninstall that installation before continuing." /SD IDOK
     Abort
   IfFileExists "$INSTDIR\*.*" 0 +3
-    MessageBox MB_OK|MB_ICONSTOP "Choose a new empty folder. PlugBrain will never merge with an existing folder."
+    MessageBox MB_OK|MB_ICONSTOP "Choose a new empty folder. PlugBrain will never merge with an existing folder." /SD IDOK
     Abort
 FunctionEnd
 
@@ -62,7 +62,7 @@ SectionEnd
 Section "Uninstall"
   ; Refuse to act on a folder that was not created by this installer.
   IfFileExists "$INSTDIR\.plugbrain-install.marker" +3 0
-    MessageBox MB_OK|MB_ICONSTOP "This folder is not a verified PlugBrain installation. Nothing was removed."
+    MessageBox MB_OK|MB_ICONSTOP "This folder is not a verified PlugBrain installation. Nothing was removed." /SD IDOK
     Abort
 
   ; A live portable Core locks its owned runtime. Test that first, before
@@ -70,7 +70,7 @@ Section "Uninstall"
   ; partially deleted product tree.
   Delete "$INSTDIR\dist\node.exe"
   IfFileExists "$INSTDIR\dist\node.exe" 0 +3
-    MessageBox MB_OK|MB_ICONSTOP "PlugBrain Core is still running or its runtime is locked. Close it and run uninstall again."
+    MessageBox MB_OK|MB_ICONSTOP "PlugBrain Core is still running or its runtime is locked. Close it and run uninstall again." /SD IDOK
     Abort
 
   Delete "$SMPROGRAMS\PLUG\PlugBrain.lnk"
