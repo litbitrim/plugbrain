@@ -127,3 +127,25 @@ test('the NSIS source refuses arbitrary folders and never recursively removes th
     /rmSync\(uiOut, \{ recursive: true, force: true \}\)/,
   );
 });
+
+test('the installer starts the Core at sign-in hidden and puts the CLI on the user PATH, and undoes both', () => {
+  const nsis = readFileSync(join(__dirname, 'PlugBrain.nsi'), 'utf8');
+  const packager = readFileSync(join(__dirname, '..', 'scripts', 'package-nsis.mjs'), 'utf8');
+  const autostart = readFileSync(join(__dirname, 'autostart.vbs'), 'utf8');
+  const cli = readFileSync(join(__dirname, 'plugbrain.cmd'), 'utf8');
+  // Per user only: the Run key and the PATH live under HKCU, never HKLM.
+  assert.match(nsis, /WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Run" "PlugBrain" 'wscript\.exe "\$INSTDIR\\desktop\\autostart\.vbs"'/);
+  assert.match(nsis, /DeleteRegValue HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Run" "PlugBrain"/);
+  assert.match(nsis, /SetEnvironmentVariable\('Path', .*'User'\)/);
+  assert.doesNotMatch(nsis, /HKLM/);
+  assert.match(nsis, /RMDir "\$INSTDIR\\bin"/);
+  // The packager holds these as JS strings, so each backslash is written twice.
+  assert.match(packager, /Delete "\$INSTDIR\\\\desktop\\\\autostart\.vbs"/);
+  assert.match(packager, /Delete "\$INSTDIR\\\\bin\\\\plugbrain\.cmd"/);
+  // The script asks the port first: `serve` starts the daemon before it binds.
+  assert.ok(autostart.indexOf('CoreAnswers()') < autostart.indexOf('shell.Run'), 'health probe before start');
+  assert.match(autostart, /http:\/\/127\.0\.0\.1:4310\/api\/health/);
+  assert.match(autostart, /shell\.Run .*, 0, False/, 'window style 0: hidden');
+  // The CLI runs on the owned runtime beside the bundle.
+  assert.match(cli, /"%~dp0\.\.\\dist\\node\.exe" "%~dp0\.\.\\dist\\plugbrain\.mjs" %\*/);
+});

@@ -68,6 +68,8 @@ const deleteLines = [
   // node.exe is deleted and verified separately before any other payload path.
   ...relativeFiles.filter(file => file !== 'node.exe').map(file => `Delete "$INSTDIR\\dist\\${nsiPath(file)}"`),
   'Delete "$INSTDIR\\desktop\\launch.cmd"',
+  'Delete "$INSTDIR\\desktop\\autostart.vbs"',
+  'Delete "$INSTDIR\\bin\\plugbrain.cmd"',
   'Delete "$INSTDIR\\README.md"',
   ...[...directories]
     .sort((a, b) => b.split(/[/\\]/).length - a.split(/[/\\]/).length || b.localeCompare(a))
