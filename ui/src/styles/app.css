@@ -1243,6 +1243,9 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .brain-offline-banner {
   position: relative;
   z-index: 9999;
+  /* A startup warning must not become a glass pane over the whole product:
+     opening the first vault is exactly how the UI can recover from it. */
+  pointer-events: none;
   background: #7f1d1d;
   color: #fef2f2;
   border-bottom: 2px solid #ef4444;
@@ -1275,6 +1278,7 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   font-family: var(--font-mono, monospace);
 }
 .brain-offline-btn {
+  pointer-events: auto;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.3);

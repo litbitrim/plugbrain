@@ -12,6 +12,24 @@
  */
 
 const KEY = 'plugbrain.workspace'
+const TOKEN_KEY = 'plugbrain.auth_token'
+
+/** Mutating vault operations use the same local daemon session as the rest of
+ * the UI.  Registration and reindex are the first actions on a fresh install,
+ * so omitting this header made a correctly injected session look unusable. */
+function mutationHeaders() {
+  let token = ''
+  try {
+    token = new URLSearchParams(window.location.search).get('token')?.trim()
+      || window.__PLUGBRAIN__?.token?.trim()
+      || localStorage.getItem(TOKEN_KEY)?.trim()
+      || ''
+  } catch { /* static tests and private storage simply have no session */ }
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}`, 'x-plug-auth-token': token } : {}),
+  }
+}
 
 export function lastWorkspace() {
   try { return localStorage.getItem(KEY) || '' } catch { return '' }
@@ -98,7 +116,7 @@ export function workspaceIdForRoot(planets, requestedRoot) {
 export async function openVault(root, name, onProgress) {
   const register = await fetch('/api/workspaces', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: mutationHeaders(),
     body: JSON.stringify({ root, name }),
   })
   if (!register.ok) {
@@ -214,7 +232,7 @@ export async function watchIndexRun(id, onProgress) {
 export async function reindexWorkspace(id, onProgress) {
   const response = await fetch('/api/reindex', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: mutationHeaders(),
     body: JSON.stringify({ workspace: id }),
   })
   const payload = await response.json().catch(() => null)
