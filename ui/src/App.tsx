@@ -97,6 +97,23 @@ export default function App() {
   const [selectionDraft, setSelectionDraft] = useState<string[]>([])
   const [selectionBusy, setSelectionBusy] = useState(false)
   const [selectionError, setSelectionError] = useState('')
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
+      if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+        event.preventDefault(); setShortcutsOpen(true)
+      } else if (event.key === 'Escape') {
+        setShortcutsOpen(false)
+      } else if (event.key.toLowerCase() === 'o') {
+        event.preventDefault(); setVaultOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ }
@@ -499,6 +516,7 @@ export default function App() {
           {vaultOpen ? 'Schließen' : 'Vault öffnen'}
         </button>
       )}
+      <button type="button" className="brain-vault-toggle" onClick={() => setShortcutsOpen(true)} title="Tastenkürzel anzeigen (?)">?</button>
       {workspaceId && (
         <button type="button" className="brain-vault-toggle"
           onClick={() => void openSelection()}
@@ -663,6 +681,11 @@ export default function App() {
           Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
           einem durchsuchbaren Graphen.
         </p>
+        <ol className="brain-first-run" aria-label="Erste Schritte">
+          <li><strong>Ordner wählen</strong><span>Notiz- oder Projektordner angeben; Git ist nicht erforderlich.</span></li>
+          <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Suche und Graph bereit sind.</span></li>
+          <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und können direkt mit einer Notiz beginnen.</span></li>
+        </ol>
         {vaultForm}
         {planets.length > 0 && (
           <div className="brain-vault__known">
@@ -839,6 +862,13 @@ export default function App() {
         )}
       </div>
     )}
+    {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
+      <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
+        <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
+        <dl><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>Im Wissensgraphen auswählen und öffnen</dd></div></dl>
+        <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
+      </section>
+    </div>}
   </>
 }
 
