@@ -68,13 +68,16 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
         (event_id, source, source_sequence, runtime_instance_id, workspace_id, task_id, worker_id,
          agent_id, type, occurred_at, observed_at, file_refs, symbol_refs, artifact_refs, receipt_refs,
          payload, provenance_mode, authority_ref, confidence)
-       VALUES (?, 'operator', ?, 'runtime-speed', ?, ?, ?, ?, 'worker.started', ?, ?, '[]', '[]', '[]', '[]', '{}', 'live', 'bench', 'authoritative')`,
+       VALUES (?, 'operator', ?, 'runtime-speed', ?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '{}', 'live', 'bench', 'authoritative')`,
     )
     db.exec('BEGIN')
     try {
       for (let i = 0; i < TRACE_EVENTS; i += 1) {
         const at = new Date(Date.UTC(2026, 8, 23, 0, 0, i)).toISOString()
-        insertTrace.run(`speed-${i}`, i, WS, `task-${i}`, `worker-${i}`, `agent-${i}`, at, at)
+        insertTrace.run(
+          `speed-${i}`, i, WS, `task-${i}`, `worker-${i}`, `agent-${i}`,
+          i % 2 === 0 ? 'worker.started' : 'worker.heartbeat', at, at,
+        )
       }
       db.exec('COMMIT')
     } catch (error) {
@@ -108,12 +111,14 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
       assert.ok(p95 < 1000, `${route} p95 ${p95.toFixed(1)} ms exceeds the 1s Core budget`)
     }
     const mesh = await (await reads.mesh()).json() as {
-      mesh: { nodes: unknown[]; edges: unknown[]; page: { totalNodes: number; returnedNodes: number; nodesTruncated: boolean } }
+      mesh: { nodes: unknown[]; edges: unknown[]; page: { totalNodes: number; returnedNodes: number; nodesTruncated: boolean; totalUnprovenWorkers: number; returnedUnprovenWorkers: number } }
     }
     assert.equal(mesh.mesh.nodes.length, 500)
     assert.equal(mesh.mesh.page.returnedNodes, 500)
     assert.ok(mesh.mesh.page.totalNodes > mesh.mesh.page.returnedNodes)
     assert.equal(mesh.mesh.page.nodesTruncated, true)
+    assert.equal(mesh.mesh.page.returnedUnprovenWorkers, 500)
+    assert.ok(mesh.mesh.page.totalUnprovenWorkers > mesh.mesh.page.returnedUnprovenWorkers)
     ingestTraceEvents(db, [{
       schema: 1,
       eventId: 'speed-after-cache',

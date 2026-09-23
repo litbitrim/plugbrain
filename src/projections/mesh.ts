@@ -87,6 +87,9 @@ export interface MeshSnapshot {
     totalEdges: number
     returnedEdges: number
     edgesTruncated: boolean
+    totalUnprovenWorkers: number
+    returnedUnprovenWorkers: number
+    unprovenWorkersTruncated: boolean
   }
 }
 
@@ -319,10 +322,15 @@ export function meshSnapshot(
   const edgeOffset = clampOffset(options.edgeOffset)
   const nodes = complete.nodes.slice(nodeOffset, nodeOffset + nodeLimit)
   const edges = complete.edges.slice(edgeOffset, edgeOffset + edgeLimit)
+  // This list is a separate response array, so it must obey the same bound as
+  // nodes. Otherwise a Planet with many heartbeat-only workers could bypass
+  // the Mesh pagination just by putting every entry in its warning list.
+  const unprovenWorkers = complete.unprovenWorkers.slice(nodeOffset, nodeOffset + nodeLimit)
   return {
     ...complete,
     nodes,
     edges,
+    unprovenWorkers,
     page: {
       nodeOffset,
       nodeLimit,
@@ -334,6 +342,9 @@ export function meshSnapshot(
       totalEdges: complete.edges.length,
       returnedEdges: edges.length,
       edgesTruncated: edgeOffset + edges.length < complete.edges.length,
+      totalUnprovenWorkers: complete.unprovenWorkers.length,
+      returnedUnprovenWorkers: unprovenWorkers.length,
+      unprovenWorkersTruncated: nodeOffset + unprovenWorkers.length < complete.unprovenWorkers.length,
     },
   }
 }
