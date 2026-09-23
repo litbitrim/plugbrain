@@ -451,6 +451,90 @@ export async function fetchBacklinks(workspaceId: string, path: string): Promise
   return Array.isArray(data?.backlinks) ? data.backlinks : []
 }
 
+export interface NoteListItem {
+  path: string
+  title: string
+  tags: string[]
+  inLinks: number
+  outLinks: number
+}
+
+export interface NoteDocument extends NoteListItem {
+  content: string
+  hash: string
+  links: Array<{ target: string; path: string | null; alias: string | null; line: number; status: string }>
+  backlinks: Array<{ path: string; title: string; line: number }>
+}
+
+export async function listNotes(workspaceId: string): Promise<NoteListItem[]> {
+  const res = await fetch(`/api/notes?workspace=${encodeURIComponent(workspaceId)}&limit=5000`)
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? `Notizen HTTP ${res.status}`)
+  return Array.isArray(data.notes) ? data.notes : []
+}
+
+export async function readNote(workspaceId: string, path: string, agentId = getStoredAgentId()): Promise<NoteDocument> {
+  await ensureAgentAttached(workspaceId, agentId)
+  const res = await fetch(`/api/notes/read?workspace=${encodeURIComponent(workspaceId)}&path=${encodeURIComponent(path)}&agentId=${encodeURIComponent(agentId)}`)
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok || !data.note) throw new Error(data?.error ?? `Notiz lesen HTTP ${res.status}`)
+  return data.note as NoteDocument
+}
+
+export async function writeNote(workspaceId: string, path: string, content: string, expectedHash?: string, agentId = getStoredAgentId()): Promise<{ hash: string; created: boolean }> {
+  await ensureAgentAttached(workspaceId, agentId)
+  const res = await fetch('/api/notes/write', {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ workspace: workspaceId, agentId, path, content, ...(expectedHash ? { expectedHash } : {}) }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) {
+    const error = new Error(data?.error ?? `Notiz speichern HTTP ${res.status}`)
+    Object.assign(error, { conflict: data?.conflict, status: res.status })
+    throw error
+  }
+  return data as { hash: string; created: boolean }
+}
+
+export interface NoteAttachment { name: string; path: string; bytes: number }
+
+export async function listNoteAttachments(workspaceId: string, note: string): Promise<NoteAttachment[]> {
+  const res = await fetch(`/api/notes/attachments?workspace=${encodeURIComponent(workspaceId)}&note=${encodeURIComponent(note)}`)
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok) throw new Error(data?.error ?? `Anhänge HTTP ${res.status}`)
+  return Array.isArray(data.attachments) ? data.attachments : []
+}
+
+export async function uploadNoteAttachment(workspaceId: string, note: string, file: File, agentId = getStoredAgentId()): Promise<NoteAttachment> {
+  await ensureAgentAttached(workspaceId, agentId)
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  // `String.fromCharCode(...bytes)` explodes the call stack for a normal
+  // attachment. Build it in bounded chunks so the UI limit and server limit
+  // stay usable for the same files.
+  let binary = ''
+  for (let start = 0; start < bytes.length; start += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(start, start + 0x8000))
+  }
+  const base64 = btoa(binary)
+  const res = await fetch('/api/notes/attachment', {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ workspace: workspaceId, agentId, note, name: file.name, base64 }),
+  })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok || !data.attachment) throw new Error(data?.error ?? `Anhang speichern HTTP ${res.status}`)
+  return data.attachment as NoteAttachment
+}
+
+export function attachmentUrl(workspaceId: string, note: string, name: string, agentId = getStoredAgentId()): string {
+  return `/api/notes/attachment?workspace=${encodeURIComponent(workspaceId)}&note=${encodeURIComponent(note)}&name=${encodeURIComponent(name)}&agentId=${encodeURIComponent(agentId)}`
+}
+
+export function exportNotesUrl(workspaceId: string, note?: string, agentId = getStoredAgentId()): string {
+  const params = new URLSearchParams({ workspace: workspaceId, agentId })
+  if (note) params.set('note', note)
+  return `/api/notes/export?${params}`
+}
+
 export interface AgentPresenceItem {
   id: string
   name: string

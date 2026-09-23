@@ -257,7 +257,7 @@ export interface WriteResult { path: string; created: boolean; bytes: number; ag
  * never exist without an author.
  */
 export function writeFile(
-  db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string,
+  db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string | Buffer,
   taskId = `task-${agentId}`,
   options?: { leaseId?: string; epoch?: number },
 ): WriteResult {
@@ -288,7 +288,9 @@ export function writeFile(
   // Keep the file row usable immediately; full re-index is the daemon's job.
   const st = statSync(abs)
   const hash = createHash('sha256').update(content).digest('hex').slice(0, 16)
-  const loc = content.length === 0 ? 0 : content.split('\n').length
+  // A binary attachment is still an owned workspace object, but pretending it
+  // has source lines would corrupt the index metadata used by the UI.
+  const loc = typeof content === 'string' ? (content.length === 0 ? 0 : content.split('\n').length) : 0
   db.prepare(
     `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at)
      VALUES (?, ?, ?, NULL, ?, ?, ?, ?, NULL)
@@ -300,6 +302,26 @@ export function writeFile(
 
   record(db, workspace, rel, agentId, created ? 'create' : 'write')
   return { path: rel, created, bytes: Buffer.byteLength(content), agent }
+}
+
+export interface BinaryReadResult { path: string; content: Buffer; bytes: number }
+
+/** Read an attachment without decoding it as UTF-8, while retaining the same
+ * containment, identity and activity guarantees as every other workspace read. */
+export function readBinaryFile(
+  db: DatabaseSync, workspaceId: string, agentId: string, relPath: string,
+): BinaryReadResult {
+  const workspace = requireWorkspace(db, workspaceId)
+  requireAgent(db, agentId)
+  const abs = resolveInside(workspace, relPath)
+  const rel = toRel(workspace, abs)
+  if (!existsSync(abs)) {
+    record(db, workspace, rel, agentId, 'read', 'missing')
+    throw new AccessDenied(`no such file in workspace: ${rel}`)
+  }
+  const content = readFileSync(abs)
+  record(db, workspace, rel, agentId, 'read')
+  return { path: rel, content, bytes: content.byteLength }
 }
 
 export interface SearchHit { name: string; path: string; kind: string; line: number | null }

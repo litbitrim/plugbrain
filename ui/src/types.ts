@@ -87,7 +87,7 @@ export type BoardTask = {
 }
 
 /** Which of the renderings or tools of the same brain is on screen. */
-export type ViewId = 'atlas' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue'
+export type ViewId = 'atlas' | 'notes' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue'
 
 /** A row of the workspace queue, as the Brain reports it. */
 export type QueueTask = {

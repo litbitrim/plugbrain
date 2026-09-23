@@ -25,7 +25,7 @@ function locOf(node) {
   return Number.isFinite(n) && n > 0 ? Math.min(4000, Math.round(n)) : 40
 }
 
-function districtForPath(path) {
+function districtForPath(path, workspaceLabel) {
   const norm = String(path).replace(/\\/g, '/')
   const parts = norm.split('/')
   if (parts[0] === 'Code' && parts[1]) {
@@ -34,7 +34,12 @@ function districtForPath(path) {
   if (['Master', 'Roadmap', 'Auftrag', 'Planung', 'Codebasis', 'PLUG-Ordner', 'Aufräumen'].includes(parts[0])) {
     return parts[0]
   }
-  return 'plugpt-vault'
+  // A path directly below the registered root has no top-level vault area.
+  // It still belongs to a real workspace, though.  The old fixed fallback
+  // made every such repository look like "plugpt-vault", including the Brain
+  // repository itself.  Keep the district tied to the snapshot's declared
+  // workspace instead of inventing a vault identity.
+  return workspaceLabel
 }
 
 /**
@@ -46,6 +51,7 @@ export function feedCity(snapshot) {
   const ws = snapshot?.workspace
   const nodes = snapshot?.graph?.nodes
   if (!ws?.id || !Array.isArray(nodes)) return { workspaces: grown.size, buildings: 0, added: 0 }
+  const workspaceLabel = folderName(ws.name || ws.canonicalPath || ws.id) || ws.id
 
   // Clear simulated districts on real data
   for (const w of workspaces.slice()) {
@@ -78,7 +84,7 @@ export function feedCity(snapshot) {
   let totalBuildings = 0
 
   for (const { node, path } of withPaths) {
-    const distId = districtForPath(path)
+    const distId = districtForPath(path, workspaceLabel)
     if (!grown.has(distId)) {
       api.register({ id: distId, name: distId })
       grown.set(distId, new Set())

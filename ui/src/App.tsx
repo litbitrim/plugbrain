@@ -15,6 +15,7 @@ import QueueView from './views/QueueView'
 import SourceView from './views/SourceView'
 import ExplorerView from './views/ExplorerView'
 import SearchView from './views/SearchView'
+import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
@@ -22,6 +23,7 @@ type Planet = { id: string; name: string; root: string; indexedAt: string | null
 
 const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'atlas', label: 'Atlas', hint: 'Wissensgraph der indexierten Objekte' },
+  { id: 'notes', label: 'Wissen', hint: 'Notizen, Links, Backlinks, Tags und Anhänge' },
   { id: 'explorer', label: 'Explorer', hint: 'Echter Quellbaum aus dem Brain' },
   { id: 'search', label: 'Suche', hint: 'Code- & Symbolsuche über /api/agent/search' },
   { id: 'packs', label: 'Packs', hint: 'Context-Pack-Inspector' },
@@ -695,6 +697,8 @@ export default function App() {
           )
         )}
 
+        {view === 'notes' && <NotesView workspaceId={workspaceId} />}
+
         {view === 'explorer' && (
           <div className="workbench-split">
             <div className="workbench-pane workbench-pane--side">
@@ -911,7 +915,7 @@ export function AtlasGraph({
   }
 
   return (
-    <div id="app">
+    <div id="app" className="atlas-app">
       <aside>
         <div className="brand">
           <h1><span className="dot"></span>PlugBrain</h1>

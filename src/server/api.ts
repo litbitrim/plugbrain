@@ -19,6 +19,8 @@ import {
   listWorkspaceView, noteRootRows, planetHistory, registerPlanet, setPlanetIndexSelection,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
+import * as attachments from '../notes/attachments.ts'
+import { exportNote, exportVault } from '../notes/export.ts'
 
 /**
  * The identity a search is attributed to. A read is a read: the provenance
@@ -110,6 +112,16 @@ const json = (res: ServerResponse, body: unknown, status = 200): void => {
   const payload = JSON.stringify(body)
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
   res.end(payload)
+}
+
+const binary = (res: ServerResponse, body: Buffer, filename: string, type = 'application/octet-stream'): void => {
+  const safe = filename.replace(/[\r\n"]/g, '_')
+  res.writeHead(200, {
+    'Content-Type': type,
+    'Content-Length': String(body.byteLength),
+    'Content-Disposition': `attachment; filename="${safe}"`,
+  })
+  res.end(body)
 }
 
 async function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -1309,6 +1321,47 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const relPath = String(q.get('path') ?? '').trim()
       if (!relPath) return json(res, { ok: false, error: 'path is required' }, 400)
       return json(res, { ok: true, backlinks: notes.backlinksOf(db, ws, relPath) })
+    }
+
+    if (p === '/api/notes/attachments' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const note = String(q.get('note') ?? '').trim()
+      if (!note) return json(res, { ok: false, error: 'note is required' }, 400)
+      return json(res, { ok: true, attachments: attachments.listAttachments(db, ws, note) })
+    }
+
+    if (p === '/api/notes/attachment' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const note = String(q.get('note') ?? '').trim()
+      const name = String(q.get('name') ?? '').trim()
+      const agentId = String(q.get('agentId') ?? '').trim()
+      if (!note || !name || !agentId) return json(res, { ok: false, error: 'note, name and agentId are required' }, 400)
+      const file = attachments.readAttachment(db, ws, agentId, note, name)
+      return binary(res, file.content, file.name)
+    }
+
+    if (p === '/api/notes/attachment' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
+      const agentId = String(body.agentId ?? '').trim()
+      const note = String(body.note ?? '').trim()
+      const name = String(body.name ?? '').trim()
+      const base64 = String(body.base64 ?? '')
+      if (!agentId || !note || !name) return json(res, { ok: false, error: 'agentId, note and name are required' }, 400)
+      access.requireWorkspace(db, workspaceId)
+      access.requireAgent(db, agentId)
+      return json(res, { ok: true, attachment: attachments.writeAttachment(db, workspaceId, agentId, note, name, base64) })
+    }
+
+    if (p === '/api/notes/export' && req.method === 'GET') {
+      access.requireWorkspace(db, ws)
+      const agentId = String(q.get('agentId') ?? '').trim()
+      const note = String(q.get('note') ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId is required' }, 400)
+      access.requireAgent(db, agentId)
+      const archive = note ? exportNote(db, ws, agentId, note) : exportVault(db, ws, agentId)
+      return binary(res, archive, note ? `${note.split('/').pop()?.replace(/\.md$/i, '') || 'note'}.zip` : 'plugbrain-vault.zip', 'application/zip')
     }
 
     if (p === '/api/notes/write' && req.method === 'POST') {
