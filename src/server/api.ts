@@ -394,6 +394,7 @@ const STORE_WRITING_ROUTES = new Set([
   '/api/awareness',
   '/api/agent/awareness',
   '/api/context/pack',
+  '/api/mission/context-pack',
   '/api/agent/attach',
   '/api/agent/read',
   '/api/agent/write',
@@ -1164,7 +1165,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       access.requireWorkspace(db, ws)
       return json(res, { ok: true, missions: missions.listMissions(db, ws) })
     }
-    if (p.startsWith('/api/mission/') && req.method === 'POST') {
+    if (p.startsWith('/api/mission/') && p !== '/api/mission/context-pack' && req.method === 'POST') {
       checkAuth(req, ctx)
       const step = p.slice('/api/mission/'.length)
       const body = await readBody(req)
@@ -1602,6 +1603,38 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         missionId: body.missionId ? String(body.missionId) : undefined,
       })
       return json(res, { ok: true, ...pack })
+    }
+
+    // Harness-bound task context: Brain projects workspace knowledge but does
+    // not create a mission, schedule a lane, or mutate Harness task state.
+    if (p === '/api/mission/context-pack' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      const taskId = String(body.taskId ?? '').trim()
+      const scopePaths = Array.isArray(body.scopePaths) ? body.scopePaths.map(String) : []
+      const requirementIds = Array.isArray(body.requirementIds) ? body.requirementIds.map(String) : []
+      if (!taskId || scopePaths.length === 0) return json(res, { ok: false, error: 'taskId and scopePaths required' }, 400)
+      try {
+        const pack = coord.createTaskContextPack(db, {
+          workspaceId, taskId, scopePaths, requirementIds,
+          agentId: typeof body.agentId === 'string' ? body.agentId : undefined,
+          checkoutId: typeof body.checkoutId === 'string' ? body.checkoutId : undefined,
+          tokenBudget: typeof body.tokenBudget === 'number' ? body.tokenBudget : undefined,
+        })
+        return json(res, { ok: true, pack })
+      } catch (err) {
+        return json(res, { ok: false, error: err instanceof Error ? err.message : String(err) }, 400)
+      }
+    }
+
+    if (p.startsWith('/api/mission/context-pack/') && p.endsWith('/changes') && req.method === 'GET') {
+      const packId = p.slice('/api/mission/context-pack/'.length, -'/changes'.length)
+      try {
+        return json(res, { ok: true, changes: coord.changesSinceTaskContextPack(db, packId) })
+      } catch (err) {
+        return json(res, { ok: false, error: err instanceof Error ? err.message : String(err) }, 404)
+      }
     }
 
     if (p.startsWith('/api/context/pack/') && p.endsWith('/staleness') && req.method === 'GET') {

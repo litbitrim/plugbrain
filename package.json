@@ -17,7 +17,8 @@
     "restore": "node --experimental-strip-types src/cli.ts restore",
     "build:standalone": "node scripts/build-standalone.mjs",
     "verify:standalone": "node scripts/verify-standalone.mjs",
-    "package:nsis": "node scripts/package-nsis.mjs"
+    "package:nsis": "node scripts/package-nsis.mjs",
+    "proof:prevention": "node --experimental-strip-types scripts/proof-prevention.ts"
   },
   "dependencies": {
     "typescript": "^5.9.3"
