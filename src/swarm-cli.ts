@@ -11,6 +11,8 @@
  *   plugbrain swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]
  *   plugbrain swarm ack <agent> <messageId>
  *   plugbrain swarm retire <agent> --note <reason>
+ *   plugbrain swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]   write lease, shown on the board
+ *   plugbrain swarm release <agent> [<path>...] [--task <id>]
  *   plugbrain swarm board [--git] [--json]
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--by <agent>]
@@ -25,7 +27,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, registerAgent } from './access.ts'
 import { enqueueTask } from './queue.ts'
 import {
-  admitWork, agentsBoard, approveCommit, confirmDelivery, hostSnapshot, listQuotas, recordTurn,
+  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, hostSnapshot, listQuotas, recordTurn, releaseLease,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
@@ -66,7 +68,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
-  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets',
+  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -174,6 +176,34 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       console.log(`abgemeldet: ${profile.agentId}`)
       return 0
     }
+    case 'claim': {
+      const usage = 'plugbrain swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]'
+      const agentId = need(pos[0], usage)
+      const paths = pos.slice(1)
+      if (paths.length === 0) throw new AccessDenied(`usage: ${usage}`)
+      const ttlMin = flag(rest, '--ttl-min')
+      const result = acquireLease(db, workspaceId, {
+        agentId, taskId: flag(rest, '--task') ?? `task-${agentId}`, paths, symbols: [], mode: 'write',
+        ttlMs: ttlMin === null ? 4 * 60 * 60_000 : Number(ttlMin) * 60_000,
+      })
+      if (!result.acquired) {
+        const holder = result.conflict?.holder
+        console.error(`refused: ${result.conflict?.path ?? paths.join(', ')} gehört ${holder?.agentId ?? '?'} (${holder?.taskId ?? '?'}): ${result.conflict?.reason ?? ''}`)
+        return 3
+      }
+      console.log(`Lease ${result.lease?.id}: ${paths.join(', ')} bis ${result.lease?.expiresAt}`)
+      return 0
+    }
+    case 'release': {
+      const usage = 'plugbrain swarm release <agent> [<path>...] [--task <id>]'
+      const agentId = need(pos[0], usage)
+      const paths = pos.slice(1)
+      const result = releaseLease(db, {
+        agentId, workspaceId, taskId: flag(rest, '--task') ?? undefined, paths: paths.length > 0 ? paths : undefined,
+      })
+      console.log(result.released ? `freigegeben: ${result.count} Lease(s)` : 'nichts freizugeben')
+      return 0
+    }
     case 'ack': {
       const usage = 'plugbrain swarm ack <agent> <messageId>'
       const read = confirmDelivery(db, need(pos[1], usage), need(pos[0], usage))
@@ -248,6 +278,6 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return admission.allowed ? 0 : 5
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|board|send|enqueue|approve|resources|quota|admit> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|approve|resources|quota|admit> …')
   }
 }
