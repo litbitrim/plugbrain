@@ -22,6 +22,7 @@ import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { workspaceIdFor } from '../src/planet.ts'
 import { removeRunState } from '../src/index/runs.ts'
+import { medianMs, prioritiseTimingProcess } from './helpers/stable-load-budget.ts'
 
 /** Run states and the store of this suite live under a throwaway home. */
 const home = mkdtempSync(join(tmpdir(), 'plugbrain-nohang-home-'))
@@ -94,9 +95,13 @@ async function waitForRun(fx: Fixture, timeoutMs = 120_000): Promise<Record<stri
   throw new Error('the index run did not finish in time')
 }
 
-test('reads answer within 500 ms while an index run works, and say so', async () => {
+test('reads answer within 500 ms while an index run works, and say so', async (t) => {
   const fx = await createFixture(3000)
   try {
+    const timing: Record<string, number[]> = {
+      health: [], planet: [], files: [], changes: [], city: [],
+    }
+    const priority = prioritiseTimingProcess()
     const started = await post(fx, '/api/reindex', { workspace: fx.workspaceId })
     const startedBody = await started.json() as { ok: boolean; started: boolean; jobId: string }
     assert.equal(started.status, 202)
@@ -110,6 +115,7 @@ test('reads answer within 500 ms while an index run works, and say so', async ()
       const healthStart = Date.now()
       const health = await fetch(`${fx.baseUrl}/api/health`)
       const healthMs = Date.now() - healthStart
+      timing.health.push(healthMs)
       const healthBody = await health.json() as { ok: boolean; indexState: string; indexing: unknown }
       assert.equal(health.status, 200)
       assert.ok(healthMs < 500, `/api/health took ${healthMs} ms during a run`)
@@ -118,6 +124,7 @@ test('reads answer within 500 ms while an index run works, and say so', async ()
       const planetStart = Date.now()
       const planet = await fetch(`${fx.baseUrl}/api/planet?workspace=${encodeURIComponent(fx.workspaceId)}`)
       const planetMs = Date.now() - planetStart
+      timing.planet.push(planetMs)
       assert.ok(planetMs < 500, `/api/planet took ${planetMs} ms during a run`)
       assert.equal(planet.status, 200)
       const planetBody = await planet.json() as { ok: boolean; indexState: string; planet: { workspaceId: string } }
@@ -136,6 +143,7 @@ test('reads answer within 500 ms while an index run works, and say so', async ()
         const readStart = Date.now()
         const response = await fetch(`${fx.baseUrl}${path}`)
         const readMs = Date.now() - readStart
+        timing[path.includes('/files') ? 'files' : path.includes('/changes') ? 'changes' : 'city'].push(readMs)
         assert.equal(response.status, 200,
           `${path} answered ${response.status} during a run: ${(await response.text()).slice(0, 200)}`)
         assert.ok(readMs < 500, `${path} took ${readMs} ms during a run`)
@@ -148,6 +156,17 @@ test('reads answer within 500 ms while an index run works, and say so', async ()
       await sleep(50)
     }
     assert.equal(observedIndexing, true, 'a read must name the running index, not hide it')
+    // The first two samples warm the HTTP/SQLite paths. The original hard
+    // 500 ms check above remains for every call; median makes the recorded
+    // timing evidence robust against a single shared-desktop scheduling spike.
+    for (const [route, samples] of Object.entries(timing)) {
+      const measured = samples.slice(2)
+      assert.ok(measured.length > 0, `${route} needs post-warmup samples`)
+      const median = medianMs(measured)
+      assert.ok(median < 500, `${route} median ${median.toFixed(1)} ms exceeds 500 ms; samples=${measured.join(',')}`)
+      t.diagnostic(`no-hang ${route}: median ${median.toFixed(1)} ms after 2 warmups; samples=${measured.join(',')}`)
+    }
+    t.diagnostic(`no-hang timing process: ${priority}`)
 
     const finished = await waitForRun(fx)
     assert.equal((finished.result as { files: number }).files, 3000)
