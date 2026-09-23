@@ -454,6 +454,8 @@ export async function fetchBacklinks(workspaceId: string, path: string): Promise
 export interface NoteListItem {
   path: string
   title: string
+  typ?: string | null
+  stand?: string | null
   tags: string[]
   inLinks: number
   outLinks: number
@@ -462,6 +464,7 @@ export interface NoteListItem {
 export interface NoteDocument extends NoteListItem {
   content: string
   hash: string
+  properties: Array<{ key: string; value: string; raw: string; isLink: boolean; line: number }>
   links: Array<{ target: string; path: string | null; alias: string | null; line: number; status: string }>
   backlinks: Array<{ path: string; title: string; line: number }>
 }
@@ -481,11 +484,11 @@ export async function readNote(workspaceId: string, path: string, agentId = getS
   return data.note as NoteDocument
 }
 
-export async function writeNote(workspaceId: string, path: string, content: string, expectedHash?: string, agentId = getStoredAgentId()): Promise<{ hash: string; created: boolean }> {
+export async function writeNote(workspaceId: string, path: string, content: string, expectedHash?: string, agentId = getStoredAgentId(), createOnly = false): Promise<{ hash: string; created: boolean }> {
   await ensureAgentAttached(workspaceId, agentId)
   const res = await fetch('/api/notes/write', {
     method: 'POST', headers: authHeaders(),
-    body: JSON.stringify({ workspace: workspaceId, agentId, path, content, ...(expectedHash ? { expectedHash } : {}) }),
+    body: JSON.stringify({ workspace: workspaceId, agentId, path, content, ...(expectedHash ? { expectedHash } : {}), ...(createOnly ? { createOnly: true } : {}) }),
   })
   const data = await res.json().catch(() => null)
   if (!res.ok || !data?.ok) {
@@ -494,6 +497,39 @@ export async function writeNote(workspaceId: string, path: string, content: stri
     throw error
   }
   return data as { hash: string; created: boolean }
+}
+
+export interface NoteGraphNode {
+  id: string
+  path: string
+  title: string
+  group: string
+  properties: { typ: string | null; stand: string | null; tags: string[] }
+  inLinks: number
+  outLinks: number
+  depth: number
+  focus: boolean
+}
+
+export interface NoteGraph {
+  nodes: NoteGraphNode[]
+  edges: Array<{ source: string; target: string; kind: 'references'; count: number; direction: number }>
+  groups: Array<{ name: string; hue: number; color: string; count: number }>
+  focus: string | null
+  depth: number
+  coverage: { notesInScope: number; selected: number; truncated: boolean; filter: string | null; focusFound: boolean }
+}
+
+export async function fetchNoteGraph(workspaceId: string, options: { focus?: string; depth?: number; filter?: string; limit?: number } = {}): Promise<NoteGraph> {
+  const params = new URLSearchParams({ workspace: workspaceId })
+  if (options.focus) params.set('focus', options.focus)
+  if (options.depth !== undefined) params.set('depth', String(options.depth))
+  if (options.filter) params.set('filter', options.filter)
+  if (options.limit !== undefined) params.set('limit', String(options.limit))
+  const res = await fetch(`/api/notes/graph?${params}`)
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok || !data.graph) throw new Error(data?.error ?? `Wissensgraph HTTP ${res.status}`)
+  return data.graph as NoteGraph
 }
 
 export interface NoteAttachment { name: string; path: string; bytes: number }

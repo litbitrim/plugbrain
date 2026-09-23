@@ -29,6 +29,11 @@ test('knowledge API writes with a version fence, keeps attachments in-vault, and
     assert.equal(changed.status, 200)
     const conflict = await fetch(`${base}/api/notes/write`, { method: 'POST', headers, body: JSON.stringify({ workspace, agentId: 'reader', path: 'Notizen/other.md', content: '# Stale\n', expectedHash: first.note.hash }) })
     assert.equal(conflict.status, 409, 'stale editor content is never overwritten')
+    const createConflict = await fetch(`${base}/api/notes/write`, { method: 'POST', headers, body: JSON.stringify({ workspace, agentId: 'reader', path: 'Notizen/other.md', content: '# Accidentally replaced\n', createOnly: true }) })
+    assert.equal(createConflict.status, 409, 'a create-only draft never overwrites a same-name note')
+
+    const orphanAttachment = await fetch(`${base}/api/notes/attachment`, { method: 'POST', headers, body: JSON.stringify({ workspace, agentId: 'reader', note: 'Notizen/not-saved.md', name: 'proof.txt', base64: Buffer.from('attachment proof').toString('base64') }) })
+    assert.equal(orphanAttachment.status, 409, 'an attachment cannot create an orphan before its note exists')
 
     const attachment = await fetch(`${base}/api/notes/attachment`, { method: 'POST', headers, body: JSON.stringify({ workspace, agentId: 'reader', note: 'Notizen/other.md', name: 'proof.txt', base64: Buffer.from('attachment proof').toString('base64') }) })
     assert.equal(attachment.status, 200)

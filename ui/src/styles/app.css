@@ -1283,3 +1283,32 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* ── Knowledge graph: list and inspector are the complete keyboard view. ── */
+.notes-create { display: flex; gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+.notes-create select { min-width: 0; flex: 1 1 90px; }
+.knowledge-graph { height: 100%; min-height: 0; display: flex; flex-direction: column; padding: 18px; gap: 10px; outline: none; }
+.knowledge-graph:focus-visible { box-shadow: inset 0 0 0 2px #60a5fa; }
+.knowledge-graph__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.knowledge-graph__head h2 { margin: 0; }
+.knowledge-graph__head p { color: var(--faint); margin: 3px 0; font-size: 12px; }
+.knowledge-graph__head label { display: grid; gap: 3px; font-size: 11px; color: var(--faint); }
+.knowledge-graph__coverage { color: var(--faint); font-size: 12px; margin: 0; }
+.knowledge-graph__body { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(260px, 1fr) minmax(220px, 0.72fr); gap: 12px; }
+.knowledge-graph__list { overflow: auto; margin: 0; padding: 0; list-style: none; border: 1px solid var(--border); border-radius: 6px; }
+.knowledge-graph__list button { width: 100%; display: grid; grid-template-columns: 10px 1fr auto; gap: 9px; text-align: left; padding: 9px 11px; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: inherit; cursor: pointer; }
+.knowledge-graph__list button:hover, .knowledge-graph__list button.on { background: rgba(96,165,250,.12); }
+.knowledge-graph__list i { width: 8px; height: 8px; border-radius: 99px; margin-top: 5px; }
+.knowledge-graph__list small, .knowledge-graph__list b { color: var(--faint); font-size: 11px; }
+.knowledge-graph__list span { display: grid; gap: 2px; }
+.knowledge-graph__empty { padding: 16px; color: var(--faint); }
+.knowledge-graph__inspector { border: 1px solid var(--border); border-radius: 6px; padding: 14px; overflow: auto; }
+.knowledge-graph__inspector h3 { margin-top: 0; }
+.knowledge-graph__inspector code { display: block; color: #60a5fa; overflow-wrap: anywhere; margin: 6px 0 10px; }
+.knowledge-graph__inspector dl { margin: 0 0 12px; }
+.knowledge-graph__inspector dl div { display: grid; grid-template-columns: 82px 1fr; gap: 8px; padding: 5px 0; border-top: 1px solid var(--border); }
+.knowledge-graph__inspector dt { color: var(--faint); }
+.knowledge-graph__inspector dd { margin: 0; overflow-wrap: anywhere; }
+.knowledge-graph__inspector section { margin-top: 16px; display: grid; gap: 5px; }
+.knowledge-graph__inspector section button { text-align: left; }
+@media (max-width: 800px) { .knowledge-graph__body { grid-template-columns: 1fr; } .knowledge-graph__inspector { max-height: 280px; } }
+

@@ -651,6 +651,11 @@ test('M2: an edit conflict is detected and nothing is overwritten', () => {
       () => writeNote(fx.db, fx.workspaceId, agent, 'Master/Gibt es nicht.md', 'neu', { expectedHash: 'deadbeef' }),
       NoteConflictError)
 
+    assert.throws(
+      () => writeNote(fx.db, fx.workspaceId, agent, rel, 'ÜBERSCHRIEBEN', { createOnly: true }),
+      NoteConflictError,
+      'a new-note editor may only create a missing path')
+
     // And the note the tracker owns refuses an edit unless it is asked twice.
     assert.throws(
       () => writeNote(fx.db, fx.workspaceId, agent, 'Auftrag/Generierte Regeln.md', '# kaputt', {}),

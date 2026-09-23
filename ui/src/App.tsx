@@ -7,7 +7,7 @@ import {
 } from './lib/workspaces.js'
 import {
   fetchMesh, fetchPlanetInventory, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
-  resetAgentAttachments, setPlanetCheckoutSelection, type PlanetInventory,
+  resetAgentAttachments, setPlanetCheckoutSelection, fetchGitState, type GitState, type PlanetInventory,
 } from './lib/brain-client'
 import CityView from './views/CityView'
 import MeshView from './views/MeshView'
@@ -85,6 +85,8 @@ export default function App() {
     const l = Number(new URLSearchParams(location.search).get('line'))
     return f ? { path: f, line: Number.isFinite(l) ? l : null } : null
   })
+  const [selectedRevision, setSelectedRevision] = useState<string | null>(null)
+  const [meshFocusAgent, setMeshFocusAgent] = useState<string | null>(null)
 
   // Token Modal state
   const [tokenModalOpen, setTokenModalOpen] = useState(false)
@@ -308,7 +310,7 @@ export default function App() {
           className="brain-vault__path"
           value={vaultPath}
           onChange={event => setVaultPath(event.target.value)}
-          placeholder={'Pfad eines Ordners, z. B. C:\\Notizen\\vault'}
+          placeholder={'Pfad eines Ordners (auch ohne .git), z. B. C:\\Notizen\\vault'}
           spellCheck={false}
           aria-label="Vault-Pfad"
         />
@@ -446,7 +448,19 @@ export default function App() {
 
   const handleOpenSource = (path: string, line?: number | null) => {
     if (!path) return
+    setSelectedRevision(null)
     setSelectedSource({ path, line })
+  }
+
+  const openKnowledgeSource = (path: string) => { handleOpenSource(path); setView('explorer') }
+  const openKnowledgeRevision = (revision: string) => {
+    setSelectedSource(null)
+    setSelectedRevision(revision)
+    setView('explorer')
+  }
+  const openKnowledgeAgentRun = (agentId: string) => {
+    setMeshFocusAgent(agentId)
+    setView('mesh')
   }
 
   return <>
@@ -645,7 +659,7 @@ export default function App() {
       <div className="brain-landing" role="main">
         <h1 className="brain-landing__title">PlugBrain</h1>
         <p className="brain-landing__lead">
-          Ein Ordner als Vault öffnen — der Brain indiziert ihn einmal und hält ihn über den
+          Einen Ordner als Vault öffnen — auch einen Wissensordner ohne <code>.git</code>. Der Brain indiziert ihn einmal und hält ihn über den
           Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
           einem durchsuchbaren Graphen.
         </p>
@@ -697,7 +711,7 @@ export default function App() {
           )
         )}
 
-        {view === 'notes' && <NotesView workspaceId={workspaceId} />}
+        {view === 'notes' && <NotesView workspaceId={workspaceId} onOpenSource={openKnowledgeSource} onOpenRevision={openKnowledgeRevision} onOpenAgentRun={openKnowledgeAgentRun} />}
 
         {view === 'explorer' && (
           <div className="workbench-split">
@@ -717,6 +731,8 @@ export default function App() {
                   highlightLine={selectedSource.line}
                   onClose={() => setSelectedSource(null)}
                 />
+              ) : selectedRevision ? (
+                <RevisionInspector workspaceId={workspaceId} revision={selectedRevision} onClose={() => setSelectedRevision(null)} />
               ) : (
                 <div className="source-placeholder">
                   <div className="source-placeholder__icon">📂</div>
@@ -807,7 +823,7 @@ export default function App() {
 
         {view === 'mesh' && (
           <div className="brain-view brain-view-mesh">
-            <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} />
+            <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
             {selectedSource && (
               <div className="atlas-source-overlay">
                 <SourceView
@@ -824,6 +840,34 @@ export default function App() {
       </div>
     )}
   </>
+}
+
+function RevisionInspector({ workspaceId, revision, onClose }: { workspaceId: string; revision: string; onClose: () => void }) {
+  const [state, setState] = useState<GitState | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let live = true
+    setState(null); setError('')
+    void fetchGitState(workspaceId).then(next => {
+      if (live) setState(next)
+    }).catch(cause => {
+      if (live) setError(cause instanceof Error ? cause.message : String(cause))
+    })
+    return () => { live = false }
+  }, [workspaceId, revision])
+
+  const hit = state?.commits?.find(commit => commit.hash === revision || commit.hash.startsWith(revision))
+  return <section className="source-placeholder revision-inspector" aria-live="polite">
+    <div className="source-placeholder__icon">⌁</div><h3>Revision-Inspector</h3>
+    <p><code>{revision}</code></p>
+    {error && <p role="alert">{error}</p>}
+    {!error && !state && <p>Prüfe die reale Git-Historie …</p>}
+    {state && !state.isRepo && <p>Dieser Wissensordner ist absichtlich kein Git-Workspace; für diese Revision gibt es keine Git-Historie.</p>}
+    {state?.isRepo && hit && <dl><div><dt>Hash</dt><dd><code>{hit.hash}</code></dd></div><div><dt>Autor</dt><dd>{hit.author}</dd></div><div><dt>Zeit</dt><dd>{hit.date}</dd></div><div><dt>Nachricht</dt><dd>{hit.message}</dd></div></dl>}
+    {state?.isRepo && !hit && <p>Die geladene Historie enthält diese Revision nicht. Der Link bleibt unverändert; keine Ersatzrevision wird behauptet.</p>}
+    <button type="button" onClick={onClose}>Inspector schließen</button>
+  </section>
 }
 
 type Cluster = { id: string; name: string; color: string }

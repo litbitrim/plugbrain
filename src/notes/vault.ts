@@ -269,7 +269,7 @@ export interface NoteWriteResult {
  */
 export function writeNote(
   db: DatabaseSync, workspaceId: string, agentId: string, relPath: string, content: string,
-  options: { expectedHash?: string; taskId?: string; allowGenerated?: boolean } = {},
+  options: { expectedHash?: string; taskId?: string; allowGenerated?: boolean; createOnly?: boolean } = {},
 ): NoteWriteResult {
   const rel = relPath.split('\\').join('/')
   // Refuse a path the walker would never index BEFORE touching the disk. The
@@ -287,6 +287,20 @@ export function writeNote(
   const actual = current === null ? null : hashOf(current)
 
   if (actual !== null) {
+    // Creation gets its own optimistic fence.  A client must never turn a
+    // friendly default name into an implicit overwrite simply because it had
+    // not read a file at that path yet.
+    if (options.createOnly === true) {
+      throw new NoteConflictError({
+        path: rel,
+        expected: 'missing',
+        actual,
+        bytes: Buffer.byteLength(current ?? '', 'utf8'),
+        mtime: indexed?.mtime ?? '',
+        indexedHash: indexed?.hash ?? null,
+        indexStale: indexed !== undefined && indexed.hash !== actual,
+      })
+    }
     if (/%%\s*Automatisch erzeugt von/i.test(current ?? '') && options.allowGenerated !== true) {
       throw new NoteGeneratedError(rel)
     }
@@ -441,7 +455,12 @@ export function listNotes(
       title: titleOf(row.path),
       typ: (properties.get('typ') ?? [])[0] ?? null,
       stand: (properties.get('stand') ?? [])[0] ?? null,
-      tags: properties.get('tags') ?? [],
+      // `note_tags` is the canonical union of frontmatter and prose tags.
+      // Listing from the frontmatter property alone made inline #tags vanish
+      // from filters even though a read of the same note showed them.
+      tags: (db.prepare(
+        'SELECT tag FROM note_tags WHERE workspace_id = ? AND file_id = ? ORDER BY tag')
+        .all(workspaceId, row.id) as unknown as Array<{ tag: string }>).map(tag => tag.tag),
       outLinks: outLinks.get(row.id) ?? 0,
       inLinks: inLinks.get(row.id) ?? 0,
       matched: [],
@@ -509,7 +528,9 @@ export function queryNotes(
       title: titleOf(file.path),
       typ: (properties.get('typ') ?? [])[0] ?? null,
       stand: (properties.get('stand') ?? [])[0] ?? null,
-      tags: properties.get('tags') ?? [],
+      tags: (db.prepare(
+        'SELECT tag FROM note_tags WHERE workspace_id = ? AND file_id = ? ORDER BY tag')
+        .all(workspaceId, file.id) as unknown as Array<{ tag: string }>).map(tag => tag.tag),
       outLinks: outBy.get(file.id) ?? 0,
       inLinks: inBy.get(file.id) ?? 0,
       matched: hit,
