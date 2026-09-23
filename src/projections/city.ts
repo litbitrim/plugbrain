@@ -182,23 +182,11 @@ function buildingsFrom(
     if (cached) {
       counts = cached
     } else {
-      counts = new Map<number, number>()
-      for (const row of db.prepare(
-        `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
-          WHERE file_id IN (${ids.map(() => '?').join(',')}) GROUP BY file_id`)
-        .all(...ids) as unknown as Array<{ fileId: number; n: number }>) {
-        counts.set(row.fileId, Number(row.n))
-      }
+      counts = countSymbols(db, ids)
       setCached(symbolCountsCache, cacheKeyStr, generation, counts)
     }
   } else {
-    counts = new Map<number, number>()
-    for (const row of db.prepare(
-      `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
-        WHERE file_id IN (${ids.map(() => '?').join(',')}) GROUP BY file_id`)
-      .all(...ids) as unknown as Array<{ fileId: number; n: number }>) {
-      counts.set(row.fileId, Number(row.n))
-    }
+    counts = countSymbols(db, ids)
   }
   
   const owners = new Map<string, { agentId: string | null; at: string }>()
@@ -223,28 +211,90 @@ function buildingsFrom(
   }))
 }
 
-/** Import roads between indexed files, aggregated by direction. */
-function roadsFor(db: DatabaseSync, workspaceId: string, fileIds?: readonly number[]): CityRoad[] {
-  const scope = fileIds === undefined || fileIds.length === 0
-    ? ''
-    : ` AND (src_file IN (${fileIds.map(() => '?').join(',')})`
-      + ` OR dst_file IN (${fileIds.map(() => '?').join(',')}))`
-  const params = fileIds === undefined || fileIds.length === 0 ? [] : [...fileIds, ...fileIds]
-  const rows = db.prepare(
-    `SELECT src_file AS fromFileId, dst_file AS toFileId, COUNT(*) AS weight
-       FROM edges
-      WHERE workspace_id = ? AND kind = 'imports' AND resolved = 1
-        AND src_file IS NOT NULL AND dst_file IS NOT NULL${scope}
-      GROUP BY src_file, dst_file
-      ORDER BY src_file ASC, dst_file ASC`)
-    .all(workspaceId, ...params) as unknown as Array<{ fromFileId: number; toFileId: number; weight: number }>
-  return rows.map(row => ({
+/**
+ * SQLite refuses statements with more bound variables than its compile-time
+ * limit (32766 in current builds, 999 in older ones), and a real planet has
+ * far more files than that - /api/city on the big planet failed with "too many
+ * SQL variables". IN-lists are therefore served in chunks, and the per-chunk
+ * results are folded back together.
+ */
+const IN_CHUNK = 500
+
+function chunked<T>(items: readonly T[], size: number = IN_CHUNK): Array<T[]> {
+  const chunks: Array<T[]> = []
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size))
+  return chunks
+}
+
+/** Per-file symbol counts, chunked so the IN-list stays under the limit. */
+function countSymbols(db: DatabaseSync, ids: readonly number[]): Map<number, number> {
+  const counts = new Map<number, number>()
+  for (const chunk of chunked(ids)) {
+    for (const row of db.prepare(
+      `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
+        WHERE file_id IN (${chunk.map(() => '?').join(',')}) GROUP BY file_id`)
+      .all(...chunk) as unknown as Array<{ fileId: number; n: number }>) {
+      counts.set(row.fileId, Number(row.n))
+    }
+  }
+  return counts
+}
+
+function roadOf(row: { fromFileId: number; toFileId: number; weight: number }): CityRoad {
+  return {
     id: `road:${row.fromFileId}->${row.toFileId}`,
     fromFileId: Number(row.fromFileId),
     toFileId: Number(row.toFileId),
     kind: 'imports' as const,
     weight: Number(row.weight),
-  }))
+  }
+}
+
+/**
+ * Import roads between indexed files, aggregated by direction.
+ *
+ * With a file list, the seek runs per chunk and the per-chunk GROUP BYs are
+ * folded with MAX: a fixed (src, dst) pair has fixed endpoints, so its rows
+ * match one chunk's scope when both endpoints live in it and BOTH chunks'
+ * scopes when they span a boundary - each contributing the pair's full weight
+ * exactly once. MAX is therefore the true weight; SUM would double the pairs
+ * that span a chunk boundary.
+ */
+function roadsFor(db: DatabaseSync, workspaceId: string, fileIds?: readonly number[]): CityRoad[] {
+  if (fileIds === undefined || fileIds.length === 0) {
+    const rows = db.prepare(
+      `SELECT src_file AS fromFileId, dst_file AS toFileId, COUNT(*) AS weight
+         FROM edges
+        WHERE workspace_id = ? AND kind = 'imports' AND resolved = 1
+          AND src_file IS NOT NULL AND dst_file IS NOT NULL
+        GROUP BY src_file, dst_file
+        ORDER BY src_file ASC, dst_file ASC`)
+      .all(workspaceId) as unknown as Array<{ fromFileId: number; toFileId: number; weight: number }>
+    return rows.map(roadOf)
+  }
+  const merged = new Map<string, { fromFileId: number; toFileId: number; weight: number }>()
+  for (const chunk of chunked(fileIds)) {
+    const scope = ` AND (src_file IN (${chunk.map(() => '?').join(',')})`
+      + ` OR dst_file IN (${chunk.map(() => '?').join(',')}))`
+    const rows = db.prepare(
+      `SELECT src_file AS fromFileId, dst_file AS toFileId, COUNT(*) AS weight
+         FROM edges
+        WHERE workspace_id = ? AND kind = 'imports' AND resolved = 1
+          AND src_file IS NOT NULL AND dst_file IS NOT NULL${scope}
+        GROUP BY src_file, dst_file
+        ORDER BY src_file ASC, dst_file ASC`)
+      .all(workspaceId, ...chunk, ...chunk) as unknown as Array<{ fromFileId: number; toFileId: number; weight: number }>
+    for (const row of rows) {
+      const weight = Number(row.weight)
+      const prev = merged.get(`${row.fromFileId}->${row.toFileId}`)
+      if (prev === undefined || weight > prev.weight) {
+        merged.set(`${row.fromFileId}->${row.toFileId}`, { fromFileId: Number(row.fromFileId), toFileId: Number(row.toFileId), weight })
+      }
+    }
+  }
+  return [...merged.values()]
+    .sort((a, b) => (a.fromFileId - b.fromFileId) || (a.toFileId - b.toFileId))
+    .map(roadOf)
 }
 
 function tombstonesFor(db: DatabaseSync, workspaceId: string, sinceGeneration = 0): CityTombstone[] {
