@@ -15,6 +15,7 @@ import type {
 import { annotateSymbolVendor } from './vendor.ts'
 
 export interface SymbolContextOptions {
+  workspaceId?: string
   repoId?: string
   checkoutId?: string
   file?: string
@@ -47,6 +48,10 @@ export function getSymbolContext(
      WHERE s.name = ?
   `
   const params: unknown[] = [name]
+  if (options?.workspaceId) {
+    sql += ' AND f.workspace_id = ?'
+    params.push(options.workspaceId)
+  }
 
   if (options?.repoId) {
     sql += ' AND f.repo_id = ?'

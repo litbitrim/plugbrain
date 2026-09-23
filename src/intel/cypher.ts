@@ -44,7 +44,7 @@ function formatMarkdownTable(columns: string[], rows: Array<Record<string, unkno
 export function executeCypherQuery(
   db: DatabaseSync,
   queryOrDsl: string | JsonGraphQuery,
-  options?: { limit?: number }
+  options?: { limit?: number; workspaceId?: string }
 ): CypherQueryResult {
   const start = performance.now()
 
@@ -53,19 +53,20 @@ export function executeCypherQuery(
     const dsl: JsonGraphQuery = typeof queryOrDsl === 'object'
       ? queryOrDsl
       : (JSON.parse(queryOrDsl) as JsonGraphQuery)
-    return executeJsonDsl(db, dsl, start, options?.limit)
+    return executeJsonDsl(db, dsl, start, options?.limit, options?.workspaceId)
   }
 
   // Parse Cypher query string
   const cypher = queryOrDsl.trim()
-  return executeCypherString(db, cypher, start, options?.limit)
+  return executeCypherString(db, cypher, start, options?.limit, options?.workspaceId)
 }
 
 function executeCypherString(
   db: DatabaseSync,
   cypher: string,
   start: number,
-  overrideLimit?: number
+  overrideLimit?: number,
+  workspaceId?: string,
 ): CypherQueryResult {
   const defaultLimit = overrideLimit ?? 50
   let sql = ''
@@ -189,6 +190,10 @@ function executeCypherString(
     sql += ` AND (${translatedWhere})`
   }
 
+  // Scope before wrapping a count query: the aliases live inside its subquery.
+  const scoped = scopeSql(sql, workspaceId)
+  sql = scoped.sql
+
   // Handle custom RETURN projection if simple
   if (returnClause.toLowerCase().includes('count(')) {
     sql = `SELECT count(*) as count FROM (${sql})`
@@ -201,7 +206,7 @@ function executeCypherString(
 
   let rows: Array<Record<string, unknown>> = []
   try {
-    rows = db.prepare(sql).all() as Array<Record<string, unknown>>
+    rows = db.prepare(sql).all(...scoped.params) as Array<Record<string, unknown>>
     if (rows.length > 0 && columns.length === 0) {
       columns = Object.keys(rows[0])
     }
@@ -230,7 +235,8 @@ function executeJsonDsl(
   db: DatabaseSync,
   dsl: JsonGraphQuery,
   start: number,
-  overrideLimit?: number
+  overrideLimit?: number,
+  workspaceId?: string,
 ): CypherQueryResult {
   const limit = overrideLimit ?? dsl.limit ?? 50
   const match = dsl.match
@@ -273,11 +279,12 @@ function executeJsonDsl(
     }
   }
 
-  sql += ` LIMIT ${limit}`
+  const scoped = scopeSql(sql, workspaceId)
+  sql = scoped.sql + ` LIMIT ${limit}`
 
   let rows: Array<Record<string, unknown>> = []
   try {
-    rows = db.prepare(sql).all() as Array<Record<string, unknown>>
+    rows = db.prepare(sql).all(...scoped.params) as Array<Record<string, unknown>>
     if (rows.length > 0 && columns.length === 0) {
       columns = Object.keys(rows[0])
     }
@@ -299,4 +306,19 @@ function executeJsonDsl(
     rowCount: rows.length,
     timingMs: Math.round((performance.now() - start) * 10) / 10,
   }
+}
+
+/** Every generated query anchors its rows in one of these workspace-aware aliases. */
+function scopeSql(sql: string, workspaceId?: string): { sql: string; params: unknown[] } {
+  if (!workspaceId) return { sql, params: [] }
+  if (/\bFROM repos r\b/i.test(sql)) {
+    return { sql: `${sql} AND r.planet_id IN (SELECT id FROM planets WHERE workspace_id = ?)`, params: [workspaceId] }
+  }
+  if (/\bFROM note_links nl\b/i.test(sql)) {
+    return { sql: `${sql} AND f1.workspace_id = ?`, params: [workspaceId] }
+  }
+  if (/\bFROM edges e\b/i.test(sql)) {
+    return { sql: `${sql} AND e.workspace_id = ?`, params: [workspaceId] }
+  }
+  return { sql: `${sql} AND f.workspace_id = ?`, params: [workspaceId] }
 }

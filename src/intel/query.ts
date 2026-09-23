@@ -72,6 +72,10 @@ export function conceptSearch(
     symbolSql += ' AND f.repo_id = ?'
     params.push(options.repoId)
   }
+  if (options?.workspaceId) {
+    symbolSql += ' AND f.workspace_id = ?'
+    params.push(options.workspaceId)
+  }
   if (options?.checkoutId) {
     symbolSql += ' AND f.checkout_id = ?'
     params.push(options.checkoutId)
@@ -102,10 +106,10 @@ export function conceptSearch(
              s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
         FROM symbols s
         JOIN files f ON s.file_id = f.id
-       WHERE s.name LIKE ? OR f.path LIKE ?
+       WHERE (s.name LIKE ? OR f.path LIKE ?)` + (options?.workspaceId ? ' AND f.workspace_id = ?' : '') + `
        LIMIT ?
     `
-    rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, limit) as typeof rawSymbols
+    rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []), limit) as typeof rawSymbols
   }
 
   const symbols: IntelSymbol[] = rawSymbols.map(s =>
@@ -155,7 +159,7 @@ export function conceptSearch(
 
   for (const sym of symbols.slice(0, 3)) {
     try {
-      const ctx = getSymbolContext(db, sym.name, { file: sym.file })
+      const ctx = getSymbolContext(db, sym.name, { file: sym.file, workspaceId: options?.workspaceId })
       for (const flow of ctx.processes) {
         if (!flowIds.has(flow.id)) {
           flowIds.add(flow.id)
