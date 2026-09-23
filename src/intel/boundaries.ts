@@ -15,6 +15,11 @@ export interface TestCoverageResult {
   tests: Array<{ path: string; symbol: string | null; line: number; relation: string }>
 }
 
+export interface TestCoverageOptions {
+  /** A route that already chose a workspace must never resolve its target in another Planet. */
+  workspaceId?: string
+}
+
 const isTestPath = (path: string): boolean =>
   /(?:^|\/)(?:test|tests|__tests__)(?:\/|$)|\.(?:test|spec)\.[cm]?[jt]sx?$/i.test(path)
 
@@ -33,35 +38,59 @@ export function getPackageEntryPoints(db: DatabaseSync, workspaceId: string): Pa
 
 export function getTestCoverage(
   db: DatabaseSync, target: string | { name: string; file?: string; id?: number },
+  options: TestCoverageOptions = {},
 ): TestCoverageResult {
   const requested = typeof target === 'string' ? { name: target } : target
-  let candidates: Array<{ id: number; name: string; file: string }>
+  let candidates: Array<{ id: number; name: string; file: string; fileId: number }>
   if (requested.id !== undefined) {
-    candidates = db.prepare('SELECT s.id, s.name, f.path AS file FROM symbols s JOIN files f ON f.id = s.file_id WHERE s.id = ?')
-      .all(requested.id) as Array<{ id: number; name: string; file: string }>
+    candidates = db.prepare(`SELECT s.id, s.name, f.path AS file, f.id AS fileId
+      FROM symbols s JOIN files f ON f.id = s.file_id
+      WHERE s.id = ?${options.workspaceId === undefined ? '' : ' AND f.workspace_id = ?'}`)
+      .all(requested.id, ...(options.workspaceId === undefined ? [] : [options.workspaceId])) as
+      Array<{ id: number; name: string; file: string; fileId: number }>
   } else {
-    let sql = 'SELECT s.id, s.name, f.path AS file FROM symbols s JOIN files f ON f.id = s.file_id WHERE s.name = ?'
+    let sql = 'SELECT s.id, s.name, f.path AS file, f.id AS fileId FROM symbols s JOIN files f ON f.id = s.file_id WHERE s.name = ?'
     const params: unknown[] = [requested.name]
+    if (options.workspaceId !== undefined) { sql += ' AND f.workspace_id = ?'; params.push(options.workspaceId) }
     if (requested.file !== undefined) { sql += ' AND f.path LIKE ?'; params.push(`%${requested.file.replace(/\\/g, '/')}%`) }
     candidates = db.prepare(sql).all(...params) as Array<{ id: number; name: string; file: string }>
   }
   if (candidates.length === 0) return { status: 'not_found', symbol: null, tests: [] }
   if (candidates.length !== 1) return { status: 'ambiguous', symbol: null, tests: [] }
   const symbol = candidates[0]
-  const raw = db.prepare(`
+  const direct = db.prepare(`
     SELECT f.path, src.name AS symbol, e.line, e.kind AS relation
       FROM edges e JOIN files f ON f.id = e.src_file
       LEFT JOIN symbols src ON src.id = e.src_symbol
-     WHERE e.dst_symbol = ? AND e.kind IN ('calls', 'references') ORDER BY f.path, e.line
-  `).all(symbol.id) as Array<{ path: string; symbol: string | null; line: number; relation: string }>
-  return { status: 'found', symbol, tests: raw.filter(row => isTestPath(row.path)) }
+     WHERE e.dst_symbol = ? AND e.kind IN ('calls', 'references')
+       ${options.workspaceId === undefined ? '' : 'AND e.workspace_id = ?'}
+     ORDER BY f.path, e.line
+  `).all(symbol.id, ...(options.workspaceId === undefined ? [] : [options.workspaceId])) as
+    Array<{ path: string; symbol: string | null; line: number; relation: string }>
+  const directTests = direct.filter(row => isTestPath(row.path))
+  const directPaths = new Set(directTests.map(row => row.path))
+  // A test that imports the target module but does not emit a resolvable call
+  // is useful review context, but not evidence that it invokes this symbol.
+  // It is deliberately labelled separately so a caller cannot mistake a
+  // module-level candidate for direct coverage.
+  const moduleImports = db.prepare(`
+    SELECT f.path, NULL AS symbol, e.line, 'module_import' AS relation
+      FROM edges e JOIN files f ON f.id = e.src_file
+     WHERE e.dst_file = ? AND e.kind = 'imports'
+       ${options.workspaceId === undefined ? '' : 'AND e.workspace_id = ?'}
+     ORDER BY f.path, e.line
+  `).all(symbol.fileId, ...(options.workspaceId === undefined ? [] : [options.workspaceId])) as
+    Array<{ path: string; symbol: string | null; line: number; relation: string }>
+  const tests = [...directTests, ...moduleImports.filter(row => isTestPath(row.path) && !directPaths.has(row.path))]
+    .sort((left, right) => left.path.localeCompare(right.path) || left.line - right.line)
+  return { status: 'found', symbol: { id: symbol.id, name: symbol.name, file: symbol.file }, tests }
 }
 
 /** One target, its resolved dependency radius, and the tests that actually reach it. */
 export function getImpactSlice(
   db: DatabaseSync, target: string | { name: string; file?: string; id?: number }, options?: BlastRadiusOptions,
 ): { coverage: TestCoverageResult; impact: ReturnType<typeof getBlastRadius> } {
-  const coverage = getTestCoverage(db, target)
+  const coverage = getTestCoverage(db, target, { workspaceId: options?.workspaceId })
   const resolved = coverage.symbol === null
     ? target
     : { name: coverage.symbol.name, id: coverage.symbol.id, file: coverage.symbol.file }
