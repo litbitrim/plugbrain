@@ -4,7 +4,7 @@
  * source column in L1-brain/INVENTAR.md records the originating file.
  */
 import { strict as assert } from 'node:assert'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -93,6 +93,42 @@ const gold = goldRows.map(([label, extract, collection, key, value]) => ({ label
 for (const item of gold) {
   test(`M16 gold ${item.label}`, () => {
     assert.equal(has(item.extract[item.collection] as Array<Record<string, string | null>>, item.key, item.value), true)
+  })
+}
+
+/** The portable fixture above mirrors these 45 snapshot-labelled PLUG cases. */
+const codeRoot = process.env.PLUGPT_CODE_ROOT
+const actualInputs = codeRoot === undefined ? null : [
+  ['PlugHub/apps/backend/main.py', '.py'],
+  ['PlugBoard/packages/plug-launcher/src-tauri/src/commands.rs', '.rs'],
+  ['PlugMedia/migrations/0001_init.sql', '.sql'],
+] as const
+const actual = actualInputs !== null && actualInputs.every(([path]) => existsSync(join(codeRoot as string, path)))
+  ? actualInputs.map(([path, ext]) => parseFile(path, ext, readFileSync(join(codeRoot as string, path), 'utf8')))
+  : null
+const actualRows: Array<[string, number, 'symbols' | 'imports' | 'refs', string, string]> = [
+  // Python, Code/PlugHub/apps/backend/main.py: definitions and direct calls.
+  ['py actual root definition', 0, 'symbols', 'name', 'root'], ['py actual class definition', 0, 'symbols', 'name', 'RateLimiter'], ['py actual method definition', 0, 'symbols', 'name', '__init__'],
+  ['py actual method definition allowed', 0, 'symbols', 'name', 'is_allowed'], ['py actual route definition', 0, 'symbols', 'name', 'get_lan_base_url'], ['py actual route definition secure', 0, 'symbols', 'name', 'is_request_secure'],
+  ['py actual route definition client', 0, 'symbols', 'name', 'get_client_ip'], ['py actual route definition local', 0, 'symbols', 'name', 'is_local_ip'], ['py actual route definition auth', 0, 'symbols', 'name', 'authenticate_admin'],
+  ['py actual route definition audit', 0, 'symbols', 'name', 'log_audit'], ['py actual startup call init', 0, 'refs', 'target', 'init_db'], ['py actual startup call seed', 0, 'refs', 'target', 'seed_preset_nodes'],
+  ['py actual startup call key', 0, 'refs', 'target', 'get_admin_key'], ['py actual startup call telemetry', 0, 'refs', 'target', 'record_local_telemetry'], ['py actual startup call version', 0, 'refs', 'target', 'record_node_version'],
+  // Rust, Code/PlugBoard/.../commands.rs: definitions, uses, and direct calls.
+  ['rs actual struct launcher paths', 1, 'symbols', 'name', 'LauncherPaths'], ['rs actual struct stage', 1, 'symbols', 'name', 'LauncherStage'], ['rs actual struct result', 1, 'symbols', 'name', 'GetStartedResult'],
+  ['rs actual function renderer', 1, 'symbols', 'name', 'renderer_path'], ['rs actual function paths', 1, 'symbols', 'name', 'get_launcher_paths'], ['rs actual import request', 1, 'imports', 'local', 'LauncherRequest'],
+  ['rs actual import response', 1, 'imports', 'local', 'LauncherResponse'], ['rs actual import app paths', 1, 'imports', 'local', 'AppPaths'], ['rs actual import serialize', 1, 'imports', 'local', 'Serialize'],
+  ['rs actual import fs', 1, 'imports', 'local', 'fs'], ['rs actual call renderer', 1, 'refs', 'target', 'renderer_path'], ['rs actual call guard', 1, 'refs', 'target', 'is_contained_path'],
+  ['rs actual call roots', 1, 'refs', 'target', 'approved_roots'], ['rs actual call format', 1, 'refs', 'target', 'format'], ['rs actual call join', 1, 'refs', 'target', 'join'],
+  // SQL, Code/PlugMedia/migrations/0001_init.sql: schema definitions and FK references.
+  ['sql actual table migrations', 2, 'symbols', 'name', 'schema_migrations'], ['sql actual table tenants', 2, 'symbols', 'name', 'tenants'], ['sql actual table workspaces', 2, 'symbols', 'name', 'workspaces'],
+  ['sql actual table brands', 2, 'symbols', 'name', 'brands'], ['sql actual table versions', 2, 'symbols', 'name', 'brand_versions'], ['sql actual table sources', 2, 'symbols', 'name', 'sources'],
+  ['sql actual table claims', 2, 'symbols', 'name', 'claims'], ['sql actual table rights', 2, 'symbols', 'name', 'rights_records'], ['sql actual table campaigns', 2, 'symbols', 'name', 'campaigns'],
+  ['sql actual table content', 2, 'symbols', 'name', 'content_items'], ['sql actual reference tenant', 2, 'refs', 'target', 'tenants'], ['sql actual reference workspace', 2, 'refs', 'target', 'workspaces'],
+  ['sql actual reference brand', 2, 'refs', 'target', 'brands'], ['sql actual reference source', 2, 'refs', 'target', 'sources'], ['sql actual reference campaign', 2, 'refs', 'target', 'campaigns'],
+]
+for (const [label, input, collection, key, value] of actualRows) {
+  test(`M16 corpus ${label}`, { skip: actual === null ? 'set PLUGPT_CODE_ROOT to run against the PLUG corpus' : false }, () => {
+    assert.equal(has(actual![input][collection] as Array<Record<string, string | null>>, key, value), true)
   })
 }
 
