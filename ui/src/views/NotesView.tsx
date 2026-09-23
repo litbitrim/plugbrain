@@ -7,7 +7,12 @@ import KnowledgeGraphView from './KnowledgeGraphView'
 
 type UndoState = { path: string; content: string; savedHash: string }
 
-export default function NotesView({ workspaceId }: { workspaceId: string }) {
+export default function NotesView({ workspaceId, onOpenSource, onOpenRevision, onOpenAgentRun }: {
+  workspaceId: string
+  onOpenSource?: (path: string) => void
+  onOpenRevision?: (revision: string) => void
+  onOpenAgentRun?: (agentId: string) => void
+}) {
   const [notes, setNotes] = useState<NoteListItem[]>([])
   const [active, setActive] = useState<NoteDocument | null>(null)
   const [draft, setDraft] = useState('')
@@ -84,7 +89,7 @@ export default function NotesView({ workspaceId }: { workspaceId: string }) {
     const kind = newType === 'notiz' ? 'notiz' : newType
     const label = newType === 'entscheidung' ? 'Entscheidung' : newType === 'widerspruch' ? 'Widerspruch' : 'Notiz'
     const path = `Notizen/${label}-${stamp}-${suffix}.md`
-    const frontmatter = newType === 'notiz' ? '' : `---\ntyp: ${kind}\nstand: ${newStatus}\ncode: \nrevision: \nagentenlauf: \n---\n\n`
+    const frontmatter = newType === 'notiz' ? '' : `---\ntyp: ${kind}\nstand: ${newStatus}\nbezug: \ncode: \nrevision: \nagentenlauf: \n---\n\n`
     const note: NoteDocument = { path, title: `Neue ${label}`, typ: kind, stand: newStatus, tags: [], inLinks: 0, outLinks: 0, content: `${frontmatter}# Neue ${label}\n\n`, hash: '', properties: [], links: [], backlinks: [] }
     setActive(note); setDraft(note.content); setAttachments([]); setConflict(''); setNotice('Neue Notiz: Namen oder Inhalt bearbeiten und speichern.')
   }
@@ -108,6 +113,12 @@ export default function NotesView({ workspaceId }: { workspaceId: string }) {
     finally { setBusy(false) }
   }
 
+  const relation = (key: string): string | null => active?.properties.find(property => property.key.toLowerCase() === key)?.value.trim() || null
+  const linkedNote = relation('bezug')
+  const linkedCode = relation('code')
+  const linkedRevision = relation('revision')
+  const linkedAgentRun = relation('agentenlauf')
+
   return <main className="notes-workbench">
     <aside className="notes-sidebar">
       <div className="notes-sidebar__head"><strong>Wissen</strong><span><button type="button" className={mode === 'editor' ? 'on' : ''} onClick={() => setMode('editor')}>Editor</button><button type="button" className={mode === 'graph' ? 'on' : ''} onClick={() => setMode('graph')}>Graph</button></span></div>
@@ -126,6 +137,7 @@ export default function NotesView({ workspaceId }: { workspaceId: string }) {
         <footer className="notes-editor__meta">
           <section><h3>Links</h3>{active.links.length ? active.links.map(link => <button type="button" disabled={!link.path} key={`${link.target}:${link.line}`} onClick={() => link.path && void open(link.path)}>{link.alias || link.target}{link.path ? '' : ' (nicht aufgelöst)'}</button>) : <span>Keine Wiki-Links.</span>}</section>
           <section><h3>Backlinks</h3>{active.backlinks.length ? active.backlinks.map(link => <button type="button" key={`${link.path}:${link.line}`} onClick={() => void open(link.path)}>← {link.title} · Zeile {link.line}</button>) : <span>Keine Rückverweise.</span>}</section>
+          {(linkedNote || linkedCode || linkedRevision || linkedAgentRun) && <section><h3>Verknüpfungen</h3>{linkedNote && <button type="button" onClick={() => void open(linkedNote.replace(/^\[\[|\]\]$/g, ''))}>Entscheidung/Widerspruch: {linkedNote}</button>}{linkedCode && <button type="button" disabled={!onOpenSource} onClick={() => onOpenSource?.(linkedCode)}>Datei: {linkedCode}</button>}{linkedRevision && <button type="button" disabled={!onOpenRevision} onClick={() => onOpenRevision?.(linkedRevision)}>Revision: {linkedRevision}</button>}{linkedAgentRun && <button type="button" disabled={!onOpenAgentRun} onClick={() => onOpenAgentRun?.(linkedAgentRun)}>Agentenlauf: {linkedAgentRun}</button>}</section>}
           <section><h3>Anhänge</h3><input ref={upload} type="file" hidden onChange={event => void attach(event.target.files?.[0])}/><button type="button" disabled={busy || active.hash === ''} title={active.hash === '' ? 'Die Notiz zuerst speichern' : undefined} onClick={() => upload.current?.click()}>Datei anhängen</button>{active.hash === '' && <span>Notiz zuerst speichern.</span>}{attachments.map(file => <a key={file.path} href={attachmentUrl(workspaceId, active.path, file.name)}>{file.name} · {file.bytes} B</a>)}</section>
         </footer>
       </> : <p className="notes-empty">Keine Notiz im gewählten Vault.</p>)}

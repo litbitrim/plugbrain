@@ -24,4 +24,7 @@ test('knowledge editor creates decision and contradiction notes behind a create-
   assert.match(notes, /typ: \$\{kind\}/)
   assert.match(notes, /active\.hash === ''/)
   assert.match(notes, /Notiz zuerst speichern/)
+  assert.match(notes, /Entscheidung\/Widerspruch:/)
+  assert.match(notes, /Revision:/)
+  assert.match(notes, /Agentenlauf:/)
 })

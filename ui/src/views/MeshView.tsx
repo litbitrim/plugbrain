@@ -6,6 +6,8 @@ interface MeshViewProps {
   mesh: MeshSnapshot | null
   workspaceId?: string
   onSelectFile?: (path: string) => void
+  /** A linked knowledge record can focus a trace-backed agent run. */
+  focusAgentId?: string | null
 }
 
 const KIND_LABEL: Record<MeshNode['kind'], string> = {
@@ -58,7 +60,7 @@ function nodeName(nodes: MeshNode[], id: string): string {
  * that the current workspace has no observed trace activity, not a rendering
  * failure to conceal with invented agents.
  */
-export default function MeshView({ mesh, workspaceId, onSelectFile }: MeshViewProps) {
+export default function MeshView({ mesh, workspaceId, onSelectFile, focusAgentId }: MeshViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [timeline, setTimeline] = useState<MeshTimelineEntry[]>([])
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -68,6 +70,12 @@ export default function MeshView({ mesh, workspaceId, onSelectFile }: MeshViewPr
     () => mesh?.nodes.find(node => node.id === selectedId) ?? null,
     [mesh, selectedId],
   )
+
+  useEffect(() => {
+    if (!focusAgentId) return
+    const id = `agent:${focusAgentId}`
+    if (mesh?.nodes.some(node => node.id === id)) setSelectedId(id)
+  }, [focusAgentId, mesh])
 
   useEffect(() => {
     if (selectedId !== null && selected === null) setSelectedId(null)
