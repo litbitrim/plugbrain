@@ -16,6 +16,7 @@
  *   plugbrain swarm board [--git] [--json]
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]
+ *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
@@ -25,7 +26,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, registerAgent } from './access.ts'
-import { enqueueTask } from './queue.ts'
+import { deliverTask, enqueueTask } from './queue.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
@@ -70,7 +71,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
-  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan',
+  '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -248,6 +249,15 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       if (planRef !== null) setPlanRef(db, task.id, planRef)
       console.log(`eingereiht ${task.id}: ${task.title}${task.addressed_to ? ` → ${task.addressed_to}` : ''}` +
         (planRef === null ? '' : `  [${planRef}]`))
+      return 0
+    }
+    case 'deliver': {
+      // The worker that holds a task hands in its candidate: the queue row
+      // moves to `delivered` and points at the evidence. Acceptance is not
+      // decided here — that is the review and the integrator's approval.
+      const usage = 'plugbrain swarm deliver <agent> <taskId> --path <evidence>'
+      const task = deliverTask(db, need(pos[1], usage), need(pos[0], usage), need(flag(rest, '--path'), usage))
+      console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0
     }
     case 'approve': {
