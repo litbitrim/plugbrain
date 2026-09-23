@@ -47,6 +47,30 @@ interface LeaseDbRow {
   ttl_ms: number
 }
 
+/**
+ * A path fence is logical within one repository, not merely a spelling on
+ * disk. Two linked worktrees have different `Code/...` prefixes but the same
+ * repository-relative file. The index supplies that identity when available;
+ * an unindexed/plain workspace safely falls back to its workspace path.
+ */
+function fenceKey(db: DatabaseSync, workspaceId: string, path: string): string {
+  const normalized = path.split('\\').join('/').replace(/^\/+/, '')
+  try {
+    const row = db.prepare(`SELECT f.repo_id AS repoId, c.rel_prefix AS relPrefix
+        FROM files f LEFT JOIN checkouts c ON c.id = f.checkout_id
+        WHERE f.workspace_id = ? AND f.path = ?`).get(workspaceId, normalized) as
+      { repoId: string | null; relPrefix: string | null } | undefined
+    if (row?.repoId && row.relPrefix && normalized.startsWith(row.relPrefix + '/')) {
+      return `repo:${row.repoId}:${normalized.slice(row.relPrefix.length + 1)}`
+    }
+  } catch { /* a legacy store without planet tables remains path-scoped */ }
+  return `path:${normalized}`
+}
+
+function sameFencePath(db: DatabaseSync, workspaceId: string, left: string, right: string): boolean {
+  return fenceKey(db, workspaceId, left) === fenceKey(db, workspaceId, right)
+}
+
 const LEASE_SCHEMA = `
 CREATE TABLE IF NOT EXISTS leases (
   id           TEXT PRIMARY KEY,
@@ -149,7 +173,7 @@ export function acquireLease(
 
       // Check path conflicts
       for (const p of paths) {
-        if (heldPaths.includes(p)) {
+        if (heldPaths.some(held => sameFencePath(db, workspaceId, held, p))) {
           const presences = getAgentPresence(db, { agentId: row.agent_id })
           const holderHb = presences[0]?.lastHeartbeat ?? row.created_at
           db.exec('COMMIT')
@@ -385,6 +409,12 @@ export function checkWriteFencing(
     if (row.agent_id !== agentId) {
       throw new FencingError(`fencing violation: lease '${options.leaseId}' belongs to '${row.agent_id}', not '${agentId}'`, options.leaseId)
     }
+    if (row.workspace_id !== workspaceId) {
+      throw new FencingError(`fencing violation: lease '${options.leaseId}' belongs to another workspace`, options.leaseId)
+    }
+    if (options.taskId !== undefined && row.task_id !== options.taskId) {
+      throw new FencingError(`fencing violation: lease '${options.leaseId}' belongs to task '${row.task_id}', not '${options.taskId}'`, options.leaseId)
+    }
     if (row.released_at !== null) {
       throw new FencingError(`fencing violation: lease '${options.leaseId}' was already released at ${row.released_at}`, options.leaseId)
     }
@@ -393,6 +423,11 @@ export function checkWriteFencing(
     }
     if (options.epoch !== undefined && options.epoch !== row.epoch) {
       throw new FencingError(`fencing violation: epoch mismatch (expected ${row.epoch}, received ${options.epoch})`, options.leaseId, row.epoch)
+    }
+    let leasedPaths: string[] = []
+    try { leasedPaths = JSON.parse(row.paths_json) as string[] } catch { /* invalid persisted lease is never a write permit */ }
+    if (!leasedPaths.some(held => sameFencePath(db, workspaceId, held, normPath))) {
+      throw new FencingError(`fencing violation: lease '${options.leaseId}' does not fence '${normPath}'`, options.leaseId, row.epoch)
     }
     return
   }
@@ -415,7 +450,7 @@ export function checkWriteFencing(
     let heldPaths: string[] = []
     try { heldPaths = JSON.parse(row.paths_json) } catch { heldPaths = [] }
 
-    if (heldPaths.includes(normPath)) {
+    if (heldPaths.some(held => sameFencePath(db, workspaceId, held, normPath))) {
       const presences = getAgentPresence(db, { agentId: row.agent_id })
       const holderHb = presences[0]?.lastHeartbeat ?? row.created_at
       throw new ClaimConflictError({
@@ -445,7 +480,7 @@ export function checkWriteFencing(
   for (const row of myLeases) {
     let heldPaths: string[] = []
     try { heldPaths = JSON.parse(row.paths_json) } catch { heldPaths = [] }
-    if (heldPaths.includes(normPath)) {
+    if (heldPaths.some(held => sameFencePath(db, workspaceId, held, normPath))) {
       hadMatchingLease = true
       const isExpired = nowMs > Date.parse(row.expires_at)
       if (!isExpired && row.released_at === null) {
