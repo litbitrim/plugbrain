@@ -83,6 +83,11 @@ test('L2: bare workspace imports cross only declared exports, and test calls map
     const entryBody = await entryResponse.json() as { ok: boolean; entries: Array<{ packageName: string }> }
     assert.equal(entryBody.ok, true)
     assert.deepEqual(entryBody.entries.map(entry => entry.packageName), ['@plug/provider'])
+    const testsResponse = await fetch(`${base}/tests?workspace=${workspaceId}&target=api&file=provider%2Fsrc%2Findex.ts`)
+    assert.equal(testsResponse.status, 200)
+    const testsBody = await testsResponse.json() as { ok: boolean; result: { tests: unknown[] } }
+    assert.equal(testsBody.ok, true)
+    assert.equal(testsBody.result.tests.length, 1)
     const sliceResponse = await fetch(`${base}/impact-slice?workspace=${workspaceId}&target=api&file=provider%2Fsrc%2Findex.ts`)
     assert.equal(sliceResponse.status, 200)
     const sliceBody = await sliceResponse.json() as { ok: boolean; result: { coverage: { tests: unknown[] } } }
