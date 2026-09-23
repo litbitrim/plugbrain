@@ -29,7 +29,7 @@ import * as access from '../src/access.ts'
 import { openStore } from '../src/store/schema.ts'
 import { isSecretPath, isSkippedDir, walk } from '../src/indexer/scan.ts'
 import {
-  checkoutIdFor, discoverCheckouts, getPlanetIndexSelection, indexPlanetWorkspace, listPlanet, planetHistory,
+  canonicalPath, checkoutIdFor, discoverCheckouts, getPlanetIndexSelection, indexPlanetWorkspace, listPlanet, planetHistory,
   planetIdFor, readCheckout, registerPlanet as registerPlanetRaw, repoIdFor, scopeRoots,
   setPlanetIndexSelection, workspaceIdFor,
 } from '../src/planet.ts'
@@ -164,6 +164,41 @@ test('the same planet registered twice is one identity, not two', { skip: skipGi
     for (const table of ['workspaces', 'planets', 'repos', 'checkouts']) {
       assert.equal(count(fx.db, table), 1, `${table} must hold exactly one row`)
     }
+  } finally { fx.cleanup() }
+})
+
+test('alias, Junction and clone paths keep one writable identity with revision overlays', { skip: skipGit }, () => {
+  const fx = planetFixture('planet-physical-identity')
+  try {
+    const main = makeRepo(fx.codeDir, 'alpha', { 'src/a.ts': 'export const a = 1\n' })
+    // A nested Junction must not invent an alias checkout for the same files.
+    symlinkSync(main, join(fx.codeDir, 'alpha-alias'), 'junction')
+    const aliasRoot = join(fx.dir, 'plugpt-alias')
+    symlinkSync(fx.planetRoot, aliasRoot, 'junction')
+
+    const first = registerPlanet(fx.db, fx.planetRoot)
+    const throughAlias = registerPlanetRaw(fx.db, aliasRoot)
+    assert.equal(throughAlias.workspaceId, first.workspaceId)
+    assert.equal(throughAlias.planetId, first.planetId)
+    assert.equal(throughAlias.root, canonicalPath(fx.planetRoot))
+    assert.equal(throughAlias.checkouts, 1, 'the alias checkout does not become writable inventory')
+    assert.equal(count(fx.db, 'workspaces'), 1)
+    assert.equal(count(fx.db, 'planets'), 1)
+    assert.equal(count(fx.db, 'checkouts'), 1)
+
+    const before = listPlanet(fx.db, first.workspaceId).checkouts[0]!
+    write(main, 'src/a.ts', 'export const a = 2\n')
+    const refreshed = registerPlanetRaw(fx.db, aliasRoot)
+    const after = listPlanet(fx.db, refreshed.workspaceId).checkouts[0]!
+    assert.equal(after.id, before.id, 'a dirty revision is an overlay on the same checkout')
+    assert.notEqual(after.revision, before.revision, 'the revision vector changes without a second checkout')
+
+    // A real clone has a different git common directory and is therefore a
+    // distinct checkout/repository even when its files and branch match.
+    git(fx.codeDir, ['clone', '-q', main, 'alpha-clone'])
+    const cloned = registerPlanetRaw(fx.db, fx.planetRoot)
+    assert.equal(cloned.checkouts, 2)
+    assert.equal(cloned.repos, 2)
   } finally { fx.cleanup() }
 })
 

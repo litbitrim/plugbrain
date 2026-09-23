@@ -27,7 +27,7 @@
  *      incremental cost — a planet is not a federation of separate indexes.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
@@ -41,8 +41,19 @@ import { cachedOnce, generationCache, publishedGeneration } from './store/count-
  * land on one row, and an id that changed shape would silently re-register
  * every existing workspace under a new name.
  */
+/**
+ * The physical path is the identity boundary. `resolve()` alone preserves a
+ * Junction/symlink spelling, so the same writable directory could otherwise
+ * become two workspaces. Missing paths retain their lexical form for callers
+ * that are only preparing an error message; registration itself requires one.
+ */
+export const canonicalPath = (path: string): string => {
+  const absolute = resolve(path)
+  try { return realpathSync.native(absolute) } catch { return absolute }
+}
+
 export const workspaceIdFor = (root: string): string =>
-  `ws-${createHash('sha256').update(resolve(root).toLowerCase()).digest('hex').slice(0, 12)}`
+  `ws-${createHash('sha256').update(canonicalPath(root).toLowerCase()).digest('hex').slice(0, 12)}`
 
 /**
  * Fold a path for identity: absolute, forward slashes, no trailing separator,
@@ -50,7 +61,7 @@ export const workspaceIdFor = (root: string): string =>
  * `c:/plug/plugpt` are the same folder and must not be two repos.
  */
 export const foldPath = (path: string): string =>
-  resolve(path).split('\\').join('/').replace(/\/+$/, '').toLowerCase()
+  canonicalPath(path).split('\\').join('/').replace(/\/+$/, '').toLowerCase()
 
 const shortHash = (value: string): string =>
   createHash('sha256').update(value).digest('hex').slice(0, 12)
@@ -100,7 +111,7 @@ export interface CheckoutFacts {
  * hashes every file's bytes.
  */
 export function readCheckout(path: string): CheckoutFacts {
-  const abs = resolve(path)
+  const abs = canonicalPath(path)
   const toplevel = gitText(abs, ['rev-parse', '--show-toplevel'])
   const rawCommon = gitText(abs, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
     ?? gitText(abs, ['rev-parse', '--git-common-dir'])
@@ -396,15 +407,22 @@ export function discoverCheckouts(codeDir: string, planetId: string): Discovered
   let entries: ReturnType<typeof readdirSync>
   try { entries = readdirSync(codeDir, { withFileTypes: true }) } catch { return [] }
   const found: DiscoveredCheckout[] = []
+  const seenPhysicalCheckouts = new Set<string>()
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
     const abs = join(codeDir, entry.name)
     if (!existsSync(join(abs, '.git'))) continue
     const facts = readCheckout(abs)
     if (facts.commonDir === null) continue
+    const checkoutId = checkoutIdFor(planetId, facts.path)
+    // A Junction or alias directory can name the same writable checkout. Keep
+    // the first canonical inventory row; it is the only row allowed to write
+    // revision overlays for that physical checkout.
+    if (seenPhysicalCheckouts.has(checkoutId)) continue
+    seenPhysicalCheckouts.add(checkoutId)
     found.push({
       ...facts,
-      checkoutId: checkoutIdFor(planetId, abs),
+      checkoutId,
       repoId: repoIdFor(planetId, facts.commonDir),
       relPrefix: `Code/${entry.name}`,
     })
@@ -487,7 +505,7 @@ export interface RegisteredPlanet {
  * index, and the history of what they once held stays readable.
  */
 export function registerPlanet(db: DatabaseSync, root: string, name?: string): RegisteredPlanet {
-  const absRoot = resolve(root)
+  const absRoot = canonicalPath(root)
   if (!existsSync(absRoot) || !statSync(absRoot).isDirectory()) {
     throw new Error(`not a directory: ${absRoot}`)
   }
