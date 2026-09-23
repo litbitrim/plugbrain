@@ -10,6 +10,7 @@
  *   plugbrain swarm turn <agent> start [--claim]
  *   plugbrain swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]
  *   plugbrain swarm ack <agent> <messageId>
+ *   plugbrain swarm retire <agent> --note <reason>
  *   plugbrain swarm board [--git] [--json]
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--by <agent>]
@@ -25,7 +26,7 @@ import { AccessDenied, registerAgent } from './access.ts'
 import { enqueueTask } from './queue.ts'
 import {
   admitWork, agentsBoard, approveCommit, confirmDelivery, hostSnapshot, listQuotas, recordTurn,
-  registerSwarmAgent, registerWorkerProfile, reportQuota, sendMessage,
+  registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
 } from './coord/index.ts'
@@ -167,6 +168,12 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       else printPing(ping)
       return 0
     }
+    case 'retire': {
+      const usage = 'plugbrain swarm retire <agent> --note <reason>'
+      const profile = retireWorker(db, { agentId: need(pos[0], usage), reason: need(flag(rest, '--note'), usage) })
+      console.log(`abgemeldet: ${profile.agentId}`)
+      return 0
+    }
     case 'ack': {
       const usage = 'plugbrain swarm ack <agent> <messageId>'
       const read = confirmDelivery(db, need(pos[1], usage), need(pos[0], usage))
@@ -241,6 +248,6 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return admission.allowed ? 0 : 5
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|board|send|enqueue|approve|resources|quota|admit> …')
   }
 }
