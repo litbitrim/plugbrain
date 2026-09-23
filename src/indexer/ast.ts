@@ -130,6 +130,7 @@ function extractPython(content: string): FileExtract {
         const binding = part.trim().match(/^([A-Za-z_]\w*)(?:\s+as\s+([A-Za-z_]\w*))?$/)
         if (binding) out.imports.push({ specifier, bindings: [{ local: binding[2] ?? binding[1], imported: binding[1] }], line: lineNo })
       }
+      continue // import-list parentheses are declarations, never calls
     } else {
       const imported = line.match(/^\s*import\s+(.+)$/)
       if (imported) for (const part of imported[1].split(',')) {
@@ -139,6 +140,7 @@ function extractPython(content: string): FileExtract {
           out.imports.push({ specifier: binding[1], bindings: [{ local, imported: '*' }], line: lineNo })
         }
       }
+      if (imported) continue // import-list parentheses are declarations, never calls
     }
 
     const declaration = line.match(/^\s*(?:async\s+)?(def|class)\s+([A-Za-z_]\w*)/)
@@ -175,6 +177,7 @@ function extractRust(content: string): FileExtract {
   for (let index = 0; index < lines.length; index += 1) {
     const lineNo = index + 1
     const line = codeOnly(lines[index], /\/\/.*$/)
+    if (/^\s*#\[/.test(line)) continue // attributes/macros are not function calls
     const use = line.match(/^\s*use\s+([^;]+);/)
     if (use) {
       const path = use[1].trim()
@@ -197,11 +200,12 @@ function extractRust(content: string): FileExtract {
       out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: /^\s*pub\b/.test(line), container: type === 'fn' ? container : null })
       continue
     }
-    for (const hit of line.matchAll(/\b([A-Za-z_]\w*(?:::[A-Za-z_]\w*)?)\s*!?\s*\(/g)) {
+    for (const hit of line.matchAll(/\b([A-Za-z_]\w*(?:(?:::|\.)[A-Za-z_]\w*)?)\s*!?\s*\(/g)) {
       const full = hit[1]
       if (['if', 'while', 'match', 'loop', 'for'].includes(full)) continue
-      const pos = full.lastIndexOf('::')
-      out.refs.push({ kind: 'calls', target: pos === -1 ? full : full.slice(pos + 2), receiver: pos === -1 ? null : full.slice(0, pos), from: container, line: lineNo })
+      const separator = Math.max(full.lastIndexOf('::'), full.lastIndexOf('.'))
+      const separatorSize = full.slice(separator, separator + 2) === '::' ? 2 : 1
+      out.refs.push({ kind: 'calls', target: separator === -1 ? full : full.slice(separator + separatorSize), receiver: separator === -1 ? null : full.slice(0, separator), from: container, line: lineNo })
     }
   }
   return out
