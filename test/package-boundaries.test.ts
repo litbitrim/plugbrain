@@ -1,11 +1,14 @@
 import { strict as assert } from 'node:assert'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { indexWorkspace } from '../src/indexer/index.ts'
 import { openStore } from '../src/store/schema.ts'
 import { getImpactSlice, getPackageEntryPoints, getTestCoverage } from '../src/intel/boundaries.ts'
+import { serve, type ServerHandle } from '../src/server/api.ts'
+import { PackageResolver } from '../src/indexer/packages.ts'
+import { walk } from '../src/indexer/scan.ts'
 
 const write = (root: string, rel: string, content: string): void => {
   const path = join(root, ...rel.split('/'))
@@ -13,10 +16,11 @@ const write = (root: string, rel: string, content: string): void => {
   writeFileSync(path, content)
 }
 
-test('L2: bare workspace imports cross only declared exports, and test calls map to the exported symbol', () => {
+test('L2: bare workspace imports cross only declared exports, and test calls map to the exported symbol', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-l2-package-'))
   const root = join(dir, 'workspace')
   const db = openStore(join(dir, 'brain.db'))
+  let server: ServerHandle | null = null
   try {
     write(root, 'pnpm-workspace.yaml', 'packages:\n  - packages/*\n')
     write(root, 'packages/provider/package.json', JSON.stringify({
@@ -72,8 +76,35 @@ test('L2: bare workspace imports cross only declared exports, and test calls map
     const slice = getImpactSlice(db, { name: 'api', file: 'provider/src/index.ts' }, { direction: 'upstream', maxDepth: 2 })
     assert.equal(slice.coverage.tests.length, 1)
     assert.ok(slice.impact.totalImpacted >= 1, 'the review slice retains resolved reverse dependants')
+    server = await serve({ db, uiRoot: null }, 0)
+    const base = `http://127.0.0.1:${server.port}/api/intel`
+    const entryResponse = await fetch(`${base}/entry-points?workspace=${workspaceId}`)
+    assert.equal(entryResponse.status, 200)
+    const entryBody = await entryResponse.json() as { ok: boolean; entries: Array<{ packageName: string }> }
+    assert.equal(entryBody.ok, true)
+    assert.deepEqual(entryBody.entries.map(entry => entry.packageName), ['@plug/provider'])
+    const sliceResponse = await fetch(`${base}/impact-slice?workspace=${workspaceId}&target=api&file=provider%2Fsrc%2Findex.ts`)
+    assert.equal(sliceResponse.status, 200)
+    const sliceBody = await sliceResponse.json() as { ok: boolean; result: { coverage: { tests: unknown[] } } }
+    assert.equal(sliceBody.ok, true)
+    assert.equal(sliceBody.result.coverage.tests.length, 1)
   } finally {
+    if (server !== null) await server.close()
     db.close()
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('L2 gold corpus: PlugBoard never turns an absent package build or undeclared dependency into an edge', {
+  skip: process.env.PLUGPT_CODE_ROOT === undefined ? 'set PLUGPT_CODE_ROOT to run against the PLUG corpus' : false,
+}, () => {
+  const root = join(process.env.PLUGPT_CODE_ROOT as string, 'PlugBoard')
+  assert.equal(existsSync(root), true)
+  const known = new Set(walk(root).map(file => file.rel))
+  const resolver = new PackageResolver(root, known)
+  // `plugboard` declares @plug/design-system, but its export points at a
+  // missing dist artifact. Mapping that to source would cross the build fence.
+  assert.equal(resolver.resolve('src/renderer/appearance/AppearanceProvider.tsx', '@plug/design-system'), null)
+  // The launcher imports the same package but does not declare it at all.
+  assert.equal(resolver.resolve('packages/plug-launcher/src/App.tsx', '@plug/design-system'), null)
 })
