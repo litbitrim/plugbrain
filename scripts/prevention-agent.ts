@@ -98,7 +98,7 @@ async function context(): Promise<void> {
 
 async function feed(packId: string): Promise<void> {
   const response = await request(`/api/mission/context-pack/${encodeURIComponent(packId)}/changes`, 'GET')
-  if (response.status !== 200 || response.data?.changes?.stale !== true) throw new Error(`expected stale changes feed (${response.status})`)
+  if (response.status !== 200 || response.data?.changes?.stale !== true) throw new Error(`expected stale changes feed (${response.status} ${JSON.stringify(response.data).slice(0, 600)})`)
   emit('context.stale', { packId, stale: true, changed: response.data.changes.changed?.length ?? 0, checkoutChanged: response.data.changes.checkoutChanged === true })
 }
 
@@ -128,4 +128,4 @@ async function run(): Promise<void> {
   }
 }
 
-run().catch(error => { emit('fatal', { message: error instanceof Error ? error.message : String(error) }); process.exitCode = 1 })
+run().catch(error => { emit('fatal', { message: error instanceof Error ? error.message : String(error) }); process.exit(1) })

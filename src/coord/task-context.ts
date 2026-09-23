@@ -51,7 +51,8 @@ export interface MissionChanges {
   checkoutId: string | null
   fromGeneration: number
   toGeneration: number
-  changed: Array<{ path: string; hash: string | null; generation: number }>
+  /** Includes a sibling-worktree change to the same repository-relative file. */
+  changed: Array<{ path: string; hash: string | null; generation: number; sourceCheckoutId: string | null }>
   deleted: Array<{ path: string; generation: number; reason: string }>
   stale: boolean
   checkoutChanged: boolean
@@ -100,6 +101,34 @@ function scopePredicate(paths: string[], column = 'path'): { sql: string; params
   const clauses = paths.map(() => `(${column} = ? OR ${column} LIKE ? ESCAPE '\\')`)
   const params = paths.flatMap(path => [path, `${path.replaceAll('%', '\\%').replaceAll('_', '\\_')}/%`])
   return { sql: clauses.join(' OR '), params }
+}
+
+interface LogicalPathRow {
+  path: string
+  repoId: string | null
+  relPrefix: string | null
+}
+
+/**
+ * Worktree spellings differ, but `repo_id + path below checkout prefix` names
+ * one source file. Context from a linked worktree must therefore become stale
+ * when its sibling changes that file, even before a merge transports the bytes.
+ */
+function logicalPathKey(row: LogicalPathRow): string {
+  if (row.repoId !== null && row.relPrefix !== null && row.path.startsWith(row.relPrefix + '/')) {
+    return `repo:${row.repoId}:${row.path.slice(row.relPrefix.length + 1)}`
+  }
+  return `path:${row.path}`
+}
+
+function logicalScopeKeys(db: DatabaseSync, workspaceId: string, paths: string[]): Set<string> {
+  const lookup = db.prepare(`SELECT f.path, f.repo_id AS repoId, c.rel_prefix AS relPrefix
+    FROM files f LEFT JOIN checkouts c ON c.id = f.checkout_id
+    WHERE f.workspace_id = ? AND f.path = ?`)
+  return new Set(paths.map(path => {
+    const row = lookup.get(workspaceId, path) as LogicalPathRow | undefined
+    return row === undefined ? `path:${path}` : logicalPathKey(row)
+  }))
 }
 
 export function createTaskContextPack(db: DatabaseSync, request: TaskContextRequest): TaskContextPack {
@@ -152,9 +181,13 @@ export function changesSinceTaskContextPack(db: DatabaseSync, packId: string): M
   const checkoutSql = pack.checkout_id === null ? '' : ' AND f.checkout_id = ?'
   const checkoutParams = pack.checkout_id === null ? [] : [pack.checkout_id]
   const state = stateVector(db, pack.workspace_id, pack.checkout_id)
-  const changed = db.prepare(`SELECT f.path, f.hash, f.generation FROM files f
-      WHERE f.workspace_id = ? AND (${scope.sql})${checkoutSql} AND f.generation > ?
-      ORDER BY f.path`).all(pack.workspace_id, ...scope.params, ...checkoutParams, pack.generation) as MissionChanges['changed']
+  const scopeKeys = logicalScopeKeys(db, pack.workspace_id, scopePaths)
+  const changedRows = db.prepare(`SELECT f.path, f.hash, f.generation, f.checkout_id AS sourceCheckoutId,
+      f.repo_id AS repoId, c.rel_prefix AS relPrefix FROM files f
+      LEFT JOIN checkouts c ON c.id = f.checkout_id
+      WHERE f.workspace_id = ? AND f.generation > ? ORDER BY f.path LIMIT 5000`)
+    .all(pack.workspace_id, pack.generation) as Array<MissionChanges['changed'][number] & LogicalPathRow>
+  const changed = changedRows.filter(row => scopeKeys.has(logicalPathKey(row)))
   const tombstoneScope = scopePredicate(scopePaths)
   const deleted = db.prepare(`SELECT path, generation, reason FROM file_tombstones
       WHERE workspace_id = ? AND (${tombstoneScope.sql}) AND generation > ? ORDER BY path`)

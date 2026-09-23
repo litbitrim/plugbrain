@@ -74,7 +74,7 @@ async function command(agent: Agent, line: string, event: string): Promise<Recor
   while (Date.now() < end) {
     const found = agent.events.slice(before).find(entry => entry.event === event)
     if (found) return found
-    if (agent.child.exitCode !== null) throw new Error(`agent exited after ${line}: ${agent.errors.join(' ')}`)
+    if (agent.child.exitCode !== null) throw new Error(`agent exited after ${line}: ${JSON.stringify(agent.events.slice(before))} ${agent.errors.join(' ')}`)
     await new Promise(resolve => setTimeout(resolve, 20))
   }
   throw new Error(`timed out after ${line}: ${agent.errors.join(' ')}`)
@@ -114,6 +114,10 @@ export async function runPreventionProof(receiptPath = flag('--receipt') ?? defa
     const prevented = await command(second, 'attempt', 'write.prevented')
     const secondBefore = readFileSync(join(secondRoot, 'src/shared.ts'), 'utf8')
     await command(first, 'write', 'write.accepted')
+    // Filesystem clock granularity can otherwise make a just-written fixture
+    // indistinguishable from its initial index pass. The agent write remains the
+    // mutation under test; this only advances the observable file timestamp.
+    const changedFile = join(firstRoot, 'src/shared.ts'); const later = new Date(Date.now() + 4_000); utimesSync(changedFile, later, later)
     indexPlanetWorkspace(db, registered.workspaceId)
     const stale = await command(second, `feed ${context.packId}`, 'context.stale')
     await command(first, 'release', 'fence.released')
