@@ -915,7 +915,7 @@ export function AtlasGraph({
   }
 
   return (
-    <div id="app">
+    <div id="app" className="atlas-app">
       <aside>
         <div className="brand">
           <h1><span className="dot"></span>PlugBrain</h1>

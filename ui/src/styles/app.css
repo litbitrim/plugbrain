@@ -49,6 +49,16 @@ body{background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing
 #app.open{grid-template-columns:264px 1fr 322px}
 @media (max-width:1180px){ #app{grid-template-columns:224px 1fr 0} #app.open{grid-template-columns:224px 1fr 300px} }
 
+/* The Atlas owns five vertical regions.  Letting flex discover the available
+   height made the bottom readouts able to paint over the legend in a short
+   window. A grid reserves the legend and counters first; only the object list
+   is allowed to shrink and scroll. The class keeps City, which also uses the
+   historic #app id, completely out of this layout rule. */
+.atlas-app { height: calc(100vh - 30px) !important; margin-top: 30px; }
+.atlas-app > aside { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; overflow: hidden; }
+.atlas-app > aside .listwrap { min-height: 0; }
+.atlas-app > aside .foot { flex: none; }
+
 aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
 #stage{position:relative;overflow:hidden}
 #drawer{border-left:1px solid var(--line);background:var(--panel);overflow:hidden;min-width:0}
