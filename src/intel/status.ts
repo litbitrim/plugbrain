@@ -9,6 +9,7 @@ import { existsSync } from 'node:fs'
 import type { IntelStatusResult } from './types.ts'
 import { gitText } from '../indexer/git.ts'
 import { activePlanetFileScope } from '../planet.ts'
+import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 
 /** Return explicit, on-disk checkout selections for this status workspace. */
 function selectedCheckouts(db: DatabaseSync, planetId: string | null): Array<{
@@ -65,17 +66,28 @@ export function getIntelStatus(
   const filesCount = Number((db.prepare(
     `SELECT count(*) AS c FROM files WHERE workspace_id = ? AND ${fileScope.sql}`)
     .get(workspaceId, ...fileScope.params) as { c: number })?.c ?? 0)
-  const symbolsCount = Number((db.prepare(
-    `SELECT count(*) AS c FROM symbols s JOIN files f ON f.id = s.file_id
-      WHERE f.workspace_id = ? AND ${symbolScope.sql}`)
-    .get(workspaceId, ...symbolScope.params) as { c: number })?.c ?? 0)
-  const edgesCount = Number((db.prepare(
-    `SELECT count(*) AS c FROM edges e
-      JOIN files src ON src.id = e.src_file
-      LEFT JOIN files dst ON dst.id = e.dst_file
-      WHERE e.workspace_id = ? AND ${sourceScope.sql}
-        AND (e.dst_file IS NULL OR (${destinationScope.sql}))`)
-    .get(workspaceId, ...sourceScope.params, ...destinationScope.params) as { c: number })?.c ?? 0)
+  // Symbols and edges only the indexer writes — memoized per (workspace,
+  // generation, scope) so a poll between index runs is exact. Files stay live:
+  // a direct write moves them before any index run does.
+  const cached = cachedOnce(generationCache('intel-status-counts'),
+    JSON.stringify([workspaceId, publishedGeneration(db, workspaceId),
+      symbolScope.sql, symbolScope.params,
+      sourceScope.sql, sourceScope.params, destinationScope.sql, destinationScope.params]),
+    () => ({
+      symbols: Number((db.prepare(
+        `SELECT count(*) AS c FROM symbols s JOIN files f ON f.id = s.file_id
+          WHERE f.workspace_id = ? AND ${symbolScope.sql}`)
+        .get(workspaceId, ...symbolScope.params) as { c: number })?.c ?? 0),
+      edges: Number((db.prepare(
+        `SELECT count(*) AS c FROM edges e
+          JOIN files src ON src.id = e.src_file
+          LEFT JOIN files dst ON dst.id = e.dst_file
+          WHERE e.workspace_id = ? AND ${sourceScope.sql}
+            AND (e.dst_file IS NULL OR (${destinationScope.sql}))`)
+        .get(workspaceId, ...sourceScope.params, ...destinationScope.params) as { c: number })?.c ?? 0),
+    }))
+  const symbolsCount = cached.symbols
+  const edgesCount = cached.edges
 
   let dirtyCheckouts = 0
   let totalDirtyFiles = 0

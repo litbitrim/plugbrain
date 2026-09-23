@@ -25,6 +25,43 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 
+/** Simple generation-scoped cache for expensive per-generation sums. */
+interface CacheEntry<T> {
+  generation: number
+  value: T
+}
+
+const districtTotalsCache = new Map<string, CacheEntry<CityDistrict[]>>()
+const symbolCountsCache = new Map<string, CacheEntry<Map<number, number>>>()
+
+function cacheKey(workspaceId: string, generation: number): string {
+  return `${workspaceId}:${generation}`
+}
+
+function getCached<T>(cache: Map<string, CacheEntry<T>>, key: string, generation: number): T | null {
+  const entry = cache.get(key)
+  if (entry && entry.generation === generation) return entry.value
+  return null
+}
+
+function setCached<T>(cache: Map<string, CacheEntry<T>>, key: string, generation: number, value: T): void {
+  cache.set(key, { generation, value })
+}
+
+/** Invalidate cache entries for a workspace at or after a generation. */
+export function invalidateCityCache(workspaceId: string, fromGeneration: number): void {
+  for (const [key, entry] of districtTotalsCache.entries()) {
+    if (key.startsWith(`${workspaceId}:`) && entry.generation >= fromGeneration) {
+      districtTotalsCache.delete(key)
+    }
+  }
+  for (const [key, entry] of symbolCountsCache.entries()) {
+    if (key.startsWith(`${workspaceId}:`) && entry.generation >= fromGeneration) {
+      symbolCountsCache.delete(key)
+    }
+  }
+}
+
 /** How tall a building is. The renderer may switch metric; the data is honest. */
 export type HeightMetric = 'symbols' | 'loc'
 
@@ -127,6 +164,7 @@ function buildingsFrom(
   workspaceId: string,
   where: string,
   params: readonly unknown[],
+  generation?: number,
 ): CityBuilding[] {
   const files = db.prepare(
     `SELECT id, path, ext, lang, loc, generation FROM files
@@ -135,13 +173,34 @@ function buildingsFrom(
   if (files.length === 0) return []
 
   const ids = files.map(row => row.id)
-  const counts = new Map<number, number>()
-  for (const row of db.prepare(
-    `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
-      WHERE file_id IN (${ids.map(() => '?').join(',')}) GROUP BY file_id`)
-    .all(...ids) as unknown as Array<{ fileId: number; n: number }>) {
-    counts.set(row.fileId, Number(row.n))
+  
+  // Use cached symbol counts if we have a generation and cache hit
+  let counts: Map<number, number>
+  if (generation !== undefined) {
+    const cacheKeyStr = cacheKey(workspaceId, generation)
+    const cached = getCached(symbolCountsCache, cacheKeyStr, generation)
+    if (cached) {
+      counts = cached
+    } else {
+      counts = new Map<number, number>()
+      for (const row of db.prepare(
+        `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
+          WHERE file_id IN (${ids.map(() => '?').join(',')}) GROUP BY file_id`)
+        .all(...ids) as unknown as Array<{ fileId: number; n: number }>) {
+        counts.set(row.fileId, Number(row.n))
+      }
+      setCached(symbolCountsCache, cacheKeyStr, generation, counts)
+    }
+  } else {
+    counts = new Map<number, number>()
+    for (const row of db.prepare(
+      `SELECT file_id AS fileId, COUNT(*) AS n FROM symbols
+        WHERE file_id IN (${ids.map(() => '?').join(',')}) GROUP BY file_id`)
+      .all(...ids) as unknown as Array<{ fileId: number; n: number }>) {
+      counts.set(row.fileId, Number(row.n))
+    }
   }
+  
   const owners = new Map<string, { agentId: string | null; at: string }>()
   for (const row of db.prepare(
     `SELECT path, agent_id AS agentId, at FROM path_owner WHERE workspace_id = ?`)
@@ -204,26 +263,36 @@ export function citySnapshot(
   const state = db.prepare(
     `SELECT generation, git_head FROM workspace_index_state WHERE workspace_id = ?`)
     .get(workspaceId) as { generation: number; git_head: string | null } | undefined
+  const generation = state?.generation ?? 0
 
-  const buildings = buildingsFrom(db, workspaceId, '', [])
-  const byDistrict = new Map<string, CityDistrict>()
-  for (const building of buildings) {
-    let district = byDistrict.get(building.district)
-    if (district === undefined) {
-      district = { id: `district:${building.district}`, name: building.district, buildings: 0, symbols: 0, loc: 0 }
-      byDistrict.set(building.district, district)
+  // Use cached buildings with symbol counts for this generation
+  const buildings = buildingsFrom(db, workspaceId, '', [], generation)
+  
+  // Check cache for district totals
+  const cacheKeyStr = cacheKey(workspaceId, generation)
+  let districts = getCached(districtTotalsCache, cacheKeyStr, generation)
+  if (!districts) {
+    const byDistrict = new Map<string, CityDistrict>()
+    for (const building of buildings) {
+      let district = byDistrict.get(building.district)
+      if (district === undefined) {
+        district = { id: `district:${building.district}`, name: building.district, buildings: 0, symbols: 0, loc: 0 }
+        byDistrict.set(building.district, district)
+      }
+      district.buildings += 1
+      district.symbols += building.symbolCount
+      district.loc += building.loc
     }
-    district.buildings += 1
-    district.symbols += building.symbolCount
-    district.loc += building.loc
+    districts = [...byDistrict.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    setCached(districtTotalsCache, cacheKeyStr, generation, districts)
   }
-  const districts = [...byDistrict.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+  
   const roads = roadsFor(db, workspaceId)
 
   return {
     schema: 1,
     workspaceId,
-    generation: state?.generation ?? 0,
+    generation,
     gitHead: state?.git_head ?? null,
     heightMetric: options.heightMetric ?? 'symbols',
     districts,
@@ -253,7 +322,8 @@ export function cityDelta(db: DatabaseSync, workspaceId: string, fromGeneration:
     .get(workspaceId) as { generation: number } | undefined
   const toGeneration = state?.generation ?? 0
 
-  const changed = buildingsFrom(db, workspaceId, ' AND generation > ?', [fromGeneration])
+  // Pass toGeneration so buildingsFrom can use cached symbol counts
+  const changed = buildingsFrom(db, workspaceId, ' AND generation > ?', [fromGeneration], toGeneration)
   const total = Number((db.prepare(
     'SELECT COUNT(*) AS n FROM files WHERE workspace_id = ?')
     .get(workspaceId) as { n: number }).n)

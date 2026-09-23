@@ -33,6 +33,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
 import { indexWorkspace, type IndexProgress, type IndexResult } from './indexer/index.ts'
 import type { IndexRoot } from './indexer/scan.ts'
+import { cachedOnce, generationCache, publishedGeneration } from './store/count-cache.ts'
 
 /**
  * The workspace id of a folder. Deliberately the SAME derivation the CLI and
@@ -714,11 +715,20 @@ function buildPlanetView(
       WHERE workspace_id = ? AND checkout_id IS NOT NULL GROUP BY checkout_id`).all(workspaceId) as
     Array<{ id: string; n: number }>) fileCounts.set(row.id, Number(row.n))
 
-  const symbolCounts = new Map<string, number>()
-  for (const row of db.prepare(
-    `SELECT f.checkout_id AS id, COUNT(*) AS n FROM symbols s JOIN files f ON f.id = s.file_id
-      WHERE f.workspace_id = ? AND f.checkout_id IS NOT NULL GROUP BY f.checkout_id`).all(workspaceId) as
-    Array<{ id: string; n: number }>) symbolCounts.set(row.id, Number(row.n))
+  // Symbols only the indexer writes — the per-checkout GROUP BY over the
+  // whole workspace is memoized per generation, so a poll between index runs
+  // does not rescan the symbol join. Files stay live: a direct write moves
+  // them before any index run does.
+  const symbolCounts = cachedOnce(generationCache('planet-symbol-counts'),
+    JSON.stringify([workspaceId, publishedGeneration(db, workspaceId)]),
+    () => {
+      const map = new Map<string, number>()
+      for (const row of db.prepare(
+        `SELECT f.checkout_id AS id, COUNT(*) AS n FROM symbols s JOIN files f ON f.id = s.file_id
+          WHERE f.workspace_id = ? AND f.checkout_id IS NOT NULL GROUP BY f.checkout_id`).all(workspaceId) as
+        Array<{ id: string; n: number }>) map.set(row.id, Number(row.n))
+      return map
+    })
 
   const checkouts: CheckoutView[] = (db.prepare(
     `SELECT c.id, c.repo_id AS repoId, r.name AS repoName, c.name, c.path,

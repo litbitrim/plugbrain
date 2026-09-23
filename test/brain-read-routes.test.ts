@@ -216,14 +216,17 @@ test('the Board read routes publish the projection they promise', async () => {
     assert.equal(kindFiltered.hits.every(hit => hit.kind === 'class'), true)
     assert.equal((await get(fx, '/api/search?q=')).status, 400, 'an empty query is refused, not answered')
 
-    // ── /api/changes: what a generation wrote, and what is honest about it ─
+    // ── /api/changes: what a generation wrote, with added vs modified split ─
     const changes = await (await get(fx, '/api/changes?from=0')).json() as {
       ok: boolean; indexState: string
       changes: {
         fromGeneration: number; toGeneration: number
         changed: Array<{ fileId: number; path: string; generation: number; loc: number }>
+        added: Array<{ fileId: number; path: string; generation: number; loc: number }>
+        modified: Array<{ fileId: number; path: string; generation: number; loc: number }>
         deleted: string[]; renamed: Array<{ from: string; to: string | null; resolved: boolean }>
-        unavailable: { added: null; modified: null; reason: string }
+        tombstones: Array<{ path: string; reason: string; generation: number; deletedAt: string }>
+        unavailable: null
       }
     }
     assert.equal(changes.ok, true)
@@ -232,11 +235,13 @@ test('the Board read routes publish the projection they promise', async () => {
     assert.equal(changes.changes.toGeneration, 1)
     assert.deepEqual(changes.changes.changed.map(row => row.path).sort(),
       ['README.md', 'src/app.ts', 'src/lib.ts', 'src/nested/deep.ts'])
+    // All files are newly added in the first generation
+    assert.deepEqual(changes.changes.added.map(row => row.path).sort(),
+      ['README.md', 'src/app.ts', 'src/lib.ts', 'src/nested/deep.ts'])
+    assert.deepEqual(changes.changes.modified, [])
     assert.deepEqual(changes.changes.deleted, [])
     assert.deepEqual(changes.changes.renamed, [])
-    assert.equal(changes.changes.unavailable.added, null, 'an unprovable split is null, not an empty list')
-    assert.equal(changes.changes.unavailable.modified, null)
-    assert.match(changes.changes.unavailable.reason, /updated in place/)
+    assert.equal(changes.changes.unavailable, null)
 
     // The delta between the FIRST generation and the CURRENT one is empty: this
     // fixture indexed once.
