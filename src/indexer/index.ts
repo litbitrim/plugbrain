@@ -33,6 +33,7 @@ import { extname, resolve as resolvePath } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { readGit, storeGit } from './git.ts'
 import { resolveMarkdownTarget } from './markdown.ts'
+import { PackageResolver } from './packages.ts'
 import {
   classify, everyNth, hashOf, insideNoteRoot, PARSE_VERSION, parseFile, resolveImport, walk, walkRoots,
   type IndexResult, type IndexRoot, type ParsedFile, type ScanProgress, type StoredFile,
@@ -950,6 +951,8 @@ function resolveEdges(
   const relById = new Map(fileRows.map(row => [row.id, row.path]))
   const idByRel = new Map(fileRows.map(row => [row.path, row.id]))
   const known = new Set(idByRel.keys())
+  const workspace = db.prepare('SELECT root FROM workspaces WHERE id = ?').get(workspaceId) as { root: string } | undefined
+  const packages = workspace === undefined ? null : new PackageResolver(workspace.root, known)
 
   // Markdown link resolution needs the document basename map.
   const byBasename = new Map<string, string[]>()
@@ -998,7 +1001,7 @@ function resolveEdges(
   const targetOf = (fileId: number, specifier: string): number | null => {
     const fromRel = relById.get(fileId)
     if (fromRel === undefined) return null
-    const targetRel = resolveImport(fromRel, specifier, known)
+    const targetRel = resolveImport(fromRel, specifier, known) ?? packages?.resolve(fromRel, specifier) ?? null
     return targetRel === null ? null : idByRel.get(targetRel) ?? null
   }
 
