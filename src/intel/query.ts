@@ -17,6 +17,58 @@ export interface ConceptSearchOptions {
   workspaceId?: string
 }
 
+/** The words of an identifier or path: camelCase, PascalCase, snake_case, kebab-case and folders. */
+export function identifierWords(text: string): string[] {
+  return text
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+}
+
+const DEFINITION_KINDS = new Set(['function', 'class', 'interface', 'method', 'type_alias', 'enum'])
+const TEST_PATH = /(^|\/)(tests?|__tests__|spec|fixtures?)\/|\.(test|spec)\.[a-z]+$|(^|\/)test_[^/]*$/
+
+/**
+ * Rank candidates the way a reader weighs a hit: a query term that IS a word of
+ * the name beats one that starts a word, which beats one merely contained in
+ * it. Covering every term, being a definition, being exported and living in
+ * source rather than a test all count; an import binding never outranks the
+ * thing it imports.
+ */
+function rankByWords<T extends { name: string; kind: string; file: string; exported: number; container: string | null }>(
+  rows: T[], query: string, terms: string[],
+): T[] {
+  const whole = query.toLowerCase()
+  const scored = rows.map((row, order) => {
+    const name = row.name.toLowerCase()
+    const nameWords = identifierWords(row.name)
+    const containerWords = row.container === null ? [] : identifierWords(row.container)
+    const pathWords = identifierWords(row.file)
+    let score = name === whole ? 100 : name.startsWith(whole) ? 60 : 0
+    let covered = 0
+    for (const term of terms) {
+      const inName = nameWords.includes(term) ? 12 : nameWords.some(word => word.startsWith(term)) ? 7
+        : name.includes(term) ? 2 : 0
+      const inContainer = containerWords.includes(term) ? 5 : containerWords.some(word => word.startsWith(term)) ? 3 : 0
+      const inPath = pathWords.includes(term) ? 4 : pathWords.some(word => word.startsWith(term)) ? 2 : 0
+      if (inName >= 7 || inContainer >= 3 || inPath >= 2) covered += 1
+      score += inName + inContainer + inPath
+    }
+    if (terms.length > 1 && covered === terms.length) score += 10
+    if (DEFINITION_KINDS.has(row.kind)) score += 3
+    if (row.exported) score += 1
+    if (row.kind === 'import') score -= 50
+    // A local constant named like the query is almost never what was asked for.
+    if (!row.exported && (row.kind === 'constant' || row.kind === 'variable' || row.kind === 'property')) score -= 3
+    if (TEST_PATH.test(row.file.toLowerCase())) score -= 4
+    return { row, score, order }
+  })
+  scored.sort((a, b) => b.score - a.score || a.row.name.length - b.row.name.length || a.order - b.order)
+  return scored.map(item => item.row)
+}
+
 /**
  * Searches the knowledge graph for symbols, notes, and execution flows matching a concept.
  */
@@ -41,31 +93,51 @@ export function conceptSearch(
   }
 
   // 1. Search symbols
-  const terms = cleanQuery.split(/\s+/).filter(Boolean)
+  //
+  // A concept is several words ("brain core supervisor start"), and matching
+  // the whole phrase as one substring found no symbol at all: no identifier
+  // contains spaces. Each term is scored on its own instead, the way a reader
+  // expects: a term inside the NAME counts most (ensureBrainCore holds "brain"
+  // and "core"), inside the container less, inside the path least. The whole
+  // query as the exact name or a name prefix still wins outright, so a query
+  // that IS an identifier ranks exactly as before. Import bindings are the
+  // noise of every module and never outrank a definition.
+  const terms = [...new Set(cleanQuery.toLowerCase().split(/[\s,;]+/).filter(term => term.length > 1))]
+    .slice(0, 8)
   const pattern = `%${cleanQuery.replace(/\\/g, '/')}%`
+  const like = (term: string): string => `%${term.replace(/[\\%_]/g, '')}%`
+  const termScore = terms.map(() =>
+    `(CASE WHEN LOWER(s.name) LIKE ? THEN 10 ELSE 0 END
+      + CASE WHEN LOWER(COALESCE(s.container, '')) LIKE ? THEN 4 ELSE 0 END
+      + CASE WHEN LOWER(f.path) LIKE ? THEN 2 ELSE 0 END)`).join(' + ') || '0'
+  const termMatch = terms.map(() => '(LOWER(s.name) LIKE ? OR LOWER(f.path) LIKE ?)').join(' OR ') || '0'
 
   let symbolSql = `
     SELECT s.id, s.name, s.kind, f.path as file, s.line, s.end_line as endLine,
            s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId,
-           CASE
-             WHEN LOWER(s.name) = LOWER(?) THEN 100
-             WHEN LOWER(s.name) LIKE LOWER(?) || '%' THEN 80
-             WHEN LOWER(s.name) LIKE LOWER(?) THEN 60
-             WHEN LOWER(f.path) LIKE LOWER(?) THEN 40
-             ELSE 20
-           END as relevance
+           (CASE
+              WHEN LOWER(s.name) = LOWER(?) THEN 100
+              WHEN LOWER(s.name) LIKE LOWER(?) || '%' THEN 80
+              WHEN LOWER(s.name) LIKE LOWER(?) THEN 60
+              ELSE 0
+            END
+            + ${termScore}
+            + CASE WHEN s.kind IN ('function', 'class', 'interface', 'method', 'type_alias', 'enum') THEN 3 ELSE 0 END
+            + CASE WHEN s.exported = 1 THEN 1 ELSE 0 END
+            - CASE WHEN s.kind = 'import' THEN 50 ELSE 0 END) as relevance
       FROM symbols s
       JOIN files f ON s.file_id = f.id
-     WHERE (s.name LIKE ? OR s.container LIKE ? OR f.path LIKE ?)
+     WHERE (s.name LIKE ? OR s.container LIKE ? OR f.path LIKE ? OR ${termMatch})
   `
   const params: unknown[] = [
     cleanQuery,
     cleanQuery,
     pattern,
+    ...terms.flatMap(term => [like(term), like(term), like(term)]),
     pattern,
     pattern,
     pattern,
-    pattern,
+    ...terms.flatMap(term => [like(term), like(term)]),
   ]
 
   if (options?.repoId) {
@@ -81,8 +153,11 @@ export function conceptSearch(
     params.push(options.checkoutId)
   }
 
-  symbolSql += ' ORDER BY relevance DESC, s.id ASC LIMIT ?'
-  params.push(limit)
+  // SQL can only score substrings, and a substring is a weak signal: "ping"
+  // sits inside "stripping", "turn" inside "returns". It fetches a generous
+  // candidate set; the ranking that decides is done below on identifier words.
+  symbolSql += ' ORDER BY relevance DESC, length(s.name) ASC, s.id ASC LIMIT ?'
+  params.push(Math.max(200, limit * 10))
 
   let rawSymbols: Array<{
     id: number
@@ -112,7 +187,8 @@ export function conceptSearch(
     rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []), limit) as typeof rawSymbols
   }
 
-  const symbols: IntelSymbol[] = rawSymbols.map(s =>
+  const ranked = rankByWords(rawSymbols, cleanQuery, terms).slice(0, limit)
+  const symbols: IntelSymbol[] = ranked.map(s =>
     annotateSymbolVendor({
       id: s.id,
       name: s.name,

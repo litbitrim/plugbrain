@@ -562,8 +562,21 @@ function planetLog(only?: string, limit = 50): void {
   }
 }
 
+/** The free text of a command: every argument that is neither a flag nor a flag's value. */
+function textArgs(args: string[], valued: string[]): string[] {
+  const out: string[] = []
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!
+    if (valued.includes(arg)) { index += 1; continue }
+    if (arg.startsWith('--')) continue
+    out.push(arg)
+  }
+  return out
+}
+
 function intelQuery(args: string[]): void {
-  const query = args.filter(a => !a.startsWith('--')).join(' ')
+  // `query brain core --limit 6` used to search for "brain core 6".
+  const query = textArgs(args, ['--repo', '--limit', '--workspace']).join(' ')
   if (!query) {
     console.error('usage: plugbrain query <search_query> [--repo <name>] [--limit <n>] [--json]')
     process.exit(1)
