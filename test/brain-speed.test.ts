@@ -89,7 +89,8 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
       'EXPLAIN QUERY PLAN SELECT event_id FROM trace_events WHERE workspace_id = ? ORDER BY occurred_at, COALESCE(source_sequence, 0), event_id',
     ).all(WS) as Array<{ detail: string }>
     assert.match(filePlan.map(row => row.detail).join('\n'), /idx_files_ws_path/)
-    assert.match(meshPlan.map(row => row.detail).join('\n'), /idx_trace_ws/)
+    assert.match(meshPlan.map(row => row.detail).join('\n'), /idx_trace_ws_order/)
+    assert.doesNotMatch(meshPlan.map(row => row.detail).join('\n'), /TEMP B-TREE/)
 
     server = await serve({ db, uiRoot: null }, 0)
     const base = `http://127.0.0.1:${server.port}`
@@ -133,6 +134,8 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
     assert.ok(refreshed.mesh.page.totalNodes > mesh.mesh.page.totalNodes,
       'a committed trace event invalidates the cached Mesh projection')
     t.diagnostic(`B-SPEED p95 ms (5 local requests, 50k files): ${JSON.stringify(p95ByRoute)}`)
+    t.diagnostic(`B-SPEED files plan: ${filePlan.map(row => row.detail).join(' | ')}`)
+    t.diagnostic(`B-SPEED mesh plan: ${meshPlan.map(row => row.detail).join(' | ')}`)
   } finally {
     if (server !== null) await server.close()
     db.close()
