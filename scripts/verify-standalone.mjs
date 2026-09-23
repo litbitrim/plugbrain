@@ -41,6 +41,9 @@ for (let i = 0; i < 12; i += 1) {
   writeFileSync(join(workspaceRoot, 'src', `mod${i}.ts`),
     `export const v${i} = ${i}\nexport function f${i}(x: number): number { return x + ${i} }\n`, 'utf8')
 }
+mkdirSync(join(workspaceRoot, 'Notizen'), { recursive: true })
+writeFileSync(join(workspaceRoot, 'Notizen', 'Alpha.md'), '# Alpha\n\nStandalone Wissenssuche.\n\n[[Entscheidung]]\n', 'utf8')
+writeFileSync(join(workspaceRoot, 'Notizen', 'Entscheidung.md'), '---\ntyp: entscheidung\nstand: entschieden\n---\n\n# Entscheidung\n\n[[Alpha]]\n', 'utf8')
 const AUTH_KEY = 'portable-verify-token'
 
 async function reservePort() {
@@ -124,8 +127,8 @@ try {
   }
   if (run === null) throw new Error('the portable index run never reached an end')
   if (run.ok !== true) throw new Error(`the portable index run failed: ${run.error ?? 'unknown reason'}`)
-  if (run.result === null || run.result.files !== 12) {
-    throw new Error(`the portable index run reported ${JSON.stringify(run.result)} instead of 12 files`)
+  if (run.result === null || run.result.files !== 14) {
+    throw new Error(`the portable index run reported ${JSON.stringify(run.result)} instead of 14 files`)
   }
 
   // The core requirement: the daemon answers WHILE its own packed worker runs.
@@ -136,11 +139,28 @@ try {
 
   const files = await (await fetch(
     `http://127.0.0.1:${port}/api/files?workspace=${encodeURIComponent(workspace.id)}`)).json()
-  if (files.ok !== true || files.files?.total !== 12) {
+  if (files.ok !== true || files.files?.total !== 14) {
     throw new Error(`portable /api/files did not list the indexed fixture: ${JSON.stringify(files).slice(0, 300)}`)
   }
 
-  console.log(`portable PlugBrain runtime + UI + packaged index worker healthy on 127.0.0.1:${port}`)
+  // The packed server must support real knowledge work, not merely serve a
+  // graph shell: attach a local actor, find, read, save, then reject a stale
+  // second save through the same HTTP route the UI uses.
+  const agentId = 'portable-knowledge'
+  const attached = await post('/api/agent/attach', { workspace: workspace.id, agentId, name: 'Portable verifier' })
+  if (attached.status !== 200) throw new Error(`portable knowledge actor attach answered ${attached.status}`)
+  const searched = await (await fetch(`http://127.0.0.1:${port}/api/notes/search?workspace=${encodeURIComponent(workspace.id)}&q=Standalone`)).json()
+  if (searched.ok !== true || searched.total !== 1) throw new Error(`portable note search failed: ${JSON.stringify(searched)}`)
+  const alpha = await (await fetch(`http://127.0.0.1:${port}/api/notes/read?workspace=${encodeURIComponent(workspace.id)}&agentId=${agentId}&path=Notizen%2FAlpha.md`)).json()
+  if (alpha.ok !== true || alpha.note?.links?.[0]?.path !== 'Notizen/Entscheidung.md') throw new Error('portable wiki-link read failed')
+  const saved = await post('/api/notes/write', { workspace: workspace.id, agentId, path: 'Notizen/Alpha.md', expectedHash: alpha.note.hash, content: `${alpha.note.content}\nGespeichert im Paket.\n` })
+  if (saved.status !== 200) throw new Error(`portable note save answered ${saved.status}`)
+  const stale = await post('/api/notes/write', { workspace: workspace.id, agentId, path: 'Notizen/Alpha.md', expectedHash: alpha.note.hash, content: 'stale' })
+  if (stale.status !== 409) throw new Error(`portable note conflict answered ${stale.status}`)
+  const noteGraph = await (await fetch(`http://127.0.0.1:${port}/api/notes/graph?workspace=${encodeURIComponent(workspace.id)}`)).json()
+  if (noteGraph.ok !== true || noteGraph.graph?.nodes?.length !== 2) throw new Error(`portable knowledge graph failed: ${JSON.stringify(noteGraph)}`)
+
+  console.log(`portable PlugBrain runtime + UI + packaged index worker + knowledge flow healthy on 127.0.0.1:${port}`)
 } finally {
   if (child.exitCode === null && !child.killed) child.kill()
   if (child.exitCode === null) await once(child, 'exit')
