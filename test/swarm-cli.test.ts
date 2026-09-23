@@ -83,3 +83,21 @@ test('quotas, resources and admission are available to every worker', () => {
     assert.match(bad.err, /looks like a credential/)
   } finally { b.cleanup() }
 })
+
+test('workers claim the paths they write, and a second writer is refused until release', () => {
+  const b = brain()
+  try {
+    for (const id of ['o2-lanes', 'o4-mission']) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    }
+    const first = b.run('swarm', 'claim', 'o2-lanes', 'packages/plug/swarm/src/client-lane-executor.ts', '--task', 'dog-run-2', '--workspace', b.ws)
+    assert.equal(first.code, 0, first.err)
+    const second = b.run('swarm', 'claim', 'o4-mission', 'packages/plug/swarm/src/client-lane-executor.ts', '--workspace', b.ws)
+    assert.equal(second.code, 3)
+    assert.match(second.err, /gehört o2-lanes \(dog-run-2\)/)
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as { agents: Array<{ id: string; leases: Array<{ paths: string[] }> }> }
+    assert.deepEqual(board.agents.find(agent => agent.id === 'o2-lanes')?.leases.map(lease => lease.paths).flat(), ['packages/plug/swarm/src/client-lane-executor.ts'])
+    assert.match(b.run('swarm', 'release', 'o2-lanes', '--task', 'dog-run-2', '--workspace', b.ws).out, /freigegeben: 1/)
+    assert.equal(b.run('swarm', 'claim', 'o4-mission', 'packages/plug/swarm/src/client-lane-executor.ts', '--workspace', b.ws).code, 0)
+  } finally { b.cleanup() }
+})
