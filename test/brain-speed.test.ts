@@ -32,7 +32,7 @@ const percentile = (values: number[], p: number): number => {
   return sorted[index] ?? 0
 }
 
-test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget at 50k files', async (t) => {
+test('B-SPEED/B-SPEED-2: core read routes stay inside the 1s budget at 50k files', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-speed-'))
   const db = openStore(join(dir, 'brain.db'))
   let server: ServerHandle | null = null
@@ -101,6 +101,13 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
       status: () => fetch(`${base}/api/intel/status?workspace=${WS}`),
       files: () => fetch(`${base}/api/files?workspace=${WS}&limit=200&offset=1000`),
       mesh: () => fetch(`${base}/api/mesh?workspace=${WS}`),
+      // B-SPEED-2 deliberately reuses this direct 50k SQLite fixture.  These
+      // are read routes the Planet UI uses; limiting graph/atlas output keeps
+      // the budget about route work, rather than serialising every file.
+      atlas: () => fetch(`${base}/api/atlas/snapshot?workspace=${WS}&limit=200&symbols=0`),
+      galaxy: () => fetch(`${base}/api/galaxy`),
+      graph: () => fetch(`${base}/api/graph?workspace=${WS}&limit=200`),
+      planet: () => fetch(`${base}/api/planet?workspace=${WS}`),
     }
     const p95ByRoute: Record<string, number> = {}
     for (const [route, read] of Object.entries(reads)) {
@@ -119,6 +126,27 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
     assert.equal(mesh.mesh.page.nodesTruncated, true)
     assert.equal(mesh.mesh.page.returnedUnprovenWorkers, 500)
     assert.ok(mesh.mesh.page.totalUnprovenWorkers > mesh.mesh.page.returnedUnprovenWorkers)
+    const atlas = await (await reads.atlas()).json() as {
+      coverage: { totalFiles: number; shownFiles: number; truncated: boolean }
+    }
+    assert.equal(atlas.coverage.totalFiles, FILES)
+    assert.equal(atlas.coverage.shownFiles, 200)
+    assert.equal(atlas.coverage.truncated, true)
+    const galaxy = await (await reads.galaxy()).json() as {
+      planets: Array<{ id: string; files: number }>
+    }
+    assert.deepEqual(galaxy.planets.map(planet => [planet.id, planet.files]), [[WS, FILES]])
+    const graph = await (await reads.graph()).json() as {
+      nodes: unknown[]; truncated: boolean
+    }
+    assert.equal(graph.nodes.length, 200)
+    assert.equal(graph.truncated, true)
+    const planet = await (await reads.planet()).json() as {
+      planet: { totals: { files: number }; notes: { files: number; roots: Array<{ files: number }> } }
+    }
+    assert.equal(planet.planet.totals.files, FILES)
+    assert.equal(planet.planet.notes.files, FILES)
+    assert.deepEqual(planet.planet.notes.roots, [{ relPath: '', kind: 'workspace', files: FILES }])
     ingestTraceEvents(db, [{
       schema: 1,
       eventId: 'speed-after-cache',
@@ -138,7 +166,7 @@ test('B-SPEED: status, paginated files and Mesh stay inside the 1s Core budget a
     }
     assert.ok(refreshed.mesh.page.totalNodes > mesh.mesh.page.totalNodes,
       'a committed trace event invalidates the cached Mesh projection')
-    t.diagnostic(`B-SPEED p95 ms (5 local requests, 50k files): ${JSON.stringify(p95ByRoute)}`)
+    t.diagnostic(`B-SPEED/B-SPEED-2 p95 ms (5 local requests, 50k files): ${JSON.stringify(p95ByRoute)}`)
     t.diagnostic(`B-SPEED files plan: ${filePlan.map(row => row.detail).join(' | ')}`)
     t.diagnostic(`B-SPEED mesh plan: ${meshPlan.map(row => row.detail).join(' | ')}`)
   } finally {

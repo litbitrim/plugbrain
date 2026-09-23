@@ -472,18 +472,6 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   const sourceScope = liveFileScope(db, workspaceId, 'src.checkout_id', 'src.path')
   const destinationScope = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
 
-  const all = db.prepare(
-    `SELECT f.id, f.path, f.lang, f.loc, f.ext,
-            o.agent_id AS agentId, a.color AS agentColor, a.name AS agentName, o.at AS ownedAt
-       FROM files f
-       LEFT JOIN file_owner o ON o.file_id = f.id
-       LEFT JOIN agents a ON a.id = o.agent_id
-      WHERE f.workspace_id = ? AND ${filesScope.sql}`
-  ).all(workspaceId, ...filesScope.params) as {
-    id: number; path: string; lang: string | null; loc: number; ext: string
-    agentId: string | null; agentColor: string | null; agentName: string | null; ownedAt: string | null
-  }[]
-
   // Selection is assembled from indexed queries and ranked in JS. Doing this
   // with correlated subqueries in ORDER BY re-scans the edge set once per file
   // and hangs the request outright on a real Planet.
@@ -527,16 +515,42 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
       return map
     })
 
+  type GraphFile = {
+    id: number; path: string; lang: string | null; loc: number; ext: string
+    agentId: string | null; agentColor: string | null; agentName: string | null; ownedAt: string | null
+  }
+  const selectFiles = `SELECT f.id, f.path, f.lang, f.loc, f.ext,
+            o.agent_id AS agentId, a.color AS agentColor, a.name AS agentName, o.at AS ownedAt
+       FROM files f
+       LEFT JOIN file_owner o ON o.file_id = f.id
+       LEFT JOIN agents a ON a.id = o.agent_id
+      WHERE f.workspace_id = ? AND ${filesScope.sql}`
+  // A knowledge-only workspace with no activity, ownership, or imports has a
+  // single honest graph order: path.  Avoid materialising and sorting every
+  // file just to take a 200-node viewport; this is common for a newly opened
+  // large vault and keeps Atlas responsive before the first agent acts.
+  const hasOwners = db.prepare(
+    `SELECT 1 FROM file_owner o JOIN files f ON f.id = o.file_id
+      WHERE f.workspace_id = ? AND ${filesScope.sql} LIMIT 1`,
+  ).get(workspaceId, ...filesScope.params) !== undefined
+  const hasRankSignals = hasOwners || touched.size > 0 || degree.size > 0
+  const total = hasRankSignals ? 0 : Number((db.prepare(
+    `SELECT COUNT(*) AS n FROM files f WHERE f.workspace_id = ? AND ${filesScope.sql}`,
+  ).get(workspaceId, ...filesScope.params) as { n: number }).n)
+  const all = (hasRankSignals
+    ? db.prepare(selectFiles).all(workspaceId, ...filesScope.params)
+    : db.prepare(`${selectFiles} ORDER BY f.path LIMIT ?`).all(workspaceId, ...filesScope.params, limit)) as GraphFile[]
+
   // Rank: agent-owned first, then anything an agent touched, then real code by
   // how connected it is. A slice full of untouched markdown has no edges and
   // teaches nobody anything.
-  const rank = (f: (typeof all)[number]): number =>
+  const rank = (f: GraphFile): number =>
     (f.agentId ? 0 : touched.has(f.path) ? 1 : f.lang ? 2 : 3)
-  const files = all
-    .sort((x, y) => rank(x) - rank(y)
+  const files = hasRankSignals
+    ? all.sort((x, y) => rank(x) - rank(y)
       || (degree.get(y.id) ?? 0) - (degree.get(x.id) ?? 0)
-      || x.path.localeCompare(y.path))
-    .slice(0, limit)
+      || x.path.localeCompare(y.path)).slice(0, limit)
+    : all
 
   // Readers are a track too: the contract asks to see everywhere an agent has
   // been, not only what it changed.
@@ -576,7 +590,7 @@ function graphOf(db: DatabaseSync, workspaceId: string, limit: number, until?: s
   }
 
   return {
-    truncated: all.length > files.length,
+    truncated: hasRankSignals ? all.length > files.length : total > files.length,
     nodes: files.map(f => ({
       id: `file:${f.id}`,
       type: 'file',
