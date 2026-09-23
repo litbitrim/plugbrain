@@ -240,6 +240,40 @@ export const MCP_TOOLS = [
       required: ['agentId'],
     },
   },
+  {
+    name: 'swarm_turn',
+    description: 'Check in at a turn boundary. Returns unread messages, the next or claimed task and host admission. '
+      + 'Call with phase=start when a turn begins and phase=end with a state when it ends.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: { type: 'string', description: 'Registered worker ID' },
+        phase: { type: 'string', enum: ['start', 'end'], description: 'Turn boundary' },
+        state: { type: 'string', enum: ['needs-task', 'awaiting-commit', 'blocked', 'paused'], description: 'Why the turn ended' },
+        summary: { type: 'string', description: 'What the turn did, in one or two lines' },
+        claimNext: { type: 'boolean', description: 'Claim the next task this worker may take' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['agentId', 'phase'],
+    },
+  },
+  {
+    name: 'swarm_board',
+    description: 'The fleet board: every worker with surface, account, turn state, unread messages, task, leases, '
+      + 'worktrees and attention flags, plus host resources',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+        git: { type: 'boolean', description: 'Read branch, HEAD and uncommitted files of every registered worktree' },
+      },
+    },
+  },
+  {
+    name: 'swarm_resources',
+    description: 'Host disk, RAM and CPU, reported account quotas, and whether there is room for test, build, install or worktree work',
+    inputSchema: { type: 'object', properties: {} },
+  },
 ] as const
 
 interface JsonRpcRequest {
@@ -569,6 +603,36 @@ export class McpServer {
           const taskId = args.taskId ? String(args.taskId) : undefined
           const hb = coord.heartbeatAgent(this.db, agentId, taskId)
           return { ok: true, ...hb }
+        }
+
+        case 'swarm_turn': {
+          this.checkAuth(args)
+          const phase = args.phase === 'end' ? 'end' : args.phase === 'start' ? 'start' : null
+          if (phase === null) return { ok: false, error: 'phase must be start or end' }
+          const ping = coord.recordTurn(this.db, {
+            workspaceId: this.getWorkspaceId(args),
+            agentId: String(args.agentId ?? ''),
+            phase,
+            state: args.state ? String(args.state) as coord.TurnEndState : undefined,
+            summary: args.summary ? String(args.summary) : undefined,
+            claimNext: args.claimNext === true,
+          })
+          return { ok: true, ping }
+        }
+
+        case 'swarm_board': {
+          const board = coord.agentsBoard(this.db, this.getWorkspaceId(args), { gitStatus: args.git === true })
+          return { ok: true, board }
+        }
+
+        case 'swarm_resources': {
+          const host = coord.hostSnapshot()
+          return {
+            ok: true,
+            host,
+            quotas: coord.listQuotas(this.db),
+            admission: coord.WORK_KINDS.map(kind => coord.admitWork(kind, host)),
+          }
         }
 
         default:

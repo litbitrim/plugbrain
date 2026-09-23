@@ -436,6 +436,10 @@ const STORE_WRITING_ROUTES = new Set([
   '/api/queue/claim',
   '/api/queue/deliver',
   '/api/workspaces',
+  '/api/agent/profile',
+  '/api/agent/turn',
+  '/api/agent/approve-commit',
+  '/api/resources/quota',
 ])
 
 function isStoreWritingRequest(method: string | undefined, path: string): boolean {
@@ -1945,6 +1949,86 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const taskId = body.taskId ? String(body.taskId) : undefined
       const hb = coord.heartbeatAgent(db, agentId, taskId)
       return json(res, { ok: true, ...hb })
+    }
+
+    // ── Swarm-Ops: worker profiles, the turn protocol, the board, resources ──
+    if (p === '/api/agent/profile' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? '').trim()
+      if (!agentId) return json(res, { ok: false, error: 'agentId required' }, 400)
+      const profile = coord.registerWorkerProfile(db, {
+        agentId,
+        surface: String(body.surface ?? '') as coord.WorkerSurface,
+        account: String(body.account ?? ''),
+        resourceKey: body.resourceKey === undefined || body.resourceKey === null ? undefined : String(body.resourceKey),
+        model: body.model ? String(body.model) : undefined,
+        worktrees: Array.isArray(body.worktrees) ? body.worktrees.map(String) : undefined,
+        takeover: body.takeover === true,
+      })
+      return json(res, { ok: true, profile })
+    }
+
+    if (p === '/api/agent/turn' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? '').trim()
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      const phase = body.phase === 'end' ? 'end' : body.phase === 'start' ? 'start' : null
+      if (!agentId || !workspaceId || phase === null) {
+        return json(res, { ok: false, error: 'agentId, workspaceId and phase (start|end) required' }, 400)
+      }
+      const ping = coord.recordTurn(db, {
+        workspaceId,
+        agentId,
+        phase,
+        state: body.state ? String(body.state) as coord.TurnEndState : undefined,
+        summary: body.summary ? String(body.summary) : undefined,
+        claimNext: body.claimNext === true,
+      })
+      return json(res, { ok: true, ping })
+    }
+
+    if (p === '/api/agent/approve-commit' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const agentId = String(body.agentId ?? '').trim()
+      const by = String(body.by ?? '').trim()
+      const workspaceId = String(body.workspaceId ?? body.workspace ?? ws).trim()
+      if (!agentId || !by || !workspaceId) return json(res, { ok: false, error: 'agentId, by and workspaceId required' }, 400)
+      const message = coord.approveCommit(db, { workspaceId, agentId, by, note: body.note ? String(body.note) : undefined })
+      return json(res, { ok: true, message })
+    }
+
+    if (p === '/api/agents/board' && req.method === 'GET') {
+      const workspaceId = q.get('workspace') ?? q.get('workspaceId') ?? ws
+      if (!workspaceId) return json(res, { ok: false, error: 'workspace required' }, 400)
+      const board = coord.agentsBoard(db, workspaceId, { gitStatus: q.get('git') === '1' })
+      return json(res, { ok: true, board })
+    }
+
+    if (p === '/api/resources' && req.method === 'GET') {
+      const host = coord.hostSnapshot()
+      return json(res, {
+        ok: true,
+        host,
+        quotas: coord.listQuotas(db),
+        admission: coord.WORK_KINDS.map(kind => coord.admitWork(kind, host)),
+      })
+    }
+
+    if (p === '/api/resources/quota' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const quota = coord.reportQuota(db, {
+        account: String(body.account ?? ''),
+        remaining: Number(body.remaining),
+        unit: String(body.unit ?? '') as coord.QuotaUnit,
+        resetsAt: body.resetsAt ? String(body.resetsAt) : undefined,
+        note: body.note ? String(body.note) : undefined,
+        reportedBy: String(body.reportedBy ?? 'api'),
+      })
+      return json(res, { ok: true, quota })
     }
 
     if (p === '/api/agent/presence' && req.method === 'GET') {
