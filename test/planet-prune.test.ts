@@ -224,6 +224,31 @@ test('a prune refuses a missing or empty selection and an unreachable child tabl
   } finally { fx.cleanup() }
 })
 
+test('a file delete cascades through indexes, and an older store drops its workspace-first edge indexes', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-edge-index-'))
+  const file = join(dir, 'brain.db')
+  try {
+    const db = openStore(file)
+    for (const column of ['src_file', 'dst_file']) {
+      const plan = (db.prepare(`EXPLAIN QUERY PLAN SELECT 1 FROM edges WHERE ${column} = 1`).all() as Array<{ detail: string }>)
+        .map(row => row.detail).join(' | ')
+      assert.match(plan, new RegExp(`SEARCH edges USING (COVERING )?INDEX idx_edges_${column} \\(${column}=\\?\\)`),
+        `the cascade lookup edges.${column} = ? is index-served: ${plan}`)
+    }
+    // An older store: the indexes led with workspace_id.
+    db.exec(`DROP INDEX idx_edges_src_file; DROP INDEX idx_edges_dst_file;
+      CREATE INDEX idx_edges_ws_src_file ON edges(workspace_id, src_file);
+      CREATE INDEX idx_edges_ws_dst_file ON edges(workspace_id, dst_file);`)
+    db.close()
+    const reopened = openStore(file)
+    const names = (reopened.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'edges'").all() as
+      Array<{ name: string }>).map(row => row.name)
+    assert.ok(names.includes('idx_edges_src_file') && names.includes('idx_edges_dst_file'))
+    assert.ok(!names.includes('idx_edges_ws_src_file') && !names.includes('idx_edges_ws_dst_file'))
+    reopened.close()
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
 test('compaction gives the pages back and refuses when the disk cannot hold the copy', { skip: skipGit }, () => {
   const fx = fixture('prune-compact')
   try {

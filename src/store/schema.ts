@@ -147,8 +147,15 @@ CREATE INDEX IF NOT EXISTS idx_edges_kind ON edges(kind);
 -- had no index at all and every refreshed file cost a full table scan: measured
 -- 1 468 ms for one COUNT, and saving a single note took 5 seconds because of it.
 -- Incremental runs pay the same cost once per 200-file chunk.
-CREATE INDEX IF NOT EXISTS idx_edges_ws_src_file ON edges(workspace_id, src_file);
-CREATE INDEX IF NOT EXISTS idx_edges_ws_dst_file ON edges(workspace_id, dst_file);
+--
+-- They lead with the FILE, not the workspace. A foreign-key cascade looks its
+-- children up by the key alone (edges.src_file = ?), and an index that leads
+-- with workspace_id cannot answer that: every deleted file row paid two full
+-- scans of the edge table, 700 ms each on the live planet, so deselecting the
+-- old checkouts would have taken days. (src_file, workspace_id) serves the
+-- cascade and every "workspace_id = ? AND src_file = ?" query alike.
+CREATE INDEX IF NOT EXISTS idx_edges_src_file ON edges(src_file, workspace_id);
+CREATE INDEX IF NOT EXISTS idx_edges_dst_file ON edges(dst_file, workspace_id);
 
 -- Every agent that has ever touched a workspace, and the colour the views
 -- paint its files in. The colour is assigned once and never reused, so a
@@ -629,6 +636,10 @@ function migrateAddedIndexes(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS idx_files_ws_created_gen ON files(workspace_id, created_generation);
     CREATE INDEX IF NOT EXISTS idx_files_ws_checkout_path ON files(workspace_id, checkout_id, path);
     CREATE INDEX IF NOT EXISTS idx_file_tombstones_ws_generation ON file_tombstones(workspace_id, generation);
+    -- Superseded by idx_edges_src_file / idx_edges_dst_file, which lead with the
+    -- key a cascade looks up (see the edges block of the schema).
+    DROP INDEX IF EXISTS idx_edges_ws_src_file;
+    DROP INDEX IF EXISTS idx_edges_ws_dst_file;
   `)
 }
 

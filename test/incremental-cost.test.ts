@@ -30,11 +30,11 @@ const AGENT = 'cost-writer'
 /** The indexes a single-file refresh depends on, and the query each one serves. */
 const PER_FILE_LOOKUPS: ReadonlyArray<{ index: string; sql: string }> = [
   {
-    index: 'idx_edges_ws_src_file',
+    index: 'idx_edges_src_file',
     sql: 'SELECT COUNT(*) FROM edges WHERE workspace_id = ? AND src_file = ?',
   },
   {
-    index: 'idx_edges_ws_dst_file',
+    index: 'idx_edges_dst_file',
     sql: 'SELECT COUNT(*) FROM edges WHERE workspace_id = ? AND dst_file = ?',
   },
   {

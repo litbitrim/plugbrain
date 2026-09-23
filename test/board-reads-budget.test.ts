@@ -32,7 +32,7 @@ const HOT_QUERIES = [
   { index: 'idx_files_ws_unindexed', accept: ['idx_files_ws_unindexed', 'idx_files_ws_created_gen', 'idx_files_ws'], params: 1, sql: 'SELECT COUNT(*) FROM files f WHERE f.workspace_id = ? AND f.indexed_at IS NULL' },
   { index: 'idx_files_ws', accept: ['idx_files_ws', 'idx_files_ws_created_gen'], params: 1, sql: 'SELECT COUNT(*) FROM files f WHERE f.workspace_id = ?' },
   { index: 'idx_symbols_file', accept: ['idx_symbols_file'], params: 1, sql: 'SELECT COUNT(*) FROM symbols s JOIN files f ON f.id = s.file_id WHERE f.workspace_id = ?' },
-  { index: 'idx_edges_ws_src_file', accept: ['idx_edges_ws_src_file'], params: 2, sql: 'SELECT dst_file FROM edges e WHERE e.workspace_id = ? AND e.src_file = ? AND e.kind = \'imports\' AND e.resolved = 1' },
+  { index: 'idx_edges_src_file', accept: ['idx_edges_src_file'], params: 2, sql: 'SELECT dst_file FROM edges e WHERE e.workspace_id = ? AND e.src_file = ? AND e.kind = \'imports\' AND e.resolved = 1' },
 ]
 
 interface Fixture {
