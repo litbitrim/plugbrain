@@ -376,7 +376,7 @@ export function indexWorkspace(
       const parsed = parseFile(file.rel, file.ext, content)
       const info = writers.insertFile.run(
         workspaceId, file.rel, file.repoId, file.checkoutId, file.ext, parsed.lang,
-        file.size, file.mtime, file.hash, parsed.loc, now, generation, PARSE_VERSION)
+        file.size, file.mtime, file.hash, parsed.loc, now, generation, generation, PARSE_VERSION)
       const fileId = Number(info.lastInsertRowid)
       const noteText = file.checkoutId === null ? content : null
       writers.writeParse({ ...parsed, fileId }, workspaceId, noteText)
@@ -641,8 +641,8 @@ interface FileWriters {
  */
 function writersFor(db: DatabaseSync, workspaceId: string): FileWriters {
   const insertFile = db.prepare(
-    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation, parse_version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    `INSERT INTO files (workspace_id, path, repo_id, checkout_id, ext, lang, size, mtime, hash, loc, indexed_at, generation, created_generation, parse_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   const updateFile = db.prepare(
     `UPDATE files SET path = ?, repo_id = ?, checkout_id = ?, ext = ?, lang = ?, size = ?, mtime = ?, hash = ?,
             loc = ?, indexed_at = ?, generation = ?, parse_version = ? WHERE id = ?`)
@@ -846,7 +846,7 @@ export function refreshFile(db: DatabaseSync, workspaceId: string, relPath: stri
     if (existing === undefined) {
       const info = writers.insertFile.run(
         workspaceId, rel, owner?.repoId ?? null, owner?.checkoutId ?? null, extname(rel),
-        parsed.lang, stats.size, stats.mtime.toISOString(), hash, parsed.loc, now, generation)
+        parsed.lang, stats.size, stats.mtime.toISOString(), hash, parsed.loc, now, generation, generation)
       row = { id: Number(info.lastInsertRowid), repoId: owner?.repoId ?? null, checkoutId: owner?.checkoutId ?? null }
     } else {
       writers.updateFile.run(

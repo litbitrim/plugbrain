@@ -289,14 +289,19 @@ export function writeFile(
   const st = statSync(abs)
   const hash = createHash('sha256').update(content).digest('hex').slice(0, 16)
   const loc = content.length === 0 ? 0 : content.split('\n').length
+  const state = db.prepare(
+    'SELECT generation FROM workspace_index_state WHERE workspace_id = ?')
+    .get(workspace.id) as { generation: number } | undefined
+  const generation = state?.generation ?? 0
+  const createdGen = created ? generation : undefined
   db.prepare(
-    `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at)
-     VALUES (?, ?, ?, NULL, ?, ?, ?, ?, NULL)
+    `INSERT INTO files (workspace_id, path, ext, lang, size, mtime, hash, loc, indexed_at, generation, created_generation)
+     VALUES (?, ?, ?, NULL, ?, ?, ?, ?, NULL, ?, ?)
      ON CONFLICT(workspace_id, path) DO UPDATE SET
        size = excluded.size, mtime = excluded.mtime, hash = excluded.hash,
-       loc = excluded.loc, indexed_at = NULL`
+       loc = excluded.loc, indexed_at = NULL, generation = excluded.generation`
   ).run(workspace.id, rel, rel.includes('.') ? `.${rel.split('.').pop()}` : '',
-    st.size, st.mtime.toISOString(), hash, loc)
+    st.size, st.mtime.toISOString(), hash, loc, generation, createdGen ?? generation)
 
   record(db, workspace, rel, agentId, created ? 'create' : 'write')
   return { path: rel, created, bytes: Buffer.byteLength(content), agent }

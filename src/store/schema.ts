@@ -75,14 +75,30 @@ CREATE TABLE IF NOT EXISTS files (
   parse_version INTEGER NOT NULL DEFAULT 0,
   loc          INTEGER NOT NULL DEFAULT 0,
   indexed_at   TEXT,
+  -- The generation that last wrote this file row.
+  generation INTEGER NOT NULL DEFAULT 0,
+  -- The generation this file row was FIRST created. Distinct from 'generation'
+  -- (the last generation that wrote the row) so /api/changes can report
+  -- added vs modified honestly: a file is "added" when created_generation
+  -- == generation, "modified" when created_generation < generation.
+  created_generation INTEGER NOT NULL DEFAULT 0,
   UNIQUE (workspace_id, path)
 );
 CREATE INDEX IF NOT EXISTS idx_files_ws ON files(workspace_id);
--- idx_files_repo and idx_files_checkout are created in migrateAddedIndexes,
--- AFTER the columns they index are guaranteed to exist. Creating them here
--- looks right and is fatal for every database that predates them: on an old
--- file table CREATE INDEX IF NOT EXISTS ... (repo_id) fails with "no such
--- column" and the whole store refuses to open.
+-- Every path lookup and the activity joins (graphOf's touched/readerRows,
+-- symbolsOf, the note roots) probe files by (workspace, path); without this
+-- index each one degraded into a scan of the workspace's files on a real
+-- Planet.
+CREATE INDEX IF NOT EXISTS idx_files_ws_path ON files(workspace_id, path);
+-- The stale count filters files by indexed_at IS NULL; the partial index
+-- keeps it a scan of only the unindexed rows, which stay a small set.
+CREATE INDEX IF NOT EXISTS idx_files_ws_unindexed ON files(workspace_id) WHERE indexed_at IS NULL;
+-- idx_files_ws_generation, idx_files_ws_created_gen, idx_files_repo and
+-- idx_files_checkout are created in migrateAddedIndexes, AFTER the columns
+-- they index are guaranteed to exist. Creating them here looks right and is
+-- fatal for every database that predates them: on an old file table
+-- CREATE INDEX IF NOT EXISTS ... (generation) fails with "no such column"
+-- and the whole store refuses to open.
 
 CREATE TABLE IF NOT EXISTS symbols (
   id        INTEGER PRIMARY KEY,
@@ -305,6 +321,10 @@ CREATE TABLE IF NOT EXISTS activity (
 CREATE INDEX IF NOT EXISTS idx_activity_ws ON activity(workspace_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_file ON activity(file_id);
 CREATE INDEX IF NOT EXISTS idx_activity_agent ON activity(agent_id);
+-- graphOf's touched/readerRows join activity with files on (workspace, path);
+-- without this index the join drove from whichever side was bigger and
+-- filtered the other — files × activity on a real Planet.
+CREATE INDEX IF NOT EXISTS idx_activity_ws_path ON activity(workspace_id, path);
 
 -- Denormalised "who owns this file right now", so the city can colour 15k
 -- buildings without a join per building.
@@ -388,6 +408,7 @@ CREATE TABLE IF NOT EXISTS file_tombstones (
   reason       TEXT NOT NULL DEFAULT 'deleted',
   PRIMARY KEY (workspace_id, path)
 );
+CREATE INDEX IF NOT EXISTS idx_file_tombstones_ws_generation ON file_tombstones(workspace_id, generation);
 
 -- Parsed-but-unresolved reference facts, kept per file so an incremental pass
 -- can re-resolve edges WITHOUT re-parsing the file. Re-parsing is the expensive
@@ -561,6 +582,9 @@ function migrateAddedColumns(db: DatabaseSync): void {
   // The generation that last wrote this file row, so a reader can tell how
   // current a row is without re-hashing the file.
   ensureColumn(db, 'files', 'generation', 'INTEGER NOT NULL DEFAULT 0')
+  // The generation this file row was FIRST created. Distinct from `generation`
+  // so /api/changes can report added vs modified honestly.
+  ensureColumn(db, 'files', 'created_generation', 'INTEGER NOT NULL DEFAULT 0')
   // Planet attribution. NULL on every workspace that is not a planet, which is
   // exactly what "this file belongs to no repository" means.
   ensureColumn(db, 'files', 'repo_id', 'TEXT')
@@ -586,6 +610,9 @@ function migrateAddedIndexes(db: DatabaseSync): void {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_files_repo ON files(repo_id);
     CREATE INDEX IF NOT EXISTS idx_files_checkout ON files(checkout_id);
+    CREATE INDEX IF NOT EXISTS idx_files_ws_generation ON files(workspace_id, generation);
+    CREATE INDEX IF NOT EXISTS idx_files_ws_created_gen ON files(workspace_id, created_generation);
+    CREATE INDEX IF NOT EXISTS idx_file_tombstones_ws_generation ON file_tombstones(workspace_id, generation);
   `)
 }
 

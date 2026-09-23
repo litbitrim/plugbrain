@@ -150,6 +150,7 @@ CREATE INDEX IF NOT EXISTS idx_trace_task ON trace_events(workspace_id, task_id)
 CREATE INDEX IF NOT EXISTS idx_trace_agent ON trace_events(workspace_id, agent_id);
 CREATE INDEX IF NOT EXISTS idx_trace_worker ON trace_events(workspace_id, worker_id);
 CREATE INDEX IF NOT EXISTS idx_trace_type ON trace_events(workspace_id, type);
+CREATE INDEX IF NOT EXISTS idx_trace_ws_type_occurred ON trace_events(workspace_id, type, occurred_at);
 
 -- An event whose identity chain does not resolve is NOT dropped and NOT
 -- guessed into shape: it is kept here with the reason, so an operator can see
