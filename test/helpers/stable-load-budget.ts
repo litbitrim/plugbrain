@@ -26,11 +26,61 @@ export function medianMs(values: readonly number[]): number {
     : (sorted[middle - 1]! + sorted[middle]!) / 2
 }
 
+export interface TimingMeasurement {
+  samples: number[]
+  median: number
+}
+
+export type HostLoadClassification =
+  | { status: 'HOST_READY' }
+  | { status: 'HOST_OVERLOADED'; reason: string }
+
+/**
+ * A deliberately separate host probe, run before the product timing starts.
+ *
+ * It measures the scheduler's delay while the test is otherwise idle. This
+ * is not a wider product budget: the product budget below remains unchanged.
+ * A sustained delay means a shared desktop cannot fairly distinguish a slow
+ * Brain route from CPU contention outside this process.
+ */
+export const HOST_OVERLOAD_MEDIAN_LAG_MS = 200
+
+export function classifyHostLoad(
+  measurement: TimingMeasurement,
+  overloadMedianLagMs = HOST_OVERLOAD_MEDIAN_LAG_MS,
+): HostLoadClassification {
+  if (measurement.median < overloadMedianLagMs) return { status: 'HOST_READY' }
+  return {
+    status: 'HOST_OVERLOADED',
+    reason: `HOST_OVERLOADED: scheduler median lag ${measurement.median.toFixed(1)} ms `
+      + `(threshold ${overloadMedianLagMs} ms; samples=${measurement.samples.map(value => value.toFixed(1)).join(',')})`,
+  }
+}
+
+async function schedulerLag(probeMs: number): Promise<number> {
+  const started = performance.now()
+  await new Promise<void>(resolve => setTimeout(resolve, probeMs))
+  return Math.max(0, performance.now() - started - probeMs)
+}
+
+/** Warm an idle scheduler probe, then classify its median delay. */
+export async function measureHostLoad(
+  options: { warmups?: number; samples?: number; probeMs?: number } = {},
+): Promise<TimingMeasurement> {
+  const warmups = options.warmups ?? 1
+  const sampleCount = options.samples ?? 5
+  const probeMs = options.probeMs ?? 50
+  for (let i = 0; i < warmups; i += 1) await schedulerLag(probeMs)
+  const samples: number[] = []
+  for (let i = 0; i < sampleCount; i += 1) samples.push(await schedulerLag(probeMs))
+  return { samples, median: medianMs(samples) }
+}
+
 /** Warm two calls, then retain an odd number of independent loaded samples. */
 export async function measureWarmMedian(
   operation: () => Promise<void>,
   options: { warmups?: number; samples?: number } = {},
-): Promise<{ samples: number[]; median: number }> {
+): Promise<TimingMeasurement> {
   const warmups = options.warmups ?? 2
   const sampleCount = options.samples ?? 5
   for (let i = 0; i < warmups; i += 1) await operation()
