@@ -63,6 +63,16 @@ export default function NotesView({
   const [viewMode, setViewMode] = useState<ViewMode>('edit')
   const [newType, setNewType] = useState<'notiz' | 'entscheidung' | 'widerspruch'>('notiz')
   const [newStatus, setNewStatus] = useState('entwurf')
+  const [metaCollapsed, setMetaCollapsed] = useState(() => {
+    try { return localStorage.getItem('plugbrain.notes_meta_collapsed') === '1' } catch { return false }
+  })
+  const toggleMeta = () => {
+    setMetaCollapsed(c => {
+      const next = !c
+      try { localStorage.setItem('plugbrain.notes_meta_collapsed', next ? '1' : '0') } catch {}
+      return next
+    })
+  }
   const upload = useRef<HTMLInputElement>(null)
 
   const refreshList = async (): Promise<NoteListItem[]> => {
@@ -873,12 +883,29 @@ export default function NotesView({
             )}
           </div>
 
-          <footer className="notes-editor__meta">
-            <section><h3>Links</h3>{active.links.length ? active.links.map(link => <button type="button" disabled={!link.path} key={`${link.target}:${link.line}`} onClick={() => link.path && void open(link.path)}>{link.alias || link.target}{link.path ? '' : ' (nicht aufgelöst)'}</button>) : <span>Keine Wiki-Links.</span>}</section>
-            <section><h3>Backlinks</h3>{active.backlinks.length ? active.backlinks.map(link => <button type="button" key={`${link.path}:${link.line}`} onClick={() => void open(link.path)}>← {link.title} · Zeile {link.line}</button>) : <span>Keine Rückverweise.</span>}</section>
-            {(linkedNote || linkedCode || linkedRevision || linkedAgentRun) && <section><h3>Verknüpfungen</h3>{linkedNote && <button type="button" onClick={() => void open(linkedNote.replace(/^\[\[|\]\]$/g, ''))}>Entscheidung/Widerspruch: {linkedNote}</button>}{linkedCode && <button type="button" disabled={!onOpenSource} onClick={() => handleOpenCode(linkedCode)}>Datei: {linkedCode}</button>}{linkedRevision && <button type="button" disabled={!onOpenRevision} onClick={() => onOpenRevision?.(linkedRevision)}>Revision: {linkedRevision}</button>}{linkedAgentRun && <button type="button" disabled={!onOpenAgentRun} onClick={() => onOpenAgentRun?.(linkedAgentRun)}>Agentenlauf: {linkedAgentRun}</button>}</section>}
-            <section><h3>Anhänge</h3><input ref={upload} type="file" hidden onChange={event => void attach(event.target.files?.[0])}/><button type="button" disabled={busy || active.hash === ''} title={active.hash === '' ? 'Die Notiz zuerst speichern' : undefined} onClick={() => upload.current?.click()}>Datei anhängen</button>{active.hash === '' && <span>Notiz zuerst speichern.</span>}{attachments.map(file => <a key={file.path} href={attachmentUrl(workspaceId, active.path, file.name)}>{file.name} · {file.bytes} B</a>)}</section>
-          </footer>
+          <div className="notes-meta-bar">
+            <button
+              type="button"
+              className="notes-meta-toggle"
+              onClick={toggleMeta}
+              aria-expanded={!metaCollapsed}
+              title={metaCollapsed ? 'Metadaten und Verknüpfungen aufklappen' : 'Metadaten und Verknüpfungen einklappen'}
+            >
+              <span>{metaCollapsed ? '▸' : '▾'} Verknüpfungen &amp; Anhänge</span>
+              <span className="notes-meta-counts">
+                {active.links.length} Links · {active.backlinks.length} Backlinks{attachments.length > 0 ? ` · ${attachments.length} Anhänge` : ''}
+              </span>
+            </button>
+          </div>
+
+          {!metaCollapsed && (
+            <footer className="notes-editor__meta">
+              <section><h3>Links ({active.links.length})</h3>{active.links.length ? active.links.map(link => <button type="button" disabled={!link.path} key={`${link.target}:${link.line}`} onClick={() => link.path && void open(link.path)}>{link.alias || link.target}{link.path ? '' : ' (nicht aufgelöst)'}</button>) : <span>Keine Wiki-Links.</span>}</section>
+              <section><h3>Backlinks ({active.backlinks.length})</h3>{active.backlinks.length ? active.backlinks.map(link => <button type="button" key={`${link.path}:${link.line}`} onClick={() => void open(link.path)}>← {link.title} · Zeile {link.line}</button>) : <span>Keine Rückverweise.</span>}</section>
+              {(linkedNote || linkedCode || linkedRevision || linkedAgentRun) && <section><h3>Verknüpfungen</h3>{linkedNote && <button type="button" onClick={() => void open(linkedNote.replace(/^\[\[|\]\]$/g, ''))}>Entscheidung/Widerspruch: {linkedNote}</button>}{linkedCode && <button type="button" disabled={!onOpenSource} onClick={() => handleOpenCode(linkedCode)}>Datei: {linkedCode}</button>}{linkedRevision && <button type="button" disabled={!onOpenRevision} onClick={() => onOpenRevision?.(linkedRevision)}>Revision: {linkedRevision}</button>}{linkedAgentRun && <button type="button" disabled={!onOpenAgentRun} onClick={() => onOpenAgentRun?.(linkedAgentRun)}>Agentenlauf: {linkedAgentRun}</button>}</section>}
+              <section><h3>Anhänge ({attachments.length})</h3><input ref={upload} type="file" hidden onChange={event => void attach(event.target.files?.[0])}/><button type="button" disabled={busy || active.hash === ''} title={active.hash === '' ? 'Die Notiz zuerst speichern' : undefined} onClick={() => upload.current?.click()}>Datei anhängen</button>{active.hash === '' && <span>Notiz zuerst speichern.</span>}{attachments.map(file => <a key={file.path} href={attachmentUrl(workspaceId, active.path, file.name)}>{file.name} · {file.bytes} B</a>)}</section>
+            </footer>
+          )}
         </> : <p className="notes-empty">Keine Notiz im gewählten Vault.</p>)}
       </section>
     </main>
