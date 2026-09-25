@@ -56,8 +56,9 @@ import { backupStore, restoreStore } from './store/backup.ts'
 import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
+import { resolveBrainHome } from './home.ts'
 
-const HOME = process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
+const HOME = resolveBrainHome()
 
 /**
  * Where the served UI lives. A source run has it at ../ui-dist relative to

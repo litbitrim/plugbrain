@@ -130,9 +130,11 @@ export function isProcessAlive(pid: number): boolean {
   }
 }
 
+import { resolveBrainHome } from '../home.ts'
+
 /** The store home, resolved the same way the CLI resolves it. */
 export function storeHome(): string {
-  return process.env.PLUGBRAIN_HOME ?? join(homedir(), '.plugbrain')
+  return resolveBrainHome()
 }
 
 export function runDir(): string {
