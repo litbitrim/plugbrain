@@ -6,6 +6,7 @@ import {
 } from '../lib/brain-client'
 import KnowledgeGraphView from './KnowledgeGraphView'
 import MarkdownPreview from '../components/MarkdownPreview'
+import { Icon, ICON } from '../ui/Icon'
 import type { ViewId } from '../types'
 
 type UndoState = { path: string; content: string; savedHash: string }
@@ -521,13 +522,22 @@ export default function NotesView({
         )}
 
         <div className="notes-list">
-          {filtered.map(note => (
-            <button type="button" key={note.path} className={active?.path === note.path ? 'on' : ''} onClick={() => void open(note.path)}>
-              <strong>{note.title}</strong>
-              <span>{note.path}</span>
-              <small>{(note.tags || []).map(value => `#${value}`).join(' ')} {note.inLinks ? `←${note.inLinks}` : ''}</small>
-            </button>
-          ))}
+          {notes.length === 0 ? (
+            <div className="notes-empty-list">
+              <p>Noch keine Notizen</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Erste Notiz anlegen
+              </button>
+            </div>
+          ) : (
+            filtered.map(note => (
+              <button type="button" key={note.path} className={active?.path === note.path ? 'on' : ''} onClick={() => void open(note.path)}>
+                <strong>{note.title}</strong>
+                <span>{note.path}</span>
+                <small>{(note.tags || []).map(value => `#${value}`).join(' ')} {note.inLinks ? `←${note.inLinks}` : ''}</small>
+              </button>
+            ))
+          )}
         </div>
       </aside>
 
@@ -906,8 +916,29 @@ export default function NotesView({
               <section><h3>Anhänge ({attachments.length})</h3><input ref={upload} type="file" hidden onChange={event => void attach(event.target.files?.[0])}/><button type="button" disabled={busy || active.hash === ''} title={active.hash === '' ? 'Die Notiz zuerst speichern' : undefined} onClick={() => upload.current?.click()}>Datei anhängen</button>{active.hash === '' && <span>Notiz zuerst speichern.</span>}{attachments.map(file => <a key={file.path} href={attachmentUrl(workspaceId, active.path, file.name)}>{file.name} · {file.bytes} B</a>)}</section>
             </footer>
           )}
-        </> : <p className="notes-empty">Keine Notiz im gewählten Vault.</p>)}
+        </> : (
+          notes.length === 0 ? (
+            <div className="notes-empty--initial">
+              <div className="notes-empty__icon"><Icon path={ICON.notes} /></div>
+              <h3>Dieser Vault ist noch leer</h3>
+              <p>Erstelle deine erste Notiz mit Wiki-Links, Tags und Eigenschaften — genau wie in Obsidian.</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Erste Notiz anlegen
+              </button>
+            </div>
+          ) : (
+            <div className="notes-empty--initial">
+              <div className="notes-empty__icon"><Icon path={ICON.notes} /></div>
+              <h3>Keine Notiz ausgewählt</h3>
+              <p>Wähle eine Notiz in der linken Seitenleiste aus oder erstelle eine neue.</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Neue Notiz anlegen
+              </button>
+            </div>
+          )
+        ))}
       </section>
     </main>
   )
 }
+

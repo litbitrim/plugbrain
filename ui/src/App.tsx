@@ -220,9 +220,17 @@ export default function App() {
       setVaultPath('')
       setVaultOpen(false)
       applyWorkspace(id)
+      setView('notes')
       setAttempt(a => a + 1)
     } catch (cause) {
-      setVaultError(cause instanceof Error ? cause.message : String(cause))
+      const raw = cause instanceof Error ? cause.message : String(cause)
+      let msg = raw
+      if (/ENOENT|not found|nicht gefunden/i.test(raw)) {
+        msg = `Ordner nicht gefunden oder nicht lesbar: "${root}". Bitte überprüfe den Pfad.`
+      } else if (/fetch|network|connection refused|econnrefused/i.test(raw)) {
+        msg = 'Brain-Kern nicht erreichbar. Bitte prüfe, ob "plugbrain serve" im Terminal läuft.'
+      }
+      setVaultError(msg)
     } finally {
       setVaultBusy(false)
       setVaultProgress('')
@@ -648,9 +656,9 @@ export default function App() {
 
       {error && (
         <div className="pb-banner" role="alert">
-          <strong>Server nicht erreichbar.</strong>
-          <span>{error} — läuft <code>plugbrain serve</code>?</span>
-          <button type="button" className="pb-button" onClick={retry}>
+          <strong>Brain-Server offline.</strong>
+          <span>Der Kern antwortet nicht ({error}). Bitte prüfe, ob <code>plugbrain serve</code> läuft.</span>
+          <button type="button" className="pb-button pb-button--primary" onClick={retry}>
             <Icon path={ICON.refresh} /> Erneut verbinden
           </button>
         </div>
@@ -669,8 +677,8 @@ export default function App() {
             </p>
             <ol className="brain-first-run" aria-label="Erste Schritte">
               <li><strong>Ordner wählen</strong><span>Notiz- oder Projektordner angeben; Git ist nicht erforderlich.</span></li>
-              <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Suche und Graph bereit sind.</span></li>
-              <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und können direkt mit einer Notiz beginnen.</span></li>
+              <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Notizen und Graph bereit sind.</span></li>
+              <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und bieten direkt „Erste Notiz anlegen“.</span></li>
             </ol>
             {vaultForm}
             {planets.length > 0 && (
@@ -691,7 +699,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Graph</h2>
                 <p>Wissensgraph: Symbole, Notizen und Verbindungen</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Graph-Aktion</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Graph aktualisieren</button>
               </div>
               <div id="app" className="atlas-app">
                 <GraphView
@@ -710,8 +718,11 @@ export default function App() {
             <div className="pb-view">
               <div className="pb-view-header">
                 <h2>Notizen</h2>
-                <p>Notizen lesen, schreiben und verknüpfen</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Notiz</button>
+                <p>Notizen lesen, schreiben und verknüpfen wie in Obsidian</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={() => {
+                  const btn = document.querySelector('.notes-create button, .notes-empty-list button, .notes-empty--initial button') as HTMLButtonElement | null;
+                  btn?.click();
+                }}>Neue Notiz</button>
               </div>
               <NotesView
                 workspaceId={workspaceId}
@@ -728,7 +739,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Dateien</h2>
                 <p>Quelldateien mit echtem Inhalt und Zeilennummern</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Datei</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Dateien aktualisieren</button>
               </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
@@ -759,7 +770,10 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Suche</h2>
                 <p>Code und Notizen durchsuchen</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Suche</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={() => {
+                  const el = document.querySelector('.search-input, .notes-search input') as HTMLInputElement | null;
+                  el?.focus();
+                }}>Suche fokussieren</button>
               </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
@@ -783,7 +797,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Kontext-Pakete</h2>
                 <p>Context-Packs für Agenten-Aufgaben zusammenstellen</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Pack erstellen</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Pakete aktualisieren</button>
               </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
@@ -807,7 +821,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Code-Stadt</h2>
                 <p>Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Stadt-Aktion</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Stadt aktualisieren</button>
               </div>
               <div className="pb-city">
                 <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
@@ -822,7 +836,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Aufgaben</h2>
                 <p>Wartende Aufgaben; der nächste freie Agent nimmt sie</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Aufgabe</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Aufgaben prüfen</button>
               </div>
               <QueueView tasks={queue.tasks} depth={queue.depth} />
             </div>
@@ -833,7 +847,7 @@ export default function App() {
               <div className="pb-view-header">
                 <h2>Agenten-Netz</h2>
                 <p>Nachweisbare Arbeit und Übergaben aus dem Core-Trace</p>
-                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Netz-Aktion</button>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Netz aktualisieren</button>
               </div>
               <div className="pb-mesh">
                 <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
