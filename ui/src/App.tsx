@@ -114,7 +114,7 @@ export default function App() {
         event.preventDefault(); setShortcutsOpen(true)
       } else if (event.key === 'Escape') {
         setShortcutsOpen(false)
-      } else if (event.key.toLowerCase() === 'o') {
+      } else if (event.key.toLowerCase() === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault(); setVaultOpen(true)
       }
     }

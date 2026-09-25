@@ -30,4 +30,6 @@ export const ICON = {
   folder: 'M2 4.5h4l1.5 1.5H14v6.5H2z',
   refresh: 'M13 8a5 5 0 1 1-1.5-3.5M13 2.5v3h-3',
   burger: 'M2 4h12M2 8h12M2 12h12',
+  pencil: 'M11 2.5 13.5 5 5 13.5H2.5V11L11 2.5Z',
+  notes: 'M3 2.5h10v11H3zM5 5.5h6M5 8.5h6M5 11.5h4',
 } as const
