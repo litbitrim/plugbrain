@@ -7,7 +7,27 @@ import { join, relative } from 'node:path'
 import { captureSourceState } from './source-state.mjs'
 
 const root = join(import.meta.dirname, '..')
-const makensis = process.env.PLUGBRAIN_MAKENSIS?.trim()
+function resolveMakensis() {
+  const envPath = process.env.PLUGBRAIN_MAKENSIS?.trim()
+  if (envPath && existsSync(envPath)) return envPath
+
+  const candidates = [
+    'C:\\Users\\mil\\AppData\\Local\\tauri\\NSIS\\makensis.exe',
+    'C:\\Users\\mil\\AppData\\Local\\electron-builder\\Cache\\nsis\\nsis-3.0.4.1\\makensis.exe',
+  ]
+  for (const c of candidates) {
+    if (existsSync(c)) return c
+  }
+
+  try {
+    const out = execFileSync('where', ['makensis.exe'], { encoding: 'utf8' }).trim().split(/\r?\n/)[0]
+    if (out && existsSync(out)) return out
+  } catch {}
+
+  return null
+}
+
+const makensis = resolveMakensis()
 const installer = join(root, 'desktop', 'PlugBrain.nsi')
 // The artifact name follows package.json, so a version bump cannot leave a
 // mislabelled installer behind: the release identity is written in one place.
@@ -21,9 +41,9 @@ if (process.arch !== 'x64') {
   throw new Error(`PlugBrain ${version} NSIS packaging supports win-x64 only; refusing host runtime ${process.arch}`)
 }
 if (!makensis) {
-  throw new Error('PLUGBRAIN_MAKENSIS must name the explicitly selected makensis.exe')
+  throw new Error('makensis.exe not found. Set PLUGBRAIN_MAKENSIS or install NSIS.')
 }
-if (!existsSync(makensis)) throw new Error(`PLUGBRAIN_MAKENSIS does not exist: ${makensis}`)
+if (!existsSync(makensis)) throw new Error(`makensis does not exist: ${makensis}`)
 
 // Capture source identity before build/package outputs can modify dist/ or
 // release/.  Only generated release output is excluded from this predicate.

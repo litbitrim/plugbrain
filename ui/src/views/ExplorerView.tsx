@@ -24,6 +24,11 @@ interface TreeNode {
   file?: FileNodeData
 }
 
+function normalizePath(p?: string | null): string {
+  if (!p || typeof p !== 'string') return ''
+  return p.replace(/\\/g, '/')
+}
+
 function buildTree(files: FileNodeData[]): TreeNode {
   const root: TreeNode = {
     name: '',
@@ -32,28 +37,37 @@ function buildTree(files: FileNodeData[]): TreeNode {
     children: new Map(),
   }
 
+  if (!Array.isArray(files)) return root
+
   for (const file of files) {
+    if (!file || typeof file.path !== 'string') continue
     const parts = file.path.split(/[\\/]/).filter(Boolean)
+    if (parts.length === 0) continue
+
     let current = root
 
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i]
       const isLast = i === parts.length - 1
+      const currentPath = parts.slice(0, i + 1).join('/')
 
       if (isLast) {
         current.children.set(part, {
           name: part,
-          path: file.path,
+          path: currentPath,
           isDir: false,
           children: new Map(),
-          file,
+          file: {
+            ...file,
+            path: currentPath,
+          },
         })
       } else {
         let dirNode = current.children.get(part)
         if (!dirNode) {
           dirNode = {
             name: part,
-            path: parts.slice(0, i + 1).join('/'),
+            path: currentPath,
             isDir: true,
             children: new Map(),
           }
@@ -78,6 +92,20 @@ export default function ExplorerView({
 
   const tree = useMemo(() => buildTree(files), [files])
 
+  const allDirs = useMemo(() => {
+    const dirs: string[] = []
+    function collect(node: TreeNode) {
+      if (node.isDir && node.path) {
+        dirs.push(node.path)
+      }
+      for (const child of node.children.values()) {
+        if (child.isDir) collect(child)
+      }
+    }
+    collect(tree)
+    return dirs
+  }, [tree])
+
   const toggleDir = (dirPath: string) => {
     setCollapsed(prev => {
       const next = new Set(prev)
@@ -85,6 +113,24 @@ export default function ExplorerView({
       else next.add(dirPath)
       return next
     })
+  }
+
+  const expandAll = () => setCollapsed(new Set())
+  const collapseAll = () => setCollapsed(new Set(allDirs))
+
+  const activeNorm = normalizePath(activePath)
+
+  function nodeMatches(n: TreeNode, q: string): boolean {
+    if (!q) return true
+    const qLower = q.toLowerCase()
+    if (!n.isDir) {
+      return n.name.toLowerCase().includes(qLower) || n.path.toLowerCase().includes(qLower)
+    }
+    if (n.name && n.name.toLowerCase().includes(qLower)) return true
+    for (const child of n.children.values()) {
+      if (nodeMatches(child, q)) return true
+    }
+    return false
   }
 
   const renderNode = (node: TreeNode, depth = 0): React.ReactNode => {
@@ -95,12 +141,12 @@ export default function ExplorerView({
         return a.name.localeCompare(b.name)
       })
 
-      // If filter active, only show dir if some children match
+      // If filter active, keep node if it matches or any descendant matches
       const filteredChildren = filter
-        ? sortedChildren.filter(c => c.path.toLowerCase().includes(filter.toLowerCase()))
+        ? sortedChildren.filter(c => nodeMatches(c, filter))
         : sortedChildren
 
-      if (filter && filteredChildren.length === 0 && !node.name.toLowerCase().includes(filter.toLowerCase())) {
+      if (filter && filteredChildren.length === 0 && (!node.name || !node.name.toLowerCase().includes(filter.toLowerCase()))) {
         return null
       }
 
@@ -111,7 +157,10 @@ export default function ExplorerView({
               className={`tree-item tree-item--dir ${depth === 0 ? 'tree-item--root' : ''}`}
               style={{ paddingLeft: `${depth * 14 + 10}px` }}
               onClick={() => toggleDir(node.path)}
+              role="treeitem"
+              aria-expanded={!isCollapsed}
             >
+              <span className="tree-chevron">{isCollapsed ? '▶' : '▼'}</span>
               <span className="tree-icon">{isCollapsed ? '📁' : '📂'}</span>
               <span className="tree-label">{node.name}</span>
               <span className="tree-badge tree-badge--count">{node.children.size}</span>
@@ -127,7 +176,7 @@ export default function ExplorerView({
     }
 
     // File item
-    const isActive = activePath === node.path
+    const isActive = activeNorm !== '' && activeNorm === node.path
     if (filter && !node.path.toLowerCase().includes(filter.toLowerCase())) {
       return null
     }
@@ -136,9 +185,10 @@ export default function ExplorerView({
       <div
         key={node.path}
         className={`tree-item tree-item--file ${isActive ? 'tree-item--active' : ''}`}
-        style={{ paddingLeft: `${depth * 14 + 10}px` }}
+        style={{ paddingLeft: `${depth * 14 + 22}px` }}
         onClick={() => onSelectFile(node.path)}
         title={node.path}
+        role="treeitem"
       >
         <span className="tree-icon">📄</span>
         <span className="tree-label mono">{node.name}</span>
@@ -185,6 +235,17 @@ export default function ExplorerView({
           </button>
         )}
       </div>
+
+      {allDirs.length > 0 && (
+        <div className="tree-actions">
+          <button type="button" className="tree-action-btn" onClick={expandAll} title="Alle Ordner aufklappen">
+            Alle aufklappen
+          </button>
+          <button type="button" className="tree-action-btn" onClick={collapseAll} title="Alle Ordner einklappen">
+            Alle einklappen
+          </button>
+        </div>
+      )}
 
       <div className="explorer-tree">
         {files.length === 0 ? (
