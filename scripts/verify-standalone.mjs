@@ -11,13 +11,12 @@ import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { once } from 'node:events'
-import { createRequire } from 'node:module'
+import { chromium } from 'playwright-core'
 
-// Reuse the locally installed browser toolchain. Packaging verification must
-// not download a browser or rely on an internet connection.
-const require = createRequire(import.meta.url)
-const playwrightRoot = process.env.PLAYWRIGHT_NODE_PATH ?? 'C:/PLUG/plugpt/Code/PlugBrain-GLM/node_modules/playwright'
-const { chromium } = require(playwrightRoot)
+// playwright-core comes from this repository's devDependencies and drives the
+// browser already installed under %LOCALAPPDATA%\ms-playwright. Packaging
+// verification must not download a browser, rely on an internet connection or
+// borrow node_modules from a sibling checkout.
 
 const root = join(import.meta.dirname, '..')
 const runtime = join(root, 'dist', process.platform === 'win32' ? 'node.exe' : 'node')
