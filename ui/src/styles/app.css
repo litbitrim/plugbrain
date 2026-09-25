@@ -1,54 +1,9 @@
-/* A knowledge network has exactly one failure mode: the hairball.
-   A hundred nodes with two hundred edges converge into a blob of glow — pretty
-   for two seconds, unreadable after that. This page treats four things as hard
-   constraints; everything else is decoration:
+.brain-empty { padding: 90px 24px; color: #cde6d6; }
 
-     1. Partition first, then converge. The seven clusters are anchored to fixed
-        bearings on the sphere and each node feels a weak pull toward its anchor.
-        The topology still comes from the force layout, but the map is stable —
-        open it today or tomorrow and every cluster sits in the same sky region.
-     2. Selecting dims. Click a node and everything outside its neighborhood
-        drops to 12% brightness. Nobody reads a hundred points at once; they
-        read one point and its neighbors.
-     3. Labels have a budget. By default only the highest-degree dozen plus the
-        hovered and selected neighborhoods are drawn; with every label on they
-        would inevitably overlap.
-     4. Edges need direction. Prerequisites are directed, shown by a pulse of
-        light traveling along each edge — cheaper than arrowheads and easier to
-        catch in peripheral vision.
-
-   Palette: neutral near-black with one cool-white highlight, cluster colors as
-   an equal-luminance spectrum. In dark mode nodes use additive blending; in
-   light mode they must switch to normal blending with deepened colors —
-   additive blending on white paper just smears into gray. Both themes share
-   the same shaders through the uLight branch, so neither can drift without
-   the other. */
-
-:root{
-  --r:6px; --r-sm:4px; --r-lg:10px;
-}
-:root[data-theme="dark"]{
-  --bg:#050507; --panel:#0a0a0d; --raised:#14141a; --ink:#eceef3;
-  --muted:#8d919b; --faint:#585c66;
-  --line:#1d1e25; --line-soft:#131419;
-  --accent:#9dc4ff; --accent-ink:#05101f; --accent-soft:#101a2c;
-  --halo:#000;
-}
-:root[data-theme="light"]{
-  --bg:#f4f4f1; --panel:#fbfbf9; --raised:#ececeb; --ink:#16171a;
-  --muted:#5b5e65; --faint:#94969c;
-  --line:#e1e0dc; --line-soft:#eeede9;
-  --accent:#2f62d0; --accent-ink:#fff; --accent-soft:#e7edfa;
-  --halo:#fff;
-}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}
-
-/* ── Layout: sidebar / stage / right drawer — three columns, one screen ──── */
-#app{display:grid;grid-template-columns:264px 1fr 0;height:100vh;transition:grid-template-columns .34s var(--ease)}
-#app.open{grid-template-columns:264px 1fr 322px}
-@media (max-width:1180px){ #app{grid-template-columns:224px 1fr 0} #app.open{grid-template-columns:224px 1fr 300px} }
-
+/* ── Vault chrome: switcher, open-panel, landing ───────────────────────────
+   The standalone vault experience. Everything here reads the daemon's own
+   registry; the UI only chooses which planet is on screen. Same visual
+   language as the views: hairline borders, ink at opacity, one action. */
 /* The Atlas owns five vertical regions.  Letting flex discover the available
    height made the bottom readouts able to paint over the legend in a short
    window. A grid reserves the legend and counters first; only the object list
@@ -58,184 +13,6 @@ body{background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing
 .atlas-app > aside { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; overflow: hidden; }
 .atlas-app > aside .listwrap { min-height: 0; }
 .atlas-app > aside .foot { flex: none; }
-
-aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
-#stage{position:relative;overflow:hidden}
-#drawer{border-left:1px solid var(--line);background:var(--panel);overflow:hidden;min-width:0}
-
-/* ── Sidebar ────────────────────────────────────────────────────── */
-.brand{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
-.brand h1{font-size:15px;font-weight:560;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-.brand h1 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
-  box-shadow:0 0 10px var(--accent);flex:none}
-.brand p{font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.6}
-
-.searchbox{padding:12px 14px 10px;position:relative}
-.searchbox input{width:100%;background:var(--raised);border-color:var(--line);
-  padding:7px 9px 7px 27px;font-size:12.5px;border-radius:var(--r-sm)}
-.searchbox input::placeholder{color:var(--faint)}
-.searchbox svg{position:absolute;left:23px;top:50%;transform:translateY(-50%);
-  width:12px;height:12px;color:var(--faint);pointer-events:none}
-
-.legend{padding:2px 14px 12px;display:flex;flex-wrap:wrap;gap:4px}
-.cl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);
-  background:none;border:1px solid transparent;border-radius:99px;padding:2.5px 8px 2.5px 6px;
-  cursor:pointer;transition:all var(--fast);font-family:inherit}
-.cl:hover{background:var(--raised)}
-.cl i{width:7px;height:7px;border-radius:50%;flex:none;transition:opacity var(--fast)}
-.cl.off{color:var(--faint)} .cl.off i{opacity:.22}
-.cl b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
-
-.listwrap{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--line-soft);padding:6px 0 10px}
-.lrow{display:flex;align-items:center;gap:8px;padding:5.5px 16px;cursor:pointer;
-  border-left:2px solid transparent;transition:background var(--fast)}
-.lrow:hover{background:var(--raised)}
-.lrow.on{background:var(--raised);border-left-color:var(--accent)}
-.lrow i{width:6px;height:6px;border-radius:50%;flex:none}
-.lrow span{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lrow b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
-.lrow mark{background:none;color:var(--accent)}
-
-.foot{border-top:1px solid var(--line-soft);padding:10px 16px 12px;
-  display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
-.foot .k{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.foot .l{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:1px}
-
-/* ── Overlays on the stage ─────────────────────────────────────────────── */
-/* The canvas is appended by JS, so in DOM order it lands after every overlay.
-   Without an explicit z-index it would cover the labels, toolbar and
-   readouts — the page would look like "3D works, but the UI is gone". */
-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
-#labels,#hud,#tools,#hint,#pathbar{z-index:3}
-#gate{z-index:6}
-#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.lab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
-  font-size:11px;letter-spacing:.01em;color:var(--ink);
-  text-shadow:0 0 4px var(--bg),0 0 9px var(--bg),0 1px 2px var(--halo);
-  padding-top:0;will-change:transform,opacity}
-.lab.sm{font-size:10px;color:var(--muted)}
-
-#hud{position:absolute;right:14px;top:12px;text-align:right;pointer-events:none;
-  font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.75;letter-spacing:.04em}
-#hud b{color:var(--muted);font-weight:400}
-
-/* width:max-content is the key here. An absolutely positioned element's
-   available width is "containing-block width − left", and left is 50%, so
-   without an explicit width it shrinks to half the screen — wrapping even
-   though the other half is still free. */
-#tools{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
-  display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--panel) 88%,transparent);
-  border:1px solid var(--line);border-radius:99px;padding:5px 7px;backdrop-filter:blur(8px);
-  width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
-#tools .sep{width:1px;height:16px;background:var(--line);margin:0 2px}
-#zlvl{min-width:44px;letter-spacing:0}
-.tb{font:500 11px var(--mono);letter-spacing:.05em;color:var(--muted);background:none;border:0;
-  border-radius:99px;padding:5px 10px;cursor:pointer;transition:all var(--fast);white-space:nowrap}
-.tb:hover{color:var(--ink);background:var(--raised)}
-.tb.on{color:var(--accent-ink);background:var(--accent)}
-
-#hint{position:absolute;left:16px;bottom:16px;font-family:var(--mono);font-size:10px;
-  color:var(--faint);line-height:1.8;pointer-events:none;letter-spacing:.03em}
-#hint kbd{color:var(--muted);font:inherit}
-
-#pathbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);
-  display:none;align-items:center;gap:8px;max-width:min(70%,760px);
-  background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--accent);
-  border-radius:99px;padding:6px 8px 6px 13px;backdrop-filter:blur(8px);
-  font-size:11.5px;overflow:hidden}
-#pathbar.on{display:flex}
-#pathbar .chain{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-#pathbar .chain em{font-style:normal;color:var(--faint);margin:0 5px}
-#pathbar .x{font:inherit;color:var(--faint);background:none;border:0;cursor:pointer;padding:0 4px}
-#pathbar .x:hover{color:var(--ink)}
-
-/* ── Right drawer ─────────────────────────────────────────────────────── */
-/* The grid column owns the width. Hard-coding 322px would let the media
-   query shrink the column to 300px on narrow screens, and #drawer's
-   overflow:hidden would then slice 22px off the content. */
-.dr{width:100%;height:100%;display:flex;flex-direction:column;min-height:0}
-.dr-head{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
-.dr-head .kind{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-.dr-head .kind i{width:7px;height:7px;border-radius:50%}
-.dr-head h2{font-size:17px;font-weight:560;letter-spacing:-.02em;margin-top:9px}
-.dr-head p{font-size:12.5px;line-height:1.75;color:var(--muted);margin-top:9px}
-/* Provenienz-Block: die PlugBrain-Auskunft „wer, wann, womit“ zum Objekt */
-.prov{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:12px;
-  padding-top:10px;border-top:1px solid var(--line-soft)}
-.prov dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
-  color:var(--faint);padding-top:1px}
-.prov dd{font-size:11.5px;color:var(--muted);line-height:1.5;word-break:break-all}
-.prov dd.mono{font-family:var(--mono);font-size:10.5px}
-.prov dd.bad{color:var(--neg);font-weight:500}
-#hud-sys{margin-top:2px}
-.dr-body{flex:1;min-height:0;overflow:auto;padding:4px 18px 18px}
-.dr-sec{margin-top:18px}
-.dr-sec h3{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--faint);font-weight:400;margin-bottom:7px;display:flex;gap:6px;align-items:baseline}
-.dr-sec h3 b{font-weight:400;color:var(--faint);opacity:.6}
-.nb{display:flex;align-items:center;gap:7px;padding:5px 7px;margin:0 -7px;border-radius:var(--r-sm);
-  cursor:pointer;transition:background var(--fast)}
-.nb:hover{background:var(--raised)}
-.nb i{width:6px;height:6px;border-radius:50%;flex:none}
-.nb span{font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nb u{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-decoration:none;letter-spacing:.05em}
-.dr-act{display:flex;gap:7px;padding:12px 18px;border-top:1px solid var(--line-soft)}
-.dr-act .btn{flex:1;background:var(--raised);border-color:var(--line);font-size:11.5px;padding:6px 8px}
-.dr-act .btn:hover{border-color:var(--faint);background:var(--raised)}
-.dr-act .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-
-#gate{position:absolute;inset:0;display:none;place-content:center;text-align:center;
-  background:var(--bg);color:var(--muted);font-size:13px;line-height:2;padding:40px}
-/* One row, always. Wrapping turned this bar into four lines at lane width and
-   pushed the visualisation off the bottom of the surface; the name is what
-   gives way, because a truncated name still identifies and a hidden figure
-   does not inform. */
-.live-status {
-  position: fixed; z-index: 50; top: 0; left: 0; right: 0;
-  height: 30px; padding: 0 12px; box-sizing: border-box;
-  background: #101613; color: #cde6d6;
-  display: flex; gap: 14px; align-items: center;
-  font-size: 11px; line-height: 1; flex-wrap: nowrap; overflow: hidden;
-}
-.live-status__name {
-  min-width: 0; flex: 0 1 auto;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-/* The figures never shrink: they are the reason to look at this bar. */
-.live-status__figures {
-  flex: none; white-space: nowrap; opacity: .72;
-  font-variant-numeric: tabular-nums; letter-spacing: .01em;
-}
-.live-status__figures b { color: #eafff2; font-weight: 600; opacity: 1; }
-.live-status__figures b + b { margin-left: 10px; }
-.live-status__state { flex: none; white-space: nowrap; opacity: .55; }
-.live-status__state.is-bad { color: #ff9c8a; opacity: 1; }
-#app { padding-top: 30px; box-sizing: border-box; }
-.brain-empty { padding: 90px 24px; color: #cde6d6; }
-
-/* ── Vault chrome: switcher, open-panel, landing ───────────────────────────
-   The standalone vault experience. Everything here reads the daemon's own
-   registry; the UI only chooses which planet is on screen. Same visual
-   language as the views: hairline borders, ink at opacity, one action. */
-.brain-switcher { flex: none; display: inline-flex; }
-.brain-switcher select {
-  font: inherit; font-size: 11px; color: currentColor;
-  background: transparent; border: 1px solid currentColor; border-radius: 999px;
-  padding: 2px 18px 2px 8px; opacity: .6; cursor: pointer;
-  transition: opacity 140ms ease;
-}
-.brain-switcher select:hover { opacity: 1; }
-.brain-switcher select:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; opacity: 1; }
-
-.brain-vault-toggle {
-  flex: none; font: inherit; font-size: 11px; letter-spacing: .03em;
-  padding: 3px 9px; cursor: pointer; color: currentColor;
-  background: transparent; border: 1px solid currentColor; border-radius: 999px;
-  opacity: .55; transition: opacity 140ms ease, background-color 140ms ease;
-}
-.brain-vault-toggle:hover { opacity: 1; }
-.brain-vault-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; opacity: 1; }
 
 /* The panel floats under the status bar, over the canvas views. */
 .brain-vault {
@@ -268,8 +45,6 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .brain-vault__reindex { color: currentColor; background: transparent; opacity: .7; }
 .brain-vault__reindex:hover:not(:disabled) { opacity: 1; }
 .brain-vault__error { color: #ff9c8a; font-size: 12px; margin: 0; }
-/* Says out loud that a graph is a crop of the index, not the whole of it. */
-.live-status__sample { opacity: .65; }
 /* Live index counters. Monospace so the numbers stop dancing as they climb. */
 .brain-vault__progress {
   color: #cde6d6; font-size: 12px; margin: 0;
@@ -311,25 +86,6 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .brain-vault__known-item:hover { opacity: 1; background: color-mix(in srgb, currentColor 10%, transparent); }
 .brain-vault__known-item em { font-style: normal; opacity: .55; }
 
-/* ── The three-view switcher ────────────────────────────────────────────────
-   One brain, three renderings. Only the active view is mounted, so each
-   engine's own global stylesheet applies to a DOM that is only ever present
-   for that view. */
-.brain-views { display: flex; gap: 2px; margin-left: auto; flex: none; }
-.brain-views button {
-  font: inherit; font-size: 12px; letter-spacing: .04em; text-transform: uppercase;
-  padding: 3px 9px; cursor: pointer;
-  color: currentColor; background: transparent;
-  border: 1px solid currentColor; border-radius: 999px; opacity: .45;
-  transition: opacity 140ms ease, background-color 140ms ease;
-}
-.brain-views button:hover { opacity: .8; }
-.brain-views button.on { opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent); }
-.brain-views button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; opacity: 1; }
-
-/* Each engine paints full-bleed beneath the status bar. */
-.brain-view { position: fixed; inset: 0; z-index: 0; }
-
 /* ── Knowledge workbench ─────────────────────────────────────────────── */
 .notes-workbench { position: fixed; inset: 52px 0 0; display: grid; grid-template-columns: minmax(230px, 29%) 1fr; background: var(--bg); z-index: 2; }
 .notes-sidebar { min-width: 0; border-right: 1px solid var(--border); background: var(--card-bg); display: flex; flex-direction: column; overflow: hidden; }
@@ -345,6 +101,31 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .notes-conflict, .notes-notice { margin: 0; padding: 8px 16px; font-size: 12px; }.notes-conflict { background: #5b1e27; color: #fecaca; }.notes-notice { background: #163824; color: #bbf7d0; }.notes-empty { padding: 24px; color: var(--faint); }
 @media (max-width: 780px) { .notes-workbench { grid-template-columns: 1fr; }.notes-sidebar { max-height: 35vh; }.notes-editor__meta { grid-template-columns: 1fr; }.notes-editor__head { align-items: flex-start; flex-direction: column; } }
 
+/* Save-status badge — colours come from kit tokens only */
+.notes-save-status {
+  font-family: var(--mono, monospace); text-transform: uppercase;
+  font-size: 11px; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 4px; font-weight: 600;
+}
+.notes-save-status--saved  { background: color-mix(in srgb, var(--pos)  20%, transparent); color: var(--pos); }
+.notes-save-status--saving { background: color-mix(in srgb, var(--info) 20%, transparent); color: var(--info); }
+.notes-save-status--dirty  { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.notes-save-status--conflict { background: color-mix(in srgb, var(--neg)  20%, transparent); color: var(--neg); }
+
+/* Search-results section head */
+.notes-results__section-head {
+  padding: 6px 12px; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--faint);
+  background: color-mix(in srgb, var(--ink) 3%, transparent); font-weight: 600;
+}
+/* Symbol kind badge */
+.notes-results__sym-row { display: flex; align-items: center; justify-content: space-between; }
+.notes-results__sym-kind {
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  background: color-mix(in srgb, var(--info) 15%, transparent);
+  color: var(--info); font-family: var(--mono);
+}
+
 /* Stated plainly when a view is showing something other than real fleet data. */
 .brain-note {
   position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 30;
@@ -353,25 +134,6 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   border: 1px solid currentColor; border-radius: 8px;
   background: color-mix(in srgb, canvas 88%, transparent);
 }
-
-/* Mesh is now a trace projection, not a fixed-canvas simulation. It must be
-   able to scroll through every observed node and evidence row. */
-.brain-view-mesh { top: 52px; overflow: auto; background: #0a0b0d; }
-
-/* Timelapse scrubber. Pinned above the view so all three renderings are read
-   at the same instant; "jetzt" means the live present, not the end of a clip. */
-.brain-timelapse {
-  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%); top: 54px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 6px 14px; border: 1px solid #2a3a33; border-radius: 999px;
-  background: #101613ee; color: #cde6d6; font-size: 12px;
-}
-.brain-timelapse button {
-  font: inherit; width: 26px; height: 26px; cursor: pointer;
-  color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 50%;
-}
-.brain-timelapse input[type="range"] { width: 260px; accent-color: #6ee7b7; }
-.brain-timelapse span { min-width: 74px; text-align: right; opacity: .8; }
 
 /* ── Queue ────────────────────────────────────────────────────────────────
    Depth first and largest: it is the number that predicts trouble. The list
@@ -407,60 +169,8 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
    ATLAS V1 — Workbench, Explorer, Search, Source & Context Packs
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── Offline Banner (Negativprüfung) ─────────────────────────────────── */
-.brain-offline-banner {
-  background: #7f1d1d;
-  color: #fecaca;
-  padding: 8px 16px;
-  font-size: 13px;
-  border-bottom: 1px solid #ef4444;
-  z-index: 9999;
-}
-.brain-offline-banner__inner {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.brain-offline-badge {
-  background: #ef4444;
-  color: #fff;
-  font-weight: 700;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.05em;
-}
-.brain-offline-btn {
-  background: #fff;
-  color: #7f1d1d;
-  border: none;
-  font-weight: 600;
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.brain-offline-btn:hover {
-  background: #fee2e2;
-}
 
-/* ── Auth Button & Modal ─────────────────────────────────────────────── */
-.brain-auth-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--fg);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  margin-left: 8px;
-}
-.brain-auth-btn:hover {
-  background: var(--card-bg);
-}
+/* ── Modal ─────────────────────────────────────────────────────────── */
 .brain-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -555,14 +265,6 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .brain-selection-list small { font: 10px var(--font-mono, ui-monospace, monospace); color: var(--faint); overflow-wrap: anywhere; }
 
 /* ── Workbench Layout & Split ────────────────────────────────────────── */
-.brain-workspace-layout {
-  position: absolute;
-  top: 48px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  overflow: hidden;
-}
 .workbench-split {
   display: flex;
   height: 100%;
@@ -588,12 +290,26 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   flex-direction: column;
 }
 
-/* ── Atlas Overlay ───────────────────────────────────────────────────── */
-.atlas-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
+@media (max-width: 860px) {
+  .workbench-split {
+    flex-direction: column;
+  }
+  .workbench-pane--side {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .workbench-pane--main {
+    width: 100%;
+    flex: 1;
+    min-height: 50vh;
+  }
 }
+
+/* ── Atlas Overlay ───────────────────────────────────────────────────── */
 .atlas-source-overlay {
   position: absolute;
   top: 16px;
@@ -842,6 +558,33 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   flex: 1;
   overflow-y: auto;
   padding: 6px 0;
+}
+.tree-actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+.tree-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--faint);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tree-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+.tree-chevron {
+  font-size: 8px;
+  color: var(--faint);
+  width: 12px;
+  text-align: center;
+  display: inline-block;
+  user-select: none;
 }
 .tree-item {
   display: flex;
@@ -1239,58 +982,6 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
   margin-bottom: 16px;
 }
 
-/* ── Offline Banner ─────────────────────────────────────────────────── */
-.brain-offline-banner {
-  position: relative;
-  z-index: 9999;
-  /* A startup warning must not become a glass pane over the whole product:
-     opening the first vault is exactly how the UI can recover from it. */
-  pointer-events: none;
-  background: #7f1d1d;
-  color: #fef2f2;
-  border-bottom: 2px solid #ef4444;
-  padding: 8px 16px;
-  font-size: 13px;
-}
-.brain-offline-banner__inner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-.brain-offline-badge {
-  background: #dc2626;
-  color: #fff;
-  font-weight: 700;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.5px;
-}
-.brain-offline-text {
-  flex: 1;
-}
-.brain-offline-text code {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-family: var(--font-mono, monospace);
-}
-.brain-offline-btn {
-  pointer-events: auto;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.brain-offline-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
 
 /* ── Knowledge graph: list and inspector are the complete keyboard view. ── */
 .notes-create { display: flex; gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
@@ -1320,4 +1011,439 @@ canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
 .knowledge-graph__inspector section { margin-top: 16px; display: grid; gap: 5px; }
 .knowledge-graph__inspector section button { text-align: left; }
 @media (max-width: 800px) { .knowledge-graph__body { grid-template-columns: 1fr; } .knowledge-graph__inspector { max-height: 280px; } }
+
+/* ── Obsidian-Fluent Markdown Preview & Notes Overhaul ────────────────────── */
+.markdown-preview {
+  color: var(--ink, #e7e8eb);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  line-height: 1.68;
+  word-break: break-word;
+}
+.markdown-preview p { margin: 0 0 12px; }
+.markdown-preview p:last-child { margin-bottom: 0; }
+.markdown-preview .md-empty { color: var(--faint); font-style: italic; }
+
+/* Headings */
+.md-heading {
+  color: var(--ink, #f1f5f9);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 18px 0 10px;
+  line-height: 1.3;
+}
+.md-heading:first-child { margin-top: 0; }
+.md-heading--1 { font-size: 20px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.md-heading--2 { font-size: 17px; border-bottom: 1px solid var(--line-soft); padding-bottom: 4px; }
+.md-heading--3 { font-size: 15px; }
+.md-heading--4 { font-size: 13.5px; }
+.md-heading--5 { font-size: 12.5px; }
+.md-heading--6 { font-size: 12px; color: var(--muted); }
+
+/* Horizontal rules */
+.md-hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
+}
+
+/* Callouts */
+.md-callout {
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin: 14px 0;
+}
+.md-callout-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.md-callout-glyph { font-size: 13px; line-height: 1; }
+.md-callout-content { font-size: 13px; line-height: 1.55; }
+.md-callout-content p { margin: 0 0 6px; }
+.md-callout-content p:last-child { margin-bottom: 0; }
+
+.md-blockquote {
+  border-left: 3px solid var(--line-strong);
+  padding: 6px 12px;
+  margin: 12px 0;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 4px 4px 0;
+}
+.md-blockquote p { margin: 0 0 6px; }
+.md-blockquote p:last-child { margin-bottom: 0; }
+
+/* Tables */
+.md-table-wrap {
+  overflow-x: auto;
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel, #0D1210);
+}
+.md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.md-table th {
+  background: var(--raised, #131A17);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+.md-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+}
+.md-table tr:hover td { background: var(--hover, #1A2320); }
+.md-table tr:last-child td { border-bottom: 0; }
+
+/* Checklists & Lists */
+.md-checklist { list-style: none; padding-left: 0; margin: 10px 0; }
+.md-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 13px;
+}
+.md-checklist-item.is-checked .md-checklist-label {
+  text-decoration: line-through;
+  color: var(--faint);
+}
+.md-checkbox {
+  margin-top: 3px;
+  accent-color: var(--accent, #10b981);
+  cursor: pointer;
+}
+.md-ul, .md-ol {
+  margin: 10px 0;
+  padding-left: 22px;
+}
+.md-ul li, .md-ol li { margin: 3px 0; }
+
+/* Inline styles */
+.md-inline-code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a5f3fc;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.md-code-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #34d399;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  transition: all var(--fast);
+}
+.md-code-link:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+}
+.md-code-link code {
+  color: inherit;
+  background: transparent;
+  padding: 0;
+  border: 0;
+}
+.md-code-link__glyph { font-size: 10px; opacity: 0.75; }
+
+.md-wikilink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #93c5fd;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all var(--fast);
+}
+.md-wikilink:hover {
+  background: rgba(96, 165, 250, 0.18);
+  border-color: #60a5fa;
+  color: #bfdbfe;
+}
+.md-wikilink__brackets { color: var(--faint); font-family: var(--mono); font-size: 11px; }
+.md-wikilink__arrow { font-size: 9px; opacity: 0.7; margin-left: 2px; }
+
+.md-link {
+  color: var(--info, #06b6d4);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.md-link:hover { color: #22d3ee; }
+
+/* Code blocks */
+.md-code-block {
+  margin: 14px 0;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel, #0D1210);
+  overflow: hidden;
+}
+.md-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  background: var(--raised, #131A17);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.md-code-lang { color: var(--muted); font-weight: 600; }
+.md-code-copy {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: all var(--fast);
+}
+.md-code-copy:hover { color: var(--ink); border-color: var(--accent); }
+.md-code-pre {
+  margin: 0;
+  padding: 10px 0;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.md-code-line {
+  display: flex;
+  padding: 0 12px;
+}
+.md-code-line:hover { background: rgba(255, 255, 255, 0.02); }
+.md-line-num {
+  width: 32px;
+  flex: none;
+  color: var(--faint);
+  user-select: none;
+  text-align: right;
+  padding-right: 12px;
+  font-size: 11px;
+}
+.md-line-code { flex: 1; white-space: pre; }
+
+/* Code syntax tokens */
+.md-tok--keyword { color: #38bdf8; font-weight: 500; }
+.md-tok--string { color: #34d399; }
+.md-tok--comment { color: #64748b; font-style: italic; }
+.md-tok--number { color: #facc15; }
+.md-tok--type { color: #c084fc; }
+.md-tok--fn { color: #60a5fa; }
+.md-tok--text { color: var(--ink); }
+
+/* ── NotesView 3-Way Mode Toggle & Ergonomics ──────────────────────────── */
+.notes-view-mode-toggle {
+  display: inline-flex;
+  background: var(--raised, #131A17);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px;
+}
+.notes-toggle-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--fast);
+}
+.notes-toggle-btn.on {
+  background: var(--accent, #10b981);
+  color: #06101f;
+  font-weight: 700;
+}
+
+/* Frontmatter Chips Bar */
+.notes-frontmatter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 16px;
+  background: var(--raised, #131A17);
+  border-bottom: 1px solid var(--line);
+}
+.notes-fm-pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.notes-fm-pill--entscheidung {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.notes-fm-pill--widerspruch {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+.notes-fm-pill--notiz, .notes-fm-pill--stand {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+.notes-fm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--fast);
+}
+.notes-fm-btn--link {
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(96, 165, 250, 0.08);
+}
+.notes-fm-btn--link:hover { background: rgba(96, 165, 250, 0.18); border-color: #60a5fa; }
+.notes-fm-btn--code {
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+}
+.notes-fm-btn--code:hover { background: rgba(16, 185, 129, 0.18); border-color: #10b981; }
+.notes-fm-btn--rev {
+  color: #c084fc;
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  background: rgba(192, 132, 252, 0.08);
+}
+.notes-fm-btn--rev:hover { background: rgba(192, 132, 252, 0.18); border-color: #a855f7; }
+
+/* Collapsible Tag Drawer */
+.notes-tag-drawer {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.notes-tag-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.notes-tag-drawer__toggle {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.notes-tag-drawer__toggle:hover { color: var(--ink); }
+.notes-tag-drawer__active {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.notes-tag-chip {
+  font-size: 10.5px;
+  font-family: var(--mono);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 99px;
+  padding: 1px 6px;
+}
+.notes-tag-clear {
+  background: transparent;
+  border: 0;
+  color: var(--faint);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 10px;
+}
+.notes-tag-clear:hover { color: var(--neg); }
+.notes-tag-drawer__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.notes-tag-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--raised, #131A17);
+  color: var(--ink);
+}
+.notes-tag-drawer__list {
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 4px;
+}
+.notes-tags--compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.notes-tags-more {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--faint);
+  border-radius: 99px;
+  padding: 2px 6px;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.notes-tags-more:hover { color: var(--ink); border-color: var(--muted); }
+
 

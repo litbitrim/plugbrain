@@ -3,6 +3,8 @@
 /** One authoritative workspace snapshot, exactly as /api/atlas/snapshot returns it. */
 export type Snapshot = {
   workspace: { id: string; name: string; canonicalPath: string }
+  /** Moves only when the index publishes a new generation; the stable change signal. */
+  indexGeneration?: number | string | null
   graph: { nodes: any[]; edges: any[] }
   coverage?: {
     /** The snapshot shows every file of the index (false = a sample of it). */

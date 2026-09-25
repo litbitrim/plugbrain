@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createAtlasModel } from './lib/atlas.js'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { folderName } from './lib/workspace-name.js'
 import {
   describeProgress, galaxy, lastWorkspace, nextDaemonProgress, rememberWorkspace, openVault, reindexWorkspace,
@@ -17,6 +16,9 @@ import ExplorerView from './views/ExplorerView'
 import SearchView from './views/SearchView'
 import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
+import GraphView from './views/GraphView'
+import { Icon, ICON } from './ui/Icon'
+import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
@@ -363,11 +365,11 @@ export default function App() {
     const from = new Date(bounds.first).getTime()
     const to = new Date(bounds.last).getTime()
     const span = Math.max(1, to - from)
-    let step = until ? Math.round(((new Date(until).getTime() - from) / span) * 60) : 0
+    let step = until ? Math.round(((new Date(until).getTime() - from) / span) * TIMELINE_STEPS) : 0
     const id = setInterval(() => {
       step += 1
-      if (step >= 60) { setUntil(null); setPlaying(false); return }
-      setUntil(new Date(from + (span * step) / 60).toISOString())
+      if (step >= TIMELINE_STEPS) { setUntil(null); setPlaying(false); return }
+      setUntil(new Date(from + (span * step) / TIMELINE_STEPS).toISOString())
     }, 220)
     return () => clearInterval(id)
   }, [playing, bounds])
@@ -389,7 +391,9 @@ export default function App() {
         if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) {
           throw new Error('Der Brain-Snapshot ist unvollständig.')
         }
-        const signature = `${next.workspace.id}:${next.updatedAt ?? ''}:${next.graph.nodes.length}:${next.graph.edges.length}`
+        // updatedAt is stamped per request, so keying on it rebuilt the whole graph
+        // on every poll. The index generation only moves when the index does.
+        const signature = `${next.workspace.id}:${next.indexGeneration ?? ''}:${until ?? ''}:${next.graph.nodes.length}:${next.graph.edges.length}`
         if (signature !== previous) { setSnapshot(next); previous = signature }
         setError('')
       } catch (cause) {
@@ -428,17 +432,17 @@ export default function App() {
     return () => { controller.abort(); clearTimeout(timer) }
   }, [attempt, until, workspaceId])
 
-  const indexed = snapshot?.graph.nodes.length ?? graphFiles.length
-  const edgeCount = snapshot?.graph.edges.length ?? 0
   // "Is the brain current?" is a question about the INDEX, not about how much of
-  // it this view happens to draw. A cropped picture used to be labelled
-  // "Index unvollständig", which reads as a broken brain on every large vault.
+  // it the graph happens to draw.
   const indexBehind = snapshot?.coverage ? !snapshot.coverage.indexComplete : false
-  const state = error
-    ? 'getrennt (offline)'
-    : (snapshot || graphFiles.length > 0)
-      ? (indexBehind ? `${snapshot?.coverage?.staleFiles ?? 0} Datei(en) warten auf den Index` : 'live')
-      : 'lädt …'
+  const staleFiles = snapshot?.coverage?.staleFiles ?? 0
+  const status: { tone: 'ok' | 'warn' | 'bad' | 'idle'; text: string; title: string } = error
+    ? { tone: 'bad', text: 'Offline', title: error }
+    : !snapshot
+      ? { tone: 'idle', text: 'Verbinde …', title: 'Der aktuelle Stand wird aus dem Brain gelesen.' }
+      : indexBehind
+        ? { tone: 'warn', text: `${staleFiles} warten`, title: `${staleFiles} Datei(en) warten auf den Index` }
+        : { tone: 'ok', text: 'Aktuell', title: 'Der Index ist auf dem neuesten Stand.' }
 
   // Extract real files for Explorer (graphFiles prioritized for instant responsiveness)
   const fileNodes = useMemo(() => {
@@ -480,396 +484,378 @@ export default function App() {
     setView('mesh')
   }
 
-  return <>
-    {/* Negativprüfung: Bei gestopptem Server erscheint ein Offline-Zustand */}
-    {error && (
-      <div className="brain-offline-banner" role="alert">
-        <div className="brain-offline-banner__inner">
-          <span className="brain-offline-badge">OFFLINE</span>
-          <span className="brain-offline-text">
-            <strong>Server nicht erreichbar:</strong> {error} — läuft <code>plugbrain serve</code>?
-          </span>
-          <button type="button" className="brain-offline-btn" onClick={() => setAttempt(v => v + 1)}>
-            Erneut verbinden
-          </button>
-        </div>
-      </div>
-    )}
+  const retry = useCallback(() => setAttempt(value => value + 1), [])
 
-    <div className="live-status" role="status">
-      <strong className="live-status__name" title={snapshot?.workspace.canonicalPath ?? ''}>
-        {snapshot ? shortLabel(snapshot.workspace.name) : (planets.find(p => p.id === workspaceId)?.name || 'PlugBrain')}
-      </strong>
-      {workspaceId && planets.length > 0 && (
-        <label className="brain-switcher" title="Zu einem anderen Vault wechseln">
-          <select value={workspaceId} onChange={event => { const id = event.target.value; if (id) applyWorkspace(id) }}>
-            {planets.map(p => (
-              <option key={p.id} value={p.id}>{shortLabel(p.name)}</option>
-            ))}
-          </select>
-        </label>
-      )}
-      {workspaceId && (
-        <button type="button" className="brain-vault-toggle"
-          onClick={() => { setVaultOpen(v => !v); setVaultError(''); setVaultDone('') }}
-          title="Einen Ordner als neuen Vault öffnen">
-          {vaultOpen ? 'Schließen' : 'Vault öffnen'}
-        </button>
-      )}
-      <button type="button" className="brain-vault-toggle" onClick={() => setShortcutsOpen(true)} title="Tastenkürzel anzeigen (?)">?</button>
-      {workspaceId && (
-        <button type="button" className="brain-vault-toggle"
-          onClick={() => void openSelection()}
-          disabled={selectionBusy}
-          title="Aktive Code-Checkouts aus dem Planet-Inventar auswählen">
-          {selectionBusy ? 'Lade Code …' : 'Code-Auswahl'}
-        </button>
-      )}
-      <span className="live-status__figures">
-        <b>{indexed}</b> Objekte <b>{edgeCount}</b> Kanten
-        {snapshot?.coverage && snapshot.coverage.totalFiles > snapshot.coverage.shownFiles && (
-          <span className="live-status__sample"
-            title={`Ausschnitt: ${snapshot.coverage.shownFiles} von ${snapshot.coverage.totalFiles} Dateien des Index`}>
-            {' '}· Ausschnitt aus {snapshot.coverage.totalFiles} Dateien
-          </span>
-        )}
-      </span>
-      <span className={error ? 'live-status__state is-bad' : 'live-status__state'}>{state}</span>
+  // A node opened from the graph lands in the Explorer: a full source view with
+  // line numbers beats a panel painted over the graph it came from.
+  const openFromGraph = useCallback((path: string) => {
+    setSelectedRevision(null)
+    setSelectedSource({ path, line: null })
+    setView('explorer')
+  }, [])
 
-      <nav className="brain-views" aria-label="Ansicht">
-        {VIEWS.map(v => (
-          <button key={v.id} type="button" title={v.hint}
-            className={v.id === view ? 'on' : undefined}
-            aria-pressed={v.id === view}
-            onClick={() => { setView(v.id); }}>
-            {v.label}
-          </button>
-        ))}
-      </nav>
+  const timeline = useMemo<Timeline | null>(() => {
+    if (!bounds || !(view === 'atlas' || view === 'city')) return null
+    const from = new Date(bounds.first).getTime()
+    const span = Math.max(1, new Date(bounds.last).getTime() - from)
+    const step = until ? Math.round(((new Date(until).getTime() - from) / span) * TIMELINE_STEPS) : TIMELINE_STEPS
+    return {
+      playing,
+      step,
+      label: until
+        ? new Date(until).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        : 'jetzt',
+      onTogglePlay: () => setPlaying(current => !current),
+      onScrub: next => {
+        setPlaying(false)
+        if (next >= TIMELINE_STEPS) { setUntil(null); return }
+        setUntil(new Date(from + (span * next) / TIMELINE_STEPS).toISOString())
+      },
+    }
+  }, [bounds, until, playing])
 
-      <button
-        type="button"
-        className="brain-auth-btn"
-        onClick={() => setTokenModalOpen(true)}
-        title="Auth-Token konfigurieren"
-      >
-        🔑 Auth
-      </button>
-
-      {error && <button type="button" onClick={() => setAttempt(value => value + 1)}>Erneut verbinden</button>}
+  const sourceOverlay = selectedSource && workspaceId ? (
+    <div className="atlas-source-overlay">
+      <SourceView
+        workspaceId={workspaceId}
+        path={selectedSource.path}
+        highlightLine={selectedSource.line}
+        onClose={() => setSelectedSource(null)}
+        onNavigateFile={(p, l) => handleOpenSource(p, l)}
+      />
     </div>
+  ) : null
 
-    {tokenModalOpen && (
-      <div className="brain-modal-backdrop" onClick={() => setTokenModalOpen(false)}>
-        <div className="brain-modal" onClick={e => e.stopPropagation()}>
-          <div className="brain-modal__header">
-            <h3>PlugBrain Authentifizierung</h3>
-            <button type="button" className="brain-modal__close" onClick={() => setTokenModalOpen(false)}>✕</button>
-          </div>
-          <form onSubmit={handleSaveToken}>
-            <div className="brain-modal__field">
-              <label>Bearer Token (aus <code>auth.token</code>):</label>
-              <input
-                type="text"
-                className="brain-modal__input mono"
-                value={tokenInput}
-                onChange={e => setTokenInput(e.target.value)}
-                placeholder="plug-..."
-              />
-            </div>
-            <div className="brain-modal__field">
-              <label>Agent ID:</label>
-              <input
-                type="text"
-                className="brain-modal__input mono"
-                value={agentInput}
-                onChange={e => setAgentInput(e.target.value)}
-                placeholder="agy"
-              />
-            </div>
-            <div className="brain-modal__actions">
-              <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
-              <button type="submit" className="primary">Speichern</button>
-            </div>
-          </form>
+  const sourcePane = (placeholder: React.ReactNode) => selectedSource && workspaceId ? (
+    <SourceView
+      workspaceId={workspaceId}
+      path={selectedSource.path}
+      highlightLine={selectedSource.line}
+      onClose={() => setSelectedSource(null)}
+      onNavigateFile={(p, l) => handleOpenSource(p, l)}
+    />
+  ) : placeholder
+
+  const workspaceName = snapshot
+    ? shortLabel(snapshot.workspace.name)
+    : (planets.find(p => p.id === workspaceId)?.name ?? '')
+
+  return (
+    <div className="pb-app">
+      <header className="pb-topbar">
+        <div className="pb-topbar__brand">
+          <span className="pb-logo" aria-hidden="true" />
+          <span className="pb-topbar__product">PlugBrain</span>
+          {workspaceId && planets.length > 1 ? (
+            <label className="pb-select" title="Vault wechseln">
+              <span className="pb-sr">Vault</span>
+              <select value={workspaceId} onChange={event => { const id = event.target.value; if (id) applyWorkspace(id) }}>
+                {planets.map(p => <option key={p.id} value={p.id}>{shortLabel(p.name)}</option>)}
+              </select>
+              <Icon path={ICON.chevron} />
+            </label>
+          ) : workspaceName !== '' && (
+            <span className="pb-topbar__workspace" title={snapshot?.workspace.canonicalPath ?? ''}>{workspaceName}</span>
+          )}
         </div>
-      </div>
-    )}
 
-    {selectionModalOpen && (
-      <div className="brain-modal-backdrop" onClick={() => !selectionBusy && setSelectionModalOpen(false)}>
-        <div className="brain-modal brain-selection-modal" onClick={e => e.stopPropagation()}>
-          <div className="brain-modal__header">
-            <h3>Aktive Code-Checkouts</h3>
-            <button type="button" className="brain-modal__close" disabled={selectionBusy}
-              onClick={() => setSelectionModalOpen(false)}>✕</button>
-          </div>
-          <p className="brain-selection-modal__hint">
-            Das Inventar bleibt vollständig sichtbar. Nur die hier bewusst markierten Checkout-IDs
-            werden beim nächsten Scan als aktiver Code indexiert.
-          </p>
-          <form onSubmit={saveSelection}>
-            {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
-            {planetInventory === null ? (
-              <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
-            ) : planetInventory.checkouts.length === 0 ? (
-              <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
-            ) : (
-              <fieldset className="brain-selection-list" disabled={selectionBusy}>
-                <legend>Checkout-Inventar</legend>
-                {planetInventory.checkouts.map(checkout => (
-                  <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
-                    <input
-                      type="checkbox"
-                      checked={selectionDraft.includes(checkout.id)}
-                      disabled={checkout.retiredAt !== null}
-                      onChange={() => toggleCheckout(checkout.id)}
-                    />
-                    <span>
-                      <strong>{checkout.relPrefix}</strong>
-                      <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-            )}
-            <p className="brain-selection-modal__hint">
-              Keine Auswahl ist ausdrücklich „notes only“; sie startet keinen leeren Code-Scan.
-            </p>
-            <div className="brain-modal__actions">
-              <button type="button" disabled={selectionBusy} onClick={() => setSelectionModalOpen(false)}>Abbrechen</button>
-              <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
-                {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
-
-    {bounds && (view === 'atlas' || view === 'city') && (
-      <div className="brain-timelapse">
-        <button type="button" onClick={() => setPlaying(p => !p)} title="Wachstum abspielen">
-          {playing ? '❚❚' : '▶'}
-        </button>
-        <input
-          type="range" min={0} max={60} step={1}
-          value={until && bounds
-            ? Math.round(((new Date(until).getTime() - new Date(bounds.first).getTime()) /
-                Math.max(1, new Date(bounds.last).getTime() - new Date(bounds.first).getTime())) * 60)
-            : 60}
-          onChange={event => {
-            setPlaying(false)
-            const step = Number(event.target.value)
-            if (step >= 60) { setUntil(null); return }
-            const from = new Date(bounds.first).getTime()
-            const to = new Date(bounds.last).getTime()
-            setUntil(new Date(from + ((to - from) * step) / 60).toISOString())
-          }}
-        />
-        <span>{until ? new Date(until).toLocaleTimeString() : 'jetzt'}</span>
-      </div>
-    )}
-
-    {vaultOpen && workspaceId && vaultForm}
-
-    {!workspaceId ? (
-      <div className="brain-landing" role="main">
-        <h1 className="brain-landing__title">PlugBrain</h1>
-        <p className="brain-landing__lead">
-          Einen Ordner als Vault öffnen — auch einen Wissensordner ohne <code>.git</code>. Der Brain indiziert ihn einmal und hält ihn über den
-          Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
-          einem durchsuchbaren Graphen.
-        </p>
-        <ol className="brain-first-run" aria-label="Erste Schritte">
-          <li><strong>Ordner wählen</strong><span>Notiz- oder Projektordner angeben; Git ist nicht erforderlich.</span></li>
-          <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Suche und Graph bereit sind.</span></li>
-          <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und können direkt mit einer Notiz beginnen.</span></li>
-        </ol>
-        {vaultForm}
-        {planets.length > 0 && (
-          <div className="brain-vault__known">
-            <span>Oder einen bekannten Vault öffnen:</span>
-            {planets.map(p => (
-              <button key={p.id} type="button" className="brain-vault__known-item"
-                onClick={() => applyWorkspace(p.id)}>
-                {shortLabel(p.name)} <em title={p.root}>{p.indexedAt ? 'indiziert' : 'nicht indiziert'}</em>
+        {workspaceId && (
+          <nav className="pb-tabs" aria-label="Ansicht">
+            {VIEWS.map(v => (
+              <button key={v.id} type="button" className="pb-tab" title={v.hint}
+                aria-current={v.id === view ? 'page' : undefined}
+                onClick={() => setView(v.id)}>
+                {v.label}
               </button>
             ))}
-          </div>
+          </nav>
         )}
-      </div>
-    ) : (
-      <div className="brain-workspace-layout">
-        {view === 'atlas' && (
-          snapshot && indexed > 0 ? (
-            <div className="atlas-wrapper">
-              <AtlasGraph graph={snapshot.graph} onOpenSource={handleOpenSource} />
-              {selectedSource && (
-                <div className="atlas-source-overlay">
-                  <SourceView
-                    workspaceId={workspaceId}
-                    path={selectedSource.path}
-                    highlightLine={selectedSource.line}
-                    onClose={() => setSelectedSource(null)}
+
+        <div className="pb-topbar__actions">
+          {workspaceId && (
+            <span className="pb-status" data-tone={status.tone} role="status" title={status.title}>
+              <i aria-hidden="true" /><span>{status.text}</span>
+            </span>
+          )}
+          {workspaceId && (
+            <button type="button" className="pb-tool"
+              aria-expanded={vaultOpen}
+              onClick={() => { setVaultOpen(v => !v); setVaultError(''); setVaultDone('') }}
+              title="Einen Ordner als neuen Vault öffnen (O)">
+              <Icon path={ICON.folder} /><span>{vaultOpen ? 'Schließen' : 'Vault öffnen'}</span>
+            </button>
+          )}
+          {workspaceId && (
+            <button type="button" className="pb-tool"
+              onClick={() => void openSelection()}
+              disabled={selectionBusy}
+              title="Aktive Code-Checkouts aus dem Planet-Inventar auswählen">
+              <span>{selectionBusy ? 'Lädt …' : 'Code-Auswahl'}</span>
+            </button>
+          )}
+          <button type="button" className="pb-tool pb-tool--icon" onClick={() => setShortcutsOpen(true)}
+            aria-label="Tastenkürzel anzeigen" title="Tastenkürzel (?)">
+            <Icon path={ICON.keyboard} />
+          </button>
+          <button type="button" className="pb-tool pb-tool--icon" onClick={() => setTokenModalOpen(true)}
+            aria-label="Zugang konfigurieren" title="Auth-Token und Agent-ID">
+            <Icon path={ICON.key} />
+          </button>
+        </div>
+      </header>
+
+      {error && (
+        <div className="pb-banner" role="alert">
+          <strong>Server nicht erreichbar.</strong>
+          <span>{error} — läuft <code>plugbrain serve</code>?</span>
+          <button type="button" className="pb-button" onClick={retry}>
+            <Icon path={ICON.refresh} /> Erneut verbinden
+          </button>
+        </div>
+      )}
+
+      {vaultOpen && workspaceId && <div className="pb-drawer">{vaultForm}</div>}
+
+      <main className="pb-main">
+        {!workspaceId ? (
+          <div className="brain-landing">
+            <h1 className="brain-landing__title">PlugBrain</h1>
+            <p className="brain-landing__lead">
+              Einen Ordner als Vault öffnen — auch einen Wissensordner ohne <code>.git</code>. Der Brain indiziert ihn einmal und hält ihn über den
+              Daemon automatisch aktuell. Wiki-Links, Überschriften, Tags und Code-Symbole werden zu
+              einem durchsuchbaren Graphen.
+            </p>
+            <ol className="brain-first-run" aria-label="Erste Schritte">
+              <li><strong>Ordner wählen</strong><span>Notiz- oder Projektordner angeben; Git ist nicht erforderlich.</span></li>
+              <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Suche und Graph bereit sind.</span></li>
+              <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und können direkt mit einer Notiz beginnen.</span></li>
+            </ol>
+            {vaultForm}
+            {planets.length > 0 && (
+              <div className="brain-vault__known">
+                <span>Oder einen bekannten Vault öffnen:</span>
+                {planets.map(p => (
+                  <button key={p.id} type="button" className="brain-vault__known-item"
+                    onClick={() => applyWorkspace(p.id)}>
+                    {shortLabel(p.name)} <em title={p.root}>{p.indexedAt ? 'indiziert' : 'nicht indiziert'}</em>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : <>
+          {view === 'atlas' && (
+            <div className="pb-view">
+              <div id="app" className="atlas-app">
+                <GraphView
+                  graph={snapshot?.graph ?? null}
+                  coverage={snapshot?.coverage ?? null}
+                  error={snapshot ? '' : error}
+                  onRetry={retry}
+                  onOpenSource={openFromGraph}
+                  timeline={timeline}
+                />
+              </div>
+            </div>
+          )}
+
+          {view === 'notes' && (
+            <NotesView
+              workspaceId={workspaceId}
+              onOpenSource={openKnowledgeSource}
+              onOpenRevision={openKnowledgeRevision}
+              onOpenAgentRun={openKnowledgeAgentRun}
+              onNavigateTab={tab => setView(tab)}
+            />
+          )}
+
+          {view === 'explorer' && (
+            <div className="pb-view">
+              <div className="workbench-split">
+                <div className="workbench-pane workbench-pane--side">
+                  <ExplorerView
+                    workspaceName={snapshot?.workspace.name ?? (planets.find(p => p.id === workspaceId)?.name || 'Workspace')}
+                    files={fileNodes}
+                    activePath={selectedSource?.path}
+                    onSelectFile={path => handleOpenSource(path)}
                   />
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="brain-empty">
-              {error ? (
-                <div className="brain-empty--offline-box">
-                  <div className="offline-icon">🔌</div>
-                  <h3>Server getrennt (Offline-Zustand)</h3>
-                  <p>Die Verbindung zu PlugBrain wurde unterbrochen oder der Server ist gestoppt.</p>
-                  <button type="button" className="btn primary" onClick={() => setAttempt(a => a + 1)}>
-                    Erneut verbinden
-                  </button>
+                <div className="workbench-pane workbench-pane--main">
+                  {selectedRevision && !selectedSource ? (
+                    <RevisionInspector workspaceId={workspaceId} revision={selectedRevision} onClose={() => setSelectedRevision(null)} />
+                  ) : sourcePane(
+                    <div className="source-placeholder">
+                      <div className="source-placeholder__icon"><Icon path={ICON.folder} /></div>
+                      <h3>Datei im Explorer auswählen</h3>
+                      <p>Wähle eine Datei im linken Baum, um den echten Inhalt mit Zeilennummern und Revision anzuzeigen.</p>
+                    </div>,
+                  )}
                 </div>
-              ) : (
-                snapshot ? 'Dieser Workspace enthält noch keine indexierten Objekte.' : 'Echten Workspace-Graphen laden …'
-              )}
+              </div>
             </div>
-          )
-        )}
+          )}
 
-        {view === 'notes' && <NotesView workspaceId={workspaceId} onOpenSource={openKnowledgeSource} onOpenRevision={openKnowledgeRevision} onOpenAgentRun={openKnowledgeAgentRun} />}
-
-        {view === 'explorer' && (
-          <div className="workbench-split">
-            <div className="workbench-pane workbench-pane--side">
-              <ExplorerView
-                workspaceName={snapshot?.workspace.name ?? (planets.find(p => p.id === workspaceId)?.name || 'Workspace')}
-                files={fileNodes}
-                activePath={selectedSource?.path}
-                onSelectFile={path => handleOpenSource(path)}
-              />
-            </div>
-            <div className="workbench-pane workbench-pane--main">
-              {selectedSource ? (
-                <SourceView
-                  workspaceId={workspaceId}
-                  path={selectedSource.path}
-                  highlightLine={selectedSource.line}
-                  onClose={() => setSelectedSource(null)}
-                />
-              ) : selectedRevision ? (
-                <RevisionInspector workspaceId={workspaceId} revision={selectedRevision} onClose={() => setSelectedRevision(null)} />
-              ) : (
-                <div className="source-placeholder">
-                  <div className="source-placeholder__icon">📂</div>
-                  <h3>Datei im Explorer auswählen</h3>
-                  <p>Wähle eine Datei im linken Baum, um den echten Inhalt mit Zeilennummern und Revision anzuzeigen.</p>
+          {view === 'search' && (
+            <div className="pb-view">
+              <div className="workbench-split">
+                <div className="workbench-pane workbench-pane--side">
+                  <SearchView workspaceId={workspaceId} onSelectHit={(path, line) => handleOpenSource(path, line)} />
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {view === 'search' && (
-          <div className="workbench-split">
-            <div className="workbench-pane workbench-pane--side">
-              <SearchView
-                workspaceId={workspaceId}
-                onSelectHit={(path, line) => handleOpenSource(path, line)}
-              />
-            </div>
-            <div className="workbench-pane workbench-pane--main">
-              {selectedSource ? (
-                <SourceView
-                  workspaceId={workspaceId}
-                  path={selectedSource.path}
-                  highlightLine={selectedSource.line}
-                  onClose={() => setSelectedSource(null)}
-                />
-              ) : (
-                <div className="source-placeholder">
-                  <div className="source-placeholder__icon">🔍</div>
-                  <h3>Code- und Symbolsuche über <code>/api/agent/search</code></h3>
-                  <p>Gib einen Suchbegriff ein (z. B. <code>authKey</code>). Ein Klick auf einen Treffer öffnet direkt die Quelle.</p>
+                <div className="workbench-pane workbench-pane--main">
+                  {sourcePane(
+                    <div className="source-placeholder">
+                      <div className="source-placeholder__icon"><Icon path={ICON.search} /></div>
+                      <h3>Code- und Symbolsuche</h3>
+                      <p>Gib einen Suchbegriff ein, zum Beispiel <code>authKey</code>. Ein Klick auf einen Treffer öffnet die Quelle.</p>
+                    </div>,
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {view === 'packs' && (
-          <div className="workbench-split">
-            <div className="workbench-pane workbench-pane--side">
-              <ContextPackView
-                workspaceId={workspaceId}
-                onSelectSource={path => handleOpenSource(path)}
-              />
-            </div>
-            <div className="workbench-pane workbench-pane--main">
-              {selectedSource ? (
-                <SourceView
-                  workspaceId={workspaceId}
-                  path={selectedSource.path}
-                  highlightLine={selectedSource.line}
-                  onClose={() => setSelectedSource(null)}
-                />
-              ) : (
-                <div className="source-placeholder">
-                  <div className="source-placeholder__icon">📦</div>
-                  <h3>Context-Pack-Inspector</h3>
-                  <p>Erzeuge einen Context Pack für eine Aufgabe. Klicke auf eine extrahierte Quelle, um ihren Inhalt zu prüfen.</p>
+          {view === 'packs' && (
+            <div className="pb-view">
+              <div className="workbench-split">
+                <div className="workbench-pane workbench-pane--side">
+                  <ContextPackView workspaceId={workspaceId} onSelectSource={path => handleOpenSource(path)} />
                 </div>
-              )}
+                <div className="workbench-pane workbench-pane--main">
+                  {sourcePane(
+                    <div className="source-placeholder">
+                      <div className="source-placeholder__icon"><Icon path={ICON.open} /></div>
+                      <h3>Context-Pack-Inspector</h3>
+                      <p>Erzeuge einen Context Pack für eine Aufgabe. Ein Klick auf eine extrahierte Quelle zeigt ihren Inhalt.</p>
+                    </div>,
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {view === 'city' && (
-          <div className="brain-view brain-view-city">
-            <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
-            {selectedSource && (
-              <div className="atlas-source-overlay">
-                <SourceView
-                  workspaceId={workspaceId}
-                  path={selectedSource.path}
-                  highlightLine={selectedSource.line}
-                  onClose={() => setSelectedSource(null)}
-                  onNavigateFile={(p, l) => handleOpenSource(p, l)}
+          {view === 'city' && (
+            <div className="pb-view">
+              <div className="pb-city">
+                <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
+                {timeline && <div className="pb-overlay-tools"><TimelineControl timeline={timeline} /></div>}
+                {sourceOverlay}
+              </div>
+            </div>
+          )}
+
+          {view === 'queue' && (
+            <div className="pb-view pb-view--scroll">
+              <QueueView tasks={queue.tasks} depth={queue.depth} />
+            </div>
+          )}
+
+          {view === 'mesh' && (
+            <div className="pb-view">
+              <div className="pb-mesh">
+                <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
+                {sourceOverlay}
+              </div>
+            </div>
+          )}
+
+        </>}
+      </main>
+
+      {tokenModalOpen && (
+        <div className="brain-modal-backdrop" onClick={() => setTokenModalOpen(false)}>
+          <div className="brain-modal" onClick={e => e.stopPropagation()}>
+            <div className="brain-modal__header">
+              <h3>PlugBrain Authentifizierung</h3>
+              <button type="button" className="brain-modal__close" onClick={() => setTokenModalOpen(false)}>✕</button>
+            </div>
+            <form onSubmit={handleSaveToken}>
+              <div className="brain-modal__field">
+                <label>Bearer Token (aus <code>auth.token</code>):</label>
+                <input
+                  type="text"
+                  className="brain-modal__input mono"
+                  value={tokenInput}
+                  onChange={e => setTokenInput(e.target.value)}
+                  placeholder="plug-..."
                 />
               </div>
-            )}
-          </div>
-        )}
-
-        {view === 'queue' && (
-          <div className="brain-view brain-view-queue">
-            <QueueView tasks={queue.tasks} depth={queue.depth} />
-          </div>
-        )}
-
-        {view === 'mesh' && (
-          <div className="brain-view brain-view-mesh">
-            <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
-            {selectedSource && (
-              <div className="atlas-source-overlay">
-                <SourceView
-                  workspaceId={workspaceId}
-                  path={selectedSource.path}
-                  highlightLine={selectedSource.line}
-                  onClose={() => setSelectedSource(null)}
-                  onNavigateFile={(p, l) => handleOpenSource(p, l)}
+              <div className="brain-modal__field">
+                <label>Agent ID:</label>
+                <input
+                  type="text"
+                  className="brain-modal__input mono"
+                  value={agentInput}
+                  onChange={e => setAgentInput(e.target.value)}
+                  placeholder="agy"
                 />
               </div>
-            )}
+              <div className="brain-modal__actions">
+                <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
+                <button type="submit" className="primary">Speichern</button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
-    )}
-    {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
-      <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
-        <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
-        <dl><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>Im Wissensgraphen auswählen und öffnen</dd></div></dl>
-        <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
-      </section>
-    </div>}
-  </>
+        </div>
+      )}
+      {selectionModalOpen && (
+        <div className="brain-modal-backdrop" onClick={() => !selectionBusy && setSelectionModalOpen(false)}>
+          <div className="brain-modal brain-selection-modal" onClick={e => e.stopPropagation()}>
+            <div className="brain-modal__header">
+              <h3>Aktive Code-Checkouts</h3>
+              <button type="button" className="brain-modal__close" disabled={selectionBusy}
+                onClick={() => setSelectionModalOpen(false)}>✕</button>
+            </div>
+            <p className="brain-selection-modal__hint">
+              Das Inventar bleibt vollständig sichtbar. Nur die hier bewusst markierten Checkout-IDs
+              werden beim nächsten Scan als aktiver Code indexiert.
+            </p>
+            <form onSubmit={saveSelection}>
+              {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
+              {planetInventory === null ? (
+                <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
+              ) : planetInventory.checkouts.length === 0 ? (
+                <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
+              ) : (
+                <fieldset className="brain-selection-list" disabled={selectionBusy}>
+                  <legend>Checkout-Inventar</legend>
+                  {planetInventory.checkouts.map(checkout => (
+                    <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
+                      <input
+                        type="checkbox"
+                        checked={selectionDraft.includes(checkout.id)}
+                        disabled={checkout.retiredAt !== null}
+                        onChange={() => toggleCheckout(checkout.id)}
+                      />
+                      <span>
+                        <strong>{checkout.relPrefix}</strong>
+                        <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+              <p className="brain-selection-modal__hint">
+                Keine Auswahl ist ausdrücklich „notes only“; sie startet keinen leeren Code-Scan.
+              </p>
+              <div className="brain-modal__actions">
+                <button type="button" disabled={selectionBusy} onClick={() => setSelectionModalOpen(false)}>Abbrechen</button>
+                <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
+                  {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
+        <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
+          <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
+          <dl><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Im Graph suchen</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
+          <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
+        </section>
+      </div>}
+    </div>
+  )
 }
 
 function RevisionInspector({ workspaceId, revision, onClose }: { workspaceId: string; revision: string; onClose: () => void }) {
@@ -889,7 +875,7 @@ function RevisionInspector({ workspaceId, revision, onClose }: { workspaceId: st
 
   const hit = state?.commits?.find(commit => commit.hash === revision || commit.hash.startsWith(revision))
   return <section className="source-placeholder revision-inspector" aria-live="polite">
-    <div className="source-placeholder__icon">⌁</div><h3>Revision-Inspector</h3>
+    <div className="source-placeholder__icon"><Icon path={ICON.refresh} /></div><h3>Revision-Inspector</h3>
     <p><code>{revision}</code></p>
     {error && <p role="alert">{error}</p>}
     {!error && !state && <p>Prüfe die reale Git-Historie …</p>}
@@ -898,187 +884,4 @@ function RevisionInspector({ workspaceId, revision, onClose }: { workspaceId: st
     {state?.isRepo && !hit && <p>Die geladene Historie enthält diese Revision nicht. Der Link bleibt unverändert; keine Ersatzrevision wird behauptet.</p>}
     <button type="button" onClick={onClose}>Inspector schließen</button>
   </section>
-}
-
-type Cluster = { id: string; name: string; color: string }
-type Row = { i: number; name: string; color: string; deg: number; on: boolean }
-
-type AtlasNode = { i: number; cid: string; name: string; meta?: any }
-type AtlasEngine = {
-  setView(view: string): void; toggleFlow(): void; toggleLabel(): void; toggleSpin(): void
-  reset(): void; toggleTheme(): void; dolly(factor: number): void; zoomReset(): void
-  toggleCluster(id: string): void; selectAt(index: number): void; hoverAt(index: number | null): void
-  setQuery(query: string): void; clearPath(): void; centerOn(index: number): void; startPath(index: number): void
-  dispose(): void
-}
-type AtlasModel = {
-  CLUSTERS: Cluster[]
-  nodes: AtlasNode[]
-  edges: unknown[]
-  createAtlas(options: { els: Record<string, HTMLElement>; emit: Record<string, (value: any) => void> }): AtlasEngine
-}
-type Drawer = {
-  i: number; name: string; desc: string; cname: string; color: string
-  deg: number; depth: number; kind: string; path: string; line?: number | null; status: string; prov: string
-  groups: any[]
-}
-
-function mark(name: string, q: string) {
-  if (!q) return name
-  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig')
-  return name.split(re).map((part, i) => i % 2 ? <mark key={i}>{part}</mark> : part)
-}
-
-export function AtlasGraph({
-  graph,
-  onOpenSource,
-}: {
-  graph: { nodes: unknown[]; edges: unknown[] }
-  onOpenSource: (path: string, line?: number | null) => void
-}) {
-  const { CLUSTERS, nodes, edges, createAtlas } = useMemo(
-    () => createAtlasModel(graph) as unknown as AtlasModel,
-    [graph]
-  )
-  const COUNT = Object.fromEntries(CLUSTERS.map((c: Cluster) => [c.id, nodes.filter((n: { cid: string }) => n.cid === c.id).length]))
-  const stage = useRef<HTMLDivElement>(null)
-  const labels = useRef<HTMLDivElement>(null)
-  const hudMode = useRef<HTMLElement>(null)
-  const hudSel = useRef<HTMLDivElement>(null)
-  const pathbar = useRef<HTMLDivElement>(null)
-  const chain = useRef<HTMLSpanElement>(null)
-  const zlvl = useRef<HTMLButtonElement>(null)
-  const sNode = useRef<HTMLDivElement>(null)
-  const sEdge = useRef<HTMLDivElement>(null)
-  const sDeg = useRef<HTMLDivElement>(null)
-  const sFps = useRef<HTMLDivElement>(null)
-  const q = useRef<HTMLInputElement>(null)
-  const api = useRef<AtlasEngine | null>(null)
-
-  const [gate, setGate] = useState(false)
-  const [list, setList] = useState<{ q: string; rows: Row[] }>({ q: '', rows: [] })
-  const [tools, setTools] = useState({ flow: true, label: true, spin: false })
-  const [view, setView] = useState('atlas')
-  const [theme, setTheme] = useState('dark')
-  const [off, setOff] = useState<string[]>([])
-
-  // Requirement 4: "Graph aus /api/graph bzw. /api/atlas/snapshot; ein Knoten-Klick öffnet die richtige Quelle, keine Infobox."
-  const handleDrawer = (d: Drawer | null) => {
-    if (d?.path) {
-      onOpenSource(d.path, d.line ?? null)
-    }
-  }
-
-  useEffect(() => {
-    const a = createAtlas({
-      els: {
-        stage: stage.current!, labels: labels.current!, hudMode: hudMode.current!,
-        hudSel: hudSel.current!, pathbar: pathbar.current!, chain: chain.current!,
-        zlvl: zlvl.current!, sNode: sNode.current!, sEdge: sEdge.current!,
-        sDeg: sDeg.current!, sFps: sFps.current!, q: q.current!,
-      },
-      emit: { gate: setGate, list: setList, drawer: handleDrawer, tools: setTools, theme: setTheme },
-    })
-    api.current = a
-    return () => { a.dispose(); api.current = null }
-  }, [createAtlas])
-
-  const toggleCluster = (id: string) => {
-    setOff(o => o.includes(id) ? o.filter(x => x !== id) : [...o, id])
-    api.current?.toggleCluster(id)
-  }
-
-  return (
-    <div id="app" className="atlas-app">
-      <aside>
-        <div className="brand">
-          <h1><span className="dot"></span>PlugBrain</h1>
-          <p>Dein Workspace. Seine Dateien und Zusammenhänge.<br />
-            Aktueller Graph aus PlugBrain.</p>
-        </div>
-
-        <div className="searchbox">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5 14 14" /></svg>
-          <input id="q" type="search" placeholder="Datei, Symbol im Graph suchen…" autoComplete="off" spellCheck={false} ref={q}
-            onChange={e => api.current?.setQuery(e.target.value)} />
-        </div>
-
-        <div className="legend" id="legend">
-          {CLUSTERS.map((c: Cluster) => (
-            <button key={c.id} className={'cl' + (off.includes(c.id) ? ' off' : '')} type="button"
-              onClick={() => toggleCluster(c.id)}>
-              <i style={{ background: c.color }}></i>{c.name}<b>{COUNT[c.id]}</b></button>
-          ))}
-        </div>
-        <div className="listwrap" id="list">
-          {list.rows.length ? list.rows.map(n => (
-            <div key={n.i} className={'lrow' + (n.on ? ' on' : '')} data-i={n.i}
-              onClick={() => {
-                api.current?.selectAt(n.i)
-                const nodeObj = nodes[n.i]
-                if (nodeObj?.meta?.path) {
-                  onOpenSource(nodeObj.meta.path, nodeObj.meta.line)
-                }
-              }}
-              onMouseOver={() => api.current?.hoverAt(n.i)}
-              onMouseLeave={() => api.current?.hoverAt(null)}>
-              <i style={{ background: n.color }}></i><span>{mark(n.name, list.q)}</span><b>{n.deg}</b>
-            </div>
-          )) : <div style={{ padding: '14px 16px', color: 'var(--faint)', fontSize: '12px' }}>Keine passenden Objekte im System-of-Record</div>}
-        </div>
-
-        <div className="foot">
-          <div><div className="k" id="s-node" ref={sNode}>—</div><div className="l">Objekte</div></div>
-          <div><div className="k" id="s-edge" ref={sEdge}>—</div><div className="l">Kanten</div></div>
-          <div><div className="k" id="s-deg" ref={sDeg}>—</div><div className="l">Ø-Grad</div></div>
-          <div><div className="k" id="s-fps" ref={sFps}>—</div><div className="l">FPS</div></div>
-        </div>
-      </aside>
-
-      <div id="stage" ref={stage}>
-        <div id="labels" ref={labels}></div>
-
-        <div id="hud">
-          <div><b id="hud-mode" ref={hudMode}>GALAXIE · FREIER ORBIT</b></div>
-          <div id="hud-sel" ref={hudSel}>Knoten anklicken, um Quelle direkt zu öffnen</div>
-          <div id="hud-sys">{nodes.length} VON {graph.nodes.length} OBJEKTEN · {edges.length} VON {graph.edges.length} KANTEN</div>
-        </div>
-
-        <div id="pathbar" ref={pathbar}>
-          <span className="chain" id="chain" ref={chain}></span>
-          <button className="x" id="path-x" type="button" onClick={() => api.current?.clearPath()}>✕</button>
-        </div>
-
-        <div id="tools">
-          {[['atlas', 'Galaxie'], ['shell', 'Planet'], ['tier', 'Pipeline']].map(([v, label]) => (
-            <button key={v} className={'tb' + (view === v ? ' on' : '')} data-view={v} type="button"
-              onClick={() => { setView(v); api.current?.setView(v) }}>{label}</button>
-          ))}
-          <span className="sep"></span>
-          <button className={'tb' + (tools.flow ? ' on' : '')} id="t-flow" type="button"
-            onClick={() => api.current?.toggleFlow()}>Signalfluss</button>
-          <button className={'tb' + (tools.label ? ' on' : '')} id="t-label" type="button"
-            onClick={() => api.current?.toggleLabel()}>Labels</button>
-          <button className={'tb' + (tools.spin ? ' on' : '')} id="t-spin" type="button"
-            onClick={() => api.current?.toggleSpin()}>Auto-Orbit</button>
-          <span className="sep"></span>
-          <button className="tb" id="zout" type="button" title="Rauszoomen" onClick={() => api.current?.dolly(1.18)}>−</button>
-          <button className="tb" id="zlvl" type="button" title="Zoom zurücksetzen" ref={zlvl}
-            onClick={() => api.current?.zoomReset()}>100%</button>
-          <button className="tb" id="zin" type="button" title="Reinzoomen" onClick={() => api.current?.dolly(1 / 1.18)}>＋</button>
-          <span className="sep"></span>
-          <button className="tb" id="t-theme" type="button" title="Theme wechseln"
-            onClick={() => api.current?.toggleTheme()}>{theme === 'light' ? 'Nacht' : 'Tag'}</button>
-          <button className="tb" id="t-reset" type="button" onClick={() => api.current?.reset()}>Reset</button>
-        </div>
-
-        <div id="hint">
-          Klick auf einen Graphknoten öffnet sofort die Quellansicht · Ziehen rotiert · Scrollen zoomt
-        </div>
-
-        <div id="gate" style={gate ? { display: 'grid' } : undefined}>WebGL ist auf diesem Gerät nicht verfügbar.<br />Suche und Objekt-Inspector bleiben nutzbar.</div>
-      </div>
-    </div>
-  )
 }

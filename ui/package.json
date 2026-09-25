@@ -9,12 +9,14 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit"
   },
   "dependencies": {
+    "d3-force": "3.0.0",
     "echarts": "6.1.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "0.185.1"
   },
   "devDependencies": {
+    "@types/d3-force": "3.0.10",
     "@types/node": "22.20.1",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",

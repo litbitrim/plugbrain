@@ -17,48 +17,118 @@
 @font-face{font-family:"Geist Mono Variable";font-style:normal;font-weight:100 900;font-display:swap;
   src:url("/fonts/geist-mono-latin-wght.woff2") format("woff2");}
 
-:root {
-  /* Overridden by the page's own token block — these are the neutral defaults. */
-  --bg: #fbfbfa;
-  --panel: #ffffff;
-  --raised: #f4f4f2;
-  --ink: #14140f;
-  --muted: #6f6f68;
-  --faint: #a3a39c;
-  --line: #e6e6e1;
-  --line-soft: #f0f0ec;
-  --accent: #1d4ed8;
-  --accent-ink: #ffffff;
-  --accent-soft: #eaeffc;
+/* The single token source. Views never define :root; a view that needs its
+   own palette scopes it to its own root element (.pb-city, .pb-mesh). */
+:root,
+:root[data-theme="dark"] {
+  --bg: #070908;
+  --panel: #0D1210;
+  --raised: #131A17;
+  --hover: #1A2320;
+  --ink: #e7e8eb;
+  --muted: #9b9ea6;
+  --faint: #6c6f77;
+  --line: #1F2B25;
+  --line-soft: #16201B;
+  --line-strong: #2C3D34;
+  --accent: #10b981;
+  --accent-hover: #34d399;
+  --accent-ink: #06101f;
+  --accent-soft: rgb(16 185 129 / .12);
+  --pos: #10b981;
+  --neg: #ef4444;
+  --warn: #eab308;
+  --info: #06b6d4;
+  --halo: #000;
+  color-scheme: dark;
+}
 
+:root[data-theme="light"] {
+  --bg: #f6f6f3;
+  --panel: #fcfcfa;
+  --raised: #efefec;
+  --hover: #e8e8e4;
+  --ink: #16171a;
+  --muted: #585b62;
+  --faint: #8e9097;
+  --line: #e0dfdb;
+  --line-soft: #ecebe7;
+  --line-strong: #cfcec9;
+  --accent: #2f62d0;
+  --accent-hover: #2552b5;
+  --accent-ink: #ffffff;
+  --accent-soft: rgb(47 98 208 / .1);
   --pos: #0f7b4f;
   --neg: #c2352b;
   --warn: #b4690e;
   --info: #2563eb;
+  --halo: #fff;
+  color-scheme: light;
+}
 
-  --r: 6px;
-  --r-sm: 4px;
+:root {
+  --r-sm: 5px;
+  --r: 7px;
   --r-lg: 10px;
 
-  --sans: "Geist Variable", ui-sans-serif, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-  --mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --sans: "Geist Variable", ui-sans-serif, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  --ease: cubic-bezier(.22, .7, .2, 1);
-  --fast: .16s var(--ease);
-  --slow: .34s var(--ease);
+  /* Motion: one curve, three durations. Only transform and opacity animate. */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 260ms;
+  --fast: var(--dur-fast) var(--ease);
+  --slow: var(--dur-slow) var(--ease);
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+
+  /* Stacking: named layers instead of ad-hoc numbers. */
+  --z-toolbar: 10;
+  --z-panel: 20;
+  --z-overlay: 40;
+  --z-modal: 100;
+
+  /* House rule: hairlines, never drop shadows. */
+  --shadow-sm: none;
+  --shadow-lg: none;
 
   --pad: 20px;
   --gap: 14px;
+
+  /* Older views were written against another naming scheme and read these
+     names. They were never defined, so borders and surfaces silently vanished;
+     aliasing them onto the real tokens restores them without a rewrite. */
+  --border: var(--line);
+  --fg: var(--ink);
+  --card-bg: var(--panel);
+  --font-mono: var(--mono);
+  --ok: var(--pos);
+  --bad: var(--neg);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0 }
 
-html { color-scheme: light dark }
+html, body, #root { height: 100%; overflow: hidden }
 
 body {
   background: var(--bg);
   color: var(--ink);
-  font: 14px/1.55 var(--sans);
+  font: var(--fs)/1.5 var(--sans);
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -296,3 +366,12 @@ td.n, th.n { text-align: right }
   border-color: var(--line);
 }
 .kit-theme-float:hover{ background: var(--raised) }
+
+/* ── Command-Center Status Pills ────────────────────────────────────────── */
+.pb-status,
+.pb-pill,
+[class*="status-chip"] {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

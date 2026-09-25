@@ -1,6 +1,6 @@
 {
   "name": "plugbrain",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
   "type": "module",
   "description": "PlugBrain — standalone workspace indexer: real AST code intelligence with three renderings of one graph.",
@@ -26,6 +26,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "playwright-core": "1.62.1"
   }
 }

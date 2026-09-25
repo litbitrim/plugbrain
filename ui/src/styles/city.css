@@ -17,114 +17,264 @@
  * faces. The hatching is drawn in the shader (upward faces only), the one place
  * this map needs a hand-drawn feel. */
 
-:root{
+/* Scoped: City was a standalone page with global ids. Everything here applies
+   only inside .pb-city, so its #app, aside and canvas rules cannot reshape any
+   other view. The rules after the city block came from the retired 3D atlas;
+   City is the only view still rendering #stage, #gate, .tb and the drawer. */
+.pb-city {
   --bg:#ddd3b4; --panel:#e9e1c8; --raised:#d3c9a8; --ink:#33301f;
   --muted:#6b6448; --faint:#9a9270; --line:#bfb493; --line-soft:#cfc5a5;
   --accent:#8a4b2a; --accent-ink:#f6f1e0; --accent-soft:#d8c9ae;
   --r:4px; --r-sm:3px;
   --k1:#8a4b2a; --k2:#3f6b52; --k3:#4a5f88; --k4:#7a5580; --k5:#8a7a2a; --k6:#7a6f5a;
+  background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:12px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+
+  #app{display:grid;grid-template-columns:250px 1fr 268px;height:100%}
+  #app.closed{grid-template-columns:250px 1fr 0}
+  @media (max-width:1120px){#app{grid-template-columns:210px 1fr 240px}}
+
+  /* ── left: repository tree ────────────────────────────────────────── */
+  aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+  .hd{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+  .hd h1{font-size:13.5px;font-weight:600;letter-spacing:.01em}
+  .hd .repo{font-size:10px;color:var(--faint);margin-top:5px;letter-spacing:.05em}
+  .hd .kpis{display:flex;gap:16px;margin-top:11px}
+  .hd .kpis b{display:block;font-size:15px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .hd .kpis i{font-style:normal;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+
+  .q{padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .q input{width:100%;font-family:var(--mono);font-size:11.5px;background:var(--bg);
+    border-color:var(--line);padding:5px 8px}
+
+  .tree{flex:1;min-height:0;overflow:auto;padding:6px 0 12px}
+  .tr{display:flex;align-items:center;gap:7px;padding:3.5px 14px;cursor:pointer;
+    border-left:2px solid transparent;white-space:nowrap;transition:background var(--fast)}
+  .tr:hover{background:var(--raised)}
+  .tr.on{background:var(--raised);border-left-color:var(--accent)}
+  .tr .sw{width:7px;height:7px;border-radius:1px;flex:none}
+  .tr .nm{flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+  .tr .lc{font-size:9.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .tr.dir .nm{font-weight:600;letter-spacing:.02em}
+  .tr.dir .lc{color:var(--muted)}
+
+  /* ── centre: the city ─────────────────────────────────────────────── */
+  #stage{position:relative;overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;cursor:grab}
+  canvas.drag{cursor:grabbing}
+  #tip{position:absolute;z-index:3;pointer-events:none;display:none;transform:translate(14px,-50%);
+    background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--ink);
+    border-radius:2px;padding:5px 8px;font-size:10.5px;line-height:1.6;white-space:nowrap}
+  #tip b{color:var(--accent)}
+
+  /* width:max-content is the key here. An absolutely positioned element's available
+     width is "containing block width − left", and with left:50% it would wrap at
+     half the screen even though the other half is still free. */
+  #bar{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);z-index:4;
+    display:flex;gap:4px;align-items:center;background:color-mix(in srgb,var(--panel) 92%,transparent);
+    border:1px solid var(--line);border-radius:99px;padding:5px 7px;backdrop-filter:blur(6px);
+    width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
+  #zlvl{font-family:var(--mono);min-width:44px;letter-spacing:0}
+  .tb{font:inherit;font-size:10.5px;color:var(--muted);background:none;border:0;border-radius:99px;
+    padding:5px 10px;cursor:pointer;transition:all var(--fast);white-space:nowrap;letter-spacing:.04em}
+  .tb:hover{color:var(--ink);background:var(--raised)}
+  .tb.on{color:var(--accent-ink);background:var(--accent)}
+  .vsep{width:1px;height:15px;background:var(--line);margin:0 3px}
+
+  #legend{position:absolute;left:16px;bottom:15px;z-index:3;font-size:9.5px;color:var(--muted);
+    line-height:1.9;letter-spacing:.03em;pointer-events:none}
+  #legend i{display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:5px}
+  #crumb{position:absolute;left:16px;top:13px;z-index:3;font-size:10px;color:var(--faint);letter-spacing:.08em}
+  #crumb b{color:var(--ink);font-weight:600}
+
+  /* ── right: details ───────────────────────────────────────────────── */
+  #side{border-left:1px solid var(--line);background:var(--panel);overflow:auto;min-width:0}
+  .dt{padding:16px 17px}
+  .dt .kind{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dt h2{font-size:14px;font-weight:600;margin-top:7px;word-break:break-all;line-height:1.45}
+  .dt .note{font-size:11.5px;line-height:1.8;color:var(--muted);margin-top:10px}
+  .dt dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:13px;font-size:11px}
+  .dt dt{color:var(--faint)}
+  .dt dd{font-variant-numeric:tabular-nums;text-align:right}
+  .dt h3{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+    margin:16px 0 7px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .dep{display:flex;align-items:center;gap:7px;padding:4px 7px;margin:0 -7px;border-radius:2px;
+    cursor:pointer;font-size:11px}
+  .dep:hover{background:var(--raised)}
+  .dep .sw{width:6px;height:6px;border-radius:1px;flex:none}
+  .dep span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+  .empty{padding:22px 17px;font-size:11.5px;color:var(--faint);line-height:1.9}
+  .empty code{background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:2px 5px;font-size:10px}
+
+  /* ── workspace registry (left rail) ───────────────────────────────── */
+  .ws{padding:8px 14px 9px;cursor:pointer;border-left:2px solid transparent;transition:background var(--fast)}
+  .ws:hover{background:var(--raised)}
+  .ws.on{background:var(--raised);border-left-color:var(--accent)}
+  .ws.dying{opacity:.45}
+  .wsrow{display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .wsrow .sw{width:8px;height:8px;border-radius:1px;flex:none}
+  .wsrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;font-weight:600;letter-spacing:.02em}
+  .wsrow .tag{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);
+    border:1px solid var(--line);border-radius:2px;padding:1px 4px}
+  .wsrow .lc{font-size:9.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .loadbar{height:2px;background:var(--line-soft);border-radius:1px;margin:6px 0 0 15px;overflow:hidden}
+  .loadbar i{display:block;height:100%;border-radius:1px;transition:width .5s ease}
+
+  /* ── live event feed (bottom left, above the legend) ──────────────── */
+  #feed{position:absolute;left:16px;bottom:52px;z-index:3;max-width:min(430px,calc(100% - 32px));
+    font-size:10px;line-height:1.5;pointer-events:none;
+    background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);
+    border-radius:3px;padding:7px 10px;backdrop-filter:blur(4px)}
+  .fe{display:flex;gap:8px;white-space:nowrap;overflow:hidden;padding:0.5px 0}
+  .fe .ft{color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
+  .fe .fw{flex:none;max-width:110px;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .fe .fm{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+  #gate{position:absolute;inset:0;z-index:9;display:none;place-content:center;text-align:center;
+    background:var(--bg);color:var(--muted);font-size:12px;line-height:2;padding:40px}
+
+  /* ── Layout: sidebar / stage / right drawer — three columns, one screen ──── */
+  #app{display:grid;grid-template-columns:264px 1fr 0;height:100vh;transition:grid-template-columns .34s var(--ease)}
+  #app.open{grid-template-columns:264px 1fr 322px}
+  @media (max-width:1180px){ #app{grid-template-columns:224px 1fr 0} #app.open{grid-template-columns:224px 1fr 300px} }
+
+  /* The Atlas owns five vertical regions.  Letting flex discover the available
+     height made the bottom readouts able to paint over the legend in a short
+     window. A grid reserves the legend and counters first; only the object list
+     is allowed to shrink and scroll. The class keeps City, which also uses the
+     historic #app id, completely out of this layout rule. */
+  .atlas-app { height: calc(100vh - 30px) !important; margin-top: 30px; }
+  .atlas-app > aside { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; overflow: hidden; }
+  .atlas-app > aside .listwrap { min-height: 0; }
+  .atlas-app > aside .foot { flex: none; }
+
+  aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+  #stage{position:relative;overflow:hidden}
+  #drawer{border-left:1px solid var(--line);background:var(--panel);overflow:hidden;min-width:0}
+
+  /* ── Sidebar ────────────────────────────────────────────────────── */
+  .brand{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
+  .brand h1{font-size:15px;font-weight:560;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+  .brand h1 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 10px var(--accent);flex:none}
+  .brand p{font-size:11.5px;color:var(--faint);margin-top:6px;line-height:1.6}
+
+  .searchbox{padding:12px 14px 10px;position:relative}
+  .searchbox input{width:100%;background:var(--raised);border-color:var(--line);
+    padding:7px 9px 7px 27px;font-size:12.5px;border-radius:var(--r-sm)}
+  .searchbox input::placeholder{color:var(--faint)}
+  .searchbox svg{position:absolute;left:23px;top:50%;transform:translateY(-50%);
+    width:12px;height:12px;color:var(--faint);pointer-events:none}
+
+  .legend{padding:2px 14px 12px;display:flex;flex-wrap:wrap;gap:4px}
+  .cl{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);
+    background:none;border:1px solid transparent;border-radius:99px;padding:2.5px 8px 2.5px 6px;
+    cursor:pointer;transition:all var(--fast);font-family:inherit}
+  .cl:hover{background:var(--raised)}
+  .cl i{width:7px;height:7px;border-radius:50%;flex:none;transition:opacity var(--fast)}
+  .cl.off{color:var(--faint)} .cl.off i{opacity:.22}
+  .cl b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
+
+  .listwrap{flex:1;min-height:0;overflow:auto;border-top:1px solid var(--line-soft);padding:6px 0 10px}
+  .lrow{display:flex;align-items:center;gap:8px;padding:5.5px 16px;cursor:pointer;
+    border-left:2px solid transparent;transition:background var(--fast)}
+  .lrow:hover{background:var(--raised)}
+  .lrow.on{background:var(--raised);border-left-color:var(--accent)}
+  .lrow i{width:6px;height:6px;border-radius:50%;flex:none}
+  .lrow span{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lrow b{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--faint)}
+  .lrow mark{background:none;color:var(--accent)}
+
+  .foot{border-top:1px solid var(--line-soft);padding:10px 16px 12px;
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+  .foot .k{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .foot .l{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:1px}
+
+  /* ── Overlays on the stage ─────────────────────────────────────────────── */
+  /* The canvas is appended by JS, so in DOM order it lands after every overlay.
+     Without an explicit z-index it would cover the labels, toolbar and
+     readouts — the page would look like "3D works, but the UI is gone". */
+  canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  #labels,#hud,#tools,#hint,#pathbar{z-index:3}
+  #gate{z-index:6}
+  #labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lab{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;
+    font-size:11px;letter-spacing:.01em;color:var(--ink);
+    text-shadow:0 0 4px var(--bg),0 0 9px var(--bg),0 1px 2px var(--halo);
+    padding-top:0;will-change:transform,opacity}
+  .lab.sm{font-size:10px;color:var(--muted)}
+
+  #hud{position:absolute;right:14px;top:12px;text-align:right;pointer-events:none;
+    font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.75;letter-spacing:.04em}
+  #hud b{color:var(--muted);font-weight:400}
+
+  /* width:max-content is the key here. An absolutely positioned element's
+     available width is "containing-block width − left", and left is 50%, so
+     without an explicit width it shrinks to half the screen — wrapping even
+     though the other half is still free. */
+  #tools{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:6px;background:color-mix(in srgb,var(--panel) 88%,transparent);
+    border:1px solid var(--line);border-radius:99px;padding:5px 7px;backdrop-filter:blur(8px);
+    width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
+  #tools .sep{width:1px;height:16px;background:var(--line);margin:0 2px}
+  #zlvl{min-width:44px;letter-spacing:0}
+  .tb{font:500 11px var(--mono);letter-spacing:.05em;color:var(--muted);background:none;border:0;
+    border-radius:99px;padding:5px 10px;cursor:pointer;transition:all var(--fast);white-space:nowrap}
+  .tb:hover{color:var(--ink);background:var(--raised)}
+  .tb.on{color:var(--accent-ink);background:var(--accent)}
+
+  #hint{position:absolute;left:16px;bottom:16px;font-family:var(--mono);font-size:10px;
+    color:var(--faint);line-height:1.8;pointer-events:none;letter-spacing:.03em}
+  #hint kbd{color:var(--muted);font:inherit}
+
+  #pathbar{position:absolute;left:50%;top:14px;transform:translateX(-50%);
+    display:none;align-items:center;gap:8px;max-width:min(70%,760px);
+    background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--accent);
+    border-radius:99px;padding:6px 8px 6px 13px;backdrop-filter:blur(8px);
+    font-size:11.5px;overflow:hidden}
+  #pathbar.on{display:flex}
+  #pathbar .chain{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  #pathbar .chain em{font-style:normal;color:var(--faint);margin:0 5px}
+  #pathbar .x{font:inherit;color:var(--faint);background:none;border:0;cursor:pointer;padding:0 4px}
+  #pathbar .x:hover{color:var(--ink)}
+
+  /* ── Right drawer ─────────────────────────────────────────────────────── */
+  /* The grid column owns the width. Hard-coding 322px would let the media
+     query shrink the column to 300px on narrow screens, and #drawer's
+     overflow:hidden would then slice 22px off the content. */
+  .dr{width:100%;height:100%;display:flex;flex-direction:column;min-height:0}
+  .dr-head{padding:18px 18px 14px;border-bottom:1px solid var(--line-soft)}
+  .dr-head .kind{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .dr-head .kind i{width:7px;height:7px;border-radius:50%}
+  .dr-head h2{font-size:17px;font-weight:560;letter-spacing:-.02em;margin-top:9px}
+  .dr-head p{font-size:12.5px;line-height:1.75;color:var(--muted);margin-top:9px}
+  /* Provenienz-Block: die PlugBrain-Auskunft „wer, wann, womit“ zum Objekt */
+  .prov{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:12px;
+    padding-top:10px;border-top:1px solid var(--line-soft)}
+  .prov dt{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--faint);padding-top:1px}
+  .prov dd{font-size:11.5px;color:var(--muted);line-height:1.5;word-break:break-all}
+  .prov dd.mono{font-family:var(--mono);font-size:10.5px}
+  .prov dd.bad{color:var(--neg);font-weight:500}
+  #hud-sys{margin-top:2px}
+  .dr-body{flex:1;min-height:0;overflow:auto;padding:4px 18px 18px}
+  .dr-sec{margin-top:18px}
+  .dr-sec h3{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--faint);font-weight:400;margin-bottom:7px;display:flex;gap:6px;align-items:baseline}
+  .dr-sec h3 b{font-weight:400;color:var(--faint);opacity:.6}
+  .nb{display:flex;align-items:center;gap:7px;padding:5px 7px;margin:0 -7px;border-radius:var(--r-sm);
+    cursor:pointer;transition:background var(--fast)}
+  .nb:hover{background:var(--raised)}
+  .nb i{width:6px;height:6px;border-radius:50%;flex:none}
+  .nb span{font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nb u{font-family:var(--mono);font-size:9.5px;color:var(--faint);text-decoration:none;letter-spacing:.05em}
+  .dr-act{display:flex;gap:7px;padding:12px 18px;border-top:1px solid var(--line-soft)}
+  .dr-act .btn{flex:1;background:var(--raised);border-color:var(--line);font-size:11.5px;padding:6px 8px}
+  .dr-act .btn:hover{border-color:var(--faint);background:var(--raised)}
+  .dr-act .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  #gate{position:absolute;inset:0;display:none;place-content:center;text-align:center;
+    background:var(--bg);color:var(--muted);font-size:13px;line-height:2;padding:40px}
 }
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:12px}
-
-#app{display:grid;grid-template-columns:250px 1fr 268px;height:100vh}
-#app.closed{grid-template-columns:250px 1fr 0}
-@media (max-width:1120px){#app{grid-template-columns:210px 1fr 240px}}
-
-/* ── left: repository tree ────────────────────────────────────────── */
-aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
-.hd{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-.hd h1{font-size:13.5px;font-weight:600;letter-spacing:.01em}
-.hd .repo{font-size:10px;color:var(--faint);margin-top:5px;letter-spacing:.05em}
-.hd .kpis{display:flex;gap:16px;margin-top:11px}
-.hd .kpis b{display:block;font-size:15px;font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.hd .kpis i{font-style:normal;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-
-.q{padding:10px 14px;border-bottom:1px solid var(--line-soft)}
-.q input{width:100%;font-family:var(--mono);font-size:11.5px;background:var(--bg);
-  border-color:var(--line);padding:5px 8px}
-
-.tree{flex:1;min-height:0;overflow:auto;padding:6px 0 12px}
-.tr{display:flex;align-items:center;gap:7px;padding:3.5px 14px;cursor:pointer;
-  border-left:2px solid transparent;white-space:nowrap;transition:background var(--fast)}
-.tr:hover{background:var(--raised)}
-.tr.on{background:var(--raised);border-left-color:var(--accent)}
-.tr .sw{width:7px;height:7px;border-radius:1px;flex:none}
-.tr .nm{flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
-.tr .lc{font-size:9.5px;color:var(--faint);font-variant-numeric:tabular-nums}
-.tr.dir .nm{font-weight:600;letter-spacing:.02em}
-.tr.dir .lc{color:var(--muted)}
-
-/* ── centre: the city ─────────────────────────────────────────────── */
-#stage{position:relative;overflow:hidden}
-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0;cursor:grab}
-canvas.drag{cursor:grabbing}
-#tip{position:absolute;z-index:3;pointer-events:none;display:none;transform:translate(14px,-50%);
-  background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--ink);
-  border-radius:2px;padding:5px 8px;font-size:10.5px;line-height:1.6;white-space:nowrap}
-#tip b{color:var(--accent)}
-
-/* width:max-content is the key here. An absolutely positioned element's available
-   width is "containing block width − left", and with left:50% it would wrap at
-   half the screen even though the other half is still free. */
-#bar{position:absolute;left:50%;bottom:15px;transform:translateX(-50%);z-index:4;
-  display:flex;gap:4px;align-items:center;background:color-mix(in srgb,var(--panel) 92%,transparent);
-  border:1px solid var(--line);border-radius:99px;padding:5px 7px;backdrop-filter:blur(6px);
-  width:max-content;max-width:calc(100% - 28px);flex-wrap:wrap;justify-content:center}
-#zlvl{font-family:var(--mono);min-width:44px;letter-spacing:0}
-.tb{font:inherit;font-size:10.5px;color:var(--muted);background:none;border:0;border-radius:99px;
-  padding:5px 10px;cursor:pointer;transition:all var(--fast);white-space:nowrap;letter-spacing:.04em}
-.tb:hover{color:var(--ink);background:var(--raised)}
-.tb.on{color:var(--accent-ink);background:var(--accent)}
-.vsep{width:1px;height:15px;background:var(--line);margin:0 3px}
-
-#legend{position:absolute;left:16px;bottom:15px;z-index:3;font-size:9.5px;color:var(--muted);
-  line-height:1.9;letter-spacing:.03em;pointer-events:none}
-#legend i{display:inline-block;width:7px;height:7px;border-radius:1px;margin-right:5px}
-#crumb{position:absolute;left:16px;top:13px;z-index:3;font-size:10px;color:var(--faint);letter-spacing:.08em}
-#crumb b{color:var(--ink);font-weight:600}
-
-/* ── right: details ───────────────────────────────────────────────── */
-#side{border-left:1px solid var(--line);background:var(--panel);overflow:auto;min-width:0}
-.dt{padding:16px 17px}
-.dt .kind{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-.dt h2{font-size:14px;font-weight:600;margin-top:7px;word-break:break-all;line-height:1.45}
-.dt .note{font-size:11.5px;line-height:1.8;color:var(--muted);margin-top:10px}
-.dt dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:13px;font-size:11px}
-.dt dt{color:var(--faint)}
-.dt dd{font-variant-numeric:tabular-nums;text-align:right}
-.dt h3{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
-  margin:16px 0 7px;padding-top:12px;border-top:1px solid var(--line-soft)}
-.dep{display:flex;align-items:center;gap:7px;padding:4px 7px;margin:0 -7px;border-radius:2px;
-  cursor:pointer;font-size:11px}
-.dep:hover{background:var(--raised)}
-.dep .sw{width:6px;height:6px;border-radius:1px;flex:none}
-.dep span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
-.empty{padding:22px 17px;font-size:11.5px;color:var(--faint);line-height:1.9}
-.empty code{background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:2px 5px;font-size:10px}
-
-/* ── workspace registry (left rail) ───────────────────────────────── */
-.ws{padding:8px 14px 9px;cursor:pointer;border-left:2px solid transparent;transition:background var(--fast)}
-.ws:hover{background:var(--raised)}
-.ws.on{background:var(--raised);border-left-color:var(--accent)}
-.ws.dying{opacity:.45}
-.wsrow{display:flex;align-items:center;gap:7px;white-space:nowrap}
-.wsrow .sw{width:8px;height:8px;border-radius:1px;flex:none}
-.wsrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;font-size:11.5px;font-weight:600;letter-spacing:.02em}
-.wsrow .tag{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);
-  border:1px solid var(--line);border-radius:2px;padding:1px 4px}
-.wsrow .lc{font-size:9.5px;color:var(--faint);font-variant-numeric:tabular-nums}
-.loadbar{height:2px;background:var(--line-soft);border-radius:1px;margin:6px 0 0 15px;overflow:hidden}
-.loadbar i{display:block;height:100%;border-radius:1px;transition:width .5s ease}
-
-/* ── live event feed (bottom left, above the legend) ──────────────── */
-#feed{position:absolute;left:16px;bottom:52px;z-index:3;max-width:min(430px,calc(100% - 32px));
-  font-size:10px;line-height:1.5;pointer-events:none;
-  background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);
-  border-radius:3px;padding:7px 10px;backdrop-filter:blur(4px)}
-.fe{display:flex;gap:8px;white-space:nowrap;overflow:hidden;padding:0.5px 0}
-.fe .ft{color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
-.fe .fw{flex:none;max-width:110px;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-.fe .fm{color:var(--muted);overflow:hidden;text-overflow:ellipsis}
-#gate{position:absolute;inset:0;z-index:9;display:none;place-content:center;text-align:center;
-  background:var(--bg);color:var(--muted);font-size:12px;line-height:2;padding:40px}

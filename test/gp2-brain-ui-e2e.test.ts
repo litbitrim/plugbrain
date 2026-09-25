@@ -1,18 +1,16 @@
 import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
-import { createRequire } from 'node:module'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
+import { chromium } from 'playwright-core'
 import { openStore } from '../src/store/schema.ts'
 import { serve } from '../src/server/api.ts'
 
-// Playwright is deliberately resolved from the already-installed local browser
-// toolchain.  GP-2 must not download a browser merely to prove a local UI.
-const require = createRequire(import.meta.url)
-const playwrightRoot = process.env.PLAYWRIGHT_NODE_PATH ?? 'C:/PLUG/plugpt/Code/PlugBrain-GLM/node_modules/playwright'
-const { chromium } = require(playwrightRoot) as { chromium: any }
+// Playwright is resolved directly from this repository's devDependencies,
+// pointing to the already-installed local browser under %LOCALAPPDATA%\ms-playwright.
+// GP-2 must not download a browser merely to prove a local UI.
 
 test('GP-2: a human can complete standalone knowledge work through the real Brain UI', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-gp2-ui-'))
