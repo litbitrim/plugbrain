@@ -23,16 +23,21 @@ import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
-const VIEWS: { id: ViewId; label: string; hint: string }[] = [
-  { id: 'atlas', label: 'Atlas', hint: 'Wissensgraph der indexierten Objekte' },
-  { id: 'notes', label: 'Wissen', hint: 'Notizen, Links, Backlinks, Tags und Anhänge' },
-  { id: 'explorer', label: 'Explorer', hint: 'Echter Quellbaum aus dem Brain' },
-  { id: 'search', label: 'Suche', hint: 'Code- & Symbolsuche über /api/agent/search' },
-  { id: 'packs', label: 'Packs', hint: 'Context-Pack-Inspector' },
-  { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
-  { id: 'mesh', label: 'Mesh', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
-  { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
+const MAIN_VIEWS: { id: ViewId; label: string; hint: string }[] = [
+  { id: 'notes', label: 'Notizen', hint: 'Notizen lesen, schreiben und verknüpfen' },
+  { id: 'atlas', label: 'Graph', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
+  { id: 'search', label: 'Suche', hint: 'Code und Notizen durchsuchen' },
+  { id: 'explorer', label: 'Dateien', hint: 'Quelldateien mit echtem Inhalt und Zeilennummern' },
 ]
+
+const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
+  { id: 'packs', label: 'Kontext-Pakete', hint: 'Context-Packs für Agenten-Aufgaben zusammenstellen' },
+  { id: 'queue', label: 'Aufgaben', hint: 'Wartende Aufgaben; der nächste freie Agent nimmt sie' },
+  { id: 'mesh', label: 'Agenten-Netz', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
+  { id: 'city', label: 'Code-Stadt', hint: 'Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude' },
+]
+
+const VIEWS = [...MAIN_VIEWS, ...AGENT_VIEWS]
 
 const shortLabel = folderName
 const SNAPSHOT_FILE_LIMIT = 2000
@@ -41,7 +46,7 @@ function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
   const stored = (() => { try { return localStorage.getItem('plugbrain.view') } catch { return null } })()
   const candidate = fromUrl || stored
-  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'atlas'
+  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'notes'
 }
 
 function initialWorkspace(): string {
@@ -562,19 +567,53 @@ export default function App() {
           )}
         </div>
 
-        {workspaceId && (
-          <nav className="pb-tabs" aria-label="Ansicht">
-            {VIEWS.map(v => (
-              <button key={v.id} type="button" className="pb-tab" title={v.hint}
-                aria-current={v.id === view ? 'page' : undefined}
-                onClick={() => setView(v.id)}>
-                {v.label}
-              </button>
-            ))}
-          </nav>
-        )}
-
         <div className="pb-topbar__actions">
+          {workspaceId && (
+            <nav className="pb-tabs pb-tabs--desktop" aria-label="Ansicht">
+              {MAIN_VIEWS.map(v => (
+                <button key={v.id} type="button" className="pb-tab" title={v.hint}
+                  aria-current={v.id === view ? 'page' : undefined}
+                  onClick={() => setView(v.id)}>
+                  {v.label}
+                </button>
+              ))}
+              <div className="pb-tab-group" data-active={AGENT_VIEWS.some(v => v.id === view) ? "true" : undefined}>
+                <button type="button" className="pb-tab" aria-haspopup="true">
+                  Agenten
+                </button>
+                <div className="pb-tab-group-menu">
+                  {AGENT_VIEWS.map(v => (
+                    <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
+                      aria-current={v.id === view ? 'page' : undefined}
+                      onClick={() => setView(v.id)}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </nav>
+          )}
+
+          {workspaceId && (
+            <div className="pb-mobile-nav">
+               <button type="button" className="pb-tool pb-tool--icon" title="Menü" onClick={() => {
+                   const el = document.getElementById('mobile-menu');
+                   if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+               }}>
+                 <Icon path={ICON.burger} />
+               </button>
+               <div id="mobile-menu" className="pb-mobile-menu" style={{display: 'none'}}>
+                  {VIEWS.map(v => (
+                    <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
+                      aria-current={v.id === view ? 'page' : undefined}
+                      onClick={() => { setView(v.id); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
+                      {v.label}
+                    </button>
+                  ))}
+               </div>
+            </div>
+          )}
+
           {workspaceId && (
             <span className="pb-status" data-tone={status.tone} role="status" title={status.title}>
               <i aria-hidden="true" /><span>{status.text}</span>
@@ -649,6 +688,11 @@ export default function App() {
         ) : <>
           {view === 'atlas' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Graph</h2>
+                <p>Wissensgraph: Symbole, Notizen und Verbindungen</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Graph-Aktion</button>
+              </div>
               <div id="app" className="atlas-app">
                 <GraphView
                   graph={snapshot?.graph ?? null}
@@ -663,17 +707,29 @@ export default function App() {
           )}
 
           {view === 'notes' && (
-            <NotesView
-              workspaceId={workspaceId}
-              onOpenSource={openKnowledgeSource}
-              onOpenRevision={openKnowledgeRevision}
-              onOpenAgentRun={openKnowledgeAgentRun}
-              onNavigateTab={tab => setView(tab)}
-            />
+            <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Notizen</h2>
+                <p>Notizen lesen, schreiben und verknüpfen</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Notiz</button>
+              </div>
+              <NotesView
+                workspaceId={workspaceId}
+                onOpenSource={openKnowledgeSource}
+                onOpenRevision={openKnowledgeRevision}
+                onOpenAgentRun={openKnowledgeAgentRun}
+                onNavigateTab={tab => setView(tab)}
+              />
+            </div>
           )}
 
           {view === 'explorer' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Dateien</h2>
+                <p>Quelldateien mit echtem Inhalt und Zeilennummern</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Datei</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <ExplorerView
@@ -700,6 +756,11 @@ export default function App() {
 
           {view === 'search' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Suche</h2>
+                <p>Code und Notizen durchsuchen</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Suche</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <SearchView workspaceId={workspaceId} onSelectHit={(path, line) => handleOpenSource(path, line)} />
@@ -719,6 +780,11 @@ export default function App() {
 
           {view === 'packs' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Kontext-Pakete</h2>
+                <p>Context-Packs für Agenten-Aufgaben zusammenstellen</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Pack erstellen</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <ContextPackView workspaceId={workspaceId} onSelectSource={path => handleOpenSource(path)} />
@@ -738,6 +804,11 @@ export default function App() {
 
           {view === 'city' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Code-Stadt</h2>
+                <p>Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Stadt-Aktion</button>
+              </div>
               <div className="pb-city">
                 <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
                 {timeline && <div className="pb-overlay-tools"><TimelineControl timeline={timeline} /></div>}
@@ -748,12 +819,22 @@ export default function App() {
 
           {view === 'queue' && (
             <div className="pb-view pb-view--scroll">
+              <div className="pb-view-header">
+                <h2>Aufgaben</h2>
+                <p>Wartende Aufgaben; der nächste freie Agent nimmt sie</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Neue Aufgabe</button>
+              </div>
               <QueueView tasks={queue.tasks} depth={queue.depth} />
             </div>
           )}
 
           {view === 'mesh' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Agenten-Netz</h2>
+                <p>Nachweisbare Arbeit und Übergaben aus dem Core-Trace</p>
+                <button type="button" className="pb-button primary" style={{color: 'var(--accent)'}}>Netz-Aktion</button>
+              </div>
               <div className="pb-mesh">
                 <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
                 {sourceOverlay}

@@ -29,4 +29,5 @@ export const ICON = {
   key: 'M10 6a3 3 0 1 1-2.1 5.1L2.5 16M5.5 13l1.5 1.5M4 14.5l1 1M10 6h.01',
   folder: 'M2 4.5h4l1.5 1.5H14v6.5H2z',
   refresh: 'M13 8a5 5 0 1 1-1.5-3.5M13 2.5v3h-3',
+  burger: 'M2 4h12M2 8h12M2 12h12',
 } as const
