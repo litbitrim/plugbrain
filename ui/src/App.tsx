@@ -507,7 +507,11 @@ export default function App() {
   const openFromGraph = useCallback((path: string) => {
     setSelectedRevision(null)
     setSelectedSource({ path, line: null })
-    setView('explorer')
+    if (path.endsWith('.md')) {
+      setView('notes')
+    } else {
+      setView('explorer')
+    }
   }, [])
 
   const timeline = useMemo<Timeline | null>(() => {
