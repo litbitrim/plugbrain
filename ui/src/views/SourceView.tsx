@@ -112,7 +112,7 @@ export default function SourceView({
           )}
         </div>
         <div className="source-error-box">
-          <div className="source-error-icon">⚠️</div>
+          <div className="source-error-icon" aria-hidden="true">!</div>
           <h3>Fehler beim Laden der Datei</h3>
           <p className="source-error-msg">
             {fileData?.error || 'Die Datei existiert nicht im Workspace oder der Pfad ist ungültig.'}
@@ -134,7 +134,6 @@ export default function SourceView({
     <div className="source-container">
       <div className="source-header">
         <div className="source-header__meta">
-          <span className="source-header__icon">📄</span>
           <span className="source-header__path mono" title={fileData.path}>
             {fileData.path}
           </span>

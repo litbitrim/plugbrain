@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Icon, ICON } from '../ui/Icon'
 
 interface FileNodeData {
   id: string
@@ -161,7 +162,7 @@ export default function ExplorerView({
               aria-expanded={!isCollapsed}
             >
               <span className="tree-chevron">{isCollapsed ? '▶' : '▼'}</span>
-              <span className="tree-icon">{isCollapsed ? '📁' : '📂'}</span>
+              <span className="tree-icon"><Icon path={ICON.folder} /></span>
               <span className="tree-label">{node.name}</span>
               <span className="tree-badge tree-badge--count">{node.children.size}</span>
             </div>
@@ -190,7 +191,7 @@ export default function ExplorerView({
         title={node.path}
         role="treeitem"
       >
-        <span className="tree-icon">📄</span>
+        <span className="tree-dot" aria-hidden="true" />
         <span className="tree-label mono">{node.name}</span>
         {node.file?.lang && (
           <span className="tree-badge tree-badge--lang">{node.file.lang}</span>
@@ -213,7 +214,7 @@ export default function ExplorerView({
     <div className="explorer-view">
       <div className="explorer-header">
         <div className="explorer-title">
-          <span className="explorer-title__icon">🗂️</span>
+          <Icon path={ICON.folder} />
           <strong>{workspaceName || 'Workspace'} Explorer</strong>
         </div>
         <div className="explorer-stats">
