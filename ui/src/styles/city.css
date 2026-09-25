@@ -144,7 +144,7 @@
      window. A grid reserves the legend and counters first; only the object list
      is allowed to shrink and scroll. The class keeps City, which also uses the
      historic #app id, completely out of this layout rule. */
-  .atlas-app { height: calc(100vh - 30px) !important; margin-top: 30px; }
+  .atlas-app { height: 100% !important; margin-top: 0; }
   .atlas-app > aside { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; overflow: hidden; }
   .atlas-app > aside .listwrap { min-height: 0; }
   .atlas-app > aside .foot { flex: none; }

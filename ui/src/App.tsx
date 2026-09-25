@@ -122,6 +122,9 @@ export default function App() {
   }, [view])
 
   useEffect(() => {
+    if (view === 'city' || view === 'mesh' || view === 'queue') {
+      setSelectedSource(null)
+    }
     if (view !== 'mesh') return
     // Mesh has a current trace contract, not a historical-snapshot contract.
     // Do not leave a global time cursor implying that its current evidence is
