@@ -525,13 +525,13 @@ export default function NotesView({
         {mode === 'graph' && <KnowledgeGraphView workspaceId={workspaceId} focus={active?.path} onOpenNote={path => { setMode('editor'); void open(path) }} />}
         {mode === 'editor' && (active ? <>
           <header className="notes-editor__head">
-            <div>
-              <strong>{active.title}</strong>
+            <div className="notes-editor__title">
+              <strong title={active.title}>{active.title}</strong>
               <span>{active.path}</span>
               {active.typ && <small>{active.typ}{active.stand ? ` · ${active.stand}` : ''}</small>}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div className="notes-editor__actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
               {/* 3-Way Segmented View Mode Toggle: [Edit] [Split] [Lesen] */}
               <div className="notes-view-mode-toggle" role="group" aria-label="Editor-Ansichtsmodus">
                 <button
@@ -660,14 +660,12 @@ export default function NotesView({
 
           {notice && <p className="notes-notice" role="status">{notice}</p>}
 
-          <div style={{ display: 'flex', gap: '6px', margin: '4px 0' }}>
-            {!draft.startsWith('---') && (
-              <>
-                <button type="button" style={{ fontSize: '10.5px', padding: '2px 7px' }} onClick={() => insertTemplate('entscheidung')}>+ Vorlage: Entscheidung</button>
-                <button type="button" style={{ fontSize: '10.5px', padding: '2px 7px' }} onClick={() => insertTemplate('widerspruch')}>+ Vorlage: Widerspruch</button>
-              </>
-            )}
-          </div>
+          {!draft.startsWith('---') && (
+            <div style={{ display: 'flex', gap: '6px', margin: '4px 0', flex: 'none' }}>
+              <button type="button" style={{ fontSize: '10.5px', padding: '2px 7px' }} onClick={() => insertTemplate('entscheidung')}>+ Vorlage: Entscheidung</button>
+              <button type="button" style={{ fontSize: '10.5px', padding: '2px 7px' }} onClick={() => insertTemplate('widerspruch')}>+ Vorlage: Widerspruch</button>
+            </div>
+          )}
 
           {/* Main Content Area: Edit / Split / Lesen */}
           <div
