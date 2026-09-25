@@ -324,14 +324,6 @@ export default function NotesView({
     }
   }, [draft, active])
 
-  // Check if viewing 00 Übersicht.md
-  const isUebersicht = useMemo(() => {
-    if (!active) return false
-    return active.path === '00 Übersicht.md' ||
-      active.path.endsWith('/00 Übersicht.md') ||
-      active.title.toLowerCase().includes('übersicht') ||
-      active.typ === 'uebersicht'
-  }, [active])
 
   // Live parsed outbound Wiki-links from draft text
   const liveOutboundLinks = useMemo(() => {
@@ -483,7 +475,7 @@ export default function NotesView({
           <div className="notes-results">
             {searchHits.length > 0 && (
               <div>
-                <div style={{ padding: '6px 12px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--faint)', background: 'rgba(255,255,255,0.03)', fontWeight: 600 }}>
+                <div className="notes-results__section-head">
                   Notizen ({searchHits.length})
                 </div>
                 {searchHits.map(hit => (
@@ -497,7 +489,7 @@ export default function NotesView({
             )}
             {symbolHits.length > 0 && (
               <div>
-                <div style={{ padding: '6px 12px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--faint)', background: 'rgba(255,255,255,0.03)', fontWeight: 600 }}>
+                <div className="notes-results__section-head">
                   Code-Symbole ({symbolHits.length})
                 </div>
                 {symbolHits.map((sym, i) => (
@@ -506,9 +498,9 @@ export default function NotesView({
                     key={`${sym.path}:${sym.line}:${i}`}
                     onClick={() => handleOpenCode(`${sym.path}${sym.line ? `:${sym.line}` : ''}`)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className="notes-results__sym-row">
                       <strong>{sym.name}</strong>
-                      <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', background: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa', fontFamily: 'var(--mono)' }}>{sym.kind}</span>
+                      <span className="notes-results__sym-kind">{sym.kind}</span>
                     </div>
                     <span>{sym.path}{sym.line ? `:${sym.line}` : ''}</span>
                   </button>
@@ -569,31 +561,8 @@ export default function NotesView({
               </div>
 
               <span
-                className="pb-status"
+                className={`pb-status notes-save-status notes-save-status--${saveStatus}`}
                 data-status={saveStatus}
-                style={{
-                  fontFamily: 'var(--mono, monospace)',
-                  textTransform: 'uppercase',
-                  fontSize: '11px',
-                  letterSpacing: '0.06em',
-                  padding: '3px 8px',
-                  borderRadius: '4px',
-                  background: saveStatus === 'saving'
-                    ? 'rgba(59, 130, 246, 0.2)'
-                    : saveStatus === 'dirty'
-                    ? 'rgba(234, 179, 8, 0.2)'
-                    : saveStatus === 'conflict'
-                    ? 'rgba(239, 68, 68, 0.2)'
-                    : 'rgba(34, 197, 94, 0.2)',
-                  color: saveStatus === 'saving'
-                    ? '#60a5fa'
-                    : saveStatus === 'dirty'
-                    ? '#facc15'
-                    : saveStatus === 'conflict'
-                    ? '#f87171'
-                    : '#4ade80',
-                  fontWeight: 600,
-                }}
               >
                 {saveStatus === 'saving' ? 'Speichert...' : saveStatus === 'dirty' ? 'Ungespeicherte Änderungen' : saveStatus === 'conflict' ? 'Konflikt' : 'Gespeichert'}
               </span>
@@ -666,61 +635,6 @@ export default function NotesView({
             </div>
           )}
 
-          {/* Embedded 00 Übersicht.md Roadmap Card */}
-          {isUebersicht && (
-            <div className="notes-uebersicht-card">
-              <div className="notes-uebersicht-card__head">
-                <div>
-                  <div className="notes-uebersicht-card__tag">PLUGPT-MASTER-01 · 14% GEWICHTET</div>
-                  <h3 className="notes-uebersicht-card__title">Master Progression & Code Velocity</h3>
-                </div>
-                <button
-                  type="button"
-                  className="notes-uebersicht-card__cta"
-                  onClick={() => onNavigateTab ? onNavigateTab('roadmap') : null}
-                >
-                  Master Roadmap Dashboard öffnen →
-                </button>
-              </div>
-
-              {/* Multi-segment mini-bar */}
-              <div className="notes-uebersicht-card__bar">
-                <div style={{ width: '0%', background: '#10b981' }} title="0 Fertig" />
-                <div style={{ width: '29.5%', background: '#eab308' }} title="36 Teilweise (29.5%)" />
-                <div style={{ width: '5.7%', background: '#a855f7' }} title="7 Behauptet (5.7%)" />
-                <div style={{ width: '62.3%', background: '#64748b' }} title="76 Offen (62.3%)" />
-                <div style={{ width: '2.5%', background: '#ef4444' }} title="3 Blockiert (2.5%)" />
-              </div>
-
-              {/* Metric pills row */}
-              <div className="notes-uebersicht-card__metrics">
-                <div className="notes-u-pill">
-                  <span>Anforderungen</span>
-                  <strong>122 Gesamt</strong>
-                </div>
-                <div className="notes-u-pill">
-                  <span>Gewichtet</span>
-                  <strong style={{ color: '#eab308' }}>14% (13,9%)</strong>
-                </div>
-                <div className="notes-u-pill">
-                  <span>Kern-Code</span>
-                  <strong>592.136 LOC</strong>
-                </div>
-                <div className="notes-u-pill">
-                  <span>7d Netto</span>
-                  <strong style={{ color: '#10b981' }}>+2.784 LOC</strong>
-                </div>
-                <div className="notes-u-pill">
-                  <span>7d Commits</span>
-                  <strong style={{ color: '#06b6d4' }}>112 Commits</strong>
-                </div>
-                <div className="notes-u-pill">
-                  <span>Prognose (Nominal)</span>
-                  <strong>~4,5 Sprints</strong>
-                </div>
-              </div>
-            </div>
-          )}
 
           {conflict && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(239, 68, 68, 0.15)', padding: '6px 12px', borderRadius: '4px', margin: '4px 0' }}>
@@ -735,11 +649,11 @@ export default function NotesView({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '8px 12px', background: 'var(--panel)', borderBottom: '1px solid var(--border)', maxHeight: '180px', overflowY: 'auto', fontSize: '11px', fontFamily: 'var(--mono)' }}>
               <div>
                 <strong style={{ display: 'block', color: 'var(--faint)', marginBottom: '4px' }}>Server-Version ({active.path}):</strong>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#f87171' }}>{active.content}</pre>
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--neg)' }}>{active.content}</pre>
               </div>
               <div>
                 <strong style={{ display: 'block', color: 'var(--faint)', marginBottom: '4px' }}>Lokale Version (Entwurf):</strong>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#4ade80' }}>{draft}</pre>
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', color: 'var(--pos)' }}>{draft}</pre>
               </div>
             </div>
           )}
@@ -818,7 +732,7 @@ export default function NotesView({
                   minHeight: 0,
                   overflowY: 'auto',
                   padding: '16px 20px',
-                  background: 'var(--bg, #070908)',
+                  background: 'var(--bg)',
                   borderRight: showBacklinks ? '1px solid var(--border)' : 'none',
                 }}
               >
@@ -838,7 +752,7 @@ export default function NotesView({
                 style={{
                   overflowY: 'auto',
                   padding: '12px',
-                  background: 'var(--panel, #0D1210)',
+                  background: 'var(--panel)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
@@ -879,7 +793,7 @@ export default function NotesView({
                             cursor: 'pointer',
                           }}
                         >
-                          <div style={{ fontWeight: 600, color: '#93c5fd' }}>← {bl.title}</div>
+                          <div style={{ fontWeight: 600, color: 'var(--info)' }}>← {bl.title}</div>
                           <div style={{ fontSize: '11px', color: 'var(--faint)', display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
                             <span>{bl.path}</span>
                             <span>Z. {bl.line}</span>
@@ -916,7 +830,7 @@ export default function NotesView({
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{ fontWeight: 600 }}>{wl.alias || wl.target}</span>
-                            <span style={{ fontSize: '10px', color: wl.resolvedPath ? '#4ade80' : 'var(--faint)' }}>
+                            <span style={{ fontSize: '10px', color: wl.resolvedPath ? 'var(--pos)' : 'var(--faint)' }}>
                               {wl.resolvedPath ? 'im Vault' : 'unaufgelöst'}
                             </span>
                           </div>
@@ -941,11 +855,11 @@ export default function NotesView({
                       style={{
                         width: '100%',
                         textAlign: 'left',
-                        background: 'rgba(96, 165, 250, 0.08)',
-                        border: '1px solid rgba(96, 165, 250, 0.3)',
+                        background: 'color-mix(in srgb, var(--info) 8%, transparent)',
+                        border: '1px solid color-mix(in srgb, var(--info) 30%, transparent)',
                         borderRadius: '4px',
                         padding: '6px 8px',
-                        color: '#93c5fd',
+                        color: 'var(--info)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',

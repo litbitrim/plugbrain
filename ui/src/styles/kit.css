@@ -370,8 +370,7 @@ td.n, th.n { text-align: right }
 /* ── Command-Center Status Pills ────────────────────────────────────────── */
 .pb-status,
 .pb-pill,
-[class*="status-chip"],
-[class*="roadmap-pill"] {
+[class*="status-chip"] {
   font-family: var(--mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;

@@ -17,7 +17,6 @@ import SearchView from './views/SearchView'
 import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
-import RoadmapView from './views/RoadmapView'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
@@ -33,7 +32,6 @@ const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
   { id: 'mesh', label: 'Mesh', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
   { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
-  { id: 'roadmap', label: 'Roadmap', hint: 'Master Roadmap Progression & Velocity Cockpit' },
 ]
 
 const shortLabel = folderName
@@ -760,15 +758,6 @@ export default function App() {
             </div>
           )}
 
-          {view === 'roadmap' && (
-            <div className="pb-view pb-view--scroll">
-              <RoadmapView
-                workspaceId={workspaceId}
-                onNavigateTab={tab => setView(tab)}
-                onOpenSource={handleOpenSource}
-              />
-            </div>
-          )}
         </>}
       </main>
 

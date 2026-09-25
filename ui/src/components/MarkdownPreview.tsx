@@ -22,41 +22,41 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
   note: {
     type: 'note',
     title: 'HINWEIS',
-    color: '#06b6d4',
-    border: '#0891b2',
-    bg: 'rgba(6, 182, 212, 0.08)',
+    color: 'var(--info)',
+    border: 'var(--info)',
+    bg: 'color-mix(in srgb, var(--info) 8%, transparent)',
     glyph: 'ℹ️',
   },
   important: {
     type: 'important',
     title: 'WICHTIG',
-    color: '#a855f7',
-    border: '#9333ea',
-    bg: 'rgba(168, 85, 247, 0.08)',
+    color: 'var(--accent)',
+    border: 'var(--accent)',
+    bg: 'var(--accent-soft)',
     glyph: '📌',
   },
   warning: {
     type: 'warning',
     title: 'WARNUNG',
-    color: '#eab308',
-    border: '#ca8a04',
-    bg: 'rgba(234, 179, 8, 0.08)',
+    color: 'var(--warn)',
+    border: 'var(--warn)',
+    bg: 'color-mix(in srgb, var(--warn) 8%, transparent)',
     glyph: '⚠️',
   },
   tip: {
     type: 'tip',
     title: 'TIPP',
-    color: '#10b981',
-    border: '#059669',
-    bg: 'rgba(16, 185, 129, 0.08)',
+    color: 'var(--pos)',
+    border: 'var(--pos)',
+    bg: 'var(--accent-soft)',
     glyph: '💡',
   },
   caution: {
     type: 'caution',
     title: 'ACHTUNG',
-    color: '#ef4444',
-    border: '#dc2626',
-    bg: 'rgba(239, 68, 68, 0.08)',
+    color: 'var(--neg)',
+    border: 'var(--neg)',
+    bg: 'color-mix(in srgb, var(--neg) 8%, transparent)',
     glyph: '🛑',
   },
 }
@@ -244,21 +244,36 @@ function renderInline(
         </button>
       )
     } else if (match[4]) {
-      // Standard markdown link [Text](URL)
+      // Standard markdown link [Text](URL) — allowlist: http, https, mailto, relative, #anchor
       const label = match[5]
       const url = match[6]
-      const isExternal = url.startsWith('http://') || url.startsWith('https://')
-      nodes.push(
-        <a
-          key={key}
-          href={url}
-          className="md-link"
-          target={isExternal ? '_blank' : undefined}
-          rel={isExternal ? 'noopener noreferrer' : undefined}
-        >
-          {label}
-        </a>
+      const isAllowed = (
+        url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('mailto:') ||
+        url.startsWith('#') ||
+        url.startsWith('/') ||
+        url.startsWith('./') ||
+        url.startsWith('../') ||
+        (!url.includes(':'))  // relative path without scheme
       )
+      const isExternal = url.startsWith('http://') || url.startsWith('https://')
+      if (isAllowed) {
+        nodes.push(
+          <a
+            key={key}
+            href={url}
+            className="md-link"
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}
+          >
+            {label}
+          </a>
+        )
+      } else {
+        // Unsafe scheme — render as plain text
+        nodes.push(<span key={key} className="md-link-blocked">{label}</span>)
+      }
     } else if (match[7]) {
       // Inline code `Code`
       const codeText = match[8]
