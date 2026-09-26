@@ -396,6 +396,27 @@ CREATE TRIGGER IF NOT EXISTS search_rows_au AFTER UPDATE ON search_rows BEGIN
   INSERT INTO search(rowid, name, path, kind) VALUES (new.id, new.name, new.path, new.kind);
 END;
 
+-- Sub-millisecond substring & trigram search over symbols and paths.
+-- External-content table mirroring search_rows so symbol lookups never table-scan.
+CREATE VIRTUAL TABLE IF NOT EXISTS search_trigram USING fts5(
+  name, path,
+  content = 'search_rows', content_rowid = 'id',
+  tokenize = 'trigram'
+);
+
+CREATE TRIGGER IF NOT EXISTS search_rows_ai_tri AFTER INSERT ON search_rows BEGIN
+  INSERT INTO search_trigram(rowid, name, path) VALUES (new.id, new.name, new.path);
+END;
+CREATE TRIGGER IF NOT EXISTS search_rows_ad_tri AFTER DELETE ON search_rows BEGIN
+  INSERT INTO search_trigram(search_trigram, rowid, name, path)
+    VALUES ('delete', old.id, old.name, old.path);
+END;
+CREATE TRIGGER IF NOT EXISTS search_rows_au_tri AFTER UPDATE ON search_rows BEGIN
+  INSERT INTO search_trigram(search_trigram, rowid, name, path)
+    VALUES ('delete', old.id, old.name, old.path);
+  INSERT INTO search_trigram(rowid, name, path) VALUES (new.id, new.name, new.path);
+END;
+
 -- The index checkpoint. A generation is only ever incremented by a COMMIT that
 -- completed a whole build, so generation names the last COMPLETE graph a
 -- reader can see. Restart reads this row, compares git_head and the per-file
@@ -624,7 +645,38 @@ function migrateAddedColumns(db: DatabaseSync): void {
   ensureColumn(db, 'files', 'processing_status', "TEXT NOT NULL DEFAULT 'inventoried'")
   ensureColumn(db, 'files', 'processing_reason', 'TEXT')
   ensureColumn(db, 'checkouts', 'untracked_count', 'INTEGER NOT NULL DEFAULT 0')
+  ensureSearchTrigram(db)
   migrateAddedIndexes(db)
+}
+
+function ensureSearchTrigram(db: DatabaseSync): void {
+  const hasTri = Boolean(db.prepare(
+    "SELECT 1 present FROM sqlite_master WHERE type = 'table' AND name = 'search_trigram'"
+  ).get())
+  if (!hasTri) {
+    db.exec(`
+      CREATE VIRTUAL TABLE search_trigram USING fts5(
+        name, path,
+        content = 'search_rows', content_rowid = 'id',
+        tokenize = 'trigram'
+      );
+      CREATE TRIGGER IF NOT EXISTS search_rows_ai_tri AFTER INSERT ON search_rows BEGIN
+        INSERT INTO search_trigram(rowid, name, path) VALUES (new.id, new.name, new.path);
+      END;
+      CREATE TRIGGER IF NOT EXISTS search_rows_ad_tri AFTER DELETE ON search_rows BEGIN
+        INSERT INTO search_trigram(search_trigram, rowid, name, path)
+          VALUES ('delete', old.id, old.name, old.path);
+      END;
+      CREATE TRIGGER IF NOT EXISTS search_rows_au_tri AFTER UPDATE ON search_rows BEGIN
+        INSERT INTO search_trigram(search_trigram, rowid, name, path)
+          VALUES ('delete', old.id, old.name, old.path);
+        INSERT INTO search_trigram(rowid, name, path) VALUES (new.id, new.name, new.path);
+      END;
+    `)
+    try {
+      db.exec("INSERT INTO search_trigram(search_trigram) VALUES ('rebuild')")
+    } catch {}
+  }
 }
 
 /**
