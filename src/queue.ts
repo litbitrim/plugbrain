@@ -22,6 +22,7 @@ import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from './access.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
+import { coordEvents } from './coord/events.ts'
 
 export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled'
 
@@ -105,7 +106,15 @@ export function enqueueTask(
     id, workspaceId, title, input.body ?? '',
     input.addressedTo ?? null, input.requestedBy ?? null, now, now,
   )
-  return load(db, id)
+  const task = load(db, id)
+  coordEvents.emitLive('task.enqueued', {
+    taskId: task.id,
+    title: task.title,
+    addressedTo: task.addressed_to,
+    requestedBy: task.requested_by,
+    createdAt: task.created_at,
+  })
+  return task
 }
 
 /**

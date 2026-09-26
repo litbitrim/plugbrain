@@ -153,7 +153,6 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   }
   const worktrees = (input.worktrees ?? []).map(path => resolve(path))
   const now = new Date().toISOString()
-
   db.exec('BEGIN IMMEDIATE')
   try {
     if (resourceKey !== null) {
@@ -309,6 +308,8 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   if (summary !== null) assertNotCredential('summary', summary)
 
   const now = new Date().toISOString()
+  const previous = db.prepare('SELECT turn_state, turn_summary FROM agents WHERE id = ?').get(input.agentId) as
+    { turn_state: string | null; turn_summary: string | null } | undefined
   db.prepare(`
     UPDATE agents
        SET turn_state = ?, turn_state_at = ?, turn_summary = COALESCE(?, turn_summary),
@@ -350,9 +351,15 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     currentTask: currentTaskOf(db, input.workspaceId, input.agentId),
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
   }
-  coordEvents.emitLive('agent.turn', { agentId: input.agentId, phase: input.phase, state, at: now })
-  if (input.phase === 'end') runAutoReap(db, input.workspaceId)
-  return ping
+  coordEvents.emitLive('agent.turn', {
+    agentId: input.agentId,
+    phase: input.phase,
+    previousState: previous?.turn_state ?? null,
+    state,
+    summary: summary ?? (input.phase === 'end' ? previous?.turn_summary : null) ?? null,
+    at: now,
+  })
+  if (input.phase === 'end') runAutoReap(db, input.workspaceId)  return ping
 }
 
 /** The integrator approves a worker's pending commit. The approval reaches it as a message. */

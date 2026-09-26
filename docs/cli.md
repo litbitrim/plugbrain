@@ -526,6 +526,7 @@ plugbrain swarm <subcommand> [args] [--workspace <id>]
 Without `--workspace` the single registered workspace is used.
 
 **Subcommands:**
+- `swarm watch [--for <agent>] [--agents <id,…>] [--dirs <path,…>] [--timeout 20m] [--json]`: Wait for relevant Brain events and sparse filesystem/resource changes.
 - `swarm register <agentId> [name]`: Register a new agent worker.
 - `swarm turn <agentId> <start|end>`: Check in at a turn boundary.
 - `swarm claim <agentId> <path> --task <taskId>`: Acquire mutual exclusion lease on a path.
@@ -579,4 +580,8 @@ plugbrain swarm admit test && npm test
 plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass"
 plugbrain swarm release codex-1 --task <task-id>
 plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
-```
+plugbrain swarm turn agent-1 start
+plugbrain swarm board
+plugbrain swarm watch --for agent-1 --dirs ./review --timeout 20m --json```
+
+`swarm watch` streams coordination events from the local Brain live-event endpoint, batches events for five seconds, and checks watched Markdown directories and resource admission every 30 seconds. It exits with `0` on an event, `3` on timeout, and `1` if the live-event stream fails. Set `PLUGBRAIN_URL` when the local Brain is served on a non-default URL.

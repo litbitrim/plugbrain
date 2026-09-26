@@ -69,6 +69,7 @@ import {
 import { machineReport, type MachineReport } from './machine/index.ts'
 import { gitCensus, type CensusReport } from './machine/git-census.ts'
 import { runSwarmCli } from './swarm-cli.ts'
+import { runSwarmWatchCli } from './swarm-watch.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
 import { resolveBrainHome } from './home.ts'
@@ -1207,7 +1208,14 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
-  case 'swarm': process.exitCode = runSwarmCli(db, args, singlePlanetId); break
+  case 'swarm':
+    if (args[0] === 'watch') {
+      void runSwarmWatchCli(args.slice(1)).then(code => { process.exitCode = code }).catch(error => {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exitCode = 1
+      })
+    } else process.exitCode = runSwarmCli(db, args, singlePlanetId)
+    break
   case 'progress': {
     progressReport(args[0])
     break
