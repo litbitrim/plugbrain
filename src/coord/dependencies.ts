@@ -56,8 +56,9 @@ interface DependencyRow {
   task_title: string
   task_state: string
   addressed_to: string | null
-  after_title: string
-  after_state: string
+  after_workspace_id: string | null
+  after_title: string | null
+  after_state: string | null
   holder_state: string | null
 }
 
@@ -72,16 +73,93 @@ interface DependencyRow {
 export function addTaskDependency(db: DatabaseSync, taskId: string, afterTaskId: string): void {
   ensureDependencySchema(db)
   if (taskId === afterTaskId) throw new AccessDenied('a task cannot wait for itself')
-  const after = db.prepare('SELECT id FROM queue_tasks WHERE id = ?').get(afterTaskId) as { id: string } | undefined
+  const after = db.prepare('SELECT id, workspace_id FROM queue_tasks WHERE id = ?').get(afterTaskId) as
+    { id: string; workspace_id: string } | undefined
   if (after === undefined) throw new AccessDenied(`unknown task to wait for: ${afterTaskId}`)
   const task = db.prepare('SELECT id, workspace_id FROM queue_tasks WHERE id = ?').get(taskId) as
     { id: string; workspace_id: string } | undefined
   if (task === undefined) throw new AccessDenied(`unknown task: ${taskId}`)
+  if (after.workspace_id !== task.workspace_id) throw new AccessDenied('task dependencies must stay within the same workspace')
+
+  const closesCycle = db.prepare(`
+    WITH RECURSIVE ancestors(id) AS (
+      SELECT after_task_id FROM task_dependencies WHERE task_id = ? AND released_at IS NULL
+      UNION
+      SELECT d.after_task_id FROM task_dependencies d JOIN ancestors a ON d.task_id = a.id
+       WHERE d.released_at IS NULL
+    ) SELECT 1 AS found FROM ancestors WHERE id = ? LIMIT 1
+  `).get(afterTaskId, taskId)
+  if (closesCycle !== undefined) throw new AccessDenied('task dependency would create a cycle')
 
   db.prepare(`INSERT INTO task_dependencies (task_id, after_task_id, released_at, announced_at, created_at)
               VALUES (?, ?, NULL, NULL, ?)`)
     .run(taskId, afterTaskId, new Date().toISOString())
   syncDependencies(db, task.workspace_id)
+}
+
+interface DependencyEdge { task_id: string; after_task_id: string }
+
+function dependencyCycles(db: DatabaseSync, workspaceId: string): string[][] {
+  const edges = db.prepare(`
+    SELECT d.task_id, d.after_task_id FROM task_dependencies d
+      JOIN queue_tasks q ON q.id = d.task_id
+     WHERE q.workspace_id = ? AND d.released_at IS NULL
+  `).all(workspaceId) as unknown as DependencyEdge[]
+  const next = new Map(edges.map(edge => [edge.task_id, edge.after_task_id]))
+  const finished = new Set<string>()
+  const cycles: string[][] = []
+  for (const start of next.keys()) {
+    if (finished.has(start)) continue
+    const path: string[] = []
+    const pathIndex = new Map<string, number>()
+    let current: string | undefined = start
+    while (current !== undefined && next.has(current) && !finished.has(current)) {
+      const seenAt = pathIndex.get(current)
+      if (seenAt !== undefined) { cycles.push(path.slice(seenAt)); break }
+      pathIndex.set(current, path.length)
+      path.push(current)
+      current = next.get(current)
+    }
+    for (const taskId of path) finished.add(taskId)
+  }
+  return cycles
+}
+
+function cancelBrokenDependency(
+  db: DatabaseSync,
+  workspaceId: string,
+  taskId: string,
+  afterTaskId: string,
+  title: string,
+  addressedTo: string | null,
+  reason: string,
+  nowIso: string,
+): void {
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const updated = db.prepare(`UPDATE queue_tasks SET state = 'cancelled', body =
+        CASE WHEN body = '' THEN ? ELSE body || char(10) || char(10) || ? END, updated_at = ?
+      WHERE id = ? AND state IN ('pending', 'claimed')`)
+      .run(reason, reason, nowIso, taskId)
+    db.prepare('UPDATE task_dependencies SET released_at = ? WHERE task_id = ? AND released_at IS NULL')
+      .run(nowIso, taskId)
+    let messageId: string | null = null
+    if (Number(updated.changes) > 0 && addressedTo !== null) {
+      ensureSystemAgent(db, workspaceId)
+      messageId = sendMessage(db, {
+        workspaceId, fromAgent: 'integrator', toAgent: addressedTo,
+        subject: `Aufgabe ${title} wurde blockiert`,
+        body: `${reason} Die Aufgabe wurde sichtbar abgebrochen; bitte Integrator informieren.`,
+      }).id
+    }
+    db.exec('COMMIT')
+    if (Number(updated.changes) > 0) {
+      coordEvents.emitLive('task.dependency.failed', { taskId, afterTaskId, messageId, at: nowIso })
+    }
+  } catch (error: unknown) {
+    db.exec('ROLLBACK')
+    throw error
+  }
 }
 
 /**
@@ -96,21 +174,38 @@ export function syncDependencies(
   ensureDependencySchema(db)
   const now = options.now ?? new Date()
   const nowIso = now.toISOString()
+  const cycleTaskIds = dependencyCycles(db, workspaceId).flat()
+  for (const taskId of cycleTaskIds) {
+    const row = db.prepare(`SELECT d.after_task_id, q.title, q.addressed_to FROM task_dependencies d
+      JOIN queue_tasks q ON q.id = d.task_id WHERE d.task_id = ?`).get(taskId) as
+      { after_task_id: string; title: string; addressed_to: string | null } | undefined
+    if (row !== undefined) {
+      cancelBrokenDependency(db, workspaceId, taskId, row.after_task_id, row.title, row.addressed_to,
+        `Blocked: dependency cycle includes task ${taskId}.`, nowIso)
+    }
+  }
   const state = holderStateSql(db)
   const ready = db.prepare(`
     SELECT d.task_id, d.after_task_id, q.title AS task_title, q.state AS task_state, q.addressed_to,
-           p.title AS after_title, p.state AS after_state, ${state.select}
+           p.workspace_id AS after_workspace_id, p.title AS after_title, p.state AS after_state, ${state.select}
       FROM task_dependencies d
       JOIN queue_tasks q ON q.id = d.task_id
-      JOIN queue_tasks p ON p.id = d.after_task_id
+      LEFT JOIN queue_tasks p ON p.id = d.after_task_id
       LEFT JOIN agents holder ON holder.id = p.claimed_by
      WHERE d.released_at IS NULL AND q.workspace_id = ?
-       AND ${state.arrived}
+       AND (p.id IS NULL OR p.workspace_id <> q.workspace_id OR ${state.arrived})
      ORDER BY d.created_at ASC, d.rowid ASC
   `).all(workspaceId) as unknown as DependencyRow[]
 
   const released: string[] = []
   for (const row of ready) {
+    if (row.after_title === null || row.after_workspace_id !== workspaceId) {
+      const reason = row.after_title === null
+        ? `Blocked: predecessor ${row.after_task_id} no longer exists.`
+        : `Blocked: predecessor ${row.after_task_id} belongs to another workspace.`
+      cancelBrokenDependency(db, workspaceId, row.task_id, row.after_task_id, row.task_title, row.addressed_to, reason, nowIso)
+      continue
+    }
     const marked = db.prepare(
       'UPDATE task_dependencies SET released_at = ? WHERE task_id = ? AND released_at IS NULL',
     ).run(nowIso, row.task_id)

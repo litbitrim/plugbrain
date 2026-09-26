@@ -14,6 +14,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import * as coord from '../src/coord/index.ts'
+import { enqueueTask } from '../src/queue.ts'
+import { addTaskDependency } from '../src/coord/dependencies.ts'
 import { runSwarmCli } from '../src/swarm-cli.ts'
 
 interface Fixture {
@@ -148,6 +150,37 @@ test('BR-2a: the integrator is told once per case, and again only after new cont
   }
 })
 
+test('BR-2a: silence notice and case latch commit together', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-quiet', 'freebuff:quiet')
+    const now = new Date('2026-09-26T20:00:00.000Z')
+    coord.recordTurn(f.db, { workspaceId: f.workspaceId, agentId: 'w-quiet', phase: 'start' })
+    backdate(f, 'w-quiet', minutesAgo(now, 50).toISOString())
+    f.db.exec(`CREATE TRIGGER fail_silence_latch BEFORE UPDATE OF silence_alerted_at ON agents
+      BEGIN SELECT RAISE(ABORT, 'simulated crash before latch'); END`)
+    assert.throws(() => coord.scanWatchdog(f.db, f.workspaceId, { now }), /simulated crash/)
+    assert.equal(messagesTo(f, 'integrator').length, 0, 'the message rolls back with the failed latch')
+    assert.equal((f.db.prepare("SELECT silence_alerted_at FROM agents WHERE id = 'w-quiet'").get() as { silence_alerted_at: string | null }).silence_alerted_at, null)
+    f.db.exec('DROP TRIGGER fail_silence_latch')
+    assert.deepEqual(coord.scanWatchdog(f.db, f.workspaceId, { now }).alerted, ['w-quiet'])
+    assert.equal(messagesTo(f, 'integrator').length, 1)
+  } finally { f.cleanup() }
+})
+
+test('BR-2a: unknown reviewer accounts do not count as independent', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-author', 'freebuff:freebucks')
+    register(f, 'w-unknown', 'unknown')
+    f.db.prepare("UPDATE agents SET account = NULL WHERE id = 'w-unknown'").run()
+    coord.setReviewPool(f.db, f.workspaceId, ['w-unknown'])
+    coord.setReviewAuto(f.db, f.workspaceId, true)
+    assert.equal(coord.routeReviewForAuthor(f.db, f.workspaceId, 'w-author').routed, false)
+    assert.equal(reviewTaskCount(f), 0)
+  } finally { f.cleanup() }
+})
+
 test('BR-2a: --after blocks a task until its predecessor is delivered, then tells the addressee', () => {
   const f = createFixture()
   try {
@@ -184,6 +217,54 @@ test('BR-2a: --after blocks a task until its predecessor is delivered, then tell
   } finally {
     f.cleanup()
   }
+})
+
+test('BR-2a: dependencies reject cross-workspace predecessors and cycles', () => {
+  const f = createFixture()
+  try {
+    const otherWorkspace = 'ws-other'
+    const otherRoot = join(f.dir, 'other')
+    const first = enqueueTask(f.db, f.workspaceId, { title: 'first' })
+    const second = enqueueTask(f.db, f.workspaceId, { title: 'second' })
+    f.db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run(otherWorkspace, 'Other', otherRoot, new Date().toISOString())
+    const foreignTask = enqueueTask(f.db, otherWorkspace, { title: 'foreign' })
+    assert.throws(() => addTaskDependency(f.db, first.id, foreignTask.id), /same workspace/)
+    addTaskDependency(f.db, second.id, first.id)
+    assert.throws(() => addTaskDependency(f.db, first.id, second.id), /cycle/)
+    const legacyTime = new Date().toISOString()
+    f.db.prepare('INSERT INTO task_dependencies (task_id, after_task_id, created_at) VALUES (?, ?, ?)')
+      .run(first.id, foreignTask.id, legacyTime)
+    coord.syncDependencies(f.db, f.workspaceId)
+    assert.equal(queueTask(f, first.id).state, 'cancelled', 'legacy cross-workspace edges are failed closed too')
+    assert.match((f.db.prepare('SELECT body FROM queue_tasks WHERE id = ?').get(first.id) as { body: string }).body, /another workspace/i)
+
+    const legacyA = enqueueTask(f.db, f.workspaceId, { title: 'legacy cycle A' })
+    const legacyB = enqueueTask(f.db, f.workspaceId, { title: 'legacy cycle B' })
+    const now = new Date().toISOString()
+    f.db.prepare('INSERT INTO task_dependencies (task_id, after_task_id, created_at) VALUES (?, ?, ?)')
+      .run(legacyA.id, legacyB.id, now)
+    f.db.prepare('INSERT INTO task_dependencies (task_id, after_task_id, created_at) VALUES (?, ?, ?)')
+      .run(legacyB.id, legacyA.id, now)
+    coord.syncDependencies(f.db, f.workspaceId)
+    assert.equal(queueTask(f, legacyA.id).state, 'cancelled')
+    assert.equal(queueTask(f, legacyB.id).state, 'cancelled')
+  } finally { f.cleanup() }
+})
+
+test('BR-2a: a deleted predecessor becomes a visible cancelled task', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-waiter', 'freebuff:waiter')
+    const predecessor = enqueueTask(f.db, f.workspaceId, { title: 'predecessor' })
+    const dependent = enqueueTask(f.db, f.workspaceId, { title: 'dependent', addressedTo: 'w-waiter', afterTaskId: predecessor.id })
+    f.db.prepare('DELETE FROM queue_tasks WHERE id = ?').run(predecessor.id)
+    coord.syncDependencies(f.db, f.workspaceId)
+    const task = f.db.prepare('SELECT state, body FROM queue_tasks WHERE id = ?').get(dependent.id) as { state: string; body: string }
+    assert.equal(task.state, 'cancelled')
+    assert.match(task.body, /predecessor .* no longer exists/i)
+    assert.match(messagesTo(f, 'w-waiter')[0]?.body ?? '', /no longer exists/i)
+  } finally { f.cleanup() }
 })
 
 test('BR-2a: a turn ended with awaiting-commit frees what waits on it — blocked does not', () => {

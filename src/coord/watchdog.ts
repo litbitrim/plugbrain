@@ -305,18 +305,28 @@ export function scanWatchdog(
   if (options.alert !== false) {
     for (const reading of silent) {
       if (!caseIsUnannounced(reading)) continue
-      ensureSystemAgent(db, workspaceId)
-      sendMessage(db, {
-        workspaceId,
-        fromAgent: 'integrator',
-        toAgent: 'integrator',
-        subject: `Still: ${reading.agentId} seit ${reading.minutes} min ohne Kontakt`,
-        body: `${reading.agentId}${reading.account === null ? '' : ` (${reading.account})`} steht seit ` +
-          `${reading.minutes} Minuten auf working, ohne Kontakt zum Brain` +
-          `${reading.lastContactAt === null ? ` (Turn-Start ${reading.workingSince})` : ` (letzter Kontakt ${reading.lastContactAt})`}.\n` +
-          'Prüfen: hängt der Tab/Prozess? Continue geben — oder sauber abmelden: plugbrain swarm retire <agent> --note <grund>.',
-      })
-      db.prepare('UPDATE agents SET silence_alerted_at = ? WHERE id = ?').run(now.toISOString(), reading.agentId)
+      db.exec('BEGIN IMMEDIATE')
+      try {
+        const current = silentWorkers(db, workspaceId, { now, silentAfterMinutes: settings.silentAfterMinutes })
+          .find(item => item.agentId === reading.agentId)
+        if (current === undefined || !caseIsUnannounced(current)) { db.exec('COMMIT'); continue }
+        ensureSystemAgent(db, workspaceId)
+        sendMessage(db, {
+          workspaceId,
+          fromAgent: 'integrator',
+          toAgent: 'integrator',
+          subject: `Still: ${current.agentId} seit ${current.minutes} min ohne Kontakt`,
+          body: `${current.agentId}${current.account === null ? '' : ` (${current.account})`} steht seit ` +
+            `${current.minutes} Minuten auf working, ohne Kontakt zum Brain` +
+            `${current.lastContactAt === null ? ` (Turn-Start ${current.workingSince})` : ` (letzter Kontakt ${current.lastContactAt})`}.\n` +
+            'Prüfen: hängt der Tab/Prozess? Continue geben — oder sauber abmelden: plugbrain swarm retire <agent> --note <grund>.',
+        })
+        db.prepare('UPDATE agents SET silence_alerted_at = ? WHERE id = ?').run(now.toISOString(), current.agentId)
+        db.exec('COMMIT')
+      } catch (error: unknown) {
+        db.exec('ROLLBACK')
+        throw error
+      }
       coordEvents.emitLive('watchdog.silent', {
         workspaceId, agentId: reading.agentId, minutes: reading.minutes, at: now.toISOString(),
       })
@@ -391,8 +401,8 @@ export function routeReviewForAuthor(
 
   const reviewer = readReviewPool(db, workspaceId).find(entry => {
     if (entry.agentId === authorId || entry.retired) return false
-    const sameAccount = entry.account !== null && author?.account != null && entry.account === author.account
-    return !sameAccount
+    if (entry.account === null || entry.account.trim() === '' || author?.account == null || author.account.trim() === '') return false
+    return entry.account !== author.account
   })
   if (reviewer === undefined) return { routed: false, reason: 'no reviewer with a different account in the pool' }
 
