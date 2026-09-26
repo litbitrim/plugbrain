@@ -1,0 +1,128 @@
+[
+  {
+    "id": "plugmedia-holdout-01",
+    "type": "definition",
+    "question": "Where is ALLOWED_ORIGINS defined for CORS and loopback security in PlugMedia runtime?",
+    "query_param": "ALLOWED_ORIGINS",
+    "expected": {
+      "path": "services/runtime/src/auth.ts",
+      "symbol": "ALLOWED_ORIGINS",
+      "kind": "symbol",
+      "details": "ALLOWED_ORIGINS defines whitelist of allowed HTTP origins."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-02",
+    "type": "definition",
+    "question": "Where is the issueCapability function defined for media read capabilities?",
+    "query_param": "issueCapability",
+    "expected": {
+      "path": "services/runtime/src/auth.ts",
+      "symbol": "issueCapability",
+      "kind": "symbol",
+      "details": "issueCapability generates signed HMAC capabilities for artifact reads."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-03",
+    "type": "definition",
+    "question": "Where is the verifyCapability function defined to check artifact access permissions?",
+    "query_param": "verifyCapability",
+    "expected": {
+      "path": "services/runtime/src/auth.ts",
+      "symbol": "verifyCapability",
+      "kind": "symbol",
+      "details": "verifyCapability validates signed HMAC capabilities against expiry and artifact ID."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-04",
+    "type": "definition",
+    "question": "Where is csrfGuard defined to enforce the x-plugmedia-client header on mutating requests?",
+    "query_param": "csrfGuard",
+    "expected": {
+      "path": "services/runtime/src/auth.ts",
+      "symbol": "csrfGuard",
+      "kind": "symbol",
+      "details": "csrfGuard checks for presence of 'plugmedia-client/1' on mutating requests."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-05",
+    "type": "definition",
+    "question": "Where is DEFAULT_CATCHUP_WINDOW_HOURS defined for the durable scheduler?",
+    "query_param": "DEFAULT_CATCHUP_WINDOW_HOURS",
+    "expected": {
+      "path": "services/runtime/src/engine/scheduler.ts",
+      "symbol": "DEFAULT_CATCHUP_WINDOW_HOURS",
+      "kind": "symbol",
+      "details": "DEFAULT_CATCHUP_WINDOW_HOURS = 24 sets maximum late-fire window for due slots."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-06",
+    "type": "definition",
+    "question": "Where is the computeNodeCacheKey function defined for compute DAG caching?",
+    "query_param": "computeNodeCacheKey",
+    "expected": {
+      "path": "packages/graph/src/compute/cacheKey.ts",
+      "symbol": "computeNodeCacheKey",
+      "kind": "symbol",
+      "details": "computeNodeCacheKey computes canonical sha256 hash of node execution inputs."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-07",
+    "type": "definition",
+    "question": "Where is the NODE_VERSIONS map defined for tracking local compute node implementations?",
+    "query_param": "NODE_VERSIONS",
+    "expected": {
+      "path": "packages/graph/src/compute/nodeVersions.ts",
+      "symbol": "NODE_VERSIONS",
+      "kind": "symbol",
+      "details": "NODE_VERSIONS maps node identifiers to implementation versions."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-08",
+    "type": "definition",
+    "question": "Where is implementationDigest defined to hash compute node version signatures?",
+    "query_param": "implementationDigest",
+    "expected": {
+      "path": "packages/graph/src/compute/nodeVersions.ts",
+      "symbol": "implementationDigest",
+      "kind": "symbol",
+      "details": "implementationDigest creates sha256 prefix from sorted node version tuples."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-09",
+    "type": "callers",
+    "question": "Where is schedulerTick called in the runtime service?",
+    "query_param": "schedulerTick",
+    "expected": {
+      "path": "services/runtime/src/engine/scheduler.ts",
+      "symbol": "schedulerTick",
+      "kind": "callers",
+      "expected_targets": [
+        "services/runtime/src/index.ts"
+      ],
+      "details": "services/runtime/src/index.ts invokes schedulerTick to run periodic queue maintenance."
+    }
+  },
+  {
+    "id": "plugmedia-holdout-10",
+    "type": "impact",
+    "question": "What is impacted if computeNodeCacheKey in cacheKey.ts is modified?",
+    "query_param": "computeNodeCacheKey",
+    "expected": {
+      "path": "packages/graph/src/compute/cacheKey.ts",
+      "symbol": "computeNodeCacheKey",
+      "kind": "impact",
+      "expected_targets": [
+        "packages/graph/src/compute/cacheKey.ts"
+      ],
+      "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
+    }
+  }
+]

@@ -1,0 +1,135 @@
+[
+  {
+    "id": "plugengine-holdout-01",
+    "type": "definition",
+    "question": "Where is createKeyVault defined to instantiate the session-only BYOK key store?",
+    "query_param": "createKeyVault",
+    "expected": {
+      "path": "packages/plugengine-ai/src/keyVault.ts",
+      "symbol": "createKeyVault",
+      "kind": "symbol",
+      "details": "createKeyVault instantiates in-memory KeyVaultHandle with closure-isolated Map."
+    }
+  },
+  {
+    "id": "plugengine-holdout-02",
+    "type": "definition",
+    "question": "Where is the KeyVaultHandle interface defined for managing API keys in memory?",
+    "query_param": "KeyVaultHandle",
+    "expected": {
+      "path": "packages/plugengine-ai/src/keyVault.ts",
+      "symbol": "KeyVaultHandle",
+      "kind": "symbol",
+      "details": "KeyVaultHandle exposes set, get, has, delete, size, and dispose."
+    }
+  },
+  {
+    "id": "plugengine-holdout-03",
+    "type": "callers",
+    "question": "Where is createKeyVault invoked to initialize an AI builder instance?",
+    "query_param": "createKeyVault",
+    "expected": {
+      "path": "packages/plugengine-ai/src/keyVault.ts",
+      "symbol": "createKeyVault",
+      "kind": "callers",
+      "expected_targets": [
+        "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+        "packages/plugengine-ai/src/aiBuild.test.ts"
+      ],
+      "details": "aiBuilderModel constructor and aiBuild.test.ts call createKeyVault."
+    }
+  },
+  {
+    "id": "plugengine-holdout-04",
+    "type": "definition",
+    "question": "Where is the generate function defined to orchestrate AI scene generation?",
+    "query_param": "generate",
+    "expected": {
+      "path": "packages/plugengine-ai/src/aiBuilder.ts",
+      "symbol": "generate",
+      "kind": "symbol",
+      "details": "generate orchestrates buildJob + providerProfiles + stagingDiff + buildRecipeFactory."
+    }
+  },
+  {
+    "id": "plugengine-holdout-05",
+    "type": "definition",
+    "question": "Where is the ArtProfile interface defined for sprite and art style configuration?",
+    "query_param": "ArtProfile",
+    "expected": {
+      "path": "packages/contracts/src/artProfile.ts",
+      "symbol": "ArtProfile",
+      "kind": "symbol",
+      "details": "ArtProfile defines palette, resolution, tile dimensions, and shading properties."
+    }
+  },
+  {
+    "id": "plugengine-holdout-06",
+    "type": "definition",
+    "question": "Where is the StagingDiff interface defined for previewing builder changes before apply?",
+    "query_param": "StagingDiff",
+    "expected": {
+      "path": "packages/plugengine-ai/src/stagingDiff.ts",
+      "symbol": "StagingDiff",
+      "kind": "symbol",
+      "details": "StagingDiff holds added, modified, removed template objects and change summaries."
+    }
+  },
+  {
+    "id": "plugengine-holdout-07",
+    "type": "definition",
+    "question": "Where is the BuildJob interface defined for engine generation jobs?",
+    "query_param": "BuildJob",
+    "expected": {
+      "path": "packages/plugengine-ai/src/buildJob.ts",
+      "symbol": "BuildJob",
+      "kind": "symbol",
+      "details": "BuildJob defines prompt, seed, provider, clock timestamp, and metadata."
+    }
+  },
+  {
+    "id": "plugengine-holdout-08",
+    "type": "definition",
+    "question": "Where is the generateMockPlan function defined for deterministic scene generation?",
+    "query_param": "generateMockPlan",
+    "expected": {
+      "path": "packages/plugengine-ai/src/mockProvider.ts",
+      "symbol": "generateMockPlan",
+      "kind": "symbol",
+      "details": "generateMockPlan uses mulberry32 PRNG and keyword detection to build mock templates."
+    }
+  },
+  {
+    "id": "plugengine-holdout-09",
+    "type": "callers",
+    "question": "Where is generateMockPlan called during mock provider execution?",
+    "query_param": "generateMockPlan",
+    "expected": {
+      "path": "packages/plugengine-ai/src/mockProvider.ts",
+      "symbol": "generateMockPlan",
+      "kind": "callers",
+      "expected_targets": [
+        "packages/plugengine-ai/src/providerProfiles.ts",
+        "packages/plugengine-ai/src/aiBuild.test.ts"
+      ],
+      "details": "providerProfiles mock profile delegates to generateMockPlan."
+    }
+  },
+  {
+    "id": "plugengine-holdout-10",
+    "type": "impact",
+    "question": "What is impacted if createKeyVault signature or interface is modified?",
+    "query_param": "createKeyVault",
+    "expected": {
+      "path": "packages/plugengine-ai/src/keyVault.ts",
+      "symbol": "createKeyVault",
+      "kind": "impact",
+      "expected_targets": [
+        "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+        "packages/plugengine-ai/src/aiBuild.test.ts",
+        "packages/plugengine-ai/src/index.ts"
+      ],
+      "details": "Consumers importing createKeyVault for BYOK secret management are impacted."
+    }
+  }
+]
