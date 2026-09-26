@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { strict as assert } from 'node:assert'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { test } from 'node:test'
@@ -67,17 +67,17 @@ test('a pinned marker survives a folder move and worktrees share it', { skip: sk
 
     // MOVE: the folder relocates carrying its .git along. The new path hashes
     // differently, but the marker travels with the common dir — same identity.
+    // A real rename, not a copy of .git: copying raced with git's background
+    // housekeeping on the macOS runner (ENOENT inside .git/objects).
     const moved = join(dir, 'renamed-elsewhere')
-    mkdirSync(moved, { recursive: true })
-    cpSync(join(repo, '.git'), join(moved, '.git'), { recursive: true })
-    writeFileSync(join(moved, 'README.md'), 'identity fixture\n', 'utf8')
+    renameSync(repo, moved)
     assert.notEqual(workspaceIdFor(moved), workspaceIdFor(join(dir, 'unrelated-name')))
     assert.equal(workspaceIdFor(moved), PINNED, 'a moved folder keeps its pinned id')
 
     // WORKTREE: a linked worktree shares the repository's common dir, so it
     // shares the workspace — one brain, not a second brain per worktree.
     const worktree = join(dir, 'side-worktree')
-    git(repo, ['worktree', 'add', '-b', 'side', worktree])
+    git(moved, ['worktree', 'add', '-b', 'side', worktree])
     assert.equal(workspaceIdFor(worktree), PINNED, 'a worktree lands on the same workspace')
   } finally {
     cleanup()
