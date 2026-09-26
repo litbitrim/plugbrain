@@ -95,6 +95,35 @@ export default function App() {
   const [selectedRevision, setSelectedRevision] = useState<string | null>(null)
   const [meshFocusAgent, setMeshFocusAgent] = useState<string | null>(null)
 
+  // Settings & Theme state
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'appearance' | 'vaults' | 'repos' | 'shortcuts' | 'advanced'>('appearance')
+  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
+    try {
+      const saved = localStorage.getItem('plugbrain.theme')
+      if (saved === 'dark' || saved === 'light' || saved === 'system') return saved
+    } catch {}
+    return 'system'
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('plugbrain.theme', theme) } catch {}
+    const applyTheme = (t: 'dark' | 'light' | 'system') => {
+      let resolved = t
+      if (t === 'system') {
+        resolved = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+      }
+      document.documentElement.dataset.theme = resolved
+    }
+    applyTheme(theme)
+    if (theme === 'system' && typeof window !== 'undefined' && window.matchMedia) {
+      const mq = window.matchMedia('(prefers-color-scheme: light)')
+      const listener = () => applyTheme('system')
+      mq.addEventListener('change', listener)
+      return () => mq.removeEventListener('change', listener)
+    }
+  }, [theme])
+
   // Token Modal state
   const [tokenModalOpen, setTokenModalOpen] = useState(false)
   const [tokenInput, setTokenInput] = useState(getStoredToken())
@@ -114,6 +143,8 @@ export default function App() {
         event.preventDefault(); setShortcutsOpen(true)
       } else if (event.key === 'Escape') {
         setShortcutsOpen(false)
+        setSettingsOpen(false)
+        setSelectionModalOpen(false)
       } else if (event.key.toLowerCase() === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault(); setVaultOpen(true)
       }
@@ -290,7 +321,7 @@ export default function App() {
     setTokenModalOpen(false)
   }
 
-  const openSelection = async (): Promise<void> => {
+  const openSelection = async (showModal = false): Promise<void> => {
     if (!workspaceId || selectionBusy) return
     setSelectionBusy(true)
     setSelectionError('')
@@ -300,10 +331,10 @@ export default function App() {
       // An empty draft is intentional when the operator has not selected any
       // code roots yet. The UI never turns inventory into a select-all default.
       setSelectionDraft([...inventory.indexSelection.checkoutIds])
-      setSelectionModalOpen(true)
+      if (showModal) setSelectionModalOpen(true)
     } catch (cause) {
       setSelectionError(cause instanceof Error ? cause.message : String(cause))
-      setSelectionModalOpen(true)
+      if (showModal) setSelectionModalOpen(true)
     } finally {
       setSelectionBusy(false)
     }
@@ -642,19 +673,19 @@ export default function App() {
           )}
           {workspaceId && (
             <button type="button" className="pb-tool"
-              onClick={() => void openSelection()}
+              onClick={() => { setSettingsTab('repos'); setSettingsOpen(true); void openSelection() }}
               disabled={selectionBusy}
-              title="Aktive Code-Checkouts aus dem Planet-Inventar auswählen">
-              <span>{selectionBusy ? 'Lädt …' : 'Code-Auswahl'}</span>
+              title="Aktive Code-Checkouts auswählen (Repos wählen)">
+              <span>{selectionBusy ? 'Lädt …' : 'Repos wählen'}</span>
             </button>
           )}
           <button type="button" className="pb-tool pb-tool--icon" onClick={() => setShortcutsOpen(true)}
             aria-label="Tastenkürzel anzeigen" title="Tastenkürzel (?)">
             <Icon path={ICON.keyboard} />
           </button>
-          <button type="button" className="pb-tool pb-tool--icon" onClick={() => setTokenModalOpen(true)}
-            aria-label="Zugang konfigurieren" title="Auth-Token und Agent-ID">
-            <Icon path={ICON.key} />
+          <button type="button" className="pb-tool pb-tool--icon" onClick={() => { setSettingsTab('appearance'); setSettingsOpen(true) }}
+            aria-label="Einstellungen" title="Einstellungen">
+            <Icon path={ICON.gear} />
           </button>
         </div>
       </header>
@@ -864,92 +895,243 @@ export default function App() {
         </>}
       </main>
 
-      {tokenModalOpen && (
-        <div className="brain-modal-backdrop" onClick={() => setTokenModalOpen(false)}>
-          <div className="brain-modal" onClick={e => e.stopPropagation()}>
+      {settingsOpen && (
+        <div className="brain-modal-backdrop" onClick={() => setSettingsOpen(false)}>
+          <section className="brain-modal brain-settings-modal" role="dialog" aria-modal="true" aria-label="Einstellungen" onClick={e => e.stopPropagation()}>
             <div className="brain-modal__header">
-              <h3>PlugBrain Authentifizierung</h3>
-              <button type="button" className="brain-modal__close" onClick={() => setTokenModalOpen(false)}>✕</button>
+              <h3>Einstellungen</h3>
+              <button type="button" className="brain-modal__close" onClick={() => setSettingsOpen(false)} aria-label="Einstellungen schließen">✕</button>
             </div>
-            <form onSubmit={handleSaveToken}>
-              <div className="brain-modal__field">
-                <label>Bearer Token (aus <code>auth.token</code>):</label>
-                <input
-                  type="text"
-                  className="brain-modal__input mono"
-                  value={tokenInput}
-                  onChange={e => setTokenInput(e.target.value)}
-                  placeholder="plug-..."
-                />
-              </div>
-              <div className="brain-modal__field">
-                <label>Agent ID:</label>
-                <input
-                  type="text"
-                  className="brain-modal__input mono"
-                  value={agentInput}
-                  onChange={e => setAgentInput(e.target.value)}
-                  placeholder="agy"
-                />
-              </div>
-              <div className="brain-modal__actions">
-                <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
-                <button type="submit" className="primary">Speichern</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {selectionModalOpen && (
-        <div className="brain-modal-backdrop" onClick={() => !selectionBusy && setSelectionModalOpen(false)}>
-          <div className="brain-modal brain-selection-modal" onClick={e => e.stopPropagation()}>
-            <div className="brain-modal__header">
-              <h3>Aktive Code-Checkouts</h3>
-              <button type="button" className="brain-modal__close" disabled={selectionBusy}
-                onClick={() => setSelectionModalOpen(false)}>✕</button>
-            </div>
-            <p className="brain-selection-modal__hint">
-              Das Inventar bleibt vollständig sichtbar. Nur die hier bewusst markierten Checkout-IDs
-              werden beim nächsten Scan als aktiver Code indexiert.
-            </p>
-            <form onSubmit={saveSelection}>
-              {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
-              {planetInventory === null ? (
-                <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
-              ) : planetInventory.checkouts.length === 0 ? (
-                <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
-              ) : (
-                <fieldset className="brain-selection-list" disabled={selectionBusy}>
-                  <legend>Checkout-Inventar</legend>
-                  {planetInventory.checkouts.map(checkout => (
-                    <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
-                      <input
-                        type="checkbox"
-                        checked={selectionDraft.includes(checkout.id)}
-                        disabled={checkout.retiredAt !== null}
-                        onChange={() => toggleCheckout(checkout.id)}
-                      />
-                      <span>
-                        <strong>{checkout.relPrefix}</strong>
-                        <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-              )}
-              <p className="brain-selection-modal__hint">
-                Keine Auswahl ist ausdrücklich „notes only“; sie startet keinen leeren Code-Scan.
-              </p>
-              <div className="brain-modal__actions">
-                <button type="button" disabled={selectionBusy} onClick={() => setSelectionModalOpen(false)}>Abbrechen</button>
-                <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
-                  {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+            <div className="brain-settings-layout">
+              <nav className="brain-settings-nav" aria-label="Einstellungskategorien">
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'appearance' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('appearance')}
+                >
+                  Erscheinungsbild
                 </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'vaults' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('vaults')}
+                >
+                  Vault-Verwaltung
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'repos' ? 'true' : 'false'}
+                  onClick={() => { setSettingsTab('repos'); if (!planetInventory) void openSelection(); }}
+                >
+                  Repos wählen
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'shortcuts' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('shortcuts')}
+                >
+                  Tastenkürzel
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'advanced' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('advanced')}
+                >
+                  Erweitert
+                </button>
+              </nav>
+
+              <div className="brain-settings-content">
+                {settingsTab === 'appearance' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Erscheinungsbild</h4>
+                    <p className="brain-settings-section-desc">
+                      Wähle dein bevorzugtes Farbschema für PlugBrain.
+                    </p>
+                    <div className="brain-theme-options">
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'dark' ? 'true' : 'false'}
+                        onClick={() => setTheme('dark')}
+                      >
+                        <strong>Dunkel</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Standard</div>
+                      </button>
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'light' ? 'true' : 'false'}
+                        onClick={() => setTheme('light')}
+                      >
+                        <strong>Hell</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Hoher Kontrast</div>
+                      </button>
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'system' ? 'true' : 'false'}
+                        onClick={() => setTheme('system')}
+                      >
+                        <strong>System</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Automatisch</div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {settingsTab === 'vaults' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Vault-Verwaltung</h4>
+                    <p className="brain-settings-section-desc">
+                      Verwalte den aktiven Wissensordner oder wechsle zu einem bestehenden Vault.
+                    </p>
+                    {workspaceId ? (
+                      <div className="brain-settings-vault-card">
+                        <dl>
+                          <dt>Aktiver Vault:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.name || workspaceId}</dd>
+                          <dt>Pfad:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.root || '—'}</dd>
+                          <dt>Status:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.indexedAt ? 'Indiziert' : 'Bereit'}</dd>
+                        </dl>
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--muted)', fontSize: '12px' }}>Kein Vault geöffnet.</p>
+                    )}
+
+                    <div style={{ marginTop: '16px' }}>
+                      <strong style={{ fontSize: '12px', display: 'block', marginBottom: '8px' }}>Bekannte Vaults:</strong>
+                      <div style={{ display: 'grid', gap: '6px' }}>
+                        {planets.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className="pb-button"
+                            style={{
+                              justifyContent: 'space-between',
+                              background: p.id === workspaceId ? 'var(--panel)' : 'transparent',
+                              borderColor: p.id === workspaceId ? 'var(--accent)' : 'var(--line)',
+                            }}
+                            onClick={() => { applyWorkspace(p.id); setSettingsOpen(false); }}
+                          >
+                            <span>{shortLabel(p.name)}</span>
+                            <small style={{ color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{p.root}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {settingsTab === 'repos' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Repos wählen</h4>
+                    <p className="brain-settings-section-desc">
+                      Wähle aus, welche Checkouts indiziert werden sollen. Nur markierte Repos werden gescannt
+                      ({planetInventory ? `${planetInventory.checkouts.filter(c => selectionDraft.includes(c.id)).length} von ${planetInventory.checkouts.length} aktiv` : 'lädt …'}).
+                    </p>
+                    <form onSubmit={saveSelection}>
+                      {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
+                      {planetInventory === null ? (
+                        <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
+                      ) : planetInventory.checkouts.length === 0 ? (
+                        <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
+                      ) : (
+                        <fieldset className="brain-selection-list" disabled={selectionBusy}>
+                          <legend>Checkout-Inventar</legend>
+                          {planetInventory.checkouts.map(checkout => (
+                            <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
+                              <input
+                                type="checkbox"
+                                checked={selectionDraft.includes(checkout.id)}
+                                disabled={checkout.retiredAt !== null}
+                                onChange={() => toggleCheckout(checkout.id)}
+                              />
+                              <span>
+                                <strong>{checkout.relPrefix}</strong>
+                                <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
+                              </span>
+                            </label>
+                          ))}
+                        </fieldset>
+                      )}
+                      <div className="brain-modal__actions" style={{ marginTop: '16px' }}>
+                        <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
+                          {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {settingsTab === 'shortcuts' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Tastenkürzel</h4>
+                    <p className="brain-settings-section-desc">
+                      Tastenkombinationen für schnelle Navigation und Bearbeitung.
+                    </p>
+                    <table className="brain-settings-shortcuts-table">
+                      <tbody>
+                        <tr><td><kbd>?</kbd></td><td>Tastenkürzel-Übersicht öffnen</td></tr>
+                        <tr><td><kbd>Strg</kbd>+<kbd>O</kbd></td><td>Schnellwechsler (Notiz öffnen)</td></tr>
+                        <tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Notiz im Editor speichern</td></tr>
+                        <tr><td><kbd>O</kbd></td><td>Ordner als Vault öffnen</td></tr>
+                        <tr><td><kbd>/</kbd></td><td>Im Graph suchen</td></tr>
+                        <tr><td><kbd>F</kbd></td><td>Graph auf Fenster einpassen</td></tr>
+                        <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Graph vergrößern / verkleinern</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Dialog oder Menü schließen</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {settingsTab === 'advanced' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Erweitert (Authentifizierung)</h4>
+                    <p className="brain-settings-section-desc">
+                      Der Brain-Kern authentifiziert den lokalen Desktop automatisch über <code>auth.token</code>.
+                      Manuelle Konfiguration ist nur für externe Agenten oder Debugging erforderlich.
+                    </p>
+                    <form onSubmit={handleSaveToken}>
+                      <div className="brain-modal__field">
+                        <label>Bearer Token (aus <code>auth.token</code>):</label>
+                        <input
+                          type="password"
+                          className="brain-modal__input mono"
+                          value={tokenInput}
+                          onChange={e => setTokenInput(e.target.value)}
+                          placeholder="plug-..."
+                        />
+                      </div>
+                      <div className="brain-modal__field">
+                        <label>Agent ID:</label>
+                        <input
+                          type="text"
+                          className="brain-modal__input mono"
+                          value={agentInput}
+                          onChange={e => setAgentInput(e.target.value)}
+                          placeholder="agy"
+                        />
+                      </div>
+                      <div className="brain-modal__actions" style={{ marginTop: '16px' }}>
+                        <button type="submit" className="primary">Zugangsdaten speichern</button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </div>
-            </form>
-          </div>
+            </div>
+          </section>
         </div>
       )}
+
       {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
         <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
           <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
