@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "plugbrain": {
+      "command": "plugbrain",
+      "args": [
+        "mcp"
+      ],
+      "env": {
+        "PLUGBRAIN_NO_DAEMON": "0"
+      }
+    }
+  }
+}

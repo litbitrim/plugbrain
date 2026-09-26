@@ -1,0 +1,17 @@
+{
+  "name": "plugbrain",
+  "version": "0.3.0",
+  "description": "Local project and code memory for AI agents: AST code intelligence, Obsidian-style notes and multi-agent coordination, asked through MCP.",
+  "author": {
+    "name": "litbitrim"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/litbitrim/plugbrain",
+  "keywords": [
+    "code-intelligence",
+    "mcp",
+    "claude-code",
+    "notes",
+    "local-first"
+  ]
+}

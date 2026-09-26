@@ -1,0 +1,3218 @@
+{
+  "tool": "gitnexus",
+  "repo": "plugmedia",
+  "commit": "6748e6f4486ebf3214d8eac3236c60f557aa466a",
+  "indexTimeMs": 14700,
+  "indexSizeBytes": 46094853,
+  "questionCount": 20,
+  "hitCount": 3,
+  "accuracy": 15,
+  "latencyP50Ms": 1284.1,
+  "latencyP95Ms": 1387.7,
+  "questions": [
+    {
+      "id": "plugmedia-01",
+      "type": "definition",
+      "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "symbol",
+        "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1600.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_76_cmd_info",
+            "summary": "Cmd_info → Snapshot_dir",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_77_cmd_info",
+            "summary": "Cmd_info → Sha256_file",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_90_restore",
+            "summary": "Restore → Sha256",
+            "priority": 0.113,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_78_restoreisolated",
+            "summary": "RestoreIsolated → Sha256",
+            "priority": 0.112,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_104_brandarea",
+            "summary": "BrandArea → Command",
+            "priority": 0.112,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:workers/media/d1_diffusion.py:cmd_info",
+            "name": "cmd_info",
+            "filePath": "workers/media/d1_diffusion.py",
+            "startLine": 127,
+            "endLine": 130,
+            "module": "Media",
+            "process_id": "proc_76_cmd_info",
+            "step_index": 1
+          },
+          {
+            "id": "Function:services/runtime/src/db.ts:applyMigrations",
+            "name": "applyMigrations",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 43,
+            "endLine": 115,
+            "module": "Domain",
+            "process_id": "proc_90_restore",
+            "step_index": 2
+          },
+          {
+            "id": "Function:services/runtime/src/domain/ops.ts:restore",
+            "name": "restore",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 188,
+            "endLine": 214,
+            "module": "Domain",
+            "process_id": "proc_90_restore",
+            "step_index": 1
+          },
+          {
+            "id": "Function:services/runtime/src/domain/ops.ts:restoreIsolated",
+            "name": "restoreIsolated",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 382,
+            "endLine": 527,
+            "module": "Domain",
+            "process_id": "proc_78_restoreisolated",
+            "step_index": 1
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:BrandArea",
+            "name": "BrandArea",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 254,
+            "endLine": 315,
+            "module": "Cluster_43",
+            "process_id": "proc_104_brandarea",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/db.ts",
+            "name": "db.ts",
+            "filePath": "services/runtime/src/db.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/db.ts:verifySchema",
+            "name": "verifySchema",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 135,
+            "endLine": 167,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:health",
+            "name": "health",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 546,
+            "endLine": 560,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:report",
+            "name": "report",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 676,
+            "endLine": 716
+          },
+          {
+            "id": "Function:workers/media/d1_diffusion.py:_torch_version",
+            "name": "_torch_version",
+            "filePath": "workers/media/d1_diffusion.py",
+            "startLine": 133,
+            "endLine": 138,
+            "module": "Media"
+          },
+          {
+            "id": "Function:workers/media/d1_diffusion.py:_diffusers_version",
+            "name": "_diffusers_version",
+            "filePath": "workers/media/d1_diffusion.py",
+            "startLine": 141,
+            "endLine": 146,
+            "module": "Media"
+          },
+          {
+            "id": "File:services/runtime/src/commands.ts",
+            "name": "commands.ts",
+            "filePath": "services/runtime/src/commands.ts"
+          },
+          {
+            "id": "File:tools/admin/plug-admin.mjs",
+            "name": "plug-admin.mjs",
+            "filePath": "tools/admin/plug-admin.mjs"
+          },
+          {
+            "id": "Function:tools/admin/plug-admin.mjs:roleBootstrap",
+            "name": "roleBootstrap",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 85,
+            "endLine": 114,
+            "module": "Admin"
+          },
+          {
+            "id": "Function:tools/admin/plug-admin.mjs:migrate",
+            "name": "migrate",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 123,
+            "endLine": 131,
+            "module": "Admin"
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:keyAt",
+            "name": "keyAt",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 261,
+            "endLine": 261,
+            "module": "Engine"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/wfImport.ts:effect_check",
+            "name": "effect_check",
+            "filePath": "services/runtime/src/domain/wfImport.ts",
+            "startLine": 95,
+            "endLine": 96,
+            "module": "Domain"
+          },
+          {
+            "id": "Interface:services/runtime/src/domain/wfImport.ts:IntentNode",
+            "name": "IntentNode",
+            "filePath": "services/runtime/src/domain/wfImport.ts",
+            "startLine": 31,
+            "endLine": 40
+          },
+          {
+            "id": "Interface:services/runtime/src/domain/wfImport.ts:IntentDocument",
+            "name": "IntentDocument",
+            "filePath": "services/runtime/src/domain/wfImport.ts",
+            "startLine": 41,
+            "endLine": 48
+          },
+          {
+            "id": "Function:services/runtime/src/domain/studio.ts:brandsList",
+            "name": "brandsList",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "startLine": 94,
+            "endLine": 109
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:HealthArea",
+            "name": "HealthArea",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 498,
+            "endLine": 563,
+            "module": "Cluster_43"
+          },
+          {
+            "id": "File:packages/contracts/src/index.ts",
+            "name": "index.ts",
+            "filePath": "packages/contracts/src/index.ts"
+          },
+          {
+            "id": "Interface:packages/contracts/src/index.ts:NodeContract",
+            "name": "NodeContract",
+            "filePath": "packages/contracts/src/index.ts",
+            "startLine": 34,
+            "endLine": 51
+          },
+          {
+            "id": "Interface:packages/contracts/src/index.ts:WorkflowIR",
+            "name": "WorkflowIR",
+            "filePath": "packages/contracts/src/index.ts",
+            "startLine": 53,
+            "endLine": 60
+          },
+          {
+            "id": "File:apps/cli/src/index.ts",
+            "name": "index.ts",
+            "filePath": "apps/cli/src/index.ts"
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 169.4,
+          "merge": 0.1,
+          "symbol_lookup": 14.4,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 185.6
+        }
+      }
+    },
+    {
+      "id": "plugmedia-02",
+      "type": "definition",
+      "question": "Where are the four QA review axes (QA_AXES) defined?",
+      "query_param": "QA_AXES",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "QA_AXES",
+        "kind": "symbol",
+        "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1288.2,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_79_qareview",
+            "summary": "QaReview → LatestArtifacts",
+            "priority": 0.125,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_28_body",
+            "summary": "Body → Command",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_29_body",
+            "summary": "Body → Reload",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_70_body",
+            "summary": "Body → UseAsync",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_71_body",
+            "summary": "Body → Card",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:services/runtime/src/domain/studio.ts:latestArtifacts",
+            "name": "latestArtifacts",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "startLine": 338,
+            "endLine": 343,
+            "module": "Domain",
+            "process_id": "proc_79_qareview",
+            "step_index": 3
+          },
+          {
+            "id": "Function:services/runtime/src/domain/studio.ts:qaReview",
+            "name": "qaReview",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "startLine": 538,
+            "endLine": 561,
+            "module": "Domain",
+            "process_id": "proc_79_qareview",
+            "step_index": 1
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:StudioArea",
+            "name": "StudioArea",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 134,
+            "endLine": 244,
+            "module": "Cluster_43",
+            "process_id": "proc_28_body",
+            "step_index": 2
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:services/runtime/src/domain/studio.ts:qaStatus",
+            "name": "qaStatus",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "startLine": 563,
+            "endLine": 601,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:qa",
+            "name": "qa",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 141,
+            "endLine": 141,
+            "module": "Cluster_43"
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:play",
+            "name": "play",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 142,
+            "endLine": 142,
+            "module": "Cluster_43"
+          },
+          {
+            "id": "File:services/runtime/src/domain/media.ts",
+            "name": "media.ts",
+            "filePath": "services/runtime/src/domain/media.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:approve",
+            "name": "approve",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 339,
+            "endLine": 419,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:report",
+            "name": "report",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 676,
+            "endLine": 716
+          },
+          {
+            "id": "File:workers/media/d1_characters.py",
+            "name": "d1_characters.py",
+            "filePath": "workers/media/d1_characters.py"
+          },
+          {
+            "id": "Function:workers/media/d1_characters.py:draw_prop",
+            "name": "draw_prop",
+            "filePath": "workers/media/d1_characters.py",
+            "startLine": 244,
+            "endLine": 277,
+            "module": "Media"
+          },
+          {
+            "id": "File:tools/verify/verify.mjs",
+            "name": "verify.mjs",
+            "filePath": "tools/verify/verify.mjs"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g04",
+            "name": "g04",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 56,
+            "endLine": 67,
+            "module": "Verify"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g05_g07",
+            "name": "g05_g07",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 70,
+            "endLine": 87,
+            "module": "Verify"
+          },
+          {
+            "id": "Interface:packages/contracts/src/index.ts:ContentItem",
+            "name": "ContentItem",
+            "filePath": "packages/contracts/src/index.ts",
+            "startLine": 20,
+            "endLine": 27
+          },
+          {
+            "id": "File:packages/contracts/src/index.ts",
+            "name": "index.ts",
+            "filePath": "packages/contracts/src/index.ts"
+          },
+          {
+            "id": "File:services/runtime/src/domain/channels.ts",
+            "name": "channels.ts",
+            "filePath": "services/runtime/src/domain/channels.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:channelsList",
+            "name": "channelsList",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 55,
+            "endLine": 110
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:handoffCatalogExport",
+            "name": "handoffCatalogExport",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 774,
+            "endLine": 961,
+            "module": "Domain"
+          },
+          {
+            "id": "File:services/runtime/src/domain/wfImport.ts",
+            "name": "wfImport.ts",
+            "filePath": "services/runtime/src/domain/wfImport.ts"
+          },
+          {
+            "id": "File:tools/d1/collect-evidence.mjs",
+            "name": "collect-evidence.mjs",
+            "filePath": "tools/d1/collect-evidence.mjs"
+          },
+          {
+            "id": "File:workflows/WF02.json",
+            "name": "WF02.json",
+            "filePath": "workflows/WF02.json"
+          },
+          {
+            "id": "File:services/runtime/src/engine/worker.ts",
+            "name": "worker.ts",
+            "filePath": "services/runtime/src/engine/worker.ts"
+          }
+        ],
+        "timing": {
+          "vector": 4.7,
+          "bm25": 121,
+          "merge": 0.1,
+          "symbol_lookup": 11,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 133.7
+        }
+      }
+    },
+    {
+      "id": "plugmedia-03",
+      "type": "callers",
+      "question": "Which module calls topoSort for compute DAG sorting?",
+      "query_param": "topoSort",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "topoSort",
+        "kind": "callers",
+        "expected_targets": [
+          "tests/graph.test.ts"
+        ],
+        "details": "topoSort performs topological sorting on graph execution DAGs."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1266.9,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:packages/graph/src/compute/topo.ts:topoSort",
+          "name": "topoSort",
+          "kind": "Function",
+          "filePath": "packages/graph/src/compute/topo.ts",
+          "startLine": 6,
+          "endLine": 24
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "File:tests/graph.test.ts",
+              "name": "graph.test.ts",
+              "filePath": "tests/graph.test.ts"
+            }
+          ]
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "uid": "Class:packages/graph/src/compute/topo.ts:CycleError",
+              "name": "CycleError",
+              "filePath": "packages/graph/src/compute/topo.ts"
+            }
+          ]
+        },
+        "processes": []
+      }
+    },
+    {
+      "id": "plugmedia-04",
+      "type": "definition",
+      "question": "Where is the CycleError class defined for DAG cycles?",
+      "query_param": "CycleError",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "CycleError",
+        "kind": "symbol",
+        "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1328.1,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:packages/graph/src/compute/topo.ts:CycleError.constructor#1",
+            "name": "constructor",
+            "filePath": "packages/graph/src/compute/topo.ts",
+            "startLine": 3,
+            "endLine": 3
+          },
+          {
+            "id": "File:packages/graph/src/compute/topo.ts",
+            "name": "topo.ts",
+            "filePath": "packages/graph/src/compute/topo.ts"
+          },
+          {
+            "id": "Function:packages/graph/src/compute/topo.ts:topoSort",
+            "name": "topoSort",
+            "filePath": "packages/graph/src/compute/topo.ts",
+            "startLine": 6,
+            "endLine": 24,
+            "module": "Compute"
+          },
+          {
+            "id": "File:tests/graph.test.ts",
+            "name": "graph.test.ts",
+            "filePath": "tests/graph.test.ts"
+          },
+          {
+            "id": "File:docs/CODE_MAP.json",
+            "name": "CODE_MAP.json",
+            "filePath": "docs/CODE_MAP.json"
+          }
+        ],
+        "timing": {
+          "vector": 5.1,
+          "bm25": 45.3,
+          "merge": 0,
+          "symbol_lookup": 11.6,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 58.4
+        }
+      }
+    },
+    {
+      "id": "plugmedia-05",
+      "type": "definition",
+      "question": "Where is casPath defined for locating content-addressed files?",
+      "query_param": "casPath",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "casPath",
+        "kind": "symbol",
+        "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1284.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_5_plancontent",
+            "summary": "PlanContent → CasPath",
+            "priority": 0.09,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_11_derivedistributionse",
+            "summary": "DeriveDistributionSet → CasPath",
+            "priority": 0.09,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_26_sceneedit",
+            "summary": "SceneEdit → CasPath",
+            "priority": 0.09,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_34_episodesimport",
+            "summary": "EpisodesImport → CasPath",
+            "priority": 0.09,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_4_plancontent",
+            "summary": "PlanContent → EnsureCas",
+            "priority": 0.073,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:services/runtime/src/cas.ts:casPath",
+            "name": "casPath",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 29,
+            "endLine": 31,
+            "module": "Domain",
+            "process_id": "proc_5_plancontent",
+            "step_index": 5
+          },
+          {
+            "id": "Function:services/runtime/src/cas.ts:storeContent",
+            "name": "storeContent",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 47,
+            "endLine": 82,
+            "module": "Domain",
+            "process_id": "proc_5_plancontent",
+            "step_index": 4
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/cas.ts",
+            "name": "cas.ts",
+            "filePath": "services/runtime/src/cas.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5.2,
+          "bm25": 44.2,
+          "merge": 0,
+          "symbol_lookup": 10,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 56.2
+        }
+      }
+    },
+    {
+      "id": "plugmedia-06",
+      "type": "callers",
+      "question": "Where is storeContent called in the runtime domains?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/domain/media.ts"
+        ],
+        "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1258,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:services/runtime/src/cas.ts:storeContent",
+          "name": "storeContent",
+          "kind": "Function",
+          "filePath": "services/runtime/src/cas.ts",
+          "startLine": 47,
+          "endLine": 82
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Function:services/runtime/src/domain/media.ts:commitArtifact",
+              "name": "commitArtifact",
+              "filePath": "services/runtime/src/domain/media.ts"
+            }
+          ]
+        },
+        "outgoing": {
+          "accesses": [
+            {
+              "uid": "Const:services/runtime/src/cas.ts:size",
+              "name": "size",
+              "filePath": "services/runtime/src/cas.ts"
+            }
+          ],
+          "calls": [
+            {
+              "uid": "Function:services/runtime/src/cas.ts:ensureCas",
+              "name": "ensureCas",
+              "filePath": "services/runtime/src/cas.ts"
+            },
+            {
+              "uid": "Function:services/runtime/src/cas.ts:casPath",
+              "name": "casPath",
+              "filePath": "services/runtime/src/cas.ts"
+            },
+            {
+              "uid": "Function:services/runtime/src/cas.ts:sha256File",
+              "name": "sha256File",
+              "filePath": "services/runtime/src/cas.ts"
+            }
+          ]
+        },
+        "processes": [
+          {
+            "id": "proc_26_sceneedit",
+            "name": "SceneEdit → CasPath",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_11_derivedistributionse",
+            "name": "DeriveDistributionSet → CasPath",
+            "step_index": 4,
+            "step_count": 5
+          },
+          {
+            "id": "proc_33_episodesimport",
+            "name": "EpisodesImport → EnsureCas",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_25_sceneedit",
+            "name": "SceneEdit → EnsureCas",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_6_plancontent",
+            "name": "PlanContent → Sha256File",
+            "step_index": 4,
+            "step_count": 5
+          },
+          {
+            "id": "proc_27_sceneedit",
+            "name": "SceneEdit → Sha256File",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_35_episodesimport",
+            "name": "EpisodesImport → Sha256File",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_12_derivedistributionse",
+            "name": "DeriveDistributionSet → Sha256File",
+            "step_index": 4,
+            "step_count": 5
+          },
+          {
+            "id": "proc_10_derivedistributionse",
+            "name": "DeriveDistributionSet → EnsureCas",
+            "step_index": 4,
+            "step_count": 5
+          },
+          {
+            "id": "proc_5_plancontent",
+            "name": "PlanContent → CasPath",
+            "step_index": 4,
+            "step_count": 5
+          },
+          {
+            "id": "proc_34_episodesimport",
+            "name": "EpisodesImport → CasPath",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_4_plancontent",
+            "name": "PlanContent → EnsureCas",
+            "step_index": 4,
+            "step_count": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-07",
+      "type": "impact",
+      "question": "What is impacted if PGCONFIG default port is changed?",
+      "query_param": "PGCONFIG",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts",
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1212.2,
+      "rawOutput": {
+        "target": {
+          "id": "Const:services/runtime/src/db.ts:PGCONFIG",
+          "name": "PGCONFIG",
+          "type": "",
+          "filePath": "services/runtime/src/db.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "plugmedia-08",
+      "type": "impact",
+      "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1180,
+      "rawOutput": {
+        "target": {
+          "id": "Const:packages/contracts/src/index.ts:SCHEMA_VERSION",
+          "name": "SCHEMA_VERSION",
+          "type": "",
+          "filePath": "packages/contracts/src/index.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "plugmedia-09",
+      "type": "dataflow",
+      "question": "How does content storage flow from raw file stream to CAS destination?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "dataflow",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1234.8,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_4_plancontent",
+            "summary": "PlanContent → EnsureCas",
+            "priority": 0.089,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_5_plancontent",
+            "summary": "PlanContent → CasPath",
+            "priority": 0.089,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_6_plancontent",
+            "summary": "PlanContent → Sha256File",
+            "priority": 0.089,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_10_derivedistributionse",
+            "summary": "DeriveDistributionSet → EnsureCas",
+            "priority": 0.089,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_11_derivedistributionse",
+            "summary": "DeriveDistributionSet → CasPath",
+            "priority": 0.089,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:services/runtime/src/cas.ts:storeContent",
+            "name": "storeContent",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 47,
+            "endLine": 82,
+            "module": "Domain",
+            "process_id": "proc_4_plancontent",
+            "step_index": 4
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:commitArtifact",
+            "name": "commitArtifact",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 63,
+            "endLine": 113,
+            "module": "Domain",
+            "process_id": "proc_4_plancontent",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/cas.ts",
+            "name": "cas.ts",
+            "filePath": "services/runtime/src/cas.ts"
+          },
+          {
+            "id": "File:services/runtime/src/domain/media.ts",
+            "name": "media.ts",
+            "filePath": "services/runtime/src/domain/media.ts"
+          }
+        ],
+        "timing": {
+          "vector": 7,
+          "bm25": 42.4,
+          "merge": 0,
+          "symbol_lookup": 11.3,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 55.8
+        }
+      }
+    },
+    {
+      "id": "plugmedia-10",
+      "type": "config",
+      "question": "Which environment variable overrides the HTTP server port?",
+      "query_param": "PLUGMEDIA_PORT",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "PLUGMEDIA_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1370.5,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_18_createwindow",
+            "summary": "CreateWindow → LocalToken",
+            "priority": 0.138,
+            "symbol_count": 3,
+            "process_type": "intra_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_94_main",
+            "summary": "Main → Psql",
+            "priority": 0.128,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_19_buildmenu",
+            "summary": "BuildMenu → LocalToken",
+            "priority": 0.126,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_106_click",
+            "summary": "Click → LocalToken",
+            "priority": 0.126,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_50_entry",
+            "summary": "Entry → BearerToken",
+            "priority": 0.121,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:apps/desktop/main.mjs:localToken",
+            "name": "localToken",
+            "filePath": "apps/desktop/main.mjs",
+            "startLine": 55,
+            "endLine": 62,
+            "module": "Desktop",
+            "process_id": "proc_18_createwindow",
+            "step_index": 5
+          },
+          {
+            "id": "Function:apps/desktop/main.mjs:authHeaders",
+            "name": "authHeaders",
+            "filePath": "apps/desktop/main.mjs",
+            "startLine": 64,
+            "endLine": 69,
+            "module": "Desktop",
+            "process_id": "proc_18_createwindow",
+            "step_index": 4
+          },
+          {
+            "id": "Function:apps/desktop/main.mjs:createWindow",
+            "name": "createWindow",
+            "filePath": "apps/desktop/main.mjs",
+            "startLine": 87,
+            "endLine": 138,
+            "module": "Desktop",
+            "process_id": "proc_18_createwindow",
+            "step_index": 1
+          },
+          {
+            "id": "Function:tools/d1/restart.mjs:main",
+            "name": "main",
+            "filePath": "tools/d1/restart.mjs",
+            "startLine": 126,
+            "endLine": 192,
+            "module": "D1",
+            "process_id": "proc_94_main",
+            "step_index": 1
+          },
+          {
+            "id": "Function:tools/d1/restart.mjs:psql",
+            "name": "psql",
+            "filePath": "tools/d1/restart.mjs",
+            "startLine": 128,
+            "endLine": 131,
+            "module": "D1",
+            "process_id": "proc_94_main",
+            "step_index": 3
+          },
+          {
+            "id": "Function:apps/cli/src/index.ts:bearerToken",
+            "name": "bearerToken",
+            "filePath": "apps/cli/src/index.ts",
+            "startLine": 28,
+            "endLine": 35,
+            "module": "Cluster_0",
+            "process_id": "proc_50_entry",
+            "step_index": 4
+          },
+          {
+            "id": "Function:apps/cli/src/index.ts:authHeaders",
+            "name": "authHeaders",
+            "filePath": "apps/cli/src/index.ts",
+            "startLine": 38,
+            "endLine": 43,
+            "module": "Cluster_0",
+            "process_id": "proc_50_entry",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:tools/d1/probe-desktop.mjs:sleep",
+            "name": "sleep",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "startLine": 24,
+            "endLine": 24,
+            "module": "D1"
+          },
+          {
+            "id": "Function:tools/d1/probe-desktop.mjs:targets",
+            "name": "targets",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "startLine": 26,
+            "endLine": 33,
+            "module": "D1"
+          },
+          {
+            "id": "Function:tools/d1/probe-desktop.mjs:main",
+            "name": "main",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "startLine": 63,
+            "endLine": 122,
+            "module": "D1"
+          },
+          {
+            "id": "File:tools/d1/gate-surfaces.mjs",
+            "name": "gate-surfaces.mjs",
+            "filePath": "tools/d1/gate-surfaces.mjs"
+          },
+          {
+            "id": "Function:tools/d1/gate-surfaces.mjs:webCommand",
+            "name": "webCommand",
+            "filePath": "tools/d1/gate-surfaces.mjs",
+            "startLine": 48,
+            "endLine": 57,
+            "module": "D1"
+          },
+          {
+            "id": "File:tools/verify/verify.mjs",
+            "name": "verify.mjs",
+            "filePath": "tools/verify/verify.mjs"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:cmd",
+            "name": "cmd",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 32,
+            "endLine": 38,
+            "module": "Verify"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g14",
+            "name": "g14",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 211,
+            "endLine": 218,
+            "module": "Verify"
+          },
+          {
+            "id": "File:tools/d1/restart.mjs",
+            "name": "restart.mjs",
+            "filePath": "tools/d1/restart.mjs"
+          },
+          {
+            "id": "Function:tools/d1/gate-queue.mjs:sha256",
+            "name": "sha256",
+            "filePath": "tools/d1/gate-queue.mjs",
+            "startLine": 18,
+            "endLine": 18,
+            "module": "D1"
+          },
+          {
+            "id": "File:tools/d1/gate-queue.mjs",
+            "name": "gate-queue.mjs",
+            "filePath": "tools/d1/gate-queue.mjs"
+          },
+          {
+            "id": "File:apps/web/vite.config.ts",
+            "name": "vite.config.ts",
+            "filePath": "apps/web/vite.config.ts"
+          },
+          {
+            "id": "Function:apps/web/vite.config.ts:localToken",
+            "name": "localToken",
+            "filePath": "apps/web/vite.config.ts",
+            "startLine": 18,
+            "endLine": 25,
+            "module": "Web"
+          },
+          {
+            "id": "Function:apps/web/vite.config.ts:forward",
+            "name": "forward",
+            "filePath": "apps/web/vite.config.ts",
+            "startLine": 27,
+            "endLine": 35,
+            "module": "Web"
+          },
+          {
+            "id": "Function:apps/desktop/preload.mjs:command",
+            "name": "command",
+            "filePath": "apps/desktop/preload.mjs",
+            "startLine": 12,
+            "endLine": 12
+          },
+          {
+            "id": "Function:apps/desktop/preload.mjs:onResult",
+            "name": "onResult",
+            "filePath": "apps/desktop/preload.mjs",
+            "startLine": 14,
+            "endLine": 18
+          },
+          {
+            "id": "Function:apps/desktop/preload.mjs:listener",
+            "name": "listener",
+            "filePath": "apps/desktop/preload.mjs",
+            "startLine": 15,
+            "endLine": 15
+          },
+          {
+            "id": "File:services/runtime/src/index.ts",
+            "name": "index.ts",
+            "filePath": "services/runtime/src/index.ts"
+          },
+          {
+            "id": "File:services/runtime/src/domain/ops.ts",
+            "name": "ops.ts",
+            "filePath": "services/runtime/src/domain/ops.ts"
+          },
+          {
+            "id": "File:tools/d1/gate-channels.mjs",
+            "name": "gate-channels.mjs",
+            "filePath": "tools/d1/gate-channels.mjs"
+          }
+        ],
+        "timing": {
+          "vector": 5.3,
+          "bm25": 163.7,
+          "merge": 0.1,
+          "symbol_lookup": 13.3,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 178.7
+        }
+      }
+    },
+    {
+      "id": "plugmedia-11",
+      "type": "config",
+      "question": "What is the default PostgreSQL database port configured in db.ts?",
+      "query_param": "PGPORT",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "config",
+        "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1230.5,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/db.ts",
+            "name": "db.ts",
+            "filePath": "services/runtime/src/db.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5.7,
+          "bm25": 36.6,
+          "merge": 0,
+          "symbol_lookup": 11.9,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 50.1
+        }
+      }
+    },
+    {
+      "id": "plugmedia-12",
+      "type": "entrypoint",
+      "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+      "query_param": "Fastify",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "app",
+        "kind": "entrypoint",
+        "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1264.6,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "File:package.json",
+            "name": "package.json",
+            "filePath": "package.json"
+          },
+          {
+            "id": "File:services/runtime/src/index.ts",
+            "name": "index.ts",
+            "filePath": "services/runtime/src/index.ts"
+          },
+          {
+            "id": "File:docs/REUSE_LICENSE_REGISTER.md",
+            "name": "REUSE_LICENSE_REGISTER.md",
+            "filePath": "docs/REUSE_LICENSE_REGISTER.md"
+          },
+          {
+            "id": "File:mission/STATE.md",
+            "name": "STATE.md",
+            "filePath": "mission/STATE.md"
+          }
+        ],
+        "timing": {
+          "vector": 4.8,
+          "bm25": 41.5,
+          "merge": 0.1,
+          "symbol_lookup": 10.6,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 53.6
+        }
+      }
+    },
+    {
+      "id": "plugmedia-13",
+      "type": "entrypoint",
+      "question": "Where is the CLI command entrypoint for PlugMedia?",
+      "query_param": "main",
+      "expected": {
+        "path": "apps/cli/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1295.4,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_94_main",
+            "summary": "Main → Psql",
+            "priority": 0.149,
+            "symbol_count": 3,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_52_main",
+            "summary": "Main → Send",
+            "priority": 0.119,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_95_main",
+            "summary": "Main → Sleep",
+            "priority": 0.119,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_49_main",
+            "summary": "Main → Powershell",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_93_main",
+            "summary": "Main → Sleep",
+            "priority": 0.116,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:tools/d1/restart.mjs:liveWorkers",
+            "name": "liveWorkers",
+            "filePath": "tools/d1/restart.mjs",
+            "startLine": 112,
+            "endLine": 124,
+            "module": "D1",
+            "process_id": "proc_94_main",
+            "step_index": 2
+          },
+          {
+            "id": "Function:tools/d1/restart.mjs:main",
+            "name": "main",
+            "filePath": "tools/d1/restart.mjs",
+            "startLine": 126,
+            "endLine": 192,
+            "module": "D1",
+            "process_id": "proc_94_main",
+            "step_index": 1
+          },
+          {
+            "id": "Function:tools/d1/restart.mjs:psql",
+            "name": "psql",
+            "filePath": "tools/d1/restart.mjs",
+            "startLine": 128,
+            "endLine": 131,
+            "module": "D1",
+            "process_id": "proc_94_main",
+            "step_index": 3
+          },
+          {
+            "id": "Function:tools/d1/gate-surfaces.mjs:desktopProbe",
+            "name": "desktopProbe",
+            "filePath": "tools/d1/gate-surfaces.mjs",
+            "startLine": 59,
+            "endLine": 127,
+            "module": "D1",
+            "process_id": "proc_52_main",
+            "step_index": 2
+          },
+          {
+            "id": "Function:tools/d1/gate-surfaces.mjs:main",
+            "name": "main",
+            "filePath": "tools/d1/gate-surfaces.mjs",
+            "startLine": 129,
+            "endLine": 179,
+            "module": "D1",
+            "process_id": "proc_52_main",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:tools/d1/probe-desktop.mjs",
+            "name": "probe-desktop.mjs",
+            "filePath": "tools/d1/probe-desktop.mjs"
+          },
+          {
+            "id": "Function:tools/d1/probe-desktop.mjs:connect",
+            "name": "connect",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "startLine": 36,
+            "endLine": 61,
+            "module": "D1"
+          },
+          {
+            "id": "Function:tools/d1/probe-desktop.mjs:main",
+            "name": "main",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "startLine": 63,
+            "endLine": 122,
+            "module": "D1"
+          },
+          {
+            "id": "File:tools/d1/gate-surfaces.mjs",
+            "name": "gate-surfaces.mjs",
+            "filePath": "tools/d1/gate-surfaces.mjs"
+          },
+          {
+            "id": "File:apps/desktop/preload.mjs",
+            "name": "preload.mjs",
+            "filePath": "apps/desktop/preload.mjs"
+          },
+          {
+            "id": "Function:apps/desktop/preload.mjs:command",
+            "name": "command",
+            "filePath": "apps/desktop/preload.mjs",
+            "startLine": 12,
+            "endLine": 12
+          },
+          {
+            "id": "File:tools/handoff/export-handoff.py",
+            "name": "export-handoff.py",
+            "filePath": "tools/handoff/export-handoff.py"
+          },
+          {
+            "id": "Function:tools/handoff/export-handoff.py:main",
+            "name": "main",
+            "filePath": "tools/handoff/export-handoff.py",
+            "startLine": 93,
+            "endLine": 119,
+            "module": "Handoff"
+          },
+          {
+            "id": "File:apps/web/src/main.tsx",
+            "name": "main.tsx",
+            "filePath": "apps/web/src/main.tsx"
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:App",
+            "name": "App",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 614,
+            "endLine": 640
+          },
+          {
+            "id": "File:services/runtime/src/auth.ts",
+            "name": "auth.ts",
+            "filePath": "services/runtime/src/auth.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/auth.ts:originGuard",
+            "name": "originGuard",
+            "filePath": "services/runtime/src/auth.ts",
+            "startLine": 117,
+            "endLine": 121
+          },
+          {
+            "id": "File:tools/refs/refs.mjs",
+            "name": "refs.mjs",
+            "filePath": "tools/refs/refs.mjs"
+          },
+          {
+            "id": "Function:tools/refs/refs.mjs:driftTest",
+            "name": "driftTest",
+            "filePath": "tools/refs/refs.mjs",
+            "startLine": 185,
+            "endLine": 221,
+            "module": "Refs"
+          },
+          {
+            "id": "File:apps/desktop/main.mjs",
+            "name": "main.mjs",
+            "filePath": "apps/desktop/main.mjs"
+          },
+          {
+            "id": "Function:workers/media/d1_diffusion.py:main",
+            "name": "main",
+            "filePath": "workers/media/d1_diffusion.py",
+            "startLine": 356,
+            "endLine": 394
+          },
+          {
+            "id": "File:apps/desktop/package.json",
+            "name": "package.json",
+            "filePath": "apps/desktop/package.json"
+          },
+          {
+            "id": "File:manifests/upstreams.lock.json",
+            "name": "upstreams.lock.json",
+            "filePath": "manifests/upstreams.lock.json"
+          },
+          {
+            "id": "File:package.json",
+            "name": "package.json",
+            "filePath": "package.json"
+          },
+          {
+            "id": "File:apps/web/index.html",
+            "name": "index.html",
+            "filePath": "apps/web/index.html"
+          }
+        ],
+        "timing": {
+          "vector": 5.9,
+          "bm25": 96.6,
+          "merge": 0.1,
+          "symbol_lookup": 11.6,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 109.8
+        }
+      }
+    },
+    {
+      "id": "plugmedia-14",
+      "type": "docs_notes",
+      "question": "Which document contains the final architecture and verification report for VS0?",
+      "query_param": "VS0_FINAL_REPORT.md",
+      "expected": {
+        "path": "VS0_FINAL_REPORT.md",
+        "symbol": "VS0_FINAL_REPORT.md",
+        "kind": "docs_notes",
+        "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1345.8,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_100_integrity",
+            "summary": "Integrity → Sha256File",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_70_body",
+            "summary": "Body → UseAsync",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_28_body",
+            "summary": "Body → Command",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_29_body",
+            "summary": "Body → Reload",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_101_contentarea",
+            "summary": "ContentArea → Command",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:services/runtime/src/domain/studio.ts:integrity",
+            "name": "integrity",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "startLine": 799,
+            "endLine": 802,
+            "module": "Domain",
+            "process_id": "proc_100_integrity",
+            "step_index": 1
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:useAsync",
+            "name": "useAsync",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 105,
+            "endLine": 120,
+            "module": "Cluster_43",
+            "process_id": "proc_70_body",
+            "step_index": 3
+          },
+          {
+            "id": "Function:apps/web/src/main.tsx:run",
+            "name": "run",
+            "filePath": "apps/web/src/main.tsx",
+            "startLine": 144,
+            "endLine": 147,
+            "module": "Cluster_43",
+            "process_id": "proc_28_body",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:tools/handoff/export-handoff.py",
+            "name": "export-handoff.py",
+            "filePath": "tools/handoff/export-handoff.py"
+          },
+          {
+            "id": "Function:tools/handoff/export-handoff.py:windows_safe_finalize",
+            "name": "windows_safe_finalize",
+            "filePath": "tools/handoff/export-handoff.py",
+            "startLine": 63,
+            "endLine": 90,
+            "module": "Handoff"
+          },
+          {
+            "id": "Function:tools/handoff/export-handoff.py:main",
+            "name": "main",
+            "filePath": "tools/handoff/export-handoff.py",
+            "startLine": 93,
+            "endLine": 119,
+            "module": "Handoff"
+          },
+          {
+            "id": "File:services/runtime/src/domain/studio.ts",
+            "name": "studio.ts",
+            "filePath": "services/runtime/src/domain/studio.ts"
+          },
+          {
+            "id": "File:apps/web/src/main.tsx",
+            "name": "main.tsx",
+            "filePath": "apps/web/src/main.tsx"
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:id",
+            "name": "id",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 28,
+            "endLine": 28,
+            "module": "Engine"
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:runDiffusionBatch",
+            "name": "runDiffusionBatch",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 1122,
+            "endLine": 1150,
+            "module": "Engine"
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:ttsCharacter",
+            "name": "ttsCharacter",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 1160,
+            "endLine": 1174,
+            "module": "Engine"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g05_g07",
+            "name": "g05_g07",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 70,
+            "endLine": 87,
+            "module": "Verify"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:deliver",
+            "name": "deliver",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 143,
+            "endLine": 145,
+            "module": "Verify"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g14",
+            "name": "g14",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 211,
+            "endLine": 218,
+            "module": "Verify"
+          },
+          {
+            "id": "File:tools/desktop/finalize-package.mjs",
+            "name": "finalize-package.mjs",
+            "filePath": "tools/desktop/finalize-package.mjs"
+          },
+          {
+            "id": "Function:tools/desktop/finalize-package.mjs:sha256File",
+            "name": "sha256File",
+            "filePath": "tools/desktop/finalize-package.mjs",
+            "startLine": 31,
+            "endLine": 31
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:handoffOpen",
+            "name": "handoffOpen",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 505,
+            "endLine": 524
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:handoffList",
+            "name": "handoffList",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 526,
+            "endLine": 538
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:receiptReport",
+            "name": "receiptReport",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 542,
+            "endLine": 567,
+            "module": "Domain"
+          },
+          {
+            "id": "File:services/runtime/src/domain/ops.ts",
+            "name": "ops.ts",
+            "filePath": "services/runtime/src/domain/ops.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/ops.ts:isolationProbe",
+            "name": "isolationProbe",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 39,
+            "endLine": 101
+          },
+          {
+            "id": "File:brands/fruchtfehler/05_D1_RUNBOOK.md",
+            "name": "05_D1_RUNBOOK.md",
+            "filePath": "brands/fruchtfehler/05_D1_RUNBOOK.md"
+          },
+          {
+            "id": "File:services/runtime/src/cas.ts",
+            "name": "cas.ts",
+            "filePath": "services/runtime/src/cas.ts"
+          }
+        ],
+        "timing": {
+          "vector": 4.8,
+          "bm25": 163.9,
+          "merge": 0.1,
+          "symbol_lookup": 12.3,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 177.8
+        }
+      }
+    },
+    {
+      "id": "plugmedia-15",
+      "type": "docs_notes",
+      "question": "Which document lists the archive manifest and quarantine inventory?",
+      "query_param": "ARCHIVE_MANIFEST.md",
+      "expected": {
+        "path": "ARCHIVE_MANIFEST.md",
+        "symbol": "ARCHIVE_MANIFEST.md",
+        "kind": "docs_notes",
+        "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1323.6,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_97_main",
+            "summary": "Main → _lerp_track",
+            "priority": 0.13,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_13_main",
+            "summary": "Main → _ellipse",
+            "priority": 0.115,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_0_loop",
+            "summary": "Loop → Id",
+            "priority": 0.104,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 7
+          },
+          {
+            "id": "proc_60_channelsseed",
+            "summary": "ChannelsSeed → Id",
+            "priority": 0.104,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_89_backup",
+            "summary": "Backup → Sha256",
+            "priority": 0.099,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:workers/media/d1_characters.py:render_frames",
+            "name": "render_frames",
+            "filePath": "workers/media/d1_characters.py",
+            "startLine": 351,
+            "endLine": 426,
+            "module": "Media",
+            "process_id": "proc_97_main",
+            "step_index": 2
+          },
+          {
+            "id": "Function:workers/media/d1_characters.py:main",
+            "name": "main",
+            "filePath": "workers/media/d1_characters.py",
+            "startLine": 429,
+            "endLine": 467,
+            "module": "Media",
+            "process_id": "proc_97_main",
+            "step_index": 1
+          },
+          {
+            "id": "Function:services/runtime/src/engine/durableWorker.ts:dispatchIntent",
+            "name": "dispatchIntent",
+            "filePath": "services/runtime/src/engine/durableWorker.ts",
+            "startLine": 78,
+            "endLine": 162,
+            "module": "Engine",
+            "process_id": "proc_0_loop",
+            "step_index": 5
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:channelsSeed",
+            "name": "channelsSeed",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 667,
+            "endLine": 758,
+            "module": "Domain",
+            "process_id": "proc_60_channelsseed",
+            "step_index": 1
+          },
+          {
+            "id": "Function:services/runtime/src/domain/ops.ts:backup",
+            "name": "backup",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 151,
+            "endLine": 179,
+            "module": "Domain",
+            "process_id": "proc_89_backup",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:tools/d1/verify-archive.mjs",
+            "name": "verify-archive.mjs",
+            "filePath": "tools/d1/verify-archive.mjs"
+          },
+          {
+            "id": "Function:tools/d1/verify-archive.mjs:sha256File",
+            "name": "sha256File",
+            "filePath": "tools/d1/verify-archive.mjs",
+            "startLine": 26,
+            "endLine": 26
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:transportDecide",
+            "name": "transportDecide",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 257,
+            "endLine": 319,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/channels.ts:handoffList",
+            "name": "handoffList",
+            "filePath": "services/runtime/src/domain/channels.ts",
+            "startLine": 526,
+            "endLine": 538
+          },
+          {
+            "id": "File:workers/media/d1_characters.py",
+            "name": "d1_characters.py",
+            "filePath": "workers/media/d1_characters.py"
+          },
+          {
+            "id": "File:ARCHIVE_MANIFEST.md",
+            "name": "ARCHIVE_MANIFEST.md",
+            "filePath": "ARCHIVE_MANIFEST.md"
+          },
+          {
+            "id": "File:tools/d1/make-archive.mjs",
+            "name": "make-archive.mjs",
+            "filePath": "tools/d1/make-archive.mjs"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:renderContent",
+            "name": "renderContent",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 220,
+            "endLine": 255,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:modelVerify",
+            "name": "modelVerify",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 576,
+            "endLine": 674,
+            "module": "Domain"
+          },
+          {
+            "id": "Function:services/runtime/src/domain/media.ts:candidates",
+            "name": "candidates",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 580,
+            "endLine": 598,
+            "module": "Domain"
+          },
+          {
+            "id": "File:mission/STATE.md",
+            "name": "STATE.md",
+            "filePath": "mission/STATE.md"
+          },
+          {
+            "id": "File:services/runtime/src/domain/studio.ts",
+            "name": "studio.ts",
+            "filePath": "services/runtime/src/domain/studio.ts"
+          },
+          {
+            "id": "File:tools/d1/zip-from-list.ps1",
+            "name": "zip-from-list.ps1",
+            "filePath": "tools/d1/zip-from-list.ps1"
+          },
+          {
+            "id": "File:services/runtime/src/domain/ops.ts",
+            "name": "ops.ts",
+            "filePath": "services/runtime/src/domain/ops.ts"
+          },
+          {
+            "id": "File:tools/admin/plug-admin.mjs",
+            "name": "plug-admin.mjs",
+            "filePath": "tools/admin/plug-admin.mjs"
+          },
+          {
+            "id": "Function:tools/admin/plug-admin.mjs:seedIsolationFixture",
+            "name": "seedIsolationFixture",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 51,
+            "endLine": 82,
+            "module": "Admin"
+          },
+          {
+            "id": "Function:tools/admin/plug-admin.mjs:principalIssue",
+            "name": "principalIssue",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 160,
+            "endLine": 202,
+            "module": "Admin"
+          },
+          {
+            "id": "File:manifests/upstreams.lock.json",
+            "name": "upstreams.lock.json",
+            "filePath": "manifests/upstreams.lock.json"
+          },
+          {
+            "id": "File:docs/REUSE_LICENSE_REGISTER.md",
+            "name": "REUSE_LICENSE_REGISTER.md",
+            "filePath": "docs/REUSE_LICENSE_REGISTER.md"
+          },
+          {
+            "id": "File:evidence/archive_verification.json",
+            "name": "archive_verification.json",
+            "filePath": "evidence/archive_verification.json"
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 160.1,
+          "merge": 0.1,
+          "symbol_lookup": 13.5,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 175.3
+        }
+      }
+    },
+    {
+      "id": "plugmedia-16",
+      "type": "rename_impact",
+      "question": "What breaks if ensureCas is renamed in cas.ts?",
+      "query_param": "ensureCas",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "ensureCas",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "ensureCas is called inside storeContent and registerContent."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1288.4,
+      "rawOutput": {
+        "target": {
+          "id": "Function:services/runtime/src/cas.ts:ensureCas",
+          "name": "ensureCas",
+          "type": "Function",
+          "filePath": "services/runtime/src/cas.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 6,
+        "risk": "HIGH",
+        "summary": {
+          "direct": 1,
+          "processes_affected": 4,
+          "modules_affected": 2
+        },
+        "byDepthCounts": {
+          "1": 1,
+          "2": 1,
+          "3": 4
+        },
+        "affected_processes": [
+          {
+            "name": "deriveDistributionSet",
+            "type": "Function",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "affected_process_count": 9,
+            "total_hits": 19,
+            "earliest_broken_step": 2
+          },
+          {
+            "name": "episodesImport",
+            "type": "Function",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "affected_process_count": 8,
+            "total_hits": 18,
+            "earliest_broken_step": 1
+          },
+          {
+            "name": "planContent",
+            "type": "Function",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "affected_process_count": 7,
+            "total_hits": 17,
+            "earliest_broken_step": 2
+          },
+          {
+            "name": "sceneEdit",
+            "type": "Function",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "affected_process_count": 7,
+            "total_hits": 17,
+            "earliest_broken_step": 1
+          }
+        ],
+        "affected_modules": [
+          {
+            "name": "Domain",
+            "hits": 5,
+            "impact": "direct"
+          },
+          {
+            "name": "Engine",
+            "hits": 1,
+            "impact": "indirect"
+          }
+        ],
+        "byDepth": {
+          "1": [
+            {
+              "depth": 1,
+              "id": "Function:services/runtime/src/cas.ts:storeContent",
+              "name": "storeContent",
+              "filePath": "services/runtime/src/cas.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_12_derivedistributionse",
+                  "label": "DeriveDistributionSet → Sha256File",
+                  "processType": "cross_community",
+                  "step": 4
+                },
+                {
+                  "id": "proc_25_sceneedit",
+                  "label": "SceneEdit → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_35_episodesimport",
+                  "label": "EpisodesImport → Sha256File",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_27_sceneedit",
+                  "label": "SceneEdit → Sha256File",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_34_episodesimport",
+                  "label": "EpisodesImport → CasPath",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_33_episodesimport",
+                  "label": "EpisodesImport → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_26_sceneedit",
+                  "label": "SceneEdit → CasPath",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_4_plancontent",
+                  "label": "PlanContent → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 4
+                },
+                {
+                  "id": "proc_11_derivedistributionse",
+                  "label": "DeriveDistributionSet → CasPath",
+                  "processType": "cross_community",
+                  "step": 4
+                },
+                {
+                  "id": "proc_5_plancontent",
+                  "label": "PlanContent → CasPath",
+                  "processType": "cross_community",
+                  "step": 4
+                },
+                {
+                  "id": "proc_10_derivedistributionse",
+                  "label": "DeriveDistributionSet → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 4
+                },
+                {
+                  "id": "proc_6_plancontent",
+                  "label": "PlanContent → Sha256File",
+                  "processType": "cross_community",
+                  "step": 4
+                }
+              ]
+            }
+          ],
+          "2": [
+            {
+              "depth": 2,
+              "id": "Function:services/runtime/src/domain/media.ts:commitArtifact",
+              "name": "commitArtifact",
+              "filePath": "services/runtime/src/domain/media.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_26_sceneedit",
+                  "label": "SceneEdit → CasPath",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_63_sceneedit",
+                  "label": "SceneEdit → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_7_derivedistributionse",
+                  "label": "DeriveDistributionSet → Sha256",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_12_derivedistributionse",
+                  "label": "DeriveDistributionSet → Sha256File",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_6_plancontent",
+                  "label": "PlanContent → Sha256File",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_8_derivedistributionse",
+                  "label": "DeriveDistributionSet → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_27_sceneedit",
+                  "label": "SceneEdit → Sha256File",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_34_episodesimport",
+                  "label": "EpisodesImport → CasPath",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_24_sceneedit",
+                  "label": "SceneEdit → Id",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_31_episodesimport",
+                  "label": "EpisodesImport → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_33_episodesimport",
+                  "label": "EpisodesImport → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_22_sceneedit",
+                  "label": "SceneEdit → Sha256",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_25_sceneedit",
+                  "label": "SceneEdit → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_1_plancontent",
+                  "label": "PlanContent → Sha256",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_2_plancontent",
+                  "label": "PlanContent → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_9_derivedistributionse",
+                  "label": "DeriveDistributionSet → Id",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_32_episodesimport",
+                  "label": "EpisodesImport → Id",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_35_episodesimport",
+                  "label": "EpisodesImport → Sha256File",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_75_episodesimport",
+                  "label": "EpisodesImport → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_5_plancontent",
+                  "label": "PlanContent → CasPath",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_44_derivedistributionse",
+                  "label": "DeriveDistributionSet → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_10_derivedistributionse",
+                  "label": "DeriveDistributionSet → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_23_sceneedit",
+                  "label": "SceneEdit → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_4_plancontent",
+                  "label": "PlanContent → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_3_plancontent",
+                  "label": "PlanContent → Id",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_11_derivedistributionse",
+                  "label": "DeriveDistributionSet → CasPath",
+                  "processType": "cross_community",
+                  "step": 3
+                },
+                {
+                  "id": "proc_30_episodesimport",
+                  "label": "EpisodesImport → Sha256",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_21_plancontent",
+                  "label": "PlanContent → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 3
+                }
+              ]
+            }
+          ],
+          "3": [
+            {
+              "depth": 3,
+              "id": "Function:services/runtime/src/domain/media.ts:insertArtifact",
+              "name": "insertArtifact",
+              "filePath": "services/runtime/src/domain/media.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_5_plancontent",
+                  "label": "PlanContent → CasPath",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_1_plancontent",
+                  "label": "PlanContent → Sha256",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_2_plancontent",
+                  "label": "PlanContent → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_6_plancontent",
+                  "label": "PlanContent → Sha256File",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_21_plancontent",
+                  "label": "PlanContent → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_3_plancontent",
+                  "label": "PlanContent → Id",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_4_plancontent",
+                  "label": "PlanContent → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 2
+                }
+              ]
+            },
+            {
+              "depth": 3,
+              "id": "Function:services/runtime/src/domain/studio.ts:episodesImport",
+              "name": "episodesImport",
+              "filePath": "services/runtime/src/domain/studio.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_32_episodesimport",
+                  "label": "EpisodesImport → Id",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_35_episodesimport",
+                  "label": "EpisodesImport → Sha256File",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_75_episodesimport",
+                  "label": "EpisodesImport → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_30_episodesimport",
+                  "label": "EpisodesImport → Sha256",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_74_episodesimport",
+                  "label": "EpisodesImport → PackFile",
+                  "processType": "intra_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_34_episodesimport",
+                  "label": "EpisodesImport → CasPath",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_31_episodesimport",
+                  "label": "EpisodesImport → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_33_episodesimport",
+                  "label": "EpisodesImport → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 1
+                }
+              ]
+            },
+            {
+              "depth": 3,
+              "id": "Function:services/runtime/src/domain/studio.ts:sceneEdit",
+              "name": "sceneEdit",
+              "filePath": "services/runtime/src/domain/studio.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_22_sceneedit",
+                  "label": "SceneEdit → Sha256",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_25_sceneedit",
+                  "label": "SceneEdit → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_23_sceneedit",
+                  "label": "SceneEdit → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_26_sceneedit",
+                  "label": "SceneEdit → CasPath",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_63_sceneedit",
+                  "label": "SceneEdit → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_24_sceneedit",
+                  "label": "SceneEdit → Id",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_27_sceneedit",
+                  "label": "SceneEdit → Sha256File",
+                  "processType": "cross_community",
+                  "step": 1
+                }
+              ]
+            },
+            {
+              "depth": 3,
+              "id": "Function:services/runtime/src/engine/worker.ts:commit",
+              "name": "commit",
+              "filePath": "services/runtime/src/engine/worker.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_44_derivedistributionse",
+                  "label": "DeriveDistributionSet → RegisterContent",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_10_derivedistributionse",
+                  "label": "DeriveDistributionSet → EnsureCas",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_43_derivedistributionse",
+                  "label": "DeriveDistributionSet → LeaseLostError",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_42_derivedistributionse",
+                  "label": "DeriveDistributionSet → HoldsLease",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_9_derivedistributionse",
+                  "label": "DeriveDistributionSet → Id",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_7_derivedistributionse",
+                  "label": "DeriveDistributionSet → Sha256",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_8_derivedistributionse",
+                  "label": "DeriveDistributionSet → FfprobeJson",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_12_derivedistributionse",
+                  "label": "DeriveDistributionSet → Sha256File",
+                  "processType": "cross_community",
+                  "step": 2
+                },
+                {
+                  "id": "proc_11_derivedistributionse",
+                  "label": "DeriveDistributionSet → CasPath",
+                  "processType": "cross_community",
+                  "step": 2
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "plugmedia-17",
+      "type": "rename_impact",
+      "question": "What breaks if applyMigrations function is renamed?",
+      "query_param": "applyMigrations",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "applyMigrations",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts"
+        ],
+        "details": "applyMigrations executes database schema migrations."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1252.1,
+      "rawOutput": {
+        "target": {
+          "id": "Function:services/runtime/src/db.ts:applyMigrations",
+          "name": "applyMigrations",
+          "type": "Function",
+          "filePath": "services/runtime/src/db.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 2,
+        "risk": "LOW",
+        "summary": {
+          "direct": 2,
+          "processes_affected": 2,
+          "modules_affected": 1
+        },
+        "byDepthCounts": {
+          "1": 2
+        },
+        "affected_processes": [
+          {
+            "name": "restore",
+            "type": "Function",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "affected_process_count": 2,
+            "total_hits": 2,
+            "earliest_broken_step": 1
+          },
+          {
+            "name": "restoreIsolated",
+            "type": "Function",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "affected_process_count": 1,
+            "total_hits": 1,
+            "earliest_broken_step": 1
+          }
+        ],
+        "affected_modules": [
+          {
+            "name": "Domain",
+            "hits": 2,
+            "impact": "direct"
+          }
+        ],
+        "byDepth": {
+          "1": [
+            {
+              "depth": 1,
+              "id": "Function:services/runtime/src/domain/ops.ts:restore",
+              "name": "restore",
+              "filePath": "services/runtime/src/domain/ops.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_91_restore",
+                  "label": "Restore → Sha256",
+                  "processType": "cross_community",
+                  "step": 1
+                },
+                {
+                  "id": "proc_90_restore",
+                  "label": "Restore → Sha256",
+                  "processType": "intra_community",
+                  "step": 1
+                }
+              ]
+            },
+            {
+              "depth": 1,
+              "id": "Function:services/runtime/src/domain/ops.ts:restoreIsolated",
+              "name": "restoreIsolated",
+              "filePath": "services/runtime/src/domain/ops.ts",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": [
+                {
+                  "id": "proc_78_restoreisolated",
+                  "label": "RestoreIsolated → Sha256",
+                  "processType": "intra_community",
+                  "step": 1
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "plugmedia-18",
+      "type": "definition",
+      "question": "Where is the durable schedulerTick function defined?",
+      "query_param": "schedulerTick",
+      "expected": {
+        "path": "services/runtime/src/engine/scheduler.ts",
+        "symbol": "schedulerTick",
+        "kind": "symbol",
+        "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1210.8,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_55_schedulerloop",
+            "summary": "SchedulerLoop → ReclaimExpiredLeases",
+            "priority": 0.135,
+            "symbol_count": 3,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_56_schedulerloop",
+            "summary": "SchedulerLoop → MaintainPublication",
+            "priority": 0.118,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_57_schedulerloop",
+            "summary": "SchedulerLoop → Enqueue",
+            "priority": 0.118,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_58_schedulerloop",
+            "summary": "SchedulerLoop → Id",
+            "priority": 0.118,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_117_schedulerloop",
+            "summary": "SchedulerLoop → DispatchOutbox",
+            "priority": 0.118,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:services/runtime/src/engine/scheduler.ts:reclaimAll",
+            "name": "reclaimAll",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "startLine": 210,
+            "endLine": 212,
+            "module": "Engine",
+            "process_id": "proc_55_schedulerloop",
+            "step_index": 3
+          },
+          {
+            "id": "Function:services/runtime/src/engine/scheduler.ts:schedulerTick",
+            "name": "schedulerTick",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "startLine": 214,
+            "endLine": 234,
+            "module": "Engine",
+            "process_id": "proc_55_schedulerloop",
+            "step_index": 2
+          },
+          {
+            "id": "Function:services/runtime/src/index.ts:schedulerLoop",
+            "name": "schedulerLoop",
+            "filePath": "services/runtime/src/index.ts",
+            "startLine": 366,
+            "endLine": 381,
+            "module": "Engine",
+            "process_id": "proc_55_schedulerloop",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/index.ts",
+            "name": "index.ts",
+            "filePath": "services/runtime/src/index.ts"
+          }
+        ],
+        "timing": {
+          "vector": 4.6,
+          "bm25": 38.5,
+          "merge": 0,
+          "symbol_lookup": 12,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 52.2
+        }
+      }
+    },
+    {
+      "id": "plugmedia-19",
+      "type": "callers",
+      "question": "Where is the command dispatcher register function called to wire media commands?",
+      "query_param": "register",
+      "expected": {
+        "path": "services/runtime/src/commands.ts",
+        "symbol": "register",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1328.6,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:services/runtime/src/commands.ts:register",
+          "name": "register",
+          "kind": "Function",
+          "filePath": "services/runtime/src/commands.ts",
+          "startLine": 11,
+          "endLine": 11
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "File:services/runtime/src/index.ts",
+              "name": "index.ts",
+              "filePath": "services/runtime/src/index.ts"
+            }
+          ]
+        },
+        "outgoing": {},
+        "processes": []
+      }
+    },
+    {
+      "id": "plugmedia-20",
+      "type": "definition",
+      "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+      "query_param": "ALLOWED_ORIGINS",
+      "expected": {
+        "path": "services/runtime/src/auth.ts",
+        "symbol": "ALLOWED_ORIGINS",
+        "kind": "symbol",
+        "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1387.7,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_87_sync",
+            "summary": "Sync → Fail",
+            "priority": 0.097,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_92_diff",
+            "summary": "Diff → Fail",
+            "priority": 0.096,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_7_derivedistributionse",
+            "summary": "DeriveDistributionSet → Sha256",
+            "priority": 0.084,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_8_derivedistributionse",
+            "summary": "DeriveDistributionSet → FfprobeJson",
+            "priority": 0.084,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_9_derivedistributionse",
+            "summary": "DeriveDistributionSet → Id",
+            "priority": 0.084,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:tools/refs/refs.mjs:sync",
+            "name": "sync",
+            "filePath": "tools/refs/refs.mjs",
+            "startLine": 65,
+            "endLine": 107,
+            "module": "Refs",
+            "process_id": "proc_87_sync",
+            "step_index": 1
+          },
+          {
+            "id": "Function:tools/refs/refs.mjs:diff",
+            "name": "diff",
+            "filePath": "tools/refs/refs.mjs",
+            "startLine": 161,
+            "endLine": 182,
+            "module": "Refs",
+            "process_id": "proc_92_diff",
+            "step_index": 1
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:deriveDistributionSet",
+            "name": "deriveDistributionSet",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 254,
+            "endLine": 437,
+            "module": "Engine",
+            "process_id": "proc_7_derivedistributionse",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:services/runtime/src/auth.ts",
+            "name": "auth.ts",
+            "filePath": "services/runtime/src/auth.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/auth.ts:sha256",
+            "name": "sha256",
+            "filePath": "services/runtime/src/auth.ts",
+            "startLine": 20,
+            "endLine": 20,
+            "module": "Cluster_6"
+          },
+          {
+            "id": "Function:services/runtime/src/auth.ts:originGuard",
+            "name": "originGuard",
+            "filePath": "services/runtime/src/auth.ts",
+            "startLine": 117,
+            "endLine": 121
+          },
+          {
+            "id": "File:tools/d1/gate-http.mjs",
+            "name": "gate-http.mjs",
+            "filePath": "tools/d1/gate-http.mjs"
+          },
+          {
+            "id": "Function:tools/d1/gate-http.mjs:rawCommand",
+            "name": "rawCommand",
+            "filePath": "tools/d1/gate-http.mjs",
+            "startLine": 38,
+            "endLine": 63,
+            "module": "D1"
+          },
+          {
+            "id": "Function:tools/d1/gate-http.mjs:post",
+            "name": "post",
+            "filePath": "tools/d1/gate-http.mjs",
+            "startLine": 65,
+            "endLine": 78
+          },
+          {
+            "id": "Function:tools/refs/refs.mjs:driftTest",
+            "name": "driftTest",
+            "filePath": "tools/refs/refs.mjs",
+            "startLine": 185,
+            "endLine": 221,
+            "module": "Refs"
+          },
+          {
+            "id": "File:tools/verify/verify.mjs",
+            "name": "verify.mjs",
+            "filePath": "tools/verify/verify.mjs"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g04",
+            "name": "g04",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 56,
+            "endLine": 67,
+            "module": "Verify"
+          },
+          {
+            "id": "Function:tools/verify/verify.mjs:g05_g07",
+            "name": "g05_g07",
+            "filePath": "tools/verify/verify.mjs",
+            "startLine": 70,
+            "endLine": 87,
+            "module": "Verify"
+          },
+          {
+            "id": "File:services/runtime/src/engine/worker.ts",
+            "name": "worker.ts",
+            "filePath": "services/runtime/src/engine/worker.ts"
+          },
+          {
+            "id": "Function:services/runtime/src/engine/worker.ts:sceneScaleFilter",
+            "name": "sceneScaleFilter",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 114,
+            "endLine": 117,
+            "module": "Engine"
+          },
+          {
+            "id": "File:workflows/WF01.json",
+            "name": "WF01.json",
+            "filePath": "workflows/WF01.json"
+          },
+          {
+            "id": "File:apps/web/vite.config.ts",
+            "name": "vite.config.ts",
+            "filePath": "apps/web/vite.config.ts"
+          },
+          {
+            "id": "Function:apps/web/vite.config.ts:forward",
+            "name": "forward",
+            "filePath": "apps/web/vite.config.ts",
+            "startLine": 27,
+            "endLine": 35,
+            "module": "Web"
+          },
+          {
+            "id": "Interface:services/runtime/src/domain/wfImport.ts:IntentNode",
+            "name": "IntentNode",
+            "filePath": "services/runtime/src/domain/wfImport.ts",
+            "startLine": 31,
+            "endLine": 40
+          },
+          {
+            "id": "File:services/runtime/src/domain/wfImport.ts",
+            "name": "wfImport.ts",
+            "filePath": "services/runtime/src/domain/wfImport.ts"
+          },
+          {
+            "id": "File:services/runtime/src/domain/studio.ts",
+            "name": "studio.ts",
+            "filePath": "services/runtime/src/domain/studio.ts"
+          },
+          {
+            "id": "File:tools/d1/gate-scheduler.mjs",
+            "name": "gate-scheduler.mjs",
+            "filePath": "tools/d1/gate-scheduler.mjs"
+          },
+          {
+            "id": "Function:tools/d1/gate-scheduler.mjs:seedContentItem",
+            "name": "seedContentItem",
+            "filePath": "tools/d1/gate-scheduler.mjs",
+            "startLine": 66,
+            "endLine": 71
+          }
+        ],
+        "timing": {
+          "vector": 5.3,
+          "bm25": 168,
+          "merge": 0.1,
+          "symbol_lookup": 11.5,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 181.4
+        }
+      }
+    }
+  ]
+}

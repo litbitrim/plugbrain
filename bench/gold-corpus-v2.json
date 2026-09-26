@@ -1,0 +1,76 @@
+{
+  "schema": 2,
+  "name": "PlugBrain Goldkorpus v2",
+  "sourceOfTruth": "NATIVE-ORCH-01 section 38.6",
+  "measurement": {
+    "tool": "E1",
+    "status": "PENDING_E1",
+    "reason": "No E1 evaluation tool is present in this integration checkout; corpus labels are not reported as evaluation scores."
+  },
+  "cases": [
+    {
+      "id": "code-write-fence",
+      "class": "code",
+      "repository": "PlugBrain-Core",
+      "target": "src/access.ts#writeFile",
+      "question": "Which sanctioned code path writes a file and enforces its lease?",
+      "expected": { "kind": "symbol", "path": "src/access.ts", "symbol": "writeFile" }
+    },
+    {
+      "id": "build-standalone",
+      "class": "build",
+      "repository": "PlugBrain-Core",
+      "target": "package.json#scripts.build:standalone",
+      "question": "Which command builds the standalone Brain artefact?",
+      "expected": { "kind": "script", "path": "package.json", "script": "build:standalone" }
+    },
+    {
+      "id": "notes-vault",
+      "class": "notes",
+      "repository": "PlugBrain-Core",
+      "target": "src/notes/vault.ts#readNote",
+      "question": "Which implementation reads a Markdown vault note with its metadata?",
+      "expected": { "kind": "symbol", "path": "src/notes/vault.ts", "symbol": "readNote" }
+    },
+    {
+      "id": "cross-repo-brain-binding",
+      "class": "cross-repo",
+      "repository": "PlugHarness",
+      "target": "packages/plug/operator/src/brain-core.ts#callBrainCore",
+      "question": "Which Harness binding calls the single PlugBrain Core authority?",
+      "expected": { "kind": "symbol", "path": "packages/plug/operator/src/brain-core.ts", "symbol": "callBrainCore" }
+    },
+    {
+      "id": "rename-preview-readonly",
+      "class": "rename",
+      "repository": "PlugBrain-Core",
+      "target": "src/intel/rename.ts#previewRename",
+      "question": "Preview a symbol rename without writing any file.",
+      "expected": { "kind": "read-only", "path": "src/intel/rename.ts", "symbol": "previewRename" }
+    },
+    {
+      "id": "delete-tombstone",
+      "class": "delete",
+      "repository": "PlugBrain-Core",
+      "target": "src/indexer/index.ts#indexWorkspace",
+      "question": "How is a deleted source removed from search and retained as a tombstone?",
+      "expected": { "kind": "symbol", "path": "src/indexer/index.ts", "symbol": "indexWorkspace" }
+    },
+    {
+      "id": "branch-revision-overlay",
+      "class": "branch-error",
+      "repository": "PlugBrain-Core",
+      "target": "src/planet.ts#readCheckout",
+      "question": "Return a checkout revision vector; reject no result rather than inventing a branch.",
+      "expected": { "kind": "symbol", "path": "src/planet.ts", "symbol": "readCheckout", "failureMode": "null git facts remain explicit" }
+    },
+    {
+      "id": "write-permission-fence",
+      "class": "rights-error",
+      "repository": "PlugBrain-Core",
+      "target": "src/coord/leases.ts#checkWriteFencing",
+      "question": "Attempt a write outside the caller's lease.",
+      "expected": { "kind": "error", "path": "src/coord/leases.ts", "symbol": "checkWriteFencing", "error": "FencingError" }
+    }
+  ]
+}

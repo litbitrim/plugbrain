@@ -1,0 +1,1411 @@
+{
+  "tool": "codegraph",
+  "repo": "plugmedia",
+  "commit": "6748e6f4486ebf3214d8eac3236c60f557aa466a",
+  "indexTimeMs": 1023,
+  "indexSizeBytes": 3432621,
+  "questionCount": 20,
+  "hitCount": 12,
+  "accuracy": 60,
+  "latencyP50Ms": 254.6,
+  "latencyP95Ms": 266.7,
+  "questions": [
+    {
+      "id": "plugmedia-01",
+      "type": "definition",
+      "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "symbol",
+        "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 254.4,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:2593ae4703e0bd1df1a32d17936ecca0",
+            "kind": "constant",
+            "name": "SCHEMA_VERSION",
+            "qualifiedName": "SCHEMA_VERSION",
+            "filePath": "packages/contracts/src/index.ts",
+            "language": "typescript",
+            "startLine": 5,
+            "endLine": 5,
+            "startColumn": 13,
+            "endColumn": 41,
+            "signature": "= '1.0.0-vs0'",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780760
+          },
+          "score": 94.86065659566101
+        },
+        {
+          "node": {
+            "id": "import:bdcf84f99a105bae2f75ababeab813db",
+            "kind": "import",
+            "name": "../../../packages/contracts/src/index.ts",
+            "qualifiedName": "../../../packages/contracts/src/index.ts",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 27,
+            "endLine": 27,
+            "startColumn": 0,
+            "endColumn": 93,
+            "signature": "import { SCHEMA_VERSION, isReadOnlyCommand } from '../../../packages/contracts/src/index.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 7.582537741176278
+        },
+        {
+          "node": {
+            "id": "import:3e357434597929da30a4c25dd348835a",
+            "kind": "import",
+            "name": "../../../../packages/contracts/src/index.ts",
+            "qualifiedName": "../../../../packages/contracts/src/index.ts",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "language": "typescript",
+            "startLine": 8,
+            "endLine": 8,
+            "startColumn": 0,
+            "endColumn": 86,
+            "signature": "import { SCHEMA_VERSION, QA_AXES } from '../../../../packages/contracts/src/index.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780870
+          },
+          "score": 7.4692523900409595
+        },
+        {
+          "node": {
+            "id": "import:7e6ddb300ffc64e995eb790e8cdd0fcc",
+            "kind": "import",
+            "name": "../../../packages/contracts/src/index.ts",
+            "qualifiedName": "../../../packages/contracts/src/index.ts",
+            "filePath": "services/runtime/src/commands.ts",
+            "language": "typescript",
+            "startLine": 2,
+            "endLine": 2,
+            "startColumn": 0,
+            "endColumn": 116,
+            "signature": "import { SCHEMA_VERSION, type CommandEnvelope, type CommandResult } from '../../../packages/contracts/src/index.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780789
+          },
+          "score": 7.253990279097756
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-02",
+      "type": "definition",
+      "question": "Where are the four QA review axes (QA_AXES) defined?",
+      "query_param": "QA_AXES",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "QA_AXES",
+        "kind": "symbol",
+        "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 246.9,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:966427b5e7da446a7172253b39a338c5",
+            "kind": "constant",
+            "name": "QA_AXES",
+            "qualifiedName": "QA_AXES",
+            "filePath": "packages/contracts/src/index.ts",
+            "language": "typescript",
+            "startLine": 16,
+            "endLine": 16,
+            "startColumn": 13,
+            "endColumn": 90,
+            "signature": "= ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780760
+          },
+          "score": 94.68370404821418
+        },
+        {
+          "node": {
+            "id": "constant:a52904bd0cee19da1e5079b1157209f6",
+            "kind": "constant",
+            "name": "AXES",
+            "qualifiedName": "AXES",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "language": "typescript",
+            "startLine": 336,
+            "endLine": 336,
+            "startColumn": 6,
+            "endColumn": 20,
+            "signature": "= QA_AXES",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780957
+          },
+          "score": 12.144720291651721
+        },
+        {
+          "node": {
+            "id": "import:06a5f0bc49fb7ade6429067158bfae5d",
+            "kind": "import",
+            "name": "../../../../packages/contracts/src/index.ts",
+            "qualifiedName": "../../../../packages/contracts/src/index.ts",
+            "filePath": "services/runtime/src/domain/studio.ts",
+            "language": "typescript",
+            "startLine": 335,
+            "endLine": 335,
+            "startColumn": 0,
+            "endColumn": 70,
+            "signature": "import { QA_AXES } from '../../../../packages/contracts/src/index.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780957
+          },
+          "score": 7.699861367118025
+        },
+        {
+          "node": {
+            "id": "import:3e357434597929da30a4c25dd348835a",
+            "kind": "import",
+            "name": "../../../../packages/contracts/src/index.ts",
+            "qualifiedName": "../../../../packages/contracts/src/index.ts",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "language": "typescript",
+            "startLine": 8,
+            "endLine": 8,
+            "startColumn": 0,
+            "endColumn": 86,
+            "signature": "import { SCHEMA_VERSION, QA_AXES } from '../../../../packages/contracts/src/index.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780870
+          },
+          "score": 7.4692523900409595
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-03",
+      "type": "callers",
+      "question": "Which module calls topoSort for compute DAG sorting?",
+      "query_param": "topoSort",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "topoSort",
+        "kind": "callers",
+        "expected_targets": [
+          "tests/graph.test.ts"
+        ],
+        "details": "topoSort performs topological sorting on graph execution DAGs."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 254.6,
+      "rawOutput": {
+        "symbol": "topoSort",
+        "callers": []
+      }
+    },
+    {
+      "id": "plugmedia-04",
+      "type": "definition",
+      "question": "Where is the CycleError class defined for DAG cycles?",
+      "query_param": "CycleError",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "CycleError",
+        "kind": "symbol",
+        "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 263.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "class:705aa20b384d6635f19cb248926391a8",
+            "kind": "class",
+            "name": "CycleError",
+            "qualifiedName": "CycleError",
+            "filePath": "packages/graph/src/compute/topo.ts",
+            "language": "typescript",
+            "startLine": 2,
+            "endLine": 5,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780771
+          },
+          "score": 100.04305154864616
+        },
+        {
+          "node": {
+            "id": "method:02fbc1b0270cd327e3714370981005da",
+            "kind": "method",
+            "name": "cycle",
+            "qualifiedName": "CycleError::cycle",
+            "filePath": "packages/graph/src/compute/topo.ts",
+            "language": "typescript",
+            "startLine": 3,
+            "endLine": 3,
+            "startColumn": 2,
+            "endColumn": 26,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780771
+          },
+          "score": 20.940589280060614
+        },
+        {
+          "node": {
+            "id": "method:f64849cd8ddddc6eca947e54801d15d1",
+            "kind": "method",
+            "name": "constructor",
+            "qualifiedName": "CycleError::constructor",
+            "filePath": "packages/graph/src/compute/topo.ts",
+            "language": "typescript",
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 2,
+            "endColumn": 105,
+            "signature": "(cycle: string[])",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780772
+          },
+          "score": 20.691645346155283
+        },
+        {
+          "node": {
+            "id": "import:9d79b4c4cdccb1a1612b52ad78e4c8bd",
+            "kind": "import",
+            "name": "../packages/graph/src/compute/topo.ts",
+            "qualifiedName": "../packages/graph/src/compute/topo.ts",
+            "filePath": "tests/graph.test.ts",
+            "language": "typescript",
+            "startLine": 4,
+            "endLine": 4,
+            "startColumn": 0,
+            "endColumn": 77,
+            "signature": "import { topoSort, CycleError } from '../packages/graph/src/compute/topo.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781144
+          },
+          "score": -7.640199654686789
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-05",
+      "type": "definition",
+      "question": "Where is casPath defined for locating content-addressed files?",
+      "query_param": "casPath",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "casPath",
+        "kind": "symbol",
+        "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 260.9,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:9cbb1a340833b9d8fff8237364b356c2",
+            "kind": "function",
+            "name": "casPath",
+            "qualifiedName": "casPath",
+            "filePath": "services/runtime/src/cas.ts",
+            "language": "typescript",
+            "startLine": 30,
+            "endLine": 32,
+            "startColumn": 7,
+            "endColumn": 1,
+            "signature": "(digest: string): string",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780784
+          },
+          "score": 117.30219617209241
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-06",
+      "type": "callers",
+      "question": "Where is storeContent called in the runtime domains?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/domain/media.ts"
+        ],
+        "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 266.3,
+      "rawOutput": {
+        "symbol": "storeContent",
+        "callers": [
+          {
+            "name": "commitArtifact",
+            "kind": "function",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 64
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-07",
+      "type": "impact",
+      "question": "What is impacted if PGCONFIG default port is changed?",
+      "query_param": "PGCONFIG",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts",
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 258.8,
+      "rawOutput": {
+        "symbol": "PGCONFIG",
+        "depth": 2,
+        "nodeCount": 8,
+        "edgeCount": 7,
+        "affected": [
+          {
+            "name": "PGCONFIG",
+            "kind": "constant",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 13
+          },
+          {
+            "name": "db.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 1
+          },
+          {
+            "name": "ops.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 1
+          },
+          {
+            "name": "durableWorker.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/durableWorker.ts",
+            "startLine": 1
+          },
+          {
+            "name": "scheduler.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "startLine": 1
+          },
+          {
+            "name": "worker.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 1
+          },
+          {
+            "name": "index.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/index.ts",
+            "startLine": 1
+          },
+          {
+            "name": "make-synthetic-source.mjs",
+            "kind": "file",
+            "filePath": "tools/media/make-synthetic-source.mjs",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-08",
+      "type": "impact",
+      "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 266.7,
+      "rawOutput": {
+        "symbol": "SCHEMA_VERSION",
+        "depth": 2,
+        "nodeCount": 2,
+        "edgeCount": 1,
+        "affected": [
+          {
+            "name": "SCHEMA_VERSION",
+            "kind": "constant",
+            "filePath": "packages/contracts/src/index.ts",
+            "startLine": 5
+          },
+          {
+            "name": "index.ts",
+            "kind": "file",
+            "filePath": "packages/contracts/src/index.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-09",
+      "type": "dataflow",
+      "question": "How does content storage flow from raw file stream to CAS destination?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "dataflow",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 256.9,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:5c262a6dfbabe655e9b10ef4623887f9",
+            "kind": "function",
+            "name": "storeContent",
+            "qualifiedName": "storeContent",
+            "filePath": "services/runtime/src/cas.ts",
+            "language": "typescript",
+            "startLine": 48,
+            "endLine": 83,
+            "startColumn": 7,
+            "endColumn": 1,
+            "signature": "(sourcePath: string, digest: string, expectedBytes?: number): StoreResult",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780784
+          },
+          "score": 103.07668075901955
+        },
+        {
+          "node": {
+            "id": "import:afa7ca6af51941da32d20cf3ab9e2746",
+            "kind": "import",
+            "name": "../cas.ts",
+            "qualifiedName": "../cas.ts",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "language": "typescript",
+            "startLine": 10,
+            "endLine": 10,
+            "startColumn": 0,
+            "endColumn": 70,
+            "signature": "import { storeContent, registerContent, sha256File } from '../cas.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780870
+          },
+          "score": 9.636937395611566
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-10",
+      "type": "config",
+      "question": "Which environment variable overrides the HTTP server port?",
+      "query_param": "PLUGMEDIA_PORT",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "PLUGMEDIA_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 261.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:72a9cfc8ebdb3acf95acb75d4fc00bba",
+            "kind": "constant",
+            "name": "PORT",
+            "qualifiedName": "PORT",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 36,
+            "endLine": 36,
+            "startColumn": 6,
+            "endColumn": 55,
+            "signature": "= Number(process.env.PLUGMEDIA_PORT ?? 8620)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 12.97318537308998
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-11",
+      "type": "config",
+      "question": "What is the default PostgreSQL database port configured in db.ts?",
+      "query_param": "PGPORT",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "config",
+        "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 251.5,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:85c68fa8ebbc5bebf1ad14b8cefcbac1",
+            "kind": "constant",
+            "name": "PGCONFIG",
+            "qualifiedName": "PGCONFIG",
+            "filePath": "services/runtime/src/db.ts",
+            "language": "typescript",
+            "startLine": 13,
+            "endLine": 20,
+            "startColumn": 13,
+            "endColumn": 1,
+            "signature": "= {\r\n  host: process.env.PGHOST ?? '127.0.0.1',\r\n  port: Number(process.env.PGPORT ?? 55432),\r\n  user:...",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780794
+          },
+          "score": 11.31423860184311
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-12",
+      "type": "entrypoint",
+      "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+      "query_param": "Fastify",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "app",
+        "kind": "entrypoint",
+        "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+      },
+      "hit": true,
+      "rank": 3,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 256.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "import:376aa1c7a379ae23fd0b23c2861fa0c2",
+            "kind": "import",
+            "name": "fastify",
+            "qualifiedName": "fastify",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 15,
+            "endLine": 15,
+            "startColumn": 0,
+            "endColumn": 30,
+            "signature": "import Fastify from 'fastify';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 93.5129190677964
+        },
+        {
+          "node": {
+            "id": "import:32b0d87b29d17455753784a71000e616",
+            "kind": "import",
+            "name": "@fastify/cors",
+            "qualifiedName": "@fastify/cors",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 16,
+            "endLine": 16,
+            "startColumn": 0,
+            "endColumn": 33,
+            "signature": "import cors from '@fastify/cors';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 23.39976734592082
+        },
+        {
+          "node": {
+            "id": "constant:5932d462531dfd28e0cf94012d43d778",
+            "kind": "constant",
+            "name": "app",
+            "qualifiedName": "app",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 38,
+            "endLine": 38,
+            "startColumn": 6,
+            "endColumn": 66,
+            "signature": "= Fastify({ logger: false, bodyLimit: 8 * 1024 * 1024 })",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 11.5202813353954
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-13",
+      "type": "entrypoint",
+      "question": "Where is the CLI command entrypoint for PlugMedia?",
+      "query_param": "main",
+      "expected": {
+        "path": "apps/cli/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 253.5,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:ea041d52e0a3c83db3e1307bd0734844",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "tools/d1/gate-surfaces.mjs",
+            "language": "javascript",
+            "startLine": 130,
+            "endLine": 180,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781301
+          },
+          "score": 100.0117988641465
+        },
+        {
+          "node": {
+            "id": "function:82b5c02c74fd8549e7d63314c5a43237",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "tools/d1/probe-desktop.mjs",
+            "language": "javascript",
+            "startLine": 64,
+            "endLine": 123,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781321
+          },
+          "score": 100.0117988641465
+        },
+        {
+          "node": {
+            "id": "function:a76782b984578ae30062f0f27e3364e5",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "tools/d1/restart.mjs",
+            "language": "javascript",
+            "startLine": 127,
+            "endLine": 193,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781346
+          },
+          "score": 100.0117988641465
+        },
+        {
+          "node": {
+            "id": "function:99cc8bfe71e254ef183dcf91ccef657f",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "tools/handoff/export-handoff.py",
+            "language": "python",
+            "startLine": 94,
+            "endLine": 120,
+            "startColumn": 0,
+            "endColumn": 12,
+            "signature": "() -> int",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781413
+          },
+          "score": 99.98620397416047
+        },
+        {
+          "node": {
+            "id": "function:9a77e9024fecd898678a7cbd35eb9e5d",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "workers/media/d1_characters.py",
+            "language": "python",
+            "startLine": 430,
+            "endLine": 468,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "() -> None",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781511
+          },
+          "score": 99.98620397416047
+        },
+        {
+          "node": {
+            "id": "function:d64a04df0018e16ade29ffcfea6b70ad",
+            "kind": "function",
+            "name": "main",
+            "qualifiedName": "main",
+            "filePath": "workers/media/d1_diffusion.py",
+            "language": "python",
+            "startLine": 357,
+            "endLine": 395,
+            "startColumn": 0,
+            "endColumn": 27,
+            "signature": "() -> None",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781533
+          },
+          "score": 99.98620397416047
+        },
+        {
+          "node": {
+            "id": "file:apps/desktop/main.mjs",
+            "kind": "file",
+            "name": "main.mjs",
+            "qualifiedName": "apps/desktop/main.mjs",
+            "filePath": "apps/desktop/main.mjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 215,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780709
+          },
+          "score": 47.83534128804878
+        },
+        {
+          "node": {
+            "id": "file:apps/web/src/main.tsx",
+            "kind": "file",
+            "name": "main.tsx",
+            "qualifiedName": "apps/web/src/main.tsx",
+            "filePath": "apps/web/src/main.tsx",
+            "language": "tsx",
+            "startLine": 1,
+            "endLine": 647,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780737
+          },
+          "score": 47.786061583742125
+        },
+        {
+          "node": {
+            "id": "function:0a4e284c8fb1dc9eafbcfa8227929929",
+            "kind": "function",
+            "name": "maintainPublication",
+            "qualifiedName": "maintainPublication",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "language": "typescript",
+            "startLine": 151,
+            "endLine": 155,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "Keep the publication row for a slot in step with the slot's real state.\rA held slot must not leave a publication claiming it is merely 'SCHEDULED' — the\rrow a client reads has to say that a person is required, or the calendar looks\rlike work that is going to happen by itself.",
+            "signature": "(db: pg.Pool, o: Record<string, any>, state: string): Promise<void>",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781046
+          },
+          "score": 34.58205713526301
+        },
+        {
+          "node": {
+            "id": "function:dd3be83080cdc450c47b0a45755a1f1f",
+            "kind": "function",
+            "name": "localToken",
+            "qualifiedName": "localToken",
+            "filePath": "apps/desktop/main.mjs",
+            "language": "javascript",
+            "startLine": 56,
+            "endLine": 63,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "The bearer session, read from the local secret store.\rIt lives in the main process only: the renderer asks this process to run commands\rand never sees the token. That is the same reason the credential is not in the\rweb bundle either.",
+            "signature": "()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780710
+          },
+          "score": 25.337583447895845
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-14",
+      "type": "docs_notes",
+      "question": "Which document contains the final architecture and verification report for VS0?",
+      "query_param": "VS0_FINAL_REPORT.md",
+      "expected": {
+        "path": "VS0_FINAL_REPORT.md",
+        "symbol": "VS0_FINAL_REPORT.md",
+        "kind": "docs_notes",
+        "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 252.3,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:217db26b0d14f011a39839a50567e54c",
+            "kind": "constant",
+            "name": "INCLUDE_FILES",
+            "qualifiedName": "INCLUDE_FILES",
+            "filePath": "tools/d1/make-archive.mjs",
+            "language": "javascript",
+            "startLine": 47,
+            "endLine": 50,
+            "startColumn": 6,
+            "endColumn": 1,
+            "signature": "= [\r\n  'ARCHIVE_MANIFEST.md', 'VS0_FINAL_REPORT.md', 'package.json', 'pnpm-lock.yaml',\r\n  'tsconfig.js...",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781315
+          },
+          "score": 11.163360904318056
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-15",
+      "type": "docs_notes",
+      "question": "Which document lists the archive manifest and quarantine inventory?",
+      "query_param": "ARCHIVE_MANIFEST.md",
+      "expected": {
+        "path": "ARCHIVE_MANIFEST.md",
+        "symbol": "ARCHIVE_MANIFEST.md",
+        "kind": "docs_notes",
+        "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 246.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:217db26b0d14f011a39839a50567e54c",
+            "kind": "constant",
+            "name": "INCLUDE_FILES",
+            "qualifiedName": "INCLUDE_FILES",
+            "filePath": "tools/d1/make-archive.mjs",
+            "language": "javascript",
+            "startLine": 47,
+            "endLine": 50,
+            "startColumn": 6,
+            "endColumn": 1,
+            "signature": "= [\r\n  'ARCHIVE_MANIFEST.md', 'VS0_FINAL_REPORT.md', 'package.json', 'pnpm-lock.yaml',\r\n  'tsconfig.js...",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781315
+          },
+          "score": 24.163360904318054
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-16",
+      "type": "rename_impact",
+      "question": "What breaks if ensureCas is renamed in cas.ts?",
+      "query_param": "ensureCas",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "ensureCas",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "ensureCas is called inside storeContent and registerContent."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 252.1,
+      "rawOutput": {
+        "symbol": "ensureCas",
+        "depth": 2,
+        "nodeCount": 4,
+        "edgeCount": 3,
+        "affected": [
+          {
+            "name": "ensureCas",
+            "kind": "function",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 25
+          },
+          {
+            "name": "storeContent",
+            "kind": "function",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 48
+          },
+          {
+            "name": "commitArtifact",
+            "kind": "function",
+            "filePath": "services/runtime/src/domain/media.ts",
+            "startLine": 64
+          },
+          {
+            "name": "cas.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/cas.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-17",
+      "type": "rename_impact",
+      "question": "What breaks if applyMigrations function is renamed?",
+      "query_param": "applyMigrations",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "applyMigrations",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts"
+        ],
+        "details": "applyMigrations executes database schema migrations."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 273.5,
+      "rawOutput": {
+        "symbol": "applyMigrations",
+        "depth": 2,
+        "nodeCount": 12,
+        "edgeCount": 11,
+        "affected": [
+          {
+            "name": "applyMigrations",
+            "kind": "function",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 44
+          },
+          {
+            "name": "restore",
+            "kind": "function",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 189
+          },
+          {
+            "name": "ops.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 1
+          },
+          {
+            "name": "restoreIsolated",
+            "kind": "function",
+            "filePath": "services/runtime/src/domain/ops.ts",
+            "startLine": 383
+          },
+          {
+            "name": "migrate",
+            "kind": "function",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 124
+          },
+          {
+            "name": "plug-admin.mjs",
+            "kind": "file",
+            "filePath": "tools/admin/plug-admin.mjs",
+            "startLine": 1
+          },
+          {
+            "name": "db.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/db.ts",
+            "startLine": 1
+          },
+          {
+            "name": "durableWorker.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/durableWorker.ts",
+            "startLine": 1
+          },
+          {
+            "name": "scheduler.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "startLine": 1
+          },
+          {
+            "name": "worker.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/engine/worker.ts",
+            "startLine": 1
+          },
+          {
+            "name": "index.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/index.ts",
+            "startLine": 1
+          },
+          {
+            "name": "make-synthetic-source.mjs",
+            "kind": "file",
+            "filePath": "tools/media/make-synthetic-source.mjs",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-18",
+      "type": "definition",
+      "question": "Where is the durable schedulerTick function defined?",
+      "query_param": "schedulerTick",
+      "expected": {
+        "path": "services/runtime/src/engine/scheduler.ts",
+        "symbol": "schedulerTick",
+        "kind": "symbol",
+        "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 250.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:b4b2375bbe18f810c8d7ea309d1a8e85",
+            "kind": "function",
+            "name": "schedulerTick",
+            "qualifiedName": "schedulerTick",
+            "filePath": "services/runtime/src/engine/scheduler.ts",
+            "language": "typescript",
+            "startLine": 215,
+            "endLine": 235,
+            "startColumn": 7,
+            "endColumn": 1,
+            "signature": "(\r\n  db: pg.Pool,\r\n  webhookUrl: string | null,\r\n  opts: { catchupWindowHours?: number } = {},\r\n): Promise<SchedulerReport>",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781046
+          },
+          "score": 115.94629337004116
+        },
+        {
+          "node": {
+            "id": "import:ad26734a0c38398027a75d11a4d87f12",
+            "kind": "import",
+            "name": "./engine/scheduler.ts",
+            "qualifiedName": "./engine/scheduler.ts",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 25,
+            "endLine": 25,
+            "startColumn": 0,
+            "endColumn": 54,
+            "signature": "import { schedulerTick } from './engine/scheduler.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 9.461053189998664
+        }
+      ]
+    },
+    {
+      "id": "plugmedia-19",
+      "type": "callers",
+      "question": "Where is the command dispatcher register function called to wire media commands?",
+      "query_param": "register",
+      "expected": {
+        "path": "services/runtime/src/commands.ts",
+        "symbol": "register",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 247.2,
+      "rawOutput": {
+        "symbol": "register",
+        "callers": [
+          {
+            "name": "index.ts",
+            "kind": "file",
+            "filePath": "services/runtime/src/index.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-20",
+      "type": "definition",
+      "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+      "query_param": "ALLOWED_ORIGINS",
+      "expected": {
+        "path": "services/runtime/src/auth.ts",
+        "symbol": "ALLOWED_ORIGINS",
+        "kind": "symbol",
+        "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 257.4,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:5c823d2abffcd44bc9a0d7a3a074f422",
+            "kind": "constant",
+            "name": "ALLOWED_ORIGINS",
+            "qualifiedName": "ALLOWED_ORIGINS",
+            "filePath": "services/runtime/src/auth.ts",
+            "language": "typescript",
+            "startLine": 24,
+            "endLine": 28,
+            "startColumn": 13,
+            "endColumn": 1,
+            "signature": "= [\r\n  'http://127.0.0.1:5183',\r\n  'http://localhost:5183',\r\n  'http://127.0.0.1:8620',\r\n]",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381780777
+          },
+          "score": 95.7555157833531
+        },
+        {
+          "node": {
+            "id": "import:8bb487a25bbb1e3d052a5f988ae77ad1",
+            "kind": "import",
+            "name": "./auth.ts",
+            "qualifiedName": "./auth.ts",
+            "filePath": "services/runtime/src/index.ts",
+            "language": "typescript",
+            "startLine": 28,
+            "endLine": 31,
+            "startColumn": 0,
+            "endColumn": 19,
+            "signature": "import {\r\n  authenticate, login, originGuard, csrfGuard, issueCapability, verifyCapability,\r\n  ALLOWED_ORIGINS, MUTATING_ROLES, type Principal,\r\n} from './auth.ts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790381781123
+          },
+          "score": 8.275737392978067
+        }
+      ]
+    }
+  ]
+}

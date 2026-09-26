@@ -1,0 +1,121 @@
+/**
+ * `plugbrain swarm` end to end: every call is a real CLI process against a
+ * throwaway store, the way a Freebuff, AGY or Codex worker would run it.
+ */
+import { strict as assert } from 'node:assert'
+import { test } from 'node:test'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { workspaceIdFor } from '../src/planet.ts'
+
+const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
+
+function brain() {
+  const home = mkdtempSync(join(tmpdir(), 'plugbrain-swarm-cli-'))
+  const root = join(home, 'root')
+  mkdirSync(root)
+  const run = (...args: string[]) => {
+    const result = spawnSync(process.execPath, ['--experimental-strip-types', '--no-warnings', CLI, ...args], {
+      env: { ...process.env, PLUGBRAIN_HOME: home, PLUGBRAIN_NO_DAEMON: '1' },
+      encoding: 'utf8',
+      timeout: 60_000,
+    })
+    return { code: result.status, out: result.stdout, err: result.stderr }
+  }
+  assert.equal(run('register', root, 'swarm-cli').code, 0)
+  return { home, ws: workspaceIdFor(root), run, cleanup: () => rmSync(home, { recursive: true, force: true }) }
+}
+
+test('a worker registers, gets pinged at its turn end, claims work and shows on the board', () => {
+  const b = brain()
+  try {
+    const reg = b.run('swarm', 'register', 'nv01', '--surface', 'freebuff', '--account', 'nvidia:key-01',
+      '--key', 'nvidia-01', '--model', 'z-ai/glm-5.3-flash', '--workspace', b.ws)
+    assert.equal(reg.code, 0, reg.err)
+    assert.match(reg.out, /registriert: nv01 \(freebuff, nvidia:key-01, Schlüssel nvidia-01\)/)
+
+    const clash = b.run('swarm', 'register', 'nv01-copy', '--surface', 'native', '--account', 'nvidia:key-01',
+      '--key', 'nvidia-01', '--workspace', b.ws)
+    assert.equal(clash.code, 3)
+    assert.match(clash.err, /already carried by nv01/)
+
+    assert.equal(b.run('swarm', 'enqueue', 'Lint', 'ratchet', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'send', 'nv01', '--subject', 'Hallo', '--body', 'Bitte starten', '--workspace', b.ws).code, 0)
+
+    const end = b.run('swarm', 'turn', 'nv01', 'end', '--state', 'needs-task', '--summary', 'R1 fertig', '--workspace', b.ws, '--json')
+    assert.equal(end.code, 0, end.err)
+    const ping = JSON.parse(end.out) as { state: string; inbox: Array<{ id: string; subject: string }>; nextTask: { title: string } | null }
+    assert.equal(ping.state, 'needs-task')
+    assert.deepEqual(ping.inbox.map(message => message.subject), ['Hallo'])
+    assert.equal(ping.nextTask?.title, 'Lint ratchet')
+
+    const start = b.run('swarm', 'turn', 'nv01', 'start', '--claim', '--workspace', b.ws)
+    assert.equal(start.code, 0, start.err)
+    assert.match(start.out, /GENOMMEN task-[0-9a-f-]+: Lint ratchet/)
+    assert.match(start.out, /NACHRICHT msg-/)
+
+    assert.equal(b.run('swarm', 'ack', 'nv01', ping.inbox[0]!.id, '--workspace', b.ws).code, 0)
+    const board = b.run('swarm', 'board', '--workspace', b.ws, '--json')
+    const parsed = JSON.parse(board.out) as { agents: Array<{ id: string; unread: number; task: { title: string } | null; turnState: string }> }
+    const row = parsed.agents.find(agent => agent.id === 'nv01')
+    assert.equal(row?.unread, 0)
+    assert.equal(row?.task?.title, 'Lint ratchet')
+    assert.equal(row?.turnState, 'working')
+  } finally { b.cleanup() }
+})
+
+test('a worker hands in its claimed task with the evidence path, and only the holder can', () => {
+  const b = brain()
+  try {
+    for (const id of ['wf-m15', 'wf-m16']) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'claude-code', '--account', 'owner:anthropic', '--workspace', b.ws).code, 0)
+    }
+    assert.equal(b.run('swarm', 'enqueue', 'M15: Overlays', '--to', 'wf-m15', '--workspace', b.ws).code, 0)
+    const start = b.run('swarm', 'turn', 'wf-m15', 'start', '--claim', '--workspace', b.ws, '--json')
+    const taskId = (JSON.parse(start.out) as { claimedTask: { id: string } }).claimedTask.id
+    const stranger = b.run('swarm', 'deliver', 'wf-m16', taskId, '--path', 'x/DONE.md', '--workspace', b.ws)
+    assert.equal(stranger.code, 3)
+    assert.match(stranger.err, /held by wf-m15/)
+    const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', 'closeout/M15/DONE.md', '--workspace', b.ws)
+    assert.equal(delivered.code, 0, delivered.err)
+    assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays → closeout\/M15\/DONE\.md/)
+  } finally { b.cleanup() }
+})
+
+test('quotas, resources and admission are available to every worker', () => {
+  const b = brain()
+  try {
+    const quota = b.run('swarm', 'quota', 'owner:chatgpt', '2', 'percent', '--resets', '2026-09-30T02:02:00+02:00', '--workspace', b.ws)
+    assert.equal(quota.code, 0, quota.err)
+    assert.match(quota.out, /owner:chatgpt: 2 percent \(erschöpft\)/)
+    const resources = b.run('swarm', 'resources', '--workspace', b.ws, '--json')
+    const parsed = JSON.parse(resources.out) as { quotas: Array<{ account: string }>; admission: Array<{ kind: string }> }
+    assert.deepEqual(parsed.quotas.map(row => row.account), ['owner:chatgpt'])
+    assert.deepEqual(parsed.admission.map(row => row.kind), ['edit', 'test', 'index', 'build', 'install', 'worktree'])
+    assert.equal(b.run('swarm', 'admit', 'edit', '--workspace', b.ws).code, 0)
+    const bad = b.run('swarm', 'quota', 'nvidia:key-02', '5', 'rpm', '--note', 'nvapi-' + 'x'.repeat(36), '--workspace', b.ws)
+    assert.equal(bad.code, 3)
+    assert.match(bad.err, /looks like a credential/)
+  } finally { b.cleanup() }
+})
+
+test('workers claim the paths they write, and a second writer is refused until release', () => {
+  const b = brain()
+  try {
+    for (const id of ['o2-lanes', 'o4-mission']) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    }
+    const first = b.run('swarm', 'claim', 'o2-lanes', 'packages/plug/swarm/src/client-lane-executor.ts', '--task', 'dog-run-2', '--workspace', b.ws)
+    assert.equal(first.code, 0, first.err)
+    const second = b.run('swarm', 'claim', 'o4-mission', 'packages/plug/swarm/src/client-lane-executor.ts', '--workspace', b.ws)
+    assert.equal(second.code, 3)
+    assert.match(second.err, /gehört o2-lanes \(dog-run-2\)/)
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as { agents: Array<{ id: string; leases: Array<{ paths: string[] }> }> }
+    assert.deepEqual(board.agents.find(agent => agent.id === 'o2-lanes')?.leases.map(lease => lease.paths).flat(), ['packages/plug/swarm/src/client-lane-executor.ts'])
+    assert.match(b.run('swarm', 'release', 'o2-lanes', '--task', 'dog-run-2', '--workspace', b.ws).out, /freigegeben: 1/)
+    assert.equal(b.run('swarm', 'claim', 'o4-mission', 'packages/plug/swarm/src/client-lane-executor.ts', '--workspace', b.ws).code, 0)
+  } finally { b.cleanup() }
+})

@@ -1,0 +1,56 @@
+{
+  "name": "plugbrain",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Local project and code memory for AI agents: real AST code intelligence plus Obsidian-style notes, exposed to Claude Code through MCP.",
+  "license": "MIT",
+  "author": "litbitrim",
+  "homepage": "https://github.com/litbitrim/plugbrain#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/litbitrim/plugbrain.git"
+  },
+  "bugs": "https://github.com/litbitrim/plugbrain/issues",
+  "keywords": [
+    "code-intelligence",
+    "ast",
+    "knowledge-base",
+    "obsidian",
+    "mcp",
+    "ai-agents",
+    "local-first",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "plugbrain": "./src/cli.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.ts desktop/*.test.cjs ui/src/lib/*.test.ts ui/src/lib/*.test.js",
+    "index": "node --experimental-strip-types src/cli.ts index",
+    "serve": "node --experimental-strip-types src/cli.ts serve",
+    "status": "node --experimental-strip-types src/cli.ts status",
+    "build:ui": "npm --prefix ui run build",
+    "backup": "node --experimental-strip-types src/cli.ts backup",
+    "restore": "node --experimental-strip-types src/cli.ts restore",
+    "build:standalone": "node scripts/build-standalone.mjs",
+    "verify:standalone": "node scripts/verify-standalone.mjs",
+    "package:nsis": "node scripts/package-nsis.mjs",
+    "proof:prevention": "node --experimental-strip-types scripts/proof-prevention.ts",
+    "proof:mcp-parity": "node --experimental-strip-types scripts/compare-gitnexus-parity.ts",
+    "verify:gold-corpus-v2": "node --experimental-strip-types scripts/verify-gold-corpus-v2.ts",
+    "secret:scan": "node scripts/secret-scan.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.0",
+    "esbuild": "^0.28.1",
+    "playwright-core": "1.62.1"
+  }
+}

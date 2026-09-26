@@ -1,0 +1,10 @@
+node_modules/
+.demo-ws/
+*.db
+*.db-wal
+*.db-shm
+artifacts/
+.claude/
+dist/
+release/
+.agents/

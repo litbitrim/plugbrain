@@ -1,0 +1,231 @@
+/**
+ * B-SPEED: bounded Brain reads on a large Planet-shaped store.
+ *
+ * The fixture inserts indexed facts directly because indexing 50,000 source
+ * files measures parsers and disk throughput, not the read routes under test.
+ * Every route still uses the production SQLite schema and HTTP server.
+ */
+import './helpers/isolated-home.ts'
+import { strict as assert } from 'node:assert'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { test } from 'node:test'
+import { serve, type ServerHandle } from '../src/server/api.ts'
+import { openStore } from '../src/store/schema.ts'
+import { ensureTraceSchema, ingestTraceEvents } from '../src/trace.ts'
+import { conceptSearch } from '../src/intel/query.ts'
+
+const FILES = 50_000
+const TRACE_EVENTS = 2_000
+const WS = 'ws-speed-fixture'
+
+const elapsed = async (read: () => Promise<Response>): Promise<number> => {
+  const start = process.hrtime.bigint()
+  const response = await read()
+  assert.equal(response.status, 200)
+  await response.arrayBuffer()
+  return Number(process.hrtime.bigint() - start) / 1e6
+}
+
+const percentile = (values: number[], p: number): number => {
+  const sorted = [...values].sort((a, b) => a - b)
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * p) - 1))
+  return sorted[index] ?? 0
+}
+
+test('B-SPEED/B-SPEED-2: core read routes stay inside the 1s budget at 50k files', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-speed-'))
+  const db = openStore(join(dir, 'brain.db'))
+  let server: ServerHandle | null = null
+  try {
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run(WS, 'speed fixture', join(dir, 'planet'), new Date().toISOString())
+    db.prepare(
+      `INSERT INTO workspace_index_state
+         (workspace_id, generation, file_count, symbol_count, edge_count)
+       VALUES (?, 7, ?, 0, 0)`,
+    ).run(WS, FILES)
+
+    const insertFile = db.prepare(
+      `INSERT INTO files
+         (workspace_id, path, ext, lang, size, mtime, loc, indexed_at, generation, created_generation)
+       VALUES (?, ?, '.ts', 'typescript', 32, ?, 1, ?, 7, 7)`,
+    )
+    const now = new Date().toISOString()
+    db.exec('BEGIN')
+    try {
+      for (let i = 0; i < FILES; i += 1) {
+        insertFile.run(WS, `Code/repo-${String(i % 20).padStart(2, '0')}/src/mod-${String(i).padStart(5, '0')}.ts`, now, now)
+      }
+      db.exec('COMMIT')
+    } catch (error) {
+      db.exec('ROLLBACK')
+      throw error
+    }
+
+    ensureTraceSchema(db)
+    const insertTrace = db.prepare(
+      `INSERT INTO trace_events
+        (event_id, source, source_sequence, runtime_instance_id, workspace_id, task_id, worker_id,
+         agent_id, type, occurred_at, observed_at, file_refs, symbol_refs, artifact_refs, receipt_refs,
+         payload, provenance_mode, authority_ref, confidence)
+       VALUES (?, 'operator', ?, 'runtime-speed', ?, ?, ?, ?, ?, ?, ?, '[]', '[]', '[]', '[]', '{}', 'live', 'bench', 'authoritative')`,
+    )
+    db.exec('BEGIN')
+    try {
+      for (let i = 0; i < TRACE_EVENTS; i += 1) {
+        const at = new Date(Date.UTC(2026, 8, 23, 0, 0, i)).toISOString()
+        insertTrace.run(
+          `speed-${i}`, i, WS, `task-${i}`, `worker-${i}`, `agent-${i}`,
+          i % 2 === 0 ? 'worker.started' : 'worker.heartbeat', at, at,
+        )
+      }
+      db.exec('COMMIT')
+    } catch (error) {
+      db.exec('ROLLBACK')
+      throw error
+    }
+
+    const filePlan = db.prepare(
+      'EXPLAIN QUERY PLAN SELECT id, path FROM files WHERE workspace_id = ? ORDER BY path LIMIT ? OFFSET ?',
+    ).all(WS, 200, 0) as Array<{ detail: string }>
+    const meshPlan = db.prepare(
+      'EXPLAIN QUERY PLAN SELECT event_id FROM trace_events WHERE workspace_id = ? ORDER BY occurred_at, COALESCE(source_sequence, 0), event_id',
+    ).all(WS) as Array<{ detail: string }>
+    assert.match(filePlan.map(row => row.detail).join('\n'), /idx_files_ws_path/)
+    assert.match(meshPlan.map(row => row.detail).join('\n'), /idx_trace_ws_order/)
+    assert.doesNotMatch(meshPlan.map(row => row.detail).join('\n'), /TEMP B-TREE/)
+
+    server = await serve({ db, uiRoot: null }, 0)
+    const base = `http://127.0.0.1:${server.port}`
+    const reads = {
+      status: () => fetch(`${base}/api/intel/status?workspace=${WS}`),
+      files: () => fetch(`${base}/api/files?workspace=${WS}&limit=200&offset=1000`),
+      mesh: () => fetch(`${base}/api/mesh?workspace=${WS}`),
+      // B-SPEED-2 deliberately reuses this direct 50k SQLite fixture.  These
+      // are read routes the Planet UI uses; limiting graph/atlas output keeps
+      // the budget about route work, rather than serialising every file.
+      atlas: () => fetch(`${base}/api/atlas/snapshot?workspace=${WS}&limit=200&symbols=0`),
+      galaxy: () => fetch(`${base}/api/galaxy`),
+      graph: () => fetch(`${base}/api/graph?workspace=${WS}&limit=200`),
+      planet: () => fetch(`${base}/api/planet?workspace=${WS}`),
+    }
+    const p95ByRoute: Record<string, number> = {}
+    for (const [route, read] of Object.entries(reads)) {
+      const runs: number[] = []
+      for (let i = 0; i < 5; i += 1) runs.push(await elapsed(read))
+      const p95 = percentile(runs, 95)
+      p95ByRoute[route] = Number(p95.toFixed(1))
+      assert.ok(p95 < 1000, `${route} p95 ${p95.toFixed(1)} ms exceeds the 1s Core budget`)
+    }
+    const mesh = await (await reads.mesh()).json() as {
+      mesh: { nodes: unknown[]; edges: unknown[]; page: { totalNodes: number; returnedNodes: number; nodesTruncated: boolean; totalUnprovenWorkers: number; returnedUnprovenWorkers: number } }
+    }
+    assert.equal(mesh.mesh.nodes.length, 500)
+    assert.equal(mesh.mesh.page.returnedNodes, 500)
+    assert.ok(mesh.mesh.page.totalNodes > mesh.mesh.page.returnedNodes)
+    assert.equal(mesh.mesh.page.nodesTruncated, true)
+    assert.equal(mesh.mesh.page.returnedUnprovenWorkers, 500)
+    assert.ok(mesh.mesh.page.totalUnprovenWorkers > mesh.mesh.page.returnedUnprovenWorkers)
+    const atlas = await (await reads.atlas()).json() as {
+      coverage: { totalFiles: number; shownFiles: number; truncated: boolean }
+    }
+    assert.equal(atlas.coverage.totalFiles, FILES)
+    assert.equal(atlas.coverage.shownFiles, 200)
+    assert.equal(atlas.coverage.truncated, true)
+    const galaxy = await (await reads.galaxy()).json() as {
+      planets: Array<{ id: string; files: number }>
+    }
+    assert.deepEqual(galaxy.planets.map(planet => [planet.id, planet.files]), [[WS, FILES]])
+    const graph = await (await reads.graph()).json() as {
+      nodes: unknown[]; truncated: boolean
+    }
+    assert.equal(graph.nodes.length, 200)
+    assert.equal(graph.truncated, true)
+    const planet = await (await reads.planet()).json() as {
+      planet: { totals: { files: number }; notes: { files: number; roots: Array<{ files: number }> } }
+    }
+    assert.equal(planet.planet.totals.files, FILES)
+    assert.equal(planet.planet.notes.files, FILES)
+    assert.deepEqual(planet.planet.notes.roots, [{ relPath: '', kind: 'workspace', files: FILES }])
+    ingestTraceEvents(db, [{
+      schema: 1,
+      eventId: 'speed-after-cache',
+      source: 'operator',
+      runtimeInstanceId: 'runtime-speed',
+      workspaceId: WS,
+      taskId: 'task-after-cache',
+      workerId: 'worker-after-cache',
+      agentId: 'agent-after-cache',
+      type: 'worker.started',
+      occurredAt: '2026-09-24T00:00:00.000Z',
+      observedAt: '2026-09-24T00:00:00.000Z',
+      provenance: { mode: 'live', authorityRef: 'bench-after-cache', confidence: 'authoritative' },
+    }], { knownWorkspaceIds: new Set([WS]) })
+    const refreshed = await (await reads.mesh()).json() as {
+      mesh: { page: { totalNodes: number } }
+    }
+    assert.ok(refreshed.mesh.page.totalNodes > mesh.mesh.page.totalNodes,
+      'a committed trace event invalidates the cached Mesh projection')
+    t.diagnostic(`B-SPEED/B-SPEED-2 p95 ms (5 local requests, 50k files): ${JSON.stringify(p95ByRoute)}`)
+    t.diagnostic(`B-SPEED files plan: ${filePlan.map(row => row.detail).join(' | ')}`)
+    t.diagnostic(`B-SPEED mesh plan: ${meshPlan.map(row => row.detail).join(' | ')}`)
+  } finally {
+    if (server !== null) await server.close()
+    db.close()
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5 })
+  }
+})
+
+test('Q2: warm symbol concept search stays < 50ms on 50k symbols', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-sym-speed-'))
+  const db = openStore(join(dir, 'brain.db'))
+  try {
+    const ws = 'ws-sym-speed'
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)').run(ws, 'sym-speed', dir, new Date().toISOString())
+    db.exec('BEGIN')
+    const insertFile = db.prepare('INSERT INTO files (workspace_id, path, ext, lang, size, mtime, loc) VALUES (?, ?, \'.ts\', \'typescript\', 100, \'now\', 10)')
+    const insertSym = db.prepare('INSERT INTO symbols (file_id, name, kind, line, end_line, exported) VALUES (?, ?, \'function\', 1, 10, 1)')
+    const insertSr = db.prepare('INSERT INTO search_rows (workspace_id, name, path, kind, symbol_id, file_id) VALUES (?, ?, ?, \'function\', ?, ?)')
+    for (let f = 0; f < 500; f++) {
+      const p = `src/pkg_${f}/module.ts`
+      const fRow = insertFile.run(ws, p)
+      const fid = Number(fRow.lastInsertRowid)
+      for (let s = 0; s < 100; s++) {
+        const name = `serviceWorkerHandler_${f}_${s}`
+        const sRow = insertSym.run(fid, name)
+        const sid = Number(sRow.lastInsertRowid)
+        insertSr.run(ws, name, p, sid, fid)
+      }
+    }
+    // Target symbol
+    const targetFile = insertFile.run(ws, 'src/target/CameraProjection.ts')
+    const tfid = Number(targetFile.lastInsertRowid)
+    const targetSym = insertSym.run(tfid, 'CameraProjection')
+    const tsid = Number(targetSym.lastInsertRowid)
+    insertSr.run(ws, 'CameraProjection', 'src/target/CameraProjection.ts', tsid, tfid)
+    db.exec('COMMIT')
+
+    // Warm up
+    conceptSearch(db, 'CameraProjection', { workspaceId: ws })
+
+    // Benchmark 10 queries
+    const times: number[] = []
+    for (let q = 0; q < 10; q++) {
+      const t0 = performance.now()
+      const res = conceptSearch(db, 'CameraProjection', { workspaceId: ws })
+      const dt = performance.now() - t0
+      times.push(dt)
+      assert.ok(res.symbols.length > 0)
+      assert.equal(res.symbols[0].name, 'CameraProjection')
+    }
+    const medianMs = percentile(times, 0.5)
+    t.diagnostic(`Q2 warm symbol concept search median: ${medianMs.toFixed(2)} ms (samples: ${times.map(x => x.toFixed(2)).join(', ')})`)
+    assert.ok(medianMs < 50, `Warm search median must be < 50ms, was ${medianMs}ms`)
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5 })
+  }
+})
+

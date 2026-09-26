@@ -1,0 +1,2048 @@
+{
+  "tool": "codegraph",
+  "repo": "cowork",
+  "commit": "5c2b2addb16d960a270bad15f80f0581e16a7cf9",
+  "indexTimeMs": 41319,
+  "indexSizeBytes": 319078573,
+  "questionCount": 20,
+  "hitCount": 9,
+  "accuracy": 45,
+  "latencyP50Ms": 343.7,
+  "latencyP95Ms": 388.4,
+  "questions": [
+    {
+      "id": "cowork-01",
+      "type": "definition",
+      "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+      "query_param": "DEFAULT_LANES",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "DEFAULT_LANES",
+        "kind": "symbol",
+        "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 355.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "variable:fb0ea3d45591f60f6e5a6561f3f72aca",
+            "kind": "variable",
+            "name": "DEFAULT_LANES",
+            "qualifiedName": "DEFAULT_LANES",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "language": "python",
+            "startLine": 43,
+            "endLine": 50,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "= [\n    {\"id\": \"groq-1\",       \"provider\": \"groq\",       \"base_url\": \"https://api.groq.com/openai/v1\",...",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624072
+          },
+          "score": 104.90239776708815
+        }
+      ]
+    },
+    {
+      "id": "cowork-02",
+      "type": "definition",
+      "question": "Where is the scrub function defined to remove API keys from output?",
+      "query_param": "scrub",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "scrub",
+        "kind": "symbol",
+        "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 385.4,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:2cd043ab27f44ee191f4ce7c042563f6",
+            "kind": "function",
+            "name": "scrub",
+            "qualifiedName": "scrub",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "language": "python",
+            "startLine": 59,
+            "endLine": 64,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(text: str) -> str",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624072
+          },
+          "score": 106.26479835963676
+        },
+        {
+          "node": {
+            "id": "function:03616fc636638358085e346ce30c9dea",
+            "kind": "function",
+            "name": "scrub",
+            "qualifiedName": "scrub",
+            "filePath": "ruflo-workers/tools/verify_gate.py",
+            "language": "python",
+            "startLine": 53,
+            "endLine": 56,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(text: str) -> str",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624229
+          },
+          "score": 106.26479835963676
+        },
+        {
+          "node": {
+            "id": "method:a2f1192e07a238ed14d905e59c192a00",
+            "kind": "method",
+            "name": "scrub",
+            "qualifiedName": "DemoEngine::scrub",
+            "filePath": "04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "language": "javascript",
+            "startLine": 60,
+            "endLine": 65,
+            "startColumn": 2,
+            "endColumn": 3,
+            "docstring": "Scrub timeline 0..1 (pauses auto-advance until play() resumes).",
+            "signature": "(t01)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383553344
+          },
+          "score": 105.8803992671245
+        },
+        {
+          "node": {
+            "id": "method:d7062d8c9d58602ef565af41feaca354",
+            "kind": "method",
+            "name": "scrub",
+            "qualifiedName": "DemoEngine::scrub",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "language": "javascript",
+            "startLine": 60,
+            "endLine": 65,
+            "startColumn": 2,
+            "endColumn": 3,
+            "docstring": "Scrub timeline 0..1 (pauses auto-advance until play() resumes).",
+            "signature": "(t01)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383563252
+          },
+          "score": 105.8803992671245
+        },
+        {
+          "node": {
+            "id": "method:583189b7025f48fcd7087d9f385458d0",
+            "kind": "method",
+            "name": "scrub",
+            "qualifiedName": "DemoEngine::scrub",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "language": "javascript",
+            "startLine": 60,
+            "endLine": 65,
+            "startColumn": 2,
+            "endColumn": 3,
+            "docstring": "Scrub timeline 0..1 (pauses auto-advance until play() resumes).",
+            "signature": "(t01)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383574476
+          },
+          "score": 105.8803992671245
+        },
+        {
+          "node": {
+            "id": "method:44df8a83a85d793f86e1d44c2204ce2e",
+            "kind": "method",
+            "name": "scrub",
+            "qualifiedName": "DemoEngine::scrub",
+            "filePath": "plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "language": "javascript",
+            "startLine": 60,
+            "endLine": 65,
+            "startColumn": 2,
+            "endColumn": 3,
+            "docstring": "Scrub timeline 0..1 (pauses auto-advance until play() resumes).",
+            "signature": "(t01)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383606233
+          },
+          "score": 105.8803992671245
+        },
+        {
+          "node": {
+            "id": "function:03b1398ff8e0a3256a1b8222fe03d8a3",
+            "kind": "function",
+            "name": "scrub",
+            "qualifiedName": "scrub",
+            "filePath": "ECOSPACE/cockpit/fleet-direct.cjs",
+            "language": "javascript",
+            "startLine": 83,
+            "endLine": 89,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "---- scrub: never let a key value (or key= URL param) escape in an error string ----",
+            "signature": "(s, key)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601424
+          },
+          "score": 105.66420867930687
+        },
+        {
+          "node": {
+            "id": "function:8dc4fd4b2611f19218fc7e6837657b9d",
+            "kind": "function",
+            "name": "scrub",
+            "qualifiedName": "scrub",
+            "filePath": "cockpit/fleet-direct.cjs",
+            "language": "javascript",
+            "startLine": 83,
+            "endLine": 89,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "---- scrub: never let a key value (or key= URL param) escape in an error string ----",
+            "signature": "(s, key)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601573
+          },
+          "score": 105.66420867930687
+        },
+        {
+          "node": {
+            "id": "function:6347f07d29529bff81d35258d3f0ad4c",
+            "kind": "function",
+            "name": "scrub_text",
+            "qualifiedName": "scrub_text",
+            "filePath": "plugos-ecospace/tools/security/secscan/masking.py",
+            "language": "python",
+            "startLine": 103,
+            "endLine": 127,
+            "startColumn": 0,
+            "endColumn": 23,
+            "signature": "(text: str) -> str",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383623633
+          },
+          "score": 51.16971352735571
+        },
+        {
+          "node": {
+            "id": "function:57e7360d217be2c4a95566f53ab021e3",
+            "kind": "function",
+            "name": "_scrub",
+            "qualifiedName": "_scrub",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/supervisor/brain/skills.py",
+            "language": "python",
+            "startLine": 211,
+            "endLine": 214,
+            "startColumn": 0,
+            "endColumn": 96,
+            "signature": "(text: str) -> str",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383542958
+          },
+          "score": 36.26479835963675
+        }
+      ]
+    },
+    {
+      "id": "cowork-03",
+      "type": "callers",
+      "question": "Where is post_event called to update the live station feed?",
+      "query_param": "post_event",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "post_event",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls post_event during worker lifecycle transitions."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 355.3,
+      "rawOutput": {
+        "symbol": "post_event",
+        "callers": [
+          {
+            "name": "fleet_patch",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 70
+          },
+          {
+            "name": "run_codex",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 116
+          },
+          {
+            "name": "_pump",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 137
+          },
+          {
+            "name": "run_fleet",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 165
+          },
+          {
+            "name": "run_part_as_worker",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 226
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-04",
+      "type": "callers",
+      "question": "Where is codegraph_context called to enrich worker prompts?",
+      "query_param": "codegraph_context",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "codegraph_context",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 333.7,
+      "rawOutput": {
+        "symbol": "codegraph_context",
+        "callers": [
+          {
+            "name": "run_part_as_worker",
+            "kind": "function",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 226
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-05",
+      "type": "impact",
+      "question": "What is impacted if CONFIG path in fleet.py is moved?",
+      "query_param": "CONFIG",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "CONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "ruflo-workers/tools/fleet.py",
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 2,
+        "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 349.7,
+      "rawOutput": {
+        "symbol": "CONFIG",
+        "depth": 2,
+        "nodeCount": 10,
+        "edgeCount": 5,
+        "affected": [
+          {
+            "name": "CONFIG",
+            "kind": "constant",
+            "filePath": ".claude/helpers/learning-service.mjs",
+            "startLine": 43
+          },
+          {
+            "name": "learning-service.mjs",
+            "kind": "file",
+            "filePath": ".claude/helpers/learning-service.mjs",
+            "startLine": 1
+          },
+          {
+            "name": "CONFIG",
+            "kind": "constant",
+            "filePath": ".claude/helpers/statusline.cjs",
+            "startLine": 29
+          },
+          {
+            "name": "statusline.cjs",
+            "kind": "file",
+            "filePath": ".claude/helpers/statusline.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "CONFIG",
+            "kind": "constant",
+            "filePath": ".claude/helpers/statusline.js",
+            "startLine": 45
+          },
+          {
+            "name": "statusline.js",
+            "kind": "file",
+            "filePath": ".claude/helpers/statusline.js",
+            "startLine": 1
+          },
+          {
+            "name": "CONFIG",
+            "kind": "constant",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 23
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "CONFIG",
+            "kind": "constant",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 23
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-06",
+      "type": "impact",
+      "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+      "query_param": "RATE",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "RATE",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "RATE determines cost calculation for different AI model providers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 318.6,
+      "rawOutput": {
+        "symbol": "RATE",
+        "depth": 2,
+        "nodeCount": 4,
+        "edgeCount": 2,
+        "affected": [
+          {
+            "name": "RATE",
+            "kind": "constant",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 33
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "RATE",
+            "kind": "constant",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 33
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-07",
+      "type": "dataflow",
+      "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "dataflow",
+        "expected_targets": [
+          "cockpit/server.cjs",
+          "ruflo-workers/tools/fleet.py"
+        ],
+        "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 322,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:5475522953b3e6517f6aec41ef08d958",
+            "kind": "function",
+            "name": "writeConfig",
+            "qualifiedName": "writeConfig",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 44,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "(cfg)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601454
+          },
+          "score": 111.06786320965509
+        },
+        {
+          "node": {
+            "id": "function:8fec889a7da9c48633eca08e63268683",
+            "kind": "function",
+            "name": "writeConfig",
+            "qualifiedName": "writeConfig",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 44,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 1,
+            "signature": "(cfg)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601632
+          },
+          "score": 111.06786320965509
+        },
+        {
+          "node": {
+            "id": "function:0d35c87f978d9949dfa136779a4ccd87",
+            "kind": "function",
+            "name": "writeConfig",
+            "qualifiedName": "PlugCodeProxyPage::writeConfig",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "language": "tsx",
+            "startLine": 39,
+            "endLine": 46,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(global?: boolean)",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383538996
+          },
+          "score": 110.9439751620146
+        },
+        {
+          "node": {
+            "id": "function:1e5622abba81683cad0f0fc91b78d5fd",
+            "kind": "function",
+            "name": "writeConfig",
+            "qualifiedName": "PlugCodeProxyPage::writeConfig",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "language": "tsx",
+            "startLine": 39,
+            "endLine": 46,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(global?: boolean)",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383580775
+          },
+          "score": 110.9439751620146
+        },
+        {
+          "node": {
+            "id": "function:25507772a7e36b80f26bbfe564745ea9",
+            "kind": "function",
+            "name": "writeConfig",
+            "qualifiedName": "PlugCodeProxyPage::writeConfig",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "language": "tsx",
+            "startLine": 39,
+            "endLine": 46,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(global?: boolean)",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383584895
+          },
+          "score": 110.9439751620146
+        }
+      ]
+    },
+    {
+      "id": "cowork-08",
+      "type": "config",
+      "question": "Which environment variable configures the Cockpit server port?",
+      "query_param": "PLUGOS_COCKPIT_PORT",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "PLUGOS_COCKPIT_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 315.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:d115f0f3ee46b28d6b38c520f8f6d2a1",
+            "kind": "constant",
+            "name": "PORT",
+            "qualifiedName": "PORT",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 35,
+            "endLine": 35,
+            "startColumn": 6,
+            "endColumn": 80,
+            "signature": "= Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601454
+          },
+          "score": 21.900225382981375
+        },
+        {
+          "node": {
+            "id": "constant:b39eb9c628f8fc9a3b966f410f0fcb54",
+            "kind": "constant",
+            "name": "PORT",
+            "qualifiedName": "PORT",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 35,
+            "endLine": 35,
+            "startColumn": 6,
+            "endColumn": 80,
+            "signature": "= Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601632
+          },
+          "score": 21.900225382981375
+        }
+      ]
+    },
+    {
+      "id": "cowork-09",
+      "type": "config",
+      "question": "Where are the active swarm chain configuration rules defined?",
+      "query_param": "swarm-chain.config.json",
+      "expected": {
+        "path": "ruflo-workers/swarm-chain.config.json",
+        "symbol": "swarm-chain.config.json",
+        "kind": "config",
+        "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 319.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:7678def96e179a3e1c6a1243868d8416",
+            "kind": "function",
+            "name": "listLanes",
+            "qualifiedName": "listLanes",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/cowork-host.cjs",
+            "language": "javascript",
+            "startLine": 235,
+            "endLine": 281,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "---------------------------------------------------------------------------\nlistLanes()\n-> [{provider, lane, model, hasKey, role}]\nReads BLOB key NAMES (never values), merges with swarm-chain.config.json.\n---------------------------------------------------------------------------",
+            "signature": "()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383585179
+          },
+          "score": 17.284192219744597
+        },
+        {
+          "node": {
+            "id": "constant:efaafe4a28e4ce2e4e82db7542396f3c",
+            "kind": "constant",
+            "name": "CONFIG",
+            "qualifiedName": "CONFIG",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 23,
+            "endLine": 23,
+            "startColumn": 6,
+            "endColumn": 74,
+            "signature": "= path.join(ROOT, \"ruflo-workers\", \"swarm-chain.config.json\")",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601454
+          },
+          "score": 16.166015526516073
+        },
+        {
+          "node": {
+            "id": "constant:07652e9bf08779fe11d4b8338033e76e",
+            "kind": "constant",
+            "name": "CONFIG",
+            "qualifiedName": "CONFIG",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 23,
+            "endLine": 23,
+            "startColumn": 6,
+            "endColumn": 74,
+            "signature": "= path.join(ROOT, \"ruflo-workers\", \"swarm-chain.config.json\")",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601632
+          },
+          "score": 16.166015526516073
+        },
+        {
+          "node": {
+            "id": "variable:b9fed1b3135065673bcd7dcd37f36f96",
+            "kind": "variable",
+            "name": "CONFIG",
+            "qualifiedName": "CONFIG",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "language": "python",
+            "startLine": 38,
+            "endLine": 38,
+            "startColumn": 0,
+            "endColumn": 59,
+            "signature": "= ROOT / \"ruflo-workers\" / \"swarm-chain.config.json\"",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624072
+          },
+          "score": 15.803859891881993
+        },
+        {
+          "node": {
+            "id": "variable:4a19c7bb860b9513354858ba6866a7b6",
+            "kind": "variable",
+            "name": "CHAIN_CONFIG",
+            "qualifiedName": "CHAIN_CONFIG",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/cowork-host.cjs",
+            "language": "javascript",
+            "startLine": 144,
+            "endLine": 144,
+            "startColumn": 4,
+            "endColumn": 70,
+            "signature": "= path.join(WORKERS_DIR, \"swarm-chain.config.json\")",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383585178
+          },
+          "score": 14.868699148851608
+        }
+      ]
+    },
+    {
+      "id": "cowork-10",
+      "type": "entrypoint",
+      "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+      "query_param": "fleet",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 364.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "class:98ca1271538e274b7e4117ffee175e6f",
+            "kind": "class",
+            "name": "Fleet",
+            "qualifiedName": "Fleet",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "language": "python",
+            "startLine": 208,
+            "endLine": 321,
+            "startColumn": 0,
+            "endColumn": 75,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624074
+          },
+          "score": 117.5439048308125
+        },
+        {
+          "node": {
+            "id": "import:d8b48b538abd2e7d5e9ecc011d7e8c62",
+            "kind": "import",
+            "name": "fleet",
+            "qualifiedName": "fleet",
+            "filePath": "ruflo-workers/tools/planner.py",
+            "language": "python",
+            "startLine": 18,
+            "endLine": 18,
+            "startColumn": 0,
+            "endColumn": 12,
+            "signature": "import fleet",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624156
+          },
+          "score": 97.48215540677815
+        },
+        {
+          "node": {
+            "id": "import:bc537b3b2eea55712756c6159d2d7721",
+            "kind": "import",
+            "name": "fleet",
+            "qualifiedName": "fleet",
+            "filePath": "ruflo-workers/tools/scope_plan.py",
+            "language": "python",
+            "startLine": 29,
+            "endLine": 29,
+            "startColumn": 0,
+            "endColumn": 12,
+            "signature": "import fleet",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624164
+          },
+          "score": 97.48215540677815
+        },
+        {
+          "node": {
+            "id": "import:d18336cdd03a8297f4f2883eedbca3ad",
+            "kind": "import",
+            "name": "fleet",
+            "qualifiedName": "fleet",
+            "filePath": "ruflo-workers/tools/supervisor.py",
+            "language": "python",
+            "startLine": 30,
+            "endLine": 30,
+            "startColumn": 0,
+            "endColumn": 12,
+            "signature": "import fleet",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624176
+          },
+          "score": 97.48215540677815
+        },
+        {
+          "node": {
+            "id": "import:4fe8e8643f24eee4d7e544c3df9ad57b",
+            "kind": "import",
+            "name": "fleet",
+            "qualifiedName": "fleet",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "language": "python",
+            "startLine": 32,
+            "endLine": 32,
+            "startColumn": 0,
+            "endColumn": 12,
+            "signature": "import fleet",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624239
+          },
+          "score": 97.48215540677815
+        },
+        {
+          "node": {
+            "id": "file:ruflo-workers/tools/fleet.py",
+            "kind": "file",
+            "name": "fleet.py",
+            "qualifiedName": "ruflo-workers/tools/fleet.py",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "language": "python",
+            "startLine": 1,
+            "endLine": 497,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624072
+          },
+          "score": 58.11371044440647
+        },
+        {
+          "node": {
+            "id": "function:3dcb66d79cda0a9653a5ac1baabca6f3",
+            "kind": "function",
+            "name": "fleetAsk",
+            "qualifiedName": "fleetAsk",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 515,
+            "endLine": 520,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "F3: a manual prompt -> the cost-ascending, never-abort fleet (NOT codex/claude).",
+            "signature": "(prompt, role, maxTokens)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601460
+          },
+          "score": 54.835585678071496
+        },
+        {
+          "node": {
+            "id": "function:5709e2070bd6b3bc13fb53ae5f949e1e",
+            "kind": "function",
+            "name": "fleetAsk",
+            "qualifiedName": "fleetAsk",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 515,
+            "endLine": 520,
+            "startColumn": 0,
+            "endColumn": 1,
+            "docstring": "F3: a manual prompt -> the cost-ascending, never-abort fleet (NOT codex/claude).",
+            "signature": "(prompt, role, maxTokens)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": true,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601638
+          },
+          "score": 54.835585678071496
+        },
+        {
+          "node": {
+            "id": "function:f41b57cd7de694632f62adba74547da4",
+            "kind": "function",
+            "name": "fleet_patch",
+            "qualifiedName": "fleet_patch",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "language": "python",
+            "startLine": 70,
+            "endLine": 83,
+            "startColumn": 0,
+            "endColumn": 20,
+            "signature": "(part: dict, context: str, station: str | None, wid: str) -> str",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624239
+          },
+          "score": 49.975241338201755
+        },
+        {
+          "node": {
+            "id": "file:cockpit/fleet-direct.cjs",
+            "kind": "file",
+            "name": "fleet-direct.cjs",
+            "qualifiedName": "cockpit/fleet-direct.cjs",
+            "filePath": "cockpit/fleet-direct.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 190,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601573
+          },
+          "score": 48.16040178683984
+        }
+      ]
+    },
+    {
+      "id": "cowork-11",
+      "type": "entrypoint",
+      "question": "Where is the HTTP server listening loop for Cockpit?",
+      "query_param": "server.cjs",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "server.cjs",
+        "kind": "entrypoint",
+        "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 395.2,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "file:cockpit/server.cjs",
+            "kind": "file",
+            "name": "server.cjs",
+            "qualifiedName": "cockpit/server.cjs",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 674,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601632
+          },
+          "score": 124.49585095756873
+        },
+        {
+          "node": {
+            "id": "file:station/server.cjs",
+            "kind": "file",
+            "name": "server.cjs",
+            "qualifiedName": "station/server.cjs",
+            "filePath": "station/server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 192,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624660
+          },
+          "score": 124.49585095756873
+        },
+        {
+          "node": {
+            "id": "file:ECOSPACE/cockpit/server.cjs",
+            "kind": "file",
+            "name": "server.cjs",
+            "qualifiedName": "ECOSPACE/cockpit/server.cjs",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 674,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601454
+          },
+          "score": 124.38835172511307
+        },
+        {
+          "node": {
+            "id": "file:ruflo-workers/swarmgrid/server.cjs",
+            "kind": "file",
+            "name": "server.cjs",
+            "qualifiedName": "ruflo-workers/swarmgrid/server.cjs",
+            "filePath": "ruflo-workers/swarmgrid/server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 140,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383623934
+          },
+          "score": 124.28209485866789
+        },
+        {
+          "node": {
+            "id": "file:ECOSPACE/_RELEASE/plugos-command-center/app/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "ECOSPACE/_RELEASE/plugos-command-center/app/src/control-server.cjs",
+            "filePath": "ECOSPACE/_RELEASE/plugos-command-center/app/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 80,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601242
+          },
+          "score": 58.71895659698431
+        },
+        {
+          "node": {
+            "id": "file:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/control-server.cjs",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 113,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383585130
+          },
+          "score": 58.62027434439685
+        },
+        {
+          "node": {
+            "id": "file:04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/app/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/app/src/control-server.cjs",
+            "filePath": "04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/app/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 80,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383559180
+          },
+          "score": 58.330714304477766
+        },
+        {
+          "node": {
+            "id": "file:04_WORKSPACE_SANDBOX/release_verify_new_zip_20260613_04/app/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "04_WORKSPACE_SANDBOX/release_verify_new_zip_20260613_04/app/src/control-server.cjs",
+            "filePath": "04_WORKSPACE_SANDBOX/release_verify_new_zip_20260613_04/app/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 80,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383559374
+          },
+          "score": 58.330714304477766
+        },
+        {
+          "node": {
+            "id": "file:04_WORKSPACE_SANDBOX/plugos_command_center_release_stage_20260613_04/app/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "04_WORKSPACE_SANDBOX/plugos_command_center_release_stage_20260613_04/app/src/control-server.cjs",
+            "filePath": "04_WORKSPACE_SANDBOX/plugos_command_center_release_stage_20260613_04/app/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 80,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383557950
+          },
+          "score": 58.236297631714976
+        },
+        {
+          "node": {
+            "id": "file:04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/control-server.cjs",
+            "kind": "file",
+            "name": "control-server.cjs",
+            "qualifiedName": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/control-server.cjs",
+            "filePath": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/control-server.cjs",
+            "language": "javascript",
+            "startLine": 1,
+            "endLine": 80,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383558450
+          },
+          "score": 58.236297631714976
+        }
+      ]
+    },
+    {
+      "id": "cowork-12",
+      "type": "entrypoint",
+      "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 369.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:5f23111b483f266d492955ac74161033",
+            "kind": "function",
+            "name": "produce_one",
+            "qualifiedName": "produce_one",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "language": "python",
+            "startLine": 13,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(row, workdir)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383591977
+          },
+          "score": 112.55647665250996
+        },
+        {
+          "node": {
+            "id": "function:6c236fd22a16f2c0cf7be5961cc1f30b",
+            "kind": "function",
+            "name": "produce_one",
+            "qualifiedName": "produce_one",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "language": "python",
+            "startLine": 13,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(row, workdir)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624602
+          },
+          "score": 112.55647665250996
+        }
+      ]
+    },
+    {
+      "id": "cowork-13",
+      "type": "docs_notes",
+      "question": "Which document outlines the core CANON principles of the workspace?",
+      "query_param": "CANON.md",
+      "expected": {
+        "path": "CANON.md",
+        "symbol": "CANON.md",
+        "kind": "docs_notes",
+        "details": "CANON.md defines foundational operating rules and non-negotiables."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 379.8,
+      "rawOutput": []
+    },
+    {
+      "id": "cowork-14",
+      "type": "docs_notes",
+      "question": "Which document specifies guidelines for social and video content style?",
+      "query_param": "CONTENT_STYLE_GUIDE.md",
+      "expected": {
+        "path": "CONTENT_STYLE_GUIDE.md",
+        "symbol": "CONTENT_STYLE_GUIDE.md",
+        "kind": "docs_notes",
+        "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 388.4,
+      "rawOutput": []
+    },
+    {
+      "id": "cowork-15",
+      "type": "rename_impact",
+      "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "produce_one is called in main loop of run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 355.3,
+      "rawOutput": {
+        "symbol": "produce_one",
+        "depth": 2,
+        "nodeCount": 6,
+        "edgeCount": 4,
+        "affected": [
+          {
+            "name": "produce_one",
+            "kind": "function",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "startLine": 13
+          },
+          {
+            "name": "main",
+            "kind": "function",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "startLine": 52
+          },
+          {
+            "name": "run.py",
+            "kind": "file",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "startLine": 1
+          },
+          {
+            "name": "produce_one",
+            "kind": "function",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "startLine": 13
+          },
+          {
+            "name": "main",
+            "kind": "function",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "startLine": 52
+          },
+          {
+            "name": "run.py",
+            "kind": "file",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-16",
+      "type": "rename_impact",
+      "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "details": "writeConfig is called by lane and runner mutation handlers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 343.7,
+      "rawOutput": {
+        "symbol": "writeConfig",
+        "depth": 2,
+        "nodeCount": 22,
+        "edgeCount": 17,
+        "affected": [
+          {
+            "name": "writeConfig",
+            "kind": "function",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 44
+          },
+          {
+            "name": "upsertLane",
+            "kind": "function",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 131
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "setRunner",
+            "kind": "function",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 153
+          },
+          {
+            "name": "applyChain",
+            "kind": "function",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 545
+          },
+          {
+            "name": "writeConfig",
+            "kind": "function",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 44
+          },
+          {
+            "name": "upsertLane",
+            "kind": "function",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 131
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "setRunner",
+            "kind": "function",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 153
+          },
+          {
+            "name": "applyChain",
+            "kind": "function",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 545
+          },
+          {
+            "name": "writeConfig",
+            "kind": "function",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 39
+          },
+          {
+            "name": "PlugCodeProxyPage",
+            "kind": "function",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 6
+          },
+          {
+            "name": "App",
+            "kind": "function",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/App.tsx",
+            "startLine": 132
+          },
+          {
+            "name": "App",
+            "kind": "function",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/App.tsx",
+            "startLine": 132
+          },
+          {
+            "name": "App",
+            "kind": "function",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/App.tsx",
+            "startLine": 132
+          },
+          {
+            "name": "PlugCodeProxyPage.tsx",
+            "kind": "file",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 1
+          },
+          {
+            "name": "writeConfig",
+            "kind": "function",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 39
+          },
+          {
+            "name": "PlugCodeProxyPage",
+            "kind": "function",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 6
+          },
+          {
+            "name": "PlugCodeProxyPage.tsx",
+            "kind": "file",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 1
+          },
+          {
+            "name": "writeConfig",
+            "kind": "function",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 39
+          },
+          {
+            "name": "PlugCodeProxyPage",
+            "kind": "function",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 6
+          },
+          {
+            "name": "PlugCodeProxyPage.tsx",
+            "kind": "file",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-17",
+      "type": "definition",
+      "question": "Where is the produce_one pipeline function implemented?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "symbol",
+        "details": "produces voiceover, captions, video composition, and social uploads."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 332.6,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:5f23111b483f266d492955ac74161033",
+            "kind": "function",
+            "name": "produce_one",
+            "qualifiedName": "produce_one",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "language": "python",
+            "startLine": 13,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(row, workdir)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383591977
+          },
+          "score": 112.55647665250996
+        },
+        {
+          "node": {
+            "id": "function:6c236fd22a16f2c0cf7be5961cc1f30b",
+            "kind": "function",
+            "name": "produce_one",
+            "qualifiedName": "produce_one",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "language": "python",
+            "startLine": 13,
+            "endLine": 49,
+            "startColumn": 0,
+            "endColumn": 15,
+            "signature": "(row, workdir)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624602
+          },
+          "score": 112.55647665250996
+        }
+      ]
+    },
+    {
+      "id": "cowork-18",
+      "type": "callers",
+      "question": "Where is synth_voiceover called in the shorts pipeline?",
+      "query_param": "synth_voiceover",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "synth_voiceover",
+        "kind": "callers",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "tts.synth_voiceover is called inside produce_one in run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 330.8,
+      "rawOutput": {
+        "symbol": "synth_voiceover",
+        "callers": []
+      }
+    },
+    {
+      "id": "cowork-19",
+      "type": "definition",
+      "question": "Where is the ROLES array defined for valid fleet lane roles?",
+      "query_param": "ROLES",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "ROLES",
+        "kind": "symbol",
+        "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 332.8,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:a82a9863f01fd5e55fa0c646205188b6",
+            "kind": "constant",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 38,
+            "endLine": 38,
+            "startColumn": 6,
+            "endColumn": 53,
+            "signature": "= [\"cheap\", \"reviewer\", \"auditor\", \"off\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601454
+          },
+          "score": 97.17382655076983
+        },
+        {
+          "node": {
+            "id": "constant:37474a4ac3f4321d4211ab821fd2484b",
+            "kind": "constant",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "cockpit/server.cjs",
+            "language": "javascript",
+            "startLine": 38,
+            "endLine": 38,
+            "startColumn": 6,
+            "endColumn": 53,
+            "signature": "= [\"cheap\", \"reviewer\", \"auditor\", \"off\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383601632
+          },
+          "score": 97.17382655076983
+        },
+        {
+          "node": {
+            "id": "variable:e234ea0dc4fc75f03a2b08b5b1bfaaf0",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/local/sprites.py",
+            "language": "python",
+            "startLine": 31,
+            "endLine": 31,
+            "startColumn": 0,
+            "endColumn": 29,
+            "signature": "= (\"plugbot\", \"watson\")",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383591906
+          },
+          "score": 96.25742049795372
+        },
+        {
+          "node": {
+            "id": "variable:6eb86976ebbf6dbc9adc507fe46462da",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "shortsfactory/local/sprites.py",
+            "language": "python",
+            "startLine": 31,
+            "endLine": 31,
+            "startColumn": 0,
+            "endColumn": 29,
+            "signature": "= (\"plugbot\", \"watson\")",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383624526
+          },
+          "score": 96.25742049795372
+        },
+        {
+          "node": {
+            "id": "variable:c8dd81b29e2d65bc270753bc8624636d",
+            "kind": "variable",
+            "name": "roles",
+            "qualifiedName": "roles",
+            "filePath": ".agents/skills/performing-aws-privilege-escalation-assessment/scripts/agent.py",
+            "language": "python",
+            "startLine": 191,
+            "endLine": 191,
+            "startColumn": 4,
+            "endColumn": 33,
+            "signature": "= enumerate_iam_roles()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383508050
+          },
+          "score": 96.24948317481301
+        },
+        {
+          "node": {
+            "id": "variable:53065b556dfa94032fcd631f083113b2",
+            "kind": "variable",
+            "name": "roles",
+            "qualifiedName": "roles",
+            "filePath": ".claude/skills/performing-aws-privilege-escalation-assessment/scripts/agent.py",
+            "language": "python",
+            "startLine": 191,
+            "endLine": 191,
+            "startColumn": 4,
+            "endColumn": 33,
+            "signature": "= enumerate_iam_roles()",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383531422
+          },
+          "score": 96.24948317481301
+        },
+        {
+          "node": {
+            "id": "variable:b9478db17c479b63e29dacbed1c3d3b6",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v12/llm_nvidia.py",
+            "language": "python",
+            "startLine": 33,
+            "endLine": 33,
+            "startColumn": 0,
+            "endColumn": 34,
+            "signature": "= [\"hermes\", \"pi\", \"gemini\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383547682
+          },
+          "score": 96.2155006323199
+        },
+        {
+          "node": {
+            "id": "variable:47072eb18a88bb8053b335369eb66322",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v12/llm_nvidia.py",
+            "language": "python",
+            "startLine": 33,
+            "endLine": 33,
+            "startColumn": 0,
+            "endColumn": 34,
+            "signature": "= [\"hermes\", \"pi\", \"gemini\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383589573
+          },
+          "score": 96.2155006323199
+        },
+        {
+          "node": {
+            "id": "variable:715f14212895072522023551a5eee6c1",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v12/llm_nvidia.py",
+            "language": "python",
+            "startLine": 33,
+            "endLine": 33,
+            "startColumn": 0,
+            "endColumn": 34,
+            "signature": "= [\"hermes\", \"pi\", \"gemini\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383595250
+          },
+          "score": 96.2155006323199
+        },
+        {
+          "node": {
+            "id": "variable:ee4ace7496cc7dc655ead927513440ef",
+            "kind": "variable",
+            "name": "ROLES",
+            "qualifiedName": "ROLES",
+            "filePath": "plugos-ecospace/apps/shorts-factory/backend/v12/llm_nvidia.py",
+            "language": "python",
+            "startLine": 33,
+            "endLine": 33,
+            "startColumn": 0,
+            "endColumn": 34,
+            "signature": "= [\"hermes\", \"pi\", \"gemini\"]",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383615457
+          },
+          "score": 96.2155006323199
+        }
+      ]
+    },
+    {
+      "id": "cowork-20",
+      "type": "impact",
+      "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+      "query_param": "KEY_ALIAS",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "KEY_ALIAS",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 321.8,
+      "rawOutput": {
+        "symbol": "KEY_ALIAS",
+        "depth": 2,
+        "nodeCount": 8,
+        "edgeCount": 4,
+        "affected": [
+          {
+            "name": "KEY_ALIAS",
+            "kind": "constant",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 58
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "KEY_ALIAS",
+            "kind": "constant",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 58
+          },
+          {
+            "name": "server.cjs",
+            "kind": "file",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "KEY_ALIAS",
+            "kind": "constant",
+            "filePath": "ECOSPACE/cockpit/fleet-direct.cjs",
+            "startLine": 25
+          },
+          {
+            "name": "fleet-direct.cjs",
+            "kind": "file",
+            "filePath": "ECOSPACE/cockpit/fleet-direct.cjs",
+            "startLine": 1
+          },
+          {
+            "name": "KEY_ALIAS",
+            "kind": "constant",
+            "filePath": "cockpit/fleet-direct.cjs",
+            "startLine": 25
+          },
+          {
+            "name": "fleet-direct.cjs",
+            "kind": "file",
+            "filePath": "cockpit/fleet-direct.cjs",
+            "startLine": 1
+          }
+        ]
+      }
+    }
+  ]
+}

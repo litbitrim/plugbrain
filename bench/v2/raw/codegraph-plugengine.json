@@ -1,0 +1,2501 @@
+{
+  "tool": "codegraph",
+  "repo": "plugengine",
+  "commit": "c6c5d98b57cbe2b2560ebc0acfbc3a9f7c80253f",
+  "indexTimeMs": 5212,
+  "indexSizeBytes": 32379053,
+  "questionCount": 20,
+  "hitCount": 7,
+  "accuracy": 35,
+  "latencyP50Ms": 286.7,
+  "latencyP95Ms": 292.4,
+  "questions": [
+    {
+      "id": "plugengine-01",
+      "type": "definition",
+      "question": "Where is the CommandBus class implemented for undo/redo state management?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBus",
+        "kind": "symbol",
+        "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 281.4,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "class:efdf648ddedc36b73dbe88105e8a834b",
+            "kind": "class",
+            "name": "CommandBus",
+            "qualifiedName": "CommandBus",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 40,
+            "endLine": 122,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 118.50053610454941
+        },
+        {
+          "node": {
+            "id": "interface:6d3ff82f7ad87056a981a57381bfbb6c",
+            "kind": "interface",
+            "name": "CommandBusOptions",
+            "qualifiedName": "CommandBusOptions",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 3,
+            "endLine": 6,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 67.50053610454941
+        },
+        {
+          "node": {
+            "id": "type_alias:2282446da2d2b706bb8abfdfc8a8736b",
+            "kind": "type_alias",
+            "name": "CommandBusListener",
+            "qualifiedName": "CommandBusListener",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 8,
+            "endLine": 8,
+            "startColumn": 7,
+            "endColumn": 44,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 63.46605463403712
+        },
+        {
+          "node": {
+            "id": "method:83eae5417193dd513e0b5b701aed9f3f",
+            "kind": "method",
+            "name": "constructor",
+            "qualifiedName": "CommandBus::constructor",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 48,
+            "endLine": 50,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(options?: CommandBusOptions)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.4869241581427
+        },
+        {
+          "node": {
+            "id": "method:1dfe1d60e254273d498f125e93c01eff",
+            "kind": "method",
+            "name": "subscribe",
+            "qualifiedName": "CommandBus::subscribe",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 105,
+            "endLine": 110,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(listener: CommandBusListener): () => void",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.38358783629147
+        },
+        {
+          "node": {
+            "id": "method:95f0692685dec32273d0b51ec6530a89",
+            "kind": "method",
+            "name": "undoStack",
+            "qualifiedName": "CommandBus::undoStack",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 41,
+            "endLine": 41,
+            "startColumn": 2,
+            "endColumn": 44,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:b35c3648fe32b1ec8b20229128f3789f",
+            "kind": "method",
+            "name": "redoStack",
+            "qualifiedName": "CommandBus::redoStack",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 42,
+            "endLine": 42,
+            "startColumn": 2,
+            "endColumn": 44,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:c77020245937c205b3664b76073a1b62",
+            "kind": "method",
+            "name": "listeners",
+            "qualifiedName": "CommandBus::listeners",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 43,
+            "endLine": 43,
+            "startColumn": 2,
+            "endColumn": 60,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:53f60cf74bbe614eee8c77b39bb6f539",
+            "kind": "method",
+            "name": "limit",
+            "qualifiedName": "CommandBus::limit",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 44,
+            "endLine": 44,
+            "startColumn": 2,
+            "endColumn": 32,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:e602007b5ef7ff27fca57ae4e908fd89",
+            "kind": "method",
+            "name": "canUndo",
+            "qualifiedName": "CommandBus::canUndo",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 52,
+            "endLine": 54,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(): boolean",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.17293642768676
+        }
+      ]
+    },
+    {
+      "id": "plugengine-02",
+      "type": "definition",
+      "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "symbol",
+        "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+      },
+      "hit": true,
+      "rank": 2,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 289.6,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:af39b6158cc480d27be5ec2a42bfa454",
+            "kind": "constant",
+            "name": "DEFAULT_LIMIT",
+            "qualifiedName": "DEFAULT_LIMIT",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "language": "typescript",
+            "startLine": 50,
+            "endLine": 50,
+            "startColumn": 6,
+            "endColumn": 26,
+            "signature": "= 2000",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383457454
+          },
+          "score": 101.63634125976688
+        },
+        {
+          "node": {
+            "id": "constant:1d613a3b9c081e27566a891b98e80f3a",
+            "kind": "constant",
+            "name": "DEFAULT_LIMIT",
+            "qualifiedName": "DEFAULT_LIMIT",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 10,
+            "endLine": 10,
+            "startColumn": 6,
+            "endColumn": 25,
+            "signature": "= 200",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 101.63634125976688
+        }
+      ]
+    },
+    {
+      "id": "plugengine-03",
+      "type": "callers",
+      "question": "Where is CommandBus.dispatch called in tests or consumers?",
+      "query_param": "dispatch",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "bus.test.ts executes dispatches against CommandBus instances."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 292.4,
+      "rawOutput": {
+        "symbol": "dispatch",
+        "callers": [
+          {
+            "name": "startComposer",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 83
+          },
+          {
+            "name": "placeEntry",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 278
+          },
+          {
+            "name": "commitMove",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 426
+          },
+          {
+            "name": "loadFromText",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 460
+          },
+          {
+            "name": "createPixelEditor",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/pixelEditor.ts",
+            "startLine": 40
+          },
+          {
+            "name": "startSandbox",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/sandbox.ts",
+            "startLine": 62
+          },
+          {
+            "name": "startSkinCreator",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/skinCreator.ts",
+            "startLine": 46
+          },
+          {
+            "name": "merge",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+            "startLine": 258
+          },
+          {
+            "name": "storeHost",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 12
+          },
+          {
+            "name": "writeBinding",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/logicBlocks/logicBlocksPanel.ts",
+            "startLine": 77
+          },
+          {
+            "name": "gizmoHost",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 54
+          },
+          {
+            "name": "startStudio",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 193
+          },
+          {
+            "name": "addObject",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 540
+          },
+          {
+            "name": "addTemplate",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 560
+          },
+          {
+            "name": "addStudioAsset",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 591
+          },
+          {
+            "name": "deleteSelected",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 910
+          },
+          {
+            "name": "setSceneData",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 1791
+          },
+          {
+            "name": "renderInspector",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2005
+          },
+          {
+            "name": "renderLaneRunnerInspector",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2257
+          },
+          {
+            "name": "setTransform",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2310
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-04",
+      "type": "definition",
+      "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "symbol",
+        "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 291.4,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:7cb6f2a02e504cb175edc808134e776e",
+            "kind": "constant",
+            "name": "PLUG_PACKAGE_KINDS",
+            "qualifiedName": "PLUG_PACKAGE_KINDS",
+            "filePath": "packages/contracts/src/addon.ts",
+            "language": "typescript",
+            "startLine": 37,
+            "endLine": 43,
+            "startColumn": 13,
+            "endColumn": 1,
+            "signature": "= [\r\n  'plugproject',\r\n  'plugaddon',\r\n  'plugbuild',\r\n  'plugtemplate',\r\n  'plugproof',\r\n]",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462075
+          },
+          "score": 106.33456185628653
+        },
+        {
+          "node": {
+            "id": "import:1bc93007f63804a303e60b39bc8b3409",
+            "kind": "import",
+            "name": "./index",
+            "qualifiedName": "./index",
+            "filePath": "packages/contracts/src/addon.test.ts",
+            "language": "typescript",
+            "startLine": 11,
+            "endLine": 30,
+            "startColumn": 0,
+            "endColumn": 17,
+            "signature": "import {\r\n  ADDON_ENTRYPOINT_SURFACES,\r\n  ADDON_LOCK_SCHEMA_VERSION,\r\n  ADDON_MANIFEST_SCHEMA_VERSION,\r\n  ADDON_PERMISSIONS,\r\n  addonSupportsEngine,\r\n  compareVersions,\r\n  isAddonLockFile,\r\n  isAddonPermission,\r\n  isPlugAddonManifest,\r\n  isPlugPackageKind,\r\n  parseVersion,\r\n  PLUG_PACKAGE_KINDS,\r\n  satisfiesRange,\r\n  validateAddonLock,\r\n  validateAddonManifest,\r\n  type AddonLockFile,\r\n  type PlugAddonManifest,\r\n  type SemverParts as ContractSemverParts,\r\n} from './index';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462066
+          },
+          "score": -1.605992825652299
+        }
+      ]
+    },
+    {
+      "id": "plugengine-05",
+      "type": "definition",
+      "question": "Where is the isPlugPackageKind type guard defined?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "symbol",
+        "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 282.9,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "function:2d4f9fabb1e31bd5755fabbe0b0d8a40",
+            "kind": "function",
+            "name": "isPlugPackageKind",
+            "qualifiedName": "isPlugPackageKind",
+            "filePath": "packages/contracts/src/addon.ts",
+            "language": "typescript",
+            "startLine": 45,
+            "endLine": 47,
+            "startColumn": 7,
+            "endColumn": 1,
+            "signature": "(value: unknown): value is PlugPackageKind",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462075
+          },
+          "score": 113.53465033372112
+        },
+        {
+          "node": {
+            "id": "import:1bc93007f63804a303e60b39bc8b3409",
+            "kind": "import",
+            "name": "./index",
+            "qualifiedName": "./index",
+            "filePath": "packages/contracts/src/addon.test.ts",
+            "language": "typescript",
+            "startLine": 11,
+            "endLine": 30,
+            "startColumn": 0,
+            "endColumn": 17,
+            "signature": "import {\r\n  ADDON_ENTRYPOINT_SURFACES,\r\n  ADDON_LOCK_SCHEMA_VERSION,\r\n  ADDON_MANIFEST_SCHEMA_VERSION,\r\n  ADDON_PERMISSIONS,\r\n  addonSupportsEngine,\r\n  compareVersions,\r\n  isAddonLockFile,\r\n  isAddonPermission,\r\n  isPlugAddonManifest,\r\n  isPlugPackageKind,\r\n  parseVersion,\r\n  PLUG_PACKAGE_KINDS,\r\n  satisfiesRange,\r\n  validateAddonLock,\r\n  validateAddonManifest,\r\n  type AddonLockFile,\r\n  type PlugAddonManifest,\r\n  type SemverParts as ContractSemverParts,\r\n} from './index';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462066
+          },
+          "score": -1.605992825652299
+        }
+      ]
+    },
+    {
+      "id": "plugengine-06",
+      "type": "callers",
+      "question": "Where is isPlugPackageKind tested or called?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 296,
+      "rawOutput": {
+        "symbol": "isPlugPackageKind",
+        "callers": []
+      }
+    },
+    {
+      "id": "plugengine-07",
+      "type": "impact",
+      "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts",
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "Limits default undo history buffer size in CommandBus constructor."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 278.9,
+      "rawOutput": {
+        "symbol": "DEFAULT_LIMIT",
+        "depth": 2,
+        "nodeCount": 4,
+        "edgeCount": 2,
+        "affected": [
+          {
+            "name": "DEFAULT_LIMIT",
+            "kind": "constant",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "startLine": 50
+          },
+          {
+            "name": "agentTrace.ts",
+            "kind": "file",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "startLine": 1
+          },
+          {
+            "name": "DEFAULT_LIMIT",
+            "kind": "constant",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 10
+          },
+          {
+            "name": "bus.ts",
+            "kind": "file",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-08",
+      "type": "impact",
+      "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/contracts/src/addon.ts",
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "PlugPackageKind union and package kind validation in addon contracts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 288.2,
+      "rawOutput": {
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "depth": 2,
+        "nodeCount": 2,
+        "edgeCount": 1,
+        "affected": [
+          {
+            "name": "PLUG_PACKAGE_KINDS",
+            "kind": "constant",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 37
+          },
+          {
+            "name": "addon.ts",
+            "kind": "file",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-09",
+      "type": "dataflow",
+      "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "dataflow",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts"
+        ],
+        "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 278.6,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "class:efdf648ddedc36b73dbe88105e8a834b",
+            "kind": "class",
+            "name": "CommandBus",
+            "qualifiedName": "CommandBus",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 40,
+            "endLine": 122,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 118.50053610454941
+        },
+        {
+          "node": {
+            "id": "interface:6d3ff82f7ad87056a981a57381bfbb6c",
+            "kind": "interface",
+            "name": "CommandBusOptions",
+            "qualifiedName": "CommandBusOptions",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 3,
+            "endLine": 6,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 67.50053610454941
+        },
+        {
+          "node": {
+            "id": "type_alias:2282446da2d2b706bb8abfdfc8a8736b",
+            "kind": "type_alias",
+            "name": "CommandBusListener",
+            "qualifiedName": "CommandBusListener",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 8,
+            "endLine": 8,
+            "startColumn": 7,
+            "endColumn": 44,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 63.46605463403712
+        },
+        {
+          "node": {
+            "id": "method:83eae5417193dd513e0b5b701aed9f3f",
+            "kind": "method",
+            "name": "constructor",
+            "qualifiedName": "CommandBus::constructor",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 48,
+            "endLine": 50,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(options?: CommandBusOptions)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.4869241581427
+        },
+        {
+          "node": {
+            "id": "method:1dfe1d60e254273d498f125e93c01eff",
+            "kind": "method",
+            "name": "subscribe",
+            "qualifiedName": "CommandBus::subscribe",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 105,
+            "endLine": 110,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(listener: CommandBusListener): () => void",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.38358783629147
+        },
+        {
+          "node": {
+            "id": "method:95f0692685dec32273d0b51ec6530a89",
+            "kind": "method",
+            "name": "undoStack",
+            "qualifiedName": "CommandBus::undoStack",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 41,
+            "endLine": 41,
+            "startColumn": 2,
+            "endColumn": 44,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:b35c3648fe32b1ec8b20229128f3789f",
+            "kind": "method",
+            "name": "redoStack",
+            "qualifiedName": "CommandBus::redoStack",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 42,
+            "endLine": 42,
+            "startColumn": 2,
+            "endColumn": 44,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:c77020245937c205b3664b76073a1b62",
+            "kind": "method",
+            "name": "listeners",
+            "qualifiedName": "CommandBus::listeners",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 43,
+            "endLine": 43,
+            "startColumn": 2,
+            "endColumn": 60,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:53f60cf74bbe614eee8c77b39bb6f539",
+            "kind": "method",
+            "name": "limit",
+            "qualifiedName": "CommandBus::limit",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 44,
+            "endLine": 44,
+            "startColumn": 2,
+            "endColumn": 32,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 39.312777482391496
+        },
+        {
+          "node": {
+            "id": "method:e602007b5ef7ff27fca57ae4e908fd89",
+            "kind": "method",
+            "name": "canUndo",
+            "qualifiedName": "CommandBus::canUndo",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 52,
+            "endLine": 54,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(): boolean",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 39.17293642768676
+        }
+      ]
+    },
+    {
+      "id": "plugengine-10",
+      "type": "config",
+      "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+      "query_param": "CommandBusOptions",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBusOptions",
+        "kind": "config",
+        "details": "export interface CommandBusOptions { limit?: number; }."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 275.9,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "interface:6d3ff82f7ad87056a981a57381bfbb6c",
+            "kind": "interface",
+            "name": "CommandBusOptions",
+            "qualifiedName": "CommandBusOptions",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 3,
+            "endLine": 6,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463051
+          },
+          "score": 125.79098724932909
+        },
+        {
+          "node": {
+            "id": "method:83eae5417193dd513e0b5b701aed9f3f",
+            "kind": "method",
+            "name": "constructor",
+            "qualifiedName": "CommandBus::constructor",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "language": "typescript",
+            "startLine": 48,
+            "endLine": 50,
+            "startColumn": 2,
+            "endColumn": 3,
+            "signature": "(options?: CommandBusOptions)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463052
+          },
+          "score": 41.75804297984761
+        }
+      ]
+    },
+    {
+      "id": "plugengine-11",
+      "type": "config",
+      "question": "Where are npm workspaces declared for the engine monorepo?",
+      "query_param": "workspaces",
+      "expected": {
+        "path": "package.json",
+        "symbol": "workspaces",
+        "kind": "config",
+        "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 291.3,
+      "rawOutput": []
+    },
+    {
+      "id": "plugengine-12",
+      "type": "entrypoint",
+      "question": "Where is the entrypoint barrel for plugengine-core?",
+      "query_param": "plugengine-core",
+      "expected": {
+        "path": "packages/plugengine-core/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 280,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "import:a56654b0f33331fa2071ac95eb543bd2",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "apps/engine-lab/src/agent/coreEditorAddon.ts",
+            "language": "typescript",
+            "startLine": 14,
+            "endLine": 14,
+            "startColumn": 0,
+            "endColumn": 57,
+            "signature": "import { command, type Command } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383457462
+          },
+          "score": 39.08840251939654
+        },
+        {
+          "node": {
+            "id": "import:2fcb338f9ca22645e6a44ea9c532e312",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-assets/src/creature/creature.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462437
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:c70bafa08d79b2e7dce0158f38d10860",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-cinematic/src/timeline.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462832
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:417d6e933b9693383036a532a6afa763",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/buildAsset.ts",
+            "language": "typescript",
+            "startLine": 2,
+            "endLine": 2,
+            "startColumn": 0,
+            "endColumn": 60,
+            "signature": "import type { MarketplaceAssetRef } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463445
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:e39af59162654c31580f16d6c6079f31",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/cameraRig.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463461
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:8c3e8e2ecb0ce282959b3b258f23de8e",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/gizmo.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463523
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:050b17f8ec2c708c6d76f3597804f5e3",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/physicsConfig.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463727
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:ef268337fc2396b32821d033fafa7838",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/placement.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463736
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:47dfcfd347937d2c23ab5cdeb3afefc0",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-editor/src/transform.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 45,
+            "signature": "import type { Vec3 } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463863
+          },
+          "score": 31.113763501930528
+        },
+        {
+          "node": {
+            "id": "import:2505fb1c9c8e9565bf424243e20264ad",
+            "kind": "import",
+            "name": "@plugengine/core",
+            "qualifiedName": "@plugengine/core",
+            "filePath": "packages/plugengine-export/src/package.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 1,
+            "startColumn": 0,
+            "endColumn": 56,
+            "signature": "import type { ProjectManifest } from '@plugengine/core';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383463959
+          },
+          "score": 31.113763501930528
+        }
+      ]
+    },
+    {
+      "id": "plugengine-13",
+      "type": "entrypoint",
+      "question": "Where is the root contracts entrypoint barrel for plugengine?",
+      "query_param": "contracts",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 284.3,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:297ebfcb40073e75ea9c3afdae2ed11a",
+            "kind": "constant",
+            "name": "contracts",
+            "qualifiedName": "contracts",
+            "filePath": "scripts/ai-builder-mock-proof.mjs",
+            "language": "javascript",
+            "startLine": 94,
+            "endLine": 94,
+            "startColumn": 8,
+            "endColumn": 78,
+            "signature": "= await runner.executeId('/packages/contracts/src/index.ts')",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383469405
+          },
+          "score": 93.5532918001901
+        },
+        {
+          "node": {
+            "id": "constant:034c163462d3d38a565a82b5c7013392",
+            "kind": "constant",
+            "name": "CONTRACTS_FS_URL",
+            "qualifiedName": "CONTRACTS_FS_URL",
+            "filePath": "scripts/asset-source-spine-proof.mjs",
+            "language": "javascript",
+            "startLine": 29,
+            "endLine": 29,
+            "startColumn": 6,
+            "endColumn": 98,
+            "signature": "= `${BASE}/@fs/${ROOT.replace(/\\\\/g, '/')}/packages/contracts/src/index.ts`",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383469530
+          },
+          "score": 40.39647910883261
+        },
+        {
+          "node": {
+            "id": "file:packages/contracts/src/contracts.test.ts",
+            "kind": "file",
+            "name": "contracts.test.ts",
+            "qualifiedName": "packages/contracts/src/contracts.test.ts",
+            "filePath": "packages/contracts/src/contracts.test.ts",
+            "language": "typescript",
+            "startLine": 1,
+            "endLine": 369,
+            "startColumn": 0,
+            "endColumn": 0,
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462140
+          },
+          "score": 36.501126939479406
+        },
+        {
+          "node": {
+            "id": "import:8ee1563649c54f6f1bf138bd2dbef163",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/agent/agentBridge.ts",
+            "language": "typescript",
+            "startLine": 15,
+            "endLine": 15,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "import type { ComponentSchema } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383457437
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:5714fd6a3b47b46361048a1760dee8cf",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "language": "typescript",
+            "startLine": 13,
+            "endLine": 13,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "import type { AddonPermission } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383457454
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:8cf62270ab5dbe59299348d587cdea2f",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/playViewer/viewer.ts",
+            "language": "typescript",
+            "startLine": 17,
+            "endLine": 17,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "import type { PublishManifest } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383457864
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:a03b956e3a51b5e4dcc9335d8f749f69",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/studio/character/npcInspectorModel.ts",
+            "language": "typescript",
+            "startLine": 9,
+            "endLine": 9,
+            "startColumn": 0,
+            "endColumn": 50,
+            "signature": "import type { Vec3 } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383458246
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:0e43d7b24673a7d068babd0199faa5fe",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "language": "typescript",
+            "startLine": 19,
+            "endLine": 19,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "import type { ComponentSchema } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383458278
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:7adce9fd4fa59fd0a5757c16f3e0e6f6",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/studio/inspector/modelSchema.ts",
+            "language": "typescript",
+            "startLine": 14,
+            "endLine": 14,
+            "startColumn": 0,
+            "endColumn": 61,
+            "signature": "import type { ComponentSchema } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383458415
+          },
+          "score": 21.553291800190095
+        },
+        {
+          "node": {
+            "id": "import:9d0579a78acff22b6cac39bb4cce7726",
+            "kind": "import",
+            "name": "@plugengine/contracts",
+            "qualifiedName": "@plugengine/contracts",
+            "filePath": "apps/engine-lab/src/studio/marketplace/listMyAssetPanel.ts",
+            "language": "typescript",
+            "startLine": 15,
+            "endLine": 15,
+            "startColumn": 0,
+            "endColumn": 57,
+            "signature": "import type { StudioAsset } from '@plugengine/contracts';",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383458556
+          },
+          "score": 21.553291800190095
+        }
+      ]
+    },
+    {
+      "id": "plugengine-14",
+      "type": "docs_notes",
+      "question": "Which document maintains the technical debt register for the engine?",
+      "query_param": "TECH_DEBT_REGISTER.md",
+      "expected": {
+        "path": "docs/TECH_DEBT_REGISTER.md",
+        "symbol": "TECH_DEBT_REGISTER.md",
+        "kind": "docs_notes",
+        "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 290,
+      "rawOutput": []
+    },
+    {
+      "id": "plugengine-15",
+      "type": "docs_notes",
+      "question": "Which document contains the specification for the creator editor?",
+      "query_param": "CREATOR_EDITOR_SPEC.md",
+      "expected": {
+        "path": "docs/CREATOR_EDITOR_SPEC.md",
+        "symbol": "CREATOR_EDITOR_SPEC.md",
+        "kind": "docs_notes",
+        "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 286.7,
+      "rawOutput": []
+    },
+    {
+      "id": "plugengine-16",
+      "type": "rename_impact",
+      "question": "What breaks if canUndo getter is renamed on CommandBus?",
+      "query_param": "canUndo",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "canUndo",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 290.8,
+      "rawOutput": {
+        "symbol": "canUndo",
+        "depth": 2,
+        "nodeCount": 97,
+        "edgeCount": 96,
+        "affected": [
+          {
+            "name": "canUndo",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 159
+          },
+          {
+            "name": "CharacterPanelModel",
+            "kind": "class",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 75
+          },
+          {
+            "name": "skin",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 76
+          },
+          {
+            "name": "tool",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 77
+          },
+          {
+            "name": "layer",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 78
+          },
+          {
+            "name": "color",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 79
+          },
+          {
+            "name": "undoStack",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 80
+          },
+          {
+            "name": "palette",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 81
+          },
+          {
+            "name": "constructor",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 83
+          },
+          {
+            "name": "createDefault",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 88
+          },
+          {
+            "name": "character-panel-proof.mjs",
+            "kind": "file",
+            "filePath": "scripts/character-panel-proof.mjs",
+            "startLine": 1
+          },
+          {
+            "name": "getTool",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 92
+          },
+          {
+            "name": "syncTools",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanel.ts",
+            "startLine": 283
+          },
+          {
+            "name": "syncInfo",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanel.ts",
+            "startLine": 295
+          },
+          {
+            "name": "setTool",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 96
+          },
+          {
+            "name": "mountCharacterPanel",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanel.ts",
+            "startLine": 45
+          },
+          {
+            "name": "getLayer",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 100
+          },
+          {
+            "name": "syncLayers",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanel.ts",
+            "startLine": 287
+          },
+          {
+            "name": "setLayer",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 104
+          },
+          {
+            "name": "getColor",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 108
+          },
+          {
+            "name": "selectPaletteColor",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 113
+          },
+          {
+            "name": "setColorRGB",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 119
+          },
+          {
+            "name": "activeBuffer",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 123
+          },
+          {
+            "name": "paintStroke",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 134
+          },
+          {
+            "name": "undoDepth",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 163
+          },
+          {
+            "name": "undo",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 168
+          },
+          {
+            "name": "isCosmeticOn",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 176
+          },
+          {
+            "name": "syncCosmetics",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanel.ts",
+            "startLine": 292
+          },
+          {
+            "name": "toggleCosmetic",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 180
+          },
+          {
+            "name": "cosmeticDefs",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 185
+          },
+          {
+            "name": "getSkin",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 190
+          },
+          {
+            "name": "toPlayerAvatarConfig",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 195
+          },
+          {
+            "name": "snapshot",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 200
+          },
+          {
+            "name": "characterPanelModel.ts",
+            "kind": "file",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "startLine": 1
+          },
+          {
+            "name": "canUndo",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 52
+          },
+          {
+            "name": "CommandBus",
+            "kind": "class",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 40
+          },
+          {
+            "name": "undoStack",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 41
+          },
+          {
+            "name": "redoStack",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 42
+          },
+          {
+            "name": "listeners",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 43
+          },
+          {
+            "name": "limit",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 44
+          },
+          {
+            "name": "collecting",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 46
+          },
+          {
+            "name": "constructor",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 48
+          },
+          {
+            "name": "canRedo",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 56
+          },
+          {
+            "name": "dispatch",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 60
+          },
+          {
+            "name": "startComposer",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 83
+          },
+          {
+            "name": "placeEntry",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 278
+          },
+          {
+            "name": "commitMove",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 426
+          },
+          {
+            "name": "loadFromText",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 460
+          },
+          {
+            "name": "createPixelEditor",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/pixelEditor.ts",
+            "startLine": 40
+          },
+          {
+            "name": "startSandbox",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/sandbox.ts",
+            "startLine": 62
+          },
+          {
+            "name": "startSkinCreator",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/skinCreator.ts",
+            "startLine": 46
+          },
+          {
+            "name": "merge",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+            "startLine": 258
+          },
+          {
+            "name": "storeHost",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 12
+          },
+          {
+            "name": "writeBinding",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/logicBlocks/logicBlocksPanel.ts",
+            "startLine": 77
+          },
+          {
+            "name": "gizmoHost",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 54
+          },
+          {
+            "name": "startStudio",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 193
+          },
+          {
+            "name": "addObject",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 540
+          },
+          {
+            "name": "addTemplate",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 560
+          },
+          {
+            "name": "addStudioAsset",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 591
+          },
+          {
+            "name": "deleteSelected",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 910
+          },
+          {
+            "name": "setSceneData",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 1791
+          },
+          {
+            "name": "renderInspector",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2005
+          },
+          {
+            "name": "renderLaneRunnerInspector",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2257
+          },
+          {
+            "name": "setTransform",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2310
+          },
+          {
+            "name": "executeBatch",
+            "kind": "method",
+            "filePath": "packages/plugengine-ai/src/executor.ts",
+            "startLine": 34
+          },
+          {
+            "name": "execute",
+            "kind": "method",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 72
+          },
+          {
+            "name": "undo",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 70
+          },
+          {
+            "name": "createAgentBridge",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/agent/agentBridge.ts",
+            "startLine": 173
+          },
+          {
+            "name": "redo",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 78
+          },
+          {
+            "name": "transaction",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 86
+          },
+          {
+            "name": "readAll",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/model/modelLibrary.ts",
+            "startLine": 73
+          },
+          {
+            "name": "put",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/model/modelLibrary.ts",
+            "startLine": 96
+          },
+          {
+            "name": "remove",
+            "kind": "method",
+            "filePath": "apps/engine-lab/src/studio/model/modelLibrary.ts",
+            "startLine": 122
+          },
+          {
+            "name": "idbBackend",
+            "kind": "function",
+            "filePath": "reference/build-battle/src/platform/saveStore.ts",
+            "startLine": 230
+          },
+          {
+            "name": "subscribe",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 105
+          },
+          {
+            "name": "record",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 113
+          },
+          {
+            "name": "notify",
+            "kind": "method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 119
+          },
+          {
+            "name": "bus.ts",
+            "kind": "file",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 1
+          },
+          {
+            "name": "makeBridge",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/agent/agentBridge.test.ts",
+            "startLine": 176
+          },
+          {
+            "name": "makeDeps",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.test.ts",
+            "startLine": 10
+          },
+          {
+            "name": "makeStudio",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/inspector/inspectorCommandPath.test.ts",
+            "startLine": 22
+          },
+          {
+            "name": "makeHost",
+            "kind": "function",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 82
+          },
+          {
+            "name": "PixelEditorOptions",
+            "kind": "interface",
+            "filePath": "apps/engine-lab/src/pixelEditor.ts",
+            "startLine": 14
+          },
+          {
+            "name": "AiBuilderDeps",
+            "kind": "interface",
+            "filePath": "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+            "startLine": 71
+          },
+          {
+            "name": "EngineHostOptions",
+            "kind": "interface",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "startLine": 38
+          },
+          {
+            "name": "EngineHost",
+            "kind": "interface",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "startLine": 46
+          },
+          {
+            "name": "LogicBlocksPanelDeps",
+            "kind": "interface",
+            "filePath": "apps/engine-lab/src/studio/logicBlocks/logicBlocksPanel.ts",
+            "startLine": 37
+          },
+          {
+            "name": "SafeExecutorOptions",
+            "kind": "interface",
+            "filePath": "packages/plugengine-ai/src/executor.ts",
+            "startLine": 11
+          },
+          {
+            "name": "bus",
+            "kind": "method",
+            "filePath": "packages/plugengine-ai/src/executor.ts",
+            "startLine": 25
+          },
+          {
+            "name": "CommandGatewayOptions",
+            "kind": "interface",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 24
+          },
+          {
+            "name": "bus",
+            "kind": "method",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 42
+          },
+          {
+            "name": "canUndo",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts",
+            "startLine": 126
+          },
+          {
+            "name": "render",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel.ts",
+            "startLine": 188
+          },
+          {
+            "name": "createVoxelBuilderPanel",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel.ts",
+            "startLine": 53
+          },
+          {
+            "name": "cellClicked",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel.ts",
+            "startLine": 170
+          },
+          {
+            "name": "undo",
+            "kind": "function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts",
+            "startLine": 135
+          },
+          {
+            "name": "voxelBuilderState.ts",
+            "kind": "file",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-17",
+      "type": "rename_impact",
+      "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+      "query_param": "impactToEdit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "impactToEdit",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-combat/src/blockDestruction.ts"
+        ],
+        "details": "impactToEdit converts projectile block hits into voxel edits."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 292.4,
+      "rawOutput": {
+        "symbol": "impactToEdit",
+        "depth": 2,
+        "nodeCount": 5,
+        "edgeCount": 4,
+        "affected": [
+          {
+            "name": "impactToEdit",
+            "kind": "function",
+            "filePath": "packages/plugengine-combat/src/blockDestruction.ts",
+            "startLine": 46
+          },
+          {
+            "name": "advance",
+            "kind": "method",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 190
+          },
+          {
+            "name": "step",
+            "kind": "method",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 163
+          },
+          {
+            "name": "ProjectilePool",
+            "kind": "class",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 120
+          },
+          {
+            "name": "blockDestruction.ts",
+            "kind": "file",
+            "filePath": "packages/plugengine-combat/src/blockDestruction.ts",
+            "startLine": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-18",
+      "type": "definition",
+      "question": "Where is COMBAT_PACKAGE package name constant defined?",
+      "query_param": "COMBAT_PACKAGE",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "COMBAT_PACKAGE",
+        "kind": "symbol",
+        "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 284.7,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "constant:19ff2342023d32e266b78fdb2e1622c1",
+            "kind": "constant",
+            "name": "COMBAT_PACKAGE",
+            "qualifiedName": "COMBAT_PACKAGE",
+            "filePath": "packages/plugengine-combat/src/index.ts",
+            "language": "typescript",
+            "startLine": 11,
+            "endLine": 11,
+            "startColumn": 13,
+            "endColumn": 50,
+            "signature": "= '@plugengine/combat'",
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462914
+          },
+          "score": 112.67167894578253
+        }
+      ]
+    },
+    {
+      "id": "plugengine-19",
+      "type": "callers",
+      "question": "Where is canHit defined and exported for faction combat checks?",
+      "query_param": "canHit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/teams.ts",
+        "symbol": "canHit",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 276.4,
+      "rawOutput": {
+        "symbol": "canHit",
+        "callers": [
+          {
+            "name": "resolveEnemyHit",
+            "kind": "method",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 219
+          },
+          {
+            "name": "retarget",
+            "kind": "method",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 247
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-20",
+      "type": "definition",
+      "question": "Where is ProjectilePool implemented for ballistics physics?",
+      "query_param": "ProjectilePool",
+      "expected": {
+        "path": "packages/plugengine-combat/src/projectiles.ts",
+        "symbol": "ProjectilePool",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 288.8,
+      "rawOutput": [
+        {
+          "node": {
+            "id": "class:3a39f3ba74516d77f9ff891da3584cd8",
+            "kind": "class",
+            "name": "ProjectilePool",
+            "qualifiedName": "ProjectilePool",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "language": "typescript",
+            "startLine": 120,
+            "endLine": 301,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462922
+          },
+          "score": 114.14390917153757
+        },
+        {
+          "node": {
+            "id": "class:2529941390508632aa44f42f26f0f756",
+            "kind": "class",
+            "name": "ProjectilePool",
+            "qualifiedName": "ProjectilePool",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 45,
+            "endLine": 151,
+            "startColumn": 7,
+            "endColumn": 1,
+            "visibility": null,
+            "isExported": true,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 114.14390917153757
+        },
+        {
+          "node": {
+            "id": "method:6dd86d8179427176489ab823271975ae",
+            "kind": "method",
+            "name": "slots",
+            "qualifiedName": "ProjectilePool::slots",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "language": "typescript",
+            "startLine": 121,
+            "endLine": 121,
+            "startColumn": 2,
+            "endColumn": 43,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462922
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:7b3d238617e30ff71456f8ceffec8c75",
+            "kind": "method",
+            "name": "free",
+            "qualifiedName": "ProjectilePool::free",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "language": "typescript",
+            "startLine": 122,
+            "endLine": 122,
+            "startColumn": 2,
+            "endColumn": 38,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383462922
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:3698e44db7dd2fd2a959ba66971bebe2",
+            "kind": "method",
+            "name": "projs",
+            "qualifiedName": "ProjectilePool::projs",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 46,
+            "endLine": 46,
+            "startColumn": 2,
+            "endColumn": 37,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:b7f906c84a000505012fe7a352891dc0",
+            "kind": "method",
+            "name": "geo",
+            "qualifiedName": "ProjectilePool::geo",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 47,
+            "endLine": 47,
+            "startColumn": 2,
+            "endColumn": 68,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:4b2fb5af66c493c5b87cf7f76a7ab2c7",
+            "kind": "method",
+            "name": "mat",
+            "qualifiedName": "ProjectilePool::mat",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 48,
+            "endLine": 48,
+            "startColumn": 2,
+            "endColumn": 73,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:d7124eab11a8432a8466bfdf5ce1753b",
+            "kind": "method",
+            "name": "tmp",
+            "qualifiedName": "ProjectilePool::tmp",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 49,
+            "endLine": 49,
+            "startColumn": 2,
+            "endColumn": 44,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:14a7b3025118883f99bd71640248240b",
+            "kind": "method",
+            "name": "step",
+            "qualifiedName": "ProjectilePool::step",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 50,
+            "endLine": 50,
+            "startColumn": 2,
+            "endColumn": 45,
+            "visibility": "private",
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.895019418587495
+        },
+        {
+          "node": {
+            "id": "method:aab93e411879a67112a7badb629fc64c",
+            "kind": "method",
+            "name": "constructor",
+            "qualifiedName": "ProjectilePool::constructor",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "language": "typescript",
+            "startLine": 52,
+            "endLine": 52,
+            "startColumn": 2,
+            "endColumn": 56,
+            "signature": "(private readonly scene: THREE.Object3D)",
+            "visibility": null,
+            "isExported": false,
+            "isAsync": false,
+            "isStatic": false,
+            "isAbstract": false,
+            "updatedAt": 1790383468663
+          },
+          "score": 34.19446677059348
+        }
+      ]
+    }
+  ]
+}

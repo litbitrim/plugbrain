@@ -1,0 +1,128 @@
+[
+  {
+    "id": "cowork-holdout-01",
+    "type": "definition",
+    "question": "Where is readLedger defined for reading roadmap.jsonl into memory?",
+    "query_param": "readLedger",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "readLedger",
+      "kind": "symbol",
+      "details": "readLedger reads and parses line-delimited roadmap.jsonl into objects."
+    }
+  },
+  {
+    "id": "cowork-holdout-02",
+    "type": "definition",
+    "question": "Where is writeLedger defined to persist updated parts back to roadmap.jsonl?",
+    "query_param": "writeLedger",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "writeLedger",
+      "kind": "symbol",
+      "details": "writeLedger serializes array of parts back to roadmap.jsonl."
+    }
+  },
+  {
+    "id": "cowork-holdout-03",
+    "type": "definition",
+    "question": "Where is missionOf defined to categorize roadmap items into mission groups?",
+    "query_param": "missionOf",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "missionOf",
+      "kind": "symbol",
+      "details": "missionOf maps part product identifiers to human-readable mission titles."
+    }
+  },
+  {
+    "id": "cowork-holdout-04",
+    "type": "definition",
+    "question": "Where is FLEET_PARALLELISM defined for estimating overall loop completion time?",
+    "query_param": "FLEET_PARALLELISM",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "FLEET_PARALLELISM",
+      "kind": "symbol",
+      "details": "FLEET_PARALLELISM reads PLUGOS_FLEET_PARALLELISM env var or defaults to 3."
+    }
+  },
+  {
+    "id": "cowork-holdout-05",
+    "type": "definition",
+    "question": "Where is the decompose_room asset generator entrypoint implemented?",
+    "query_param": "decompose_room",
+    "expected": {
+      "path": "tools/decompose_room.py",
+      "symbol": "main",
+      "kind": "symbol",
+      "details": "tools/decompose_room.py main function executes object cropping and inpainting pipeline."
+    }
+  },
+  {
+    "id": "cowork-holdout-06",
+    "type": "definition",
+    "question": "Where is the verdictOf function defined to read verify.json verdicts?",
+    "query_param": "verdictOf",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "verdictOf",
+      "kind": "symbol",
+      "details": "verdictOf inspects reports/<id>/verify.json to retrieve verification outcome."
+    }
+  },
+  {
+    "id": "cowork-holdout-07",
+    "type": "callers",
+    "question": "Where is writeLedger called to save priority changes in the station server?",
+    "query_param": "writeLedger",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "writeLedger",
+      "kind": "callers",
+      "expected_targets": [
+        "station/server.cjs"
+      ],
+      "details": "station/server.cjs invokes writeLedger when reordering parts in /api/prio."
+    }
+  },
+  {
+    "id": "cowork-holdout-08",
+    "type": "definition",
+    "question": "Where is the DEFAULT_EFFORT constant set for roadmap items lacking explicit estimates?",
+    "query_param": "DEFAULT_EFFORT",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "DEFAULT_EFFORT",
+      "kind": "symbol",
+      "details": "const DEFAULT_EFFORT = 3 in station/server.cjs."
+    }
+  },
+  {
+    "id": "cowork-holdout-09",
+    "type": "impact",
+    "question": "What is impacted if readLedger in station/server.cjs changes its return format?",
+    "query_param": "readLedger",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "readLedger",
+      "kind": "impact",
+      "expected_targets": [
+        "station/server.cjs"
+      ],
+      "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
+    }
+  },
+  {
+    "id": "cowork-holdout-10",
+    "type": "definition",
+    "question": "Where is the effortOf helper defined to compute swarm hours per part?",
+    "query_param": "effortOf",
+    "expected": {
+      "path": "station/server.cjs",
+      "symbol": "effortOf",
+      "kind": "symbol",
+      "details": "effortOf returns estimate_hours or maps severity through EFFORT table."
+    }
+  }
+]

@@ -1,0 +1,31 @@
+{
+  // Strict-tsc entry point for the repository. The core runs on
+  // --experimental-strip-types and src/ still carries known strict-tsc
+  // findings (SQLite row casts, unknown bindings). Because every test imports
+  // src/, the check compiles the full program; until that debt is paid down,
+  // `npm run typecheck` runs as an advisory step in CI while the test suite
+  // and the CLI load-check stay blocking.
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2023",
+    "lib": ["es2023"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "scripts/**/*.ts",
+    "bench/**/*.ts"
+  ]
+}
