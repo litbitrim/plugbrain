@@ -23,6 +23,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync, statfsSync } from 'no
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { liveClaims, type LiveClaim } from '../projections/conflicts.ts'
+import { canonicalPath } from '../planet.ts'
 
 /** Level of a finding, worst-first. `ok` is the absence of any finding. */
 export type HygieneLevel = 'ok' | 'attention' | 'risk'
@@ -308,7 +309,7 @@ function claimsByCheckout(
 
   const result = new Map<string, HygieneClaim[]>()
   for (const row of rows) {
-    const rel = norm(relative(workspaceRoot, resolve(row.path)))
+    const rel = norm(relative(canonicalPath(workspaceRoot), canonicalPath(row.path)))
     const dirPrefix = rel === '.' ? '' : rel
     const storedPrefix = norm(row.relPrefix)
     const byAgent = new Map<string, HygieneClaim>()
@@ -375,24 +376,26 @@ export function collectHygiene(
   const drives = new Set<string>()
 
   for (const row of rows) {
-    const counts = statusCounts(row.path, timeout)
-    if (counts === null) unavailable.push(`git status for ${row.path}`)
-    const stashes = stashCount(row.path, timeout)
-    if (stashes === null) unavailable.push(`stashes for ${row.path}`)
-    const sizeMb = boundedSizeMb(row.path, sizeBudget, sizeMax)
-    if (sizeMb === null) unavailable.push(`sizeMb for ${row.path}`)
-    if (existsSync(row.path)) drives.add(resolve(row.path))
+    const checkoutPath = resolve(row.path)
+    const physicalPath = canonicalPath(checkoutPath)
+    const counts = statusCounts(physicalPath, timeout)
+    if (counts === null) unavailable.push(`git status for ${checkoutPath}`)
+    const stashes = stashCount(physicalPath, timeout)
+    if (stashes === null) unavailable.push(`stashes for ${checkoutPath}`)
+    const sizeMb = boundedSizeMb(physicalPath, sizeBudget, sizeMax)
+    if (sizeMb === null) unavailable.push(`sizeMb for ${checkoutPath}`)
+    if (existsSync(physicalPath)) drives.add(physicalPath)
     checkouts.push({
-      path: row.path,
+      path: checkoutPath,
       repo: row.repo,
       branch: row.branch,
       dirtyFiles: counts?.dirty ?? null,
       untrackedFiles: counts?.untracked ?? null,
       stashes,
-      unpushed: unpushedBranches(row.path, timeout),
-      staleDays: staleDays(row.path, timeout, now),
+      unpushed: unpushedBranches(physicalPath, timeout),
+      staleDays: staleDays(physicalPath, timeout, now),
       sizeMb,
-      orphan: isOrphan(row.path),
+      orphan: isOrphan(physicalPath),
       claims: claimsFor.get(row.id) ?? [],
     })
   }
@@ -400,7 +403,8 @@ export function collectHygiene(
   // One number for the whole report: the fullest volume decides, because that
   // is the one that stops the work first.
   const candidates = [...drives].map(diskFreeGb)
-  if (existsSync(workspace.root)) candidates.push(diskFreeGb(workspace.root))
+  const workspaceRoot = canonicalPath(workspace.root)
+  if (existsSync(workspaceRoot)) candidates.push(diskFreeGb(workspaceRoot))
   const freeSpaces = candidates.filter((gb): gb is number => gb !== null)
   const freeGb = freeSpaces.length === 0
     ? null
