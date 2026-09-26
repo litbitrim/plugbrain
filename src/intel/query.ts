@@ -63,6 +63,13 @@ function rankByWords<T extends { name: string; kind: string; file: string; expor
     // A local constant named like the query is almost never what was asked for.
     if (!row.exported && (row.kind === 'constant' || row.kind === 'variable' || row.kind === 'property')) score -= 3
     if (TEST_PATH.test(row.file.toLowerCase())) score -= 4
+
+    // Boost entrypoints & barrels: index.*, main.*, server.*, cli.*, mod.*
+    const fileName = row.file.split('/').pop()?.toLowerCase() ?? ''
+    const isEntrypoint = /^(index|main|server|cli|mod|app|default)\.[a-z]+$/.test(fileName)
+    if (isEntrypoint) score += 15
+    if (fileName === whole || fileName.startsWith(whole)) score += 40
+    if (isEntrypoint && row.kind === 'file') score += 20
     return { row, score, order }
   })
   scored.sort((a, b) => b.score - a.score || a.row.name.length - b.row.name.length || a.order - b.order)
@@ -231,6 +238,27 @@ export function conceptSearch(
             fastCandidates.push(h)
           }
         }
+      }
+    }
+
+    // Direct file & markdown match (universal document/barrel lookup)
+    let fileSql = `
+      SELECT -f.id as id, f.path as name, 'file' as kind, f.path as file,
+             1 as line, 1 as endLine, 1 as exported, NULL as container,
+             f.repo_id as repoId, f.checkout_id as checkoutId
+        FROM files f
+       WHERE (f.path = ? OR f.path LIKE '%' || ? OR f.path LIKE ? || '%')
+    `
+    const fileParams: unknown[] = [cleanQuery, cleanQuery, cleanQuery]
+    if (options?.repoId) { fileSql += ' AND f.repo_id = ?'; fileParams.push(options.repoId) }
+    if (options?.workspaceId) { fileSql += ' AND f.workspace_id = ?'; fileParams.push(options.workspaceId) }
+    if (options?.checkoutId) { fileSql += ' AND f.checkout_id = ?'; fileParams.push(options.checkoutId) }
+    fileSql += ' LIMIT 20'
+    const fileHits = db.prepare(fileSql).all(...fileParams) as typeof rawSymbols
+    for (const fh of fileHits) {
+      if (!seenCandidateIds.has(fh.id)) {
+        seenCandidateIds.add(fh.id)
+        fastCandidates.push(fh)
       }
     }
   } catch {}

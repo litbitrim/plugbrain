@@ -587,6 +587,24 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
       generated: md.generated,
     }
   }
+  if (ext.toLowerCase() === '.json') {
+    const syms: Array<{ name: string; kind: import('./ast.ts').ExtractedSymbol['kind']; line: number; endLine: number; exported: boolean; container: string | null }> = []
+    try {
+      const obj = JSON.parse(content)
+      if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+        const lines = content.split('\n')
+        for (const k of Object.keys(obj)) {
+          const lIdx = lines.findIndex(l => l.includes(`"${k}"`))
+          const line = lIdx === -1 ? 1 : lIdx + 1
+          syms.push({ name: k, kind: 'property', line, endLine: line, exported: true, container: null })
+        }
+      }
+    } catch {}
+    return {
+      rel, ext, lang: null, processingStatus: 'inventoried', processingReason: 'no semantic extractor for extension', loc: content.split('\n').length,
+      symbols: syms, refs: [], imports: [], properties: [], links: [], tags: [], generated: false,
+    }
+  }
   return {
     rel, ext, lang: null, processingStatus: 'inventoried', processingReason: 'no semantic extractor for extension', loc: content.split('\n').length,
     symbols: [], refs: [], imports: [], properties: [], links: [], tags: [], generated: false,

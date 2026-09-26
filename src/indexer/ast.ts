@@ -163,6 +163,12 @@ function extractPython(content: string): FileExtract {
       continue
     }
 
+    const envMatch = raw.match(/\b(?:os\.environ(?:\[\s*['"]([A-Z0-9_]+)['"]\s*\]|\.get\(\s*['"]([A-Z0-9_]+)['"])|os\.getenv\(\s*['"]([A-Z0-9_]+)['"])/)
+    if (envMatch) {
+      const envName = envMatch[1] || envMatch[2] || envMatch[3]
+      if (envName) out.symbols.push({ name: envName, kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: null })
+    }
+
     const calls = codeOnly(line, /\s+#.*$/).matchAll(/\b([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\s*\(/g)
     for (const hit of calls) {
       const full = hit[1]
@@ -336,6 +342,11 @@ function extractJava(content: string): FileExtract {
     )
     if (fieldDecl && currentContainer !== null) {
       out.symbols.push({ name: fieldDecl[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: /\bpublic\b/.test(withoutComment), container: currentContainer })
+    }
+
+    const envJava = code.match(/System\.getenv\(\s*"([A-Z0-9_]+)"\s*\)/)
+    if (envJava && envJava[1]) {
+      out.symbols.push({ name: envJava[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: currentContainer })
     }
 
     // Calls
@@ -629,6 +640,27 @@ export function extractFromSource(path: string, content: string, ext: string): F
         const isFn = init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))
         push(name, isFn ? 'function' : isConst ? 'constant' : 'variable', decl, exported)
         if (isFn) { containerStack.push(name); pushedContainer = true }
+      }
+    } else if (ts.isPropertyAccessExpression(node)) {
+      const expr = node.expression
+      if (ts.isPropertyAccessExpression(expr) &&
+          ts.isIdentifier(expr.expression) && expr.expression.text === 'process' &&
+          expr.name.text === 'env') {
+        const envName = node.name.text
+        if (envName && /^[A-Z0-9_]+$/.test(envName)) {
+          push(envName, 'constant', node, true)
+        }
+      }
+    } else if (ts.isElementAccessExpression(node)) {
+      const expr = node.expression
+      if (ts.isPropertyAccessExpression(expr) &&
+          ts.isIdentifier(expr.expression) && expr.expression.text === 'process' &&
+          expr.name.text === 'env' &&
+          node.argumentExpression && ts.isStringLiteral(node.argumentExpression)) {
+        const envName = node.argumentExpression.text
+        if (envName && /^[A-Z0-9_]+$/.test(envName)) {
+          push(envName, 'constant', node, true)
+        }
       }
     }
 
