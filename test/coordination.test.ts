@@ -281,13 +281,14 @@ test('M4: expired lease cannot write (fencing violation)', async () => {
       heartbeatTtlMs: 60000,
     })
 
-    // Acquire lease with 60ms TTL
+    // Acquire lease with a 2s TTL — long enough that a scheduler stall between
+    // acquire and the first write check cannot expire it mid-test under load.
     const leaseRes = coord.acquireLease(f.db, f.workspaceId, {
       agentId: 'agent-fencing',
       taskId: 'task-fence',
       paths: ['src/fenced.ts'],
       mode: 'write',
-      ttlMs: 60,
+      ttlMs: 2000,
     })
     assert.equal(leaseRes.acquired, true)
     const lease = leaseRes.lease!
@@ -301,8 +302,8 @@ test('M4: expired lease cannot write (fencing violation)', async () => {
       })
     })
 
-    // Wait for lease to expire
-    await new Promise((r) => setTimeout(r, 100))
+    // Wait for the lease to expire (TTL + margin), then expect FencingError
+    await new Promise((r) => setTimeout(r, 2100))
 
     // Write after expiration must throw FencingError
     assert.throws(() => {
