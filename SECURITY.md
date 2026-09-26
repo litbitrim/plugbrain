@@ -28,8 +28,10 @@ Only the latest release gets security fixes.
 
 ## Known advisories
 
-Development-only dependencies in the `ui` package currently report two advisories in `npm audit`:
-- **esbuild (moderate):** Request exposure on the local development server (affects development mode only).
-- **vite (high):** Transitive dependency on the affected esbuild version with dev-server path traversal concerns in development mode.
+Development-only dependencies in the `ui` package currently report four advisories in `npm audit --prefix ui` affecting local development mode only:
+- **esbuild <=0.24.2 (GHSA-67mh-4wv8-2f99, moderate):** Development server request exposure.
+- **vite <=6.4.1 (GHSA-4w7w-66w2-5vf9, moderate):** Path traversal in optimized deps `.map` handling.
+- **vite <=6.4.2 (GHSA-v6wh-96g9-6wx3, moderate):** Windows UNC path handling in launch-editor.
+- **vite <=6.4.2 (GHSA-fx2h-pf6j-xcff, high):** `server.fs.deny` bypass on Windows alternate paths.
 
-Neither issue affects production builds or the shipped standalone distributions, which serve pre-compiled static assets and run without the Vite development server. An upgrade is planned for the next release cycle.
+None of these issues affect production builds or the shipped standalone distributions, which serve pre-compiled static assets and run without the Vite development server. An upgrade is planned for the next release cycle.

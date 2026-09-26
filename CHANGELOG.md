@@ -16,21 +16,22 @@ Linux.
   CLI command `plugbrain ask`, returning cited source locations and honest
   confidence levels.
 - **Project Briefing:** Automatic project overview via `GET /api/briefing` and
-  `plugbrain briefing`, synthesizing active repositories, languages, dirty state,
+  the web UI home view, synthesizing active repositories, languages, dirty state,
   and key symbols.
 - **Automated MCP setup and client onboarding:** `plugbrain init` (including `--dry-run`),
-  and `plugbrain setup` supporting seven MCP clients (Claude Desktop, Claude Code,
-  Cursor, Windsurf, VS Code, Codex, Hermes) with automatic client configuration
+  and `plugbrain setup` supporting seven MCP clients: Claude Code (`claude`),
+  Codex (`codex`), Cursor (`cursor`), Windsurf (`windsurf`), Hermes (`hermes`),
+  Antigravity (`agy`), and OpenCode (`opencode`), with automatic client configuration
   backups and `--undo`.
 - **MCP stdio server and tools:** Full 27-tool MCP server exposed over stdio
   (`plugbrain mcp`) with automatic workspace resolution from the current directory,
   `PLUGBRAIN_WORKSPACE` environment variable, or explicit `--workspace`.
 - **Git hygiene and host awareness:** `plugbrain hygiene`, `GET /api/hygiene`,
-  `GET /api/machine`, `GET /api/repos`, and the `machine` and `repos` MCP tools.
+  `GET /api/machine`, `GET /api/repos`, and the `hygiene`, `machine`, and `repos` MCP tools.
   Includes non-destructive WIP snapshots (`--wip-snapshot`) to rescue uncommitted
   work outside the brain, disk capacity depletion forecasts via linear trend
   analysis, and machine-wide git repository discovery.
-- **Polyglot AST extraction:** Language extractors for Python, Rust, SQL, and Java,
+- **Polyglot AST extraction:** Language extractors for Python, Rust, SQL, Java, and Go,
   alongside TypeScript and JavaScript.
 - **Trigram symbol search:** SQLite FTS5 trigram search (`search_trigram`) for
   sub-identifier and concept matching, with automatic non-destructive backfill for
@@ -49,7 +50,7 @@ Linux.
   CI and release workflows for all three platforms with SHA-256 checksums and
   per-OS `verify:standalone`.
 - **Secret scanning:** `scripts/secret-scan.mjs` and `npm run secret:scan` guarding
-  the repository against credential-shaped content in pre-commit and CI.
+  the repository against credential-shaped content in CI.
 - **Reproducible benchmark suite v2:** Comprehensive evaluation framework in
   `bench/v2/` testing 120 questions across four real-world codebases with frozen
   holdout sets.
@@ -87,7 +88,7 @@ Linux.
 ### Known Issues
 
 - The web interface is currently in German (localization into English is planned for a future release).
-- The Vite 5 development server has a known security advisory for development mode (`GHSA-67mh-4wv8-2f99` via esbuild; only affects `npm run dev`, not the built standalone application).
+- The Vite 5 development server has four known security advisories affecting local development mode only (`npm run dev`; see `npm audit --prefix ui`): `GHSA-67mh-4wv8-2f99` (esbuild dev-server request exposure, moderate), `GHSA-4w7w-66w2-5vf9` (Vite path traversal in optimized deps `.map` handling, moderate), `GHSA-v6wh-96g9-6wx3` (Windows UNC path handling in launch-editor, moderate), and `GHSA-fx2h-pf6j-xcff` (Vite `server.fs.deny` bypass on Windows alternate paths, high). The built standalone application is unaffected.
 - Initial load of the Hygiene view on large machines with dozens of repositories can take up to ~20 seconds while performing the cold git census.
 - The project briefing view currently reports TypeScript twice under language breakdowns.
 - The Windows NSIS installer is unsigned (Windows SmartScreen may present an unknown publisher warning upon first run).

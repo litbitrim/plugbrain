@@ -10,7 +10,7 @@ PlugBrain is now open-source under the MIT license. This release turns the local
 - Natural-language project questions (`ask` / `Ctrl+K`) with cited sources and confidence levels.
 - Automated client onboarding (`plugbrain init`, `plugbrain setup`) supporting seven MCP clients with backups and `--undo`.
 - Git hygiene and machine awareness (`plugbrain hygiene`, disk depletion forecasts, machine-wide uncommitted work detection).
-- Polyglot AST extraction (Python, Rust, SQL, Java) and trigram symbol search (`search_trigram`).
+- Polyglot AST extraction (Python, Rust, SQL, Java, Go) and trigram symbol search (`search_trigram`).
 - Portable standalone builds for macOS and Linux alongside an unsigned Windows NSIS installer.
 - Full 27-tool MCP server over stdio with automatic workspace detection.
 
