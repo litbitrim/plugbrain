@@ -225,4 +225,4 @@ async function run() {
   console.log(`========================================\n`);
 }
 
-run().catch(console.error);
+run().catch((err) => { console.error(err); process.exitCode = 1 });

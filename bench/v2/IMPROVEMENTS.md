@@ -9,7 +9,7 @@ Reference: `bench/v2/RESULTS.md`, `bench/v2/raw/matrix.json`
 
 ## Executive Overview
 
-The v2 benchmark on foreign codebases proved:
+The v2 benchmark on four of the author's own projects proved:
 1. **PlugBrain decisively beats GitNexus** in accuracy (32.5% vs. 17.5%), indexing throughput (202s vs. 482s), and database storage efficiency (1.27 GB vs. 3.61 GB).
 2. **CodeGraph leads PlugBrain** (47.5% vs. 32.5%) primarily through three distinct advantages:
    - Polyglot AST parsing (Java, Python, TypeScript, C++)
