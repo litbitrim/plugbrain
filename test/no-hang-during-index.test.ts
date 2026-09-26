@@ -161,9 +161,9 @@ test('reads answer within 500 ms while an index run works, and say so', async (t
       await sleep(50)
     }
     assert.equal(observedIndexing, true, 'a read must name the running index, not hide it')
-    // The first two samples warm the HTTP/SQLite paths. The original hard
-    // 500 ms check above remains for every call; median makes the recorded
-    // timing evidence robust against a single shared-desktop scheduling spike.
+    // The first two samples warm the HTTP/SQLite paths. Every single call is
+    // held to the hang bound (< 5000 ms) above; the 500 ms budget is asserted
+    // on the median here, so one shared-desktop scheduling spike cannot fail it.
     for (const [route, samples] of Object.entries(timing)) {
       const measured = samples.slice(2)
       assert.ok(measured.length > 0, `${route} needs post-warmup samples`)
