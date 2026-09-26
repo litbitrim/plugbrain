@@ -61,7 +61,12 @@ test('desktop launcher fails closed rather than adopting an unrelated Core', () 
   assert.doesNotMatch(launcher, /PlugPT-Shell|electron\\dist/i);
 });
 
-test('the launcher quoting form keeps a spaced Core bundle as one Node argument', () => {
+// The desktop launcher is a Windows PowerShell script; these two probes run
+// that PowerShell. Linux runners have no `powershell`, so they only mean
+// something on Windows.
+const WINDOWS_LAUNCHER_ONLY = process.platform === 'win32' ? false : 'the PowerShell launcher only runs on Windows';
+
+test('the launcher quoting form keeps a spaced Core bundle as one Node argument', { skip: WINDOWS_LAUNCHER_ONLY }, () => {
   const expression = [
     "$bundle = 'C:\\Program Files\\PlugBrain\\dist\\plugbrain.mjs'",
     "$bundleArgument = [string][char]34 + $bundle + [char]34",
@@ -72,7 +77,7 @@ test('the launcher quoting form keeps a spaced Core bundle as one Node argument'
   assert.equal(probe.stdout.trim(), '"C:\\Program Files\\PlugBrain\\dist\\plugbrain.mjs"');
 });
 
-test('PowerShell Start-Process delivers the quoted spaced bundle as one actual Node argv entry', () => {
+test('PowerShell Start-Process delivers the quoted spaced bundle as one actual Node argv entry', { skip: WINDOWS_LAUNCHER_ONLY }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-launcher-'));
   const probeScript = join(dir, 'argv-probe.cjs');
   const probeOutput = join(dir, 'argv.json');
