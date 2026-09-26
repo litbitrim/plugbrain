@@ -12,7 +12,11 @@
  *      path to our own CLI, so it runs even when `plugbrain` is not on PATH.
  *   2. BACKED UP.  Before a file changes at all, a copy named
  *      `<file>.plugbrain-backup-<stamp>` is written next to it; `--undo`
- *      restores the newest one.
+ *      restores the newest one. When the file does not exist yet, setup leaves
+ *      an EMPTY marker backup instead, so undo can tell a creation from a real
+ *      update. And before undo restores, it keeps the file's current stand as
+ *      `<file>.plugbrain-undobackup-<stamp>` — a name the next undo never
+ *      picks — so user edits made after setup are never lost.
  *   3. IDEMPOTENT.  A second run that would write the same entry writes
  *      nothing and takes no backup.
  *   4. NO IDS, NO TOKENS.  The args are just `mcp`; the workspace comes from
@@ -22,7 +26,8 @@
  * never touch the owner's real configuration.
  */
 import {
-  copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync,
+  copyFileSync, existsSync, readdirSync, readFileSync, unlinkSync,
+  writeFileSync,
 } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { homedir } from 'node:os'
@@ -255,6 +260,10 @@ export interface ClientSetupResult {
   detected: boolean
   backupPath: string | null
   restoredFrom: string | null
+  /** Counter-backup undo wrote to keep the user's current stand, or null. */
+  counterBackupPath: string | null
+  /** Honest extra detail, e.g. that setup had created the file. */
+  note?: string
   /** Text before the change, for a `--dry-run` diff. */
   before: string | null
   /** Text after the change, for a `--dry-run` diff. */
@@ -305,7 +314,8 @@ export function setupClients(options: SetupClientsOptions): ClientSetupResult[] 
     const base: ClientSetupResult = {
       id: target.def.id, label: target.def.label, path: target.path,
       action: 'skipped', changed: false, detected: target.detected,
-      backupPath: null, restoredFrom: null, before: null, after: null,
+      backupPath: null, restoredFrom: null, counterBackupPath: null,
+      before: null, after: null,
     }
     try {
       if (wanted !== null && !wanted.has(target.def.id)) return base
@@ -333,6 +343,12 @@ function applyClient(
   if (existing !== null) {
     backup = backupPathFor(target.path)
     copyFileSync(target.path, backup)
+  } else {
+    // The file is being created from nothing: an empty marker backup records
+    // that, so undo can roll the creation back honestly instead of reporting
+    // 'unchanged' for lack of a backup.
+    backup = backupPathFor(target.path)
+    writeFileSync(backup, '')
   }
   writeFileSync(target.path, rendered.text)
   return {
@@ -350,9 +366,166 @@ function undoClient(target: ClientTarget, base: ClientSetupResult): ClientSetupR
   if (backup === null) return { ...base, action: 'unchanged' }
   const current = existsSync(target.path) ? readFileSync(target.path, 'utf8') : null
   const restored = readFileSync(backup, 'utf8')
+
+  // The user may have changed the file since the last setup write. Before
+  // anything destructive, keep the current stand next to the file —
+  // symmetrical to the write path — under a name the next undo never picks.
+  let counterBackup: string | null = null
+  if (current !== null && current !== restored) {
+    counterBackup = undoBackupPathFor(target.path)
+    writeFileSync(counterBackup, current)
+  }
+
+  // An empty backup is the marker setup leaves when it CREATED the file (there
+  // was nothing to back up). Undo then removes only our entry and — when
+  // nothing of the user's remains — the file itself.
+  if (restored.trim() === '') {
+    if (current === null) {
+      // The creation was already rolled back; the marker is all that is left.
+      return { ...base, action: 'unchanged' }
+    }
+    const reduced = removeClientEntry(target.def, current)
+    if (isEffectivelyEmpty(target.def, reduced.text)) {
+      unlinkSync(target.path)
+      return {
+        ...base,
+        action: 'undone',
+        changed: true,
+        restoredFrom: backup,
+        counterBackupPath: counterBackup,
+        before: current,
+        after: null,
+        note: 'file was created by setup: plugbrain entry removed, empty file deleted',
+      }
+    }
+    writeFileSync(target.path, reduced.text)
+    return {
+      ...base,
+      action: 'undone',
+      changed: true,
+      restoredFrom: backup,
+      counterBackupPath: counterBackup,
+      before: current,
+      after: reduced.text,
+      note: 'file was created by setup: only the plugbrain entry was removed',
+    }
+  }
+
+  // Restore the pre-setup content verbatim.
   copyFileSync(backup, target.path)
   return {
-    ...base, action: 'undone', changed: true, restoredFrom: backup,
-    before: current, after: restored,
+    ...base,
+    action: 'undone',
+    changed: true,
+    restoredFrom: backup,
+    counterBackupPath: counterBackup,
+    before: current,
+    after: restored,
   }
+}
+
+/** Backup path for the counter-backup undo writes before a restore. */
+export function undoBackupPathFor(path: string, at: Date = new Date()): string {
+  const stamp = at.toISOString().replace(/[:.]/g, '-')
+  return `${path}.plugbrain-undobackup-${stamp}`
+}
+
+/** Removes only the plugbrain entry from a rendered client config. */
+export function removeClientEntry(def: ClientDefinition, current: string): { text: string; changed: boolean } {
+  if (def.format === 'json') return removeJsonEntry(def, current)
+  if (def.format === 'toml') return removeTomlEntry(def, current)
+  return removeYamlEntry(def, current)
+}
+
+function removeJsonEntry(def: ClientDefinition, current: string): { text: string; changed: boolean } {
+  let parsed: Record<string, unknown>
+  try {
+    parsed = JSON.parse(current) as Record<string, unknown>
+  } catch (error) {
+    throw new TypeError(`stored config is not valid JSON: ${(error as Error).message}`)
+  }
+  const map = parsed?.[def.mapKey]
+  if (map !== null && typeof map === 'object' && !Array.isArray(map)) {
+    delete (map as Record<string, unknown>).plugbrain
+    if (Object.keys(map as Record<string, unknown>).length === 0) delete parsed[def.mapKey]
+  }
+  return { text: `${JSON.stringify(parsed, null, 2)}\n`, changed: true }
+}
+
+function removeTomlEntry(def: ClientDefinition, current: string): { text: string; changed: boolean } {
+  const lines = current.split(/\r?\n/)
+  const header = `[${def.mapKey}.plugbrain]`
+  const idx = lines.findIndex(line => line.trim() === header)
+  if (idx === -1) return { text: current, changed: false }
+  let end = idx + 1
+  while (end < lines.length && !/^\s*\[/.test(lines[end] ?? '')) end += 1
+  const next = [...lines.slice(0, idx), ...lines.slice(end)]
+  const text = `${next.join('\n').replace(/^\n+/, '').replace(/\s*$/, '')}\n`
+  return { text, changed: true }
+}
+
+function removeYamlEntry(def: ClientDefinition, current: string): { text: string; changed: boolean } {
+  const lines = current.split(/\r?\n/)
+  const keyIdx = lines.findIndex(line => line.trimEnd() === `${def.mapKey}:`)
+  if (keyIdx === -1) return { text: current, changed: false }
+  let keyEnd = keyIdx + 1
+  while (keyEnd < lines.length) {
+    const line = lines[keyEnd] ?? ''
+    if (line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('#')) break
+    keyEnd += 1
+  }
+  let subStart = -1
+  for (let i = keyIdx + 1; i < keyEnd; i++) {
+    if (/^ {2}plugbrain:/.test(lines[i] ?? '')) {
+      subStart = i
+      break
+    }
+  }
+  if (subStart === -1) return { text: current, changed: false }
+  let subEnd = subStart + 1
+  while (subEnd < keyEnd) {
+    const line = lines[subEnd] ?? ''
+    if (line.startsWith('    ') || /^ {2}#/.test(line) || line.trim() === '') {
+      subEnd += 1
+      continue
+    }
+    break
+  }
+  const next = [...lines.slice(0, subStart), ...lines.slice(subEnd)]
+  // Drop the now-empty mapKey block header too.
+  const cleaned: string[] = []
+  for (let i = 0; i < next.length; i++) {
+    const line = next[i] ?? ''
+    if (line.trimEnd() === `${def.mapKey}:`) {
+      const after = next[i + 1] ?? ''
+      if (after.trim() === '' || !after.startsWith(' ')) continue
+    }
+    cleaned.push(line)
+  }
+  const text = `${cleaned.join('\n').replace(/^\n+/, '').replace(/\s*$/, '')}\n`
+  return { text, changed: true }
+}
+
+/** True when nothing of the user's would remain after removing our entry. */
+export function isEffectivelyEmpty(def: ClientDefinition, text: string): boolean {
+  if (text.trim() === '') return true
+  if (def.format === 'json') {
+    try {
+      const parsed = JSON.parse(text) as unknown
+      if (
+        parsed !== null &&
+        typeof parsed === 'object' &&
+        !Array.isArray(parsed) &&
+        Object.keys(parsed as Record<string, unknown>).length === 0
+      ) {
+        return true
+      }
+    } catch {
+      return false
+    }
+    return false
+  }
+  return !text
+    .split(/\r?\n/)
+    .some(line => line.trim() !== '' && !line.trimStart().startsWith('#'))
 }
