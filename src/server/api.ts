@@ -22,6 +22,8 @@ import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
+import { resolveBrainHome } from '../home.ts'
+import { packageVersion, removeCoreEndpoint, writeCoreEndpoint } from './core-endpoint.ts'
 
 /**
  * The identity a search is attributed to. A read is a read: the provenance
@@ -107,6 +109,12 @@ export interface Ctx {
   authKey?: string | null
   requireAuth?: boolean
   instanceId?: string | null
+  /**
+   * The PlugBrain home this serve publishes itself to (`core.json`). The serve
+   * command passes its resolved home; a test passes a throwaway one. When it
+   * is not set, the server serves without publishing an endpoint file.
+   */
+  home?: string | null
 }
 
 const json = (res: ServerResponse, body: unknown, status = 200): void => {
@@ -2703,16 +2711,33 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     json(res, { ok: false, error: `no route: ${p}` }, 404)
   }
 
+  // The endpoint file: serve writes where it listens — atomic temp + rename —
+  // and takes it with it on the way down, so a reader never guesses a port
+  // and never points at a serve that is already gone.
+  const home = ctx.home ?? null
   return new Promise((resolve, reject) => {
     server.on('error', reject)
     server.listen(port, '127.0.0.1', () => {
       const address = server.address()
       const actualPort = typeof address === 'object' && address ? address.port : port
+      if (home) {
+        try {
+          writeCoreEndpoint(home, {
+            url: `http://127.0.0.1:${actualPort}`,
+            pid: process.pid,
+            version: packageVersion(),
+            startedAt: new Date().toISOString(),
+          })
+        } catch (error) {
+          process.stderr.write(`PlugBrain: could not write core.json: ${(error as Error).message}\n`)
+        }
+      }
       resolve({
         port: actualPort,
         server,
         close: () => new Promise<void>((res, rej) => {
           server.close(err => (err ? rej(err) : res()))
+          if (home) removeCoreEndpoint(home, process.pid)
         }),
       })
     })

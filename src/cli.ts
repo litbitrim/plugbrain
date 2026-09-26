@@ -909,7 +909,9 @@ switch (command) {
         }
       }
     }
-    startServer({ db, dbFile: DB_FILE, uiRoot, authKey, requireAuth: true }, port).then(actual => {
+    // The home rides along so the server publishes core.json where consumers
+    // (the operator, the desktop shell) look for the one canonical endpoint.
+    startServer({ db, dbFile: DB_FILE, uiRoot, authKey, requireAuth: true, home: HOME }, port).then(actual => {
       console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
       console.log(`  UI       http://127.0.0.1:${actual}/`)
       console.log(`  Galaxy   http://127.0.0.1:${actual}/api/galaxy`)
