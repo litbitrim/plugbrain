@@ -42,7 +42,8 @@
     "proof:prevention": "node --experimental-strip-types scripts/proof-prevention.ts",
     "proof:mcp-parity": "node --experimental-strip-types scripts/compare-gitnexus-parity.ts",
     "verify:gold-corpus-v2": "node --experimental-strip-types scripts/verify-gold-corpus-v2.ts",
-    "secret:scan": "node scripts/secret-scan.mjs"
+    "secret:scan": "node scripts/secret-scan.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "typescript": "^5.9.3"

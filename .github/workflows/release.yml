@@ -26,6 +26,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The UI is a separate package with its own lockfile.
+      - name: Install UI dependencies
+        run: npm ci --prefix ui
+
+      # Advisory: pre-existing strict-tsc findings in src/ are tracked debt,
+      # not a release blocker (see ci.yml for the same step).
+      - name: Typecheck core (advisory)
+        continue-on-error: true
+        run: npm run typecheck
+
       - name: Build the UI
         run: npm run build:ui
 
@@ -46,6 +56,12 @@ jobs:
         run: |
           npm run build:standalone
           npm run verify:standalone
+
+      # Smoke: the shipped bundle must answer as a CLI against a temp home —
+      # this catches a broken bundle before any artifact is attached.
+      - name: Smoke the bundled CLI
+        shell: bash
+        run: PLUGBRAIN_HOME="${{ runner.temp }}/pb-smoke-home" PLUGBRAIN_NO_DAEMON=1 node dist/plugbrain.mjs status
 
       - name: Collect artifacts
         shell: bash
