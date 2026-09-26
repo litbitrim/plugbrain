@@ -76,8 +76,10 @@ export function verifyBackupFile(backupPath: string): { valid: boolean; error?: 
 
   let testDb: DatabaseSync | null = null
   try {
-    // Open read-only / temporary check
+    // Open read-only / temporary check; every connection waits a moment when
+    // another connection holds the database (BRAIN-BE-01 B1).
     testDb = new DatabaseSync(file)
+    testDb.exec('PRAGMA busy_timeout = 15000;')
     const wsRow = testDb.prepare("SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='workspaces'").get() as { c: number }
     if (!wsRow || wsRow.c === 0) {
       return { valid: false, error: `file is not a valid PlugBrain backup: 'workspaces' table missing` }
