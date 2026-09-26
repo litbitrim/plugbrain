@@ -231,7 +231,9 @@ test('a worker run keeps the caller free and publishes progress while it works',
 test('a worker that cannot do the run records why, instead of failing silently', async () => {
   // The worker opens its OWN connection, so this store has the schema but not
   // the workspace row: the state a wrong path or a fresh store is in.
-  const scratch = join(tmpdir(), 'plugbrain-no-such-store')
+  // Unique per run: a fixed path left behind by an aborted or concurrent run
+  // already holds the workspace row and fails the INSERT below.
+  const scratch = mkdtempSync(join(tmpdir(), 'plugbrain-no-such-store-'))
   const missRoot = join(scratch, 'ws')
   mkdirSync(missRoot, { recursive: true })
   const db = openStore(join(scratch, 'other.db'))
