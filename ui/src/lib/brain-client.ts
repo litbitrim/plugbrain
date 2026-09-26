@@ -279,17 +279,35 @@ export async function fetchProvenance(workspaceId: string, path: string): Promis
   return res.json()
 }
 
-export async function attachAgent(workspaceId: string, agentId = getStoredAgentId(), name = 'AGY'): Promise<any> {
-  const res = await fetch('/api/agent/attach', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ workspace: workspaceId, agentId, name }),
-  })
-  if (!res.ok) {
+/** How long an attach waits for a running index run before it gives up. */
+const ATTACH_BUSY_WAIT_MS = 60_000
+
+export async function attachAgent(
+  workspaceId: string,
+  agentId = getStoredAgentId(),
+  name = 'AGY',
+  { maxWaitMs = ATTACH_BUSY_WAIT_MS }: { maxWaitMs?: number } = {},
+): Promise<any> {
+  const deadline = Date.now() + maxWaitMs
+  for (;;) {
+    const res = await fetch('/api/agent/attach', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ workspace: workspaceId, agentId, name }),
+    })
+    if (res.ok) return res.json()
     const err = await res.json().catch(() => null)
-    throw new Error(err?.error ?? `Agent Attach HTTP ${res.status}`)
+    // An index run holds the store's writer lock for its whole length. The
+    // daemon then answers 503 at once and says when to ask again; giving up
+    // here would leave the page's following reads without a registered agent.
+    const remaining = deadline - Date.now()
+    if (res.status === 503 && err?.busy === true && remaining > 0) {
+      const wait = Math.min(Math.max(Number(err.retryAfterMs) || 1000, 5), 5000, remaining)
+      await new Promise(resolve => setTimeout(resolve, wait))
+      continue
+    }
+    throw new Error(err?.error ?? err?.reason ?? `Agent Attach HTTP ${res.status}`)
   }
-  return res.json()
 }
 
 // Reads require a *registered* agent (FO-3): a read must never mint an identity.
