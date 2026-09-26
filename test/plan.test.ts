@@ -23,7 +23,20 @@ const home = mkdtempSync(join(tmpdir(), 'plugbrain-plan-home-'))
 process.env.PLUGBRAIN_HOME = home
 process.on('exit', () => { rmSync(home, { recursive: true, force: true }) })
 
-const LEDGER = {
+interface ProgressStateFile {
+  updated: string
+  updatedBy: string
+  statusOverall: string
+  master: { id: string; version: string }
+  gates: Array<{ id: string; wave: string; title: string; status: string; owner: string; dependsOn?: string[] }>
+  ownerDecisions: Array<{ ref: string; decision: string; status: string }>
+  statusDimensions: Array<{ dimension: string; current: string }>
+  masterTasks: {
+    tasks: Array<{ id: string; title: string; dependsOn: string[]; priority: string; status: string; ledgerGates?: string[]; evidence?: string[] }>
+  }
+}
+
+const LEDGER: ProgressStateFile = {
   updated: '2026-09-22T21:50:58.623Z',
   updatedBy: 'integrator',
   statusOverall: 'PARTIAL',
@@ -115,12 +128,15 @@ test('swarm enqueue --plan links the task, and the MCP plan tool answers all fou
     assert.equal(status.ok, true)
     assert.equal(status.progress.tasksTotal, 4)
     assert.deepEqual(status.next.map(task => task.id), ['M00', 'M01'])
-    const task = await mcp.executeTool('plan', { view: 'task', id: 'M02' }) as { task: { queue: Array<{ title: string }> } }
-    assert.deepEqual(task.task.queue.map(ref => ref.title), ['Brain ausbauen'])
-    const gates = await mcp.executeTool('plan', { view: 'gates', status: 'OPEN' }) as { gates: Array<{ id: string }> }
-    assert.deepEqual(gates.gates.map(gate => gate.id), ['R8-SURF-001'])
-    const next = await mcp.executeTool('plan', { view: 'next', limit: 1 }) as { next: Array<{ id: string }> }
-    assert.deepEqual(next.next.map(t => t.id), ['M00'])
+    const taskResult = await mcp.executeTool('plan', { view: 'task', id: 'M02' })
+    const task = taskResult.task as { queue: Array<{ title: string }> }
+    assert.deepEqual(task.queue.map(ref => ref.title), ['Brain ausbauen'])
+    const gatesResult = await mcp.executeTool('plan', { view: 'gates', status: 'OPEN' })
+    const gates = gatesResult.gates as Array<{ id: string }>
+    assert.deepEqual(gates.map(gate => gate.id), ['R8-SURF-001'])
+    const nextResult = await mcp.executeTool('plan', { view: 'next', limit: 1 })
+    const next = nextResult.next as Array<{ id: string }>
+    assert.deepEqual(next.map(t => t.id), ['M00'])
   } finally { w.cleanup() }
 })
 
@@ -147,15 +163,18 @@ test('the notes tools answer search, read, property query and backlinks over MCP
     setPlanetIndexSelection(db, planet.workspaceId, [])
     indexPlanetWorkspace(db, planet.workspaceId)
     const mcp = new McpServer({ db, workspaceId: planet.workspaceId, authKey: null })
-    const query = await mcp.executeTool('notes_query', { filter: 'typ=gate UND stand=offen' }) as { notes: Array<{ path: string }> }
-    assert.deepEqual(query.notes.map(n => n.path), ['Roadmap/Gates/R7.md'])
-    const search = await mcp.executeTool('notes_search', { query: 'Leitstelle', lines: true }) as { hits: Array<{ path: string; line?: number }> }
-    assert.deepEqual(search.hits.map(hit => hit.path), ['Planung/Ziel.md'])
-    assert.equal(search.hits[0]!.line, 2)
+    const queryResult = await mcp.executeTool('notes_query', { filter: 'typ=gate UND stand=offen' })
+    const query = queryResult.notes as Array<{ path: string }>
+    assert.deepEqual(query.map(n => n.path), ['Roadmap/Gates/R7.md'])
+    const searchResult = await mcp.executeTool('notes_search', { query: 'Leitstelle', lines: true })
+    const search = searchResult.hits as Array<{ path: string; line?: number }>
+    assert.deepEqual(search.map(hit => hit.path), ['Planung/Ziel.md'])
+    assert.equal(search[0]!.line, 2)
     const read = await mcp.executeTool('notes_read', { path: 'Roadmap/Gates/R7.md' }) as { ok: boolean; note: { properties: Array<{ key: string }> } }
     assert.equal(read.ok, true)
     assert.ok(read.note.properties.some(property => property.key === 'typ'))
-    const back = await mcp.executeTool('notes_backlinks', { path: 'Planung/Ziel.md' }) as { backlinks: Array<{ path: string }> }
-    assert.deepEqual(back.backlinks.map(link => link.path), ['Roadmap/Gates/R7.md'])
+    const backResult = await mcp.executeTool('notes_backlinks', { path: 'Planung/Ziel.md' })
+    const back = backResult.backlinks as Array<{ path: string }>
+    assert.deepEqual(back.map(link => link.path), ['Roadmap/Gates/R7.md'])
   } finally { db.close(); rmSync(dir, { recursive: true, force: true }) }
 })

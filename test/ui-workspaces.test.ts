@@ -5,7 +5,16 @@ import {
   workspaceIdForRoot,
 } from '../ui/src/lib/workspaces.js'
 
-const quietLiveReport = {
+interface UiIndexRun {
+  phase: string; mode: string; processed: number; total: number; scanned: number
+  startedAt: string; finishedAt: string | null; ok: boolean | null; error: string | null; result: unknown
+}
+interface UiLiveReport {
+  running: boolean; stale: boolean; quiet: boolean; ownerAlive: boolean
+  recoverable: boolean; finished: boolean; summary: string; run: UiIndexRun
+}
+
+const quietLiveReport: UiLiveReport = {
   running: false,
   stale: true,
   quiet: true,

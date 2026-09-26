@@ -10,6 +10,20 @@ import { serve } from '../src/server/api.ts'
 import * as coord from '../src/coord/index.ts'
 import * as access from '../src/access.ts'
 
+interface BackupVerifyPayload {
+  ok: boolean
+  valid: boolean
+  counts?: { workspaces?: number }
+}
+
+interface AgentInspectPayload {
+  ok: boolean
+  agent: { id: string; model: string; taskId: string; checkoutId: string }
+  claims: Array<{ paths: string[] }>
+  dateiereignisse: Array<{ path: string }>
+  messages: Array<{ subject: string }>
+}
+
 test('M5: backupStore creates consistent standalone database from live WAL state', () => {
   const tmp = join(tmpdir(), `plugbrain-test-backup-${Date.now()}`)
   mkdirSync(tmp, { recursive: true })
@@ -200,14 +214,14 @@ test('M5: HTTP API /api/backup, /api/backup/verify and /api/agent/inspect serve 
       body: JSON.stringify({ targetPath: backupDest }),
     })
     assert.equal(backupRes.status, 200)
-    const backupData = await backupRes.json()
+    const backupData = await backupRes.json() as { ok: boolean }
     assert.equal(backupData.ok, true)
     assert.equal(existsSync(backupDest), true)
 
     // 3. /api/backup/verify
     const verifyRes = await fetch(`http://127.0.0.1:${port}/api/backup/verify?path=${encodeURIComponent(backupDest)}`)
     assert.equal(verifyRes.status, 200)
-    const verifyData = await verifyRes.json()
+    const verifyData = await verifyRes.json() as BackupVerifyPayload
     assert.equal(verifyData.ok, true)
     assert.equal(verifyData.valid, true)
     assert.equal(verifyData.counts?.workspaces, 1)
@@ -215,7 +229,7 @@ test('M5: HTTP API /api/backup, /api/backup/verify and /api/agent/inspect serve 
     // 4. /api/agent/inspect
     const inspectRes = await fetch(`http://127.0.0.1:${port}/api/agent/inspect?agentId=agent-inspect-1&workspace=${wsId}`)
     assert.equal(inspectRes.status, 200)
-    const inspectData = await inspectRes.json()
+    const inspectData = await inspectRes.json() as AgentInspectPayload
     assert.equal(inspectData.ok, true)
     assert.equal(inspectData.agent.id, 'agent-inspect-1')
     assert.equal(inspectData.agent.model, 'gemini-2.5-pro')

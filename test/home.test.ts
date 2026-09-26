@@ -7,7 +7,7 @@ import { resolveBrainHome } from '../src/home.ts'
 
 test('resolveBrainHome: prefers process.env.PLUGBRAIN_HOME when present', () => {
   let regCalled = false
-  const mockReg = () => {
+  const mockReg = (): string | null => {
     regCalled = true
     return 'C:\\registry\\plugbrain'
   }
@@ -21,7 +21,7 @@ test('resolveBrainHome: prefers process.env.PLUGBRAIN_HOME when present', () => 
 
 test('resolveBrainHome: reads Windows registry when env lacks PLUGBRAIN_HOME', () => {
   let regCalled = false
-  const mockReg = () => {
+  const mockReg = (): string | null => {
     regCalled = true
     return 'C:\\registry\\plugbrain'
   }
@@ -35,7 +35,7 @@ test('resolveBrainHome: reads Windows registry when env lacks PLUGBRAIN_HOME', (
 
 test('resolveBrainHome: falls back to ~/.plugbrain when both env and registry are empty', () => {
   let regCalled = false
-  const mockReg = () => {
+  const mockReg = (): string | null => {
     regCalled = true
     return null
   }
