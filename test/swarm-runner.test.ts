@@ -13,13 +13,14 @@
 import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
+import { DatabaseSync } from 'node:sqlite'
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workspaceIdFor } from '../src/planet.ts'
-import { buildRunnerArgv, discoverProtocolDocs, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
+import { buildRunnerArgv, discoverProtocolDocs, isOwnedProcess, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
 
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 const FAKE = fileURLToPath(new URL('./fixtures/fake-worker.mjs', import.meta.url))
@@ -146,6 +147,30 @@ test('a runner profile is stored and read back, and a bad sandbox is refused', (
   } finally { b.cleanup() }
 })
 
+test('runner profiles reject credential-like args, unknown commands, and cwd outside the workspace', () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    const credential = 'ghp_' + 'x'.repeat(36)
+    const secret = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'node', '--args', `--token ${credential}`, '--workspace', b.ws)
+    assert.notEqual(secret.code, 0)
+    assert.doesNotMatch(secret.err + secret.out, new RegExp(credential))
+
+    const badCommand = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'powershell.exe', '--workspace', b.ws)
+    assert.notEqual(badCommand.code, 0)
+    assert.match(badCommand.err, /not an allowed worker command/)
+    const pathCommand = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'C:\\Temp\\codex.exe', '--workspace', b.ws)
+    assert.notEqual(pathCommand.code, 0)
+    assert.match(pathCommand.err, /known executable name from PATH/)
+
+    const outsidePath = join(b.home, 'outside')
+    mkdirSync(outsidePath)
+    const outside = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'node', '--cwd', outsidePath, '--workspace', b.ws)
+    assert.notEqual(outside.code, 0)
+    assert.match(outside.err, /outside registered workspace/i)
+  } finally { b.cleanup() }
+})
+
 test('swarm run starts the worker detached, keeps its log, and the board shows pid and last event', async () => {
   const b = brain()
   try {
@@ -200,7 +225,8 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
-    assert.equal(b.run('swarm', 'run', 'fake-01', '--workspace', b.ws).code, 0)
+    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(started.code, 0, started.err)
 
     const board = await settleBoard(b, 'fake-01')
     const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
@@ -221,6 +247,38 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
     const integrator = board.agents.find(agent => agent.id === 'integrator')
     assert.equal(integrator?.unread, 1)
   } finally { b.cleanup() }
+})
+
+test('blocked booking, run latch, and notification reconcile atomically and retry exactly once', async () => {
+  const b = brain()
+  let db: DatabaseSync | null = null
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
+    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(started.code, 0, started.err)
+    await delay(300)
+    db = new DatabaseSync(join(b.home, 'plugbrain.db'))
+    db.exec(`CREATE TRIGGER fail_blocked_booking BEFORE UPDATE OF turn_state ON agents
+      WHEN NEW.turn_state = 'blocked' BEGIN SELECT RAISE(ABORT, 'simulated crash before blocked booking'); END`)
+    const failed = b.run('swarm', 'board', '--workspace', b.ws, '--json')
+    assert.notEqual(failed.code, 0)
+    const afterFailure = db.prepare("SELECT ended_at, blocked_at FROM worker_runs WHERE agent_id = 'fake-01'").get() as { ended_at: string | null; blocked_at: string | null }
+    assert.equal(afterFailure.ended_at, null, 'the run latch rolls back with the failed turn update')
+    assert.equal(afterFailure.blocked_at, null)
+    assert.equal(Number((db.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }).n), 0)
+    db.exec('DROP TRIGGER fail_blocked_booking')
+    db.close()
+    db = null
+
+    const settled = await settleBoard(b, 'fake-01')
+    assert.equal(settled.settled.length, 1)
+    const verify = new DatabaseSync(join(b.home, 'plugbrain.db'))
+    try {
+      assert.equal(Number((verify.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }).n), 1)
+      assert.equal(Number((verify.prepare("SELECT COUNT(*) AS n FROM worker_runs WHERE agent_id = 'fake-01' AND blocked_at IS NOT NULL").get() as { n: number }).n), 1)
+    } finally { verify.close() }
+  } finally { db?.close(); b.cleanup() }
 })
 
 test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
@@ -249,6 +307,27 @@ test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
   } finally { b.cleanup() }
 })
 
+test('swarm run --stop kills only the verified worker process tree', async () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'tree'), '--workspace', b.ws).code, 0)
+    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    assert.equal(started.code, 0, started.err)
+    const run = JSON.parse(started.out) as RunJson
+    const deadline = Date.now() + 10_000
+    let childPid = 0
+    while (Date.now() < deadline) {
+      try { childPid = Number(readFileSync(run.lastDocPath!, 'utf8')); if (childPid > 0) break } catch { /* child not started yet */ }
+      await delay(50)
+    }
+    assert.ok(childPid > 0, 'fake worker must start its child')
+    const stopped = b.run('swarm', 'run', 'fake-01', '--stop', '--workspace', b.ws)
+    assert.equal(stopped.code, 0, stopped.err)
+    assert.throws(() => process.kill(childPid, 0), 'the descendant must not survive the stop')
+  } finally { b.cleanup() }
+})
+
 test('swarm run refuses a worker without a profile and refuses a second live run', async () => {
   const b = brain()
   try {
@@ -265,10 +344,9 @@ test('swarm run refuses a worker without a profile and refuses a second live run
     assert.equal(b.run('swarm', 'run', 'fake-01', '--stop', '--workspace', b.ws).code, 0)
 
     // A missing program is a refusal, not a run that dies silently.
-    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'no-such-program-xyz', '--workspace', b.ws).code, 0)
-    const notFound = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
-    assert.equal(notFound.code, 3)
-    assert.match(notFound.err, /command not found: no-such-program-xyz/)
+    const disallowed = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'no-such-program-xyz', '--workspace', b.ws)
+    assert.equal(disallowed.code, 3)
+    assert.match(disallowed.err, /not an allowed worker command/)
   } finally { b.cleanup() }
 })
 
@@ -286,6 +364,9 @@ test('the Codex command line and the log summarizer are what they claim to be', 
   ])
   assert.equal(plan.viaComspec, false)
   assert.ok(plan.commandText.includes('p.md'), 'the prompt is shown as its file, never as its text')
+
+  assert.throws(() => buildRunnerArgv({ ...codex, cmd: 'C:\\worker.cmd' }, context), /batch shims are not supported/i)
+  assert.equal(isOwnedProcess(process.pid, '2000-01-01T00:00:00.000Z'), false, 'a reused pid with a different start time is not owned')
 
   const sandboxed = buildRunnerArgv({ ...codex, sandbox: 'workspace-write', search: false }, context)
   assert.deepEqual(sandboxed.args, [

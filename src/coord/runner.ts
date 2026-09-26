@@ -21,9 +21,9 @@
  *   3. NO SECRETS IN THE STORE. A profile holds a program, a model and flags.
  *      Codex brings its own login, and BYOK keys stay out of the database.
  */
-import { spawn } from 'node:child_process'
-import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readSync, statSync, writeFileSync } from 'node:fs'
-import { delimiter, join, resolve } from 'node:path'
+import { execFileSync, spawn } from 'node:child_process'
+import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { basename, delimiter, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { resolveBrainHome } from '../home.ts'
@@ -86,6 +86,10 @@ CREATE TABLE IF NOT EXISTS worker_runs (
   blocked_at      TEXT
 );
 `)
+  const columns = db.prepare('PRAGMA table_info(worker_runs)').all() as unknown as Array<{ name: string }>
+  if (!columns.some(column => column.name === 'process_started_at')) {
+    db.exec('ALTER TABLE worker_runs ADD COLUMN process_started_at TEXT')
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +98,8 @@ CREATE TABLE IF NOT EXISTS worker_runs (
 
 export type RunnerSandbox = 'bypass' | 'workspace-write' | 'read-only' | 'danger-full-access'
 export const RUNNER_SANDBOXES: readonly RunnerSandbox[] = ['bypass', 'workspace-write', 'read-only', 'danger-full-access']
+/** Programs the fleet may launch. `node` is retained for the documented fake-worker harness. */
+export const RUNNER_COMMANDS = ['codex', 'claude', 'gemini', 'node'] as const
 
 export interface RunnerProfile {
   agentId: string
@@ -167,11 +173,24 @@ export function setRunnerProfile(db: DatabaseSync, input: SetRunnerInput): Runne
   requireAgent(db, input.agentId)
   const cmd = shortField('cmd', input.cmd, 200)
   if (cmd === null) throw new AccessDenied('a runner profile needs a program: --cmd <exe>')
+  assertAllowedCommand(cmd)
   const sandbox = shortField('sandbox', input.sandbox, 40)
   if (sandbox !== null && !RUNNER_SANDBOXES.includes(sandbox as RunnerSandbox)) {
     throw new AccessDenied(`unknown sandbox: ${sandbox} (${RUNNER_SANDBOXES.join(', ')})`)
   }
-  const args = (input.args ?? []).map(token => token.trim()).filter(token => token !== '')
+  const args = (input.args ?? []).map(token => {
+    const trimmed = token.trim()
+    if (trimmed.length > 2000) throw new AccessDenied('runner args need at most 2000 characters per token')
+    assertNotCredential('args', trimmed)
+    return trimmed
+  }).filter(token => token !== '')
+  const cwd = input.cwd === undefined ? null : resolve(input.cwd)
+  if (cwd !== null) {
+    const agent = db.prepare('SELECT workspace_id, worktrees FROM agents WHERE id = ?').get(input.agentId) as
+      { workspace_id: string; worktrees: string | null } | undefined
+    if (agent === undefined) throw new AccessDenied(`unknown agent: ${input.agentId}`)
+    validateRunnerCwd(db, agent.workspace_id, agent.worktrees, cwd)
+  }
   const now = new Date().toISOString()
 
   db.prepare(`
@@ -185,10 +204,42 @@ export function setRunnerProfile(db: DatabaseSync, input: SetRunnerInput): Runne
     input.agentId, cmd, JSON.stringify(args),
     shortField('model', input.model, 120), shortField('effort', input.effort, 40), sandbox,
     input.search === true ? 1 : 0,
-    input.cwd === undefined ? null : resolve(input.cwd),
+    cwd,
     now,
   )
   return getRunnerProfile(db, input.agentId)!
+}
+
+function assertAllowedCommand(cmd: string): void {
+  if (/\.(?:cmd|bat)$/i.test(cmd)) throw new AccessDenied(`batch shims are not supported by swarm run: ${cmd}`)
+  if (cmd.includes('/') || cmd.includes('\\') || cmd.includes(':')) {
+    throw new AccessDenied('runner command must be a known executable name from PATH, not a file path')
+  }
+  const name = basename(cmd).replace(/\.(?:exe|com|cmd|bat)$/i, '').toLowerCase()
+  if (!RUNNER_COMMANDS.includes(name as typeof RUNNER_COMMANDS[number])) {
+    throw new AccessDenied(`not an allowed worker command: ${cmd} (allowed: ${RUNNER_COMMANDS.join(', ')})`)
+  }
+}
+
+function within(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel === '' || (!rel.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) && rel !== '..' && !isAbsolute(rel))
+}
+
+function validateRunnerCwd(db: DatabaseSync, workspaceId: string, worktreesJson: string | null, candidate: string): string {
+  const workspace = requireWorkspace(db, workspaceId)
+  let actual: string
+  try { actual = realpathSync(candidate) } catch { throw new AccessDenied(`runner cwd does not exist: ${candidate}`) }
+  let registered: string[] = [workspace.root]
+  try {
+    const values = worktreesJson === null ? [] : JSON.parse(worktreesJson) as unknown
+    if (Array.isArray(values)) registered.push(...values.filter((item): item is string => typeof item === 'string'))
+  } catch { /* malformed legacy metadata grants no extra roots */ }
+  const accepted = registered.some(root => {
+    try { return within(realpathSync(root), actual) } catch { return false }
+  })
+  if (!accepted) throw new AccessDenied(`runner cwd is outside registered workspace/worktrees: ${candidate}`)
+  return actual
 }
 
 export function getRunnerProfile(db: DatabaseSync, agentId: string): RunnerProfile | null {
@@ -367,21 +418,15 @@ export function resolveExecutable(cmd: string): string {
 }
 
 /** Every token quoted, `%` doubled: `cmd.exe` expands `%VAR%` even inside quotes. */
-function quoteForCmd(token: string): string {
-  return `"${token.replace(/%/g, '%%').replace(/"/g, '\\"')}"`
-}
-
 export function buildRunnerArgv(profile: RunnerProfile, context: ArgvContext): RunnerArgv {
-  const args = profile.cmd === 'codex' ? codexArgs(profile, context) : templateArgs(profile, context)
+  assertAllowedCommand(profile.cmd)
+  const args = basename(profile.cmd).replace(/\.exe$/i, '').toLowerCase() === 'codex'
+    ? codexArgs(profile, context) : templateArgs(profile, context)
   const file = resolveExecutable(profile.cmd)
-  const shim = process.platform === 'win32' && /\.(cmd|bat)$/i.test(file)
-  // `cmd.exe` needs the command line verbatim; Node's own quoting would wrap the
-  // whole string in one pair of quotes and the shim would never be found.
-  const plan = shim
-    ? { file: process.env.ComSpec ?? process.env.COMSPEC ?? 'cmd.exe', args: ['/d', '/s', '/c', `"${[file, ...args].map(quoteForCmd).join(' ')}"`] }
-    : { file, args }
+  if (/\.(cmd|bat)$/i.test(file)) throw new AccessDenied(`batch shims are not supported by swarm run: ${file}`)
+  const plan = { file, args }
   const shown = plan.args.map(arg => (arg === context.prompt ? context.promptPath : arg))
-  return { ...plan, viaComspec: shim, commandText: [plan.file, ...shown].join(' ') }
+  return { ...plan, viaComspec: false, commandText: [plan.file, ...shown].join(' ') }
 }
 
 // ---------------------------------------------------------------------------
@@ -498,6 +543,7 @@ interface RunDbRow {
   agent_id: string
   run_id: string
   pid: number | null
+  process_started_at: string | null
   started_at: string
   cwd: string
   log_path: string
@@ -543,9 +589,34 @@ const loadRunRow = (db: DatabaseSync, agentId: string): RunDbRow | null =>
  * A PID can be reused after a reboot; the start time in the run row is what
  * keeps that from being mistaken for a live worker.
  */
-export function isAlive(pid: number | null): boolean {
-  if (pid === null || !Number.isInteger(pid) || pid <= 0) return false
-  try { process.kill(pid, 0); return true } catch { return false }
+function getProcessStartTime(pid: number): string | null {
+  if (!Number.isInteger(pid) || pid <= 0 || process.platform !== 'win32') return null
+  try {
+    const command = `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($p) { $p.StartTime.ToUniversalTime().ToString('o') }`
+    const value = execFileSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
+      encoding: 'utf8', windowsHide: true, timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    return Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null
+  } catch { return null }
+}
+
+function processExists(pid: number): boolean {
+  try { process.kill(pid, 0); return true } catch (error: unknown) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM'
+  }
+}
+
+/** True only when both the PID and its operating-system creation time match this run. */
+export function isOwnedProcess(pid: number | null, processStartedAt: string | null): boolean {
+  if (pid === null || !Number.isInteger(pid) || pid <= 0 || processStartedAt === null) return false
+  const actual = getProcessStartTime(pid)
+  if (actual === null || !Number.isFinite(Date.parse(processStartedAt))) return false
+  return Math.abs(Date.parse(actual) - Date.parse(processStartedAt)) <= 100
+}
+
+export function isAlive(pid: number | null, processStartedAt: string | null = null): boolean {
+  if (!isOwnedProcess(pid, processStartedAt)) return false
+  try { process.kill(pid!, 0); return true } catch { return false }
 }
 
 /**
@@ -560,8 +631,8 @@ export function isAlive(pid: number | null): boolean {
  * reused before the Brain ever looks) is small and cannot be closed from a pid
  * alone.
  */
-export function runAlive(row: { pid: number | null; ended_at: string | null }): boolean {
-  return row.ended_at === null && isAlive(row.pid)
+export function runAlive(row: { pid: number | null; process_started_at?: string | null; ended_at: string | null }): boolean {
+  return row.ended_at === null && isAlive(row.pid, row.process_started_at ?? null)
 }
 
 export function getWorkerRun(db: DatabaseSync, agentId: string): WorkerRun | null {
@@ -597,6 +668,7 @@ export interface StartRunInput {
  */
 export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRun {
   ensureRunnerSchema(db)
+  if (process.platform !== 'win32') throw new AccessDenied('swarm run is not supported on this platform; Windows process-tree identity is required')
   const workspace = requireWorkspace(db, input.workspaceId)
   requireAgent(db, input.agentId)
   const profile = getRunnerProfile(db, input.agentId)
@@ -621,6 +693,8 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
   const nowIso = now.toISOString()
   const workspaceRoot = resolve(workspace.root)
   const cwd = resolve(input.cwd ?? profile.cwd ?? workspaceRoot)
+  const agent = db.prepare('SELECT worktrees FROM agents WHERE id = ?').get(input.agentId) as { worktrees: string | null } | undefined
+  const verifiedCwd = validateRunnerCwd(db, workspace.id, agent?.worktrees ?? null, cwd)
   const home = input.home ?? resolveBrainHome()
   const stamp = stampOf(now)
   const workersDir = join(home, 'runs', 'workers')
@@ -654,7 +728,7 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
       log_mtime_ms = NULL, log_size = NULL, last_event_at = NULL, last_event_kind = NULL, last_event_text = NULL,
       ended_at = NULL, ended_reason = NULL, stopped_at = NULL, blocked_at = NULL
   `).run(
-    input.agentId, runId, nowIso, cwd, logPath, lastDocPath, promptPath, plan.commandText,
+    input.agentId, runId, nowIso, verifiedCwd, logPath, lastDocPath, promptPath, plan.commandText,
     plan.viaComspec ? 1 : 0,
   )
 
@@ -665,7 +739,7 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
     const errFd = openSync(errPath, 'a')
     try {
       const child = spawn(plan.file, plan.args, {
-        cwd,
+        cwd: verifiedCwd,
         detached: true,
         windowsHide: true,
         stdio: ['ignore', logFd, errFd],
@@ -673,6 +747,16 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
         ...(plan.viaComspec ? { windowsVerbatimArguments: true } : {}),
       })
       pid = child.pid ?? null
+      if (pid !== null) {
+        const processStartedAt = getProcessStartTime(pid)
+        if (processStartedAt === null && child.exitCode === null && processExists(pid)) {
+          child.kill()
+          throw new AccessDenied(`could not verify process start time for worker ${input.agentId}; process stopped`)
+        }
+        if (processStartedAt !== null) {
+          db.prepare('UPDATE worker_runs SET process_started_at = ? WHERE agent_id = ?').run(processStartedAt, input.agentId)
+        }
+      }
       // Best effort: a spawn failure that arrives after this process exits would
       // otherwise leave an empty log and no explanation for it.
       child.on('error', (error: Error) => {
@@ -770,37 +854,51 @@ export function reconcileWorkerRuns(db: DatabaseSync, workspaceId: string, optio
     const refreshed = loadRunRow(db, row.agent_id) ?? row
     const turn = turnOf(db, row.agent_id)
     const endedCleanly = endedTurnWithin(row, turn)
-    db.prepare('UPDATE worker_runs SET ended_at = ?, ended_reason = ? WHERE agent_id = ?')
-      .run(nowIso, endedCleanly ? 'turn-end' : 'process-gone', row.agent_id)
-    if (endedCleanly) {
-      events.push({
-        agentId: row.agent_id, runId: row.run_id, reason: 'ended-after-turn-end',
-        summary: `${row.agent_id}: runner exited after a turn end (${turn.turn_state})`, messageId: null,
-      })
-      continue
-    }
     const tail = tailOfLog(refreshed.log_path)
     const summary = `${row.agent_id}: runner exited without a turn end (pid ${row.pid ?? '?'}, started ${row.started_at})` +
       (tail.length === 0 ? '\nno log output' : `\n${tail.join('\n')}`)
-    db.prepare(`
-      UPDATE agents SET turn_state = 'blocked', turn_state_at = ?, turn_summary = ?,
-                        last_heartbeat = ?, last_seen = ?
-       WHERE id = ?
-    `).run(nowIso, summary.slice(0, 2000), nowIso, nowIso, row.agent_id)
-    db.prepare('UPDATE worker_runs SET blocked_at = ? WHERE agent_id = ?').run(nowIso, row.agent_id)
-    let messageId: string | null = null
-    if (options.notify !== false) {
-      ensureIntegrator(db, workspaceId)
-      messageId = sendMessage(db, {
-        workspaceId,
-        fromAgent: row.agent_id,
-        toAgent: INTEGRATOR,
-        subject: `swarm run: ${row.agent_id} exited without a turn end`,
-        body: `Worker ${row.agent_id} was started by the Brain and its process is gone before the turn ended.\n` +
-          `Command: ${row.command_text}\nLog: ${row.log_path}\n\nLast log lines:\n${tail.length === 0 ? '(empty)' : tail.join('\n')}`,
-      }).id
+    db.exec('BEGIN IMMEDIATE')
+    try {
+      const current = loadRunRow(db, row.agent_id)
+      if (current === null || current.ended_at !== null) { db.exec('COMMIT'); continue }
+      if (runAlive(current)) { db.exec('COMMIT'); refreshRunLog(db, current); continue }
+      const currentTurn = turnOf(db, row.agent_id)
+      const clean = endedTurnWithin(current, currentTurn)
+      if (clean) {
+        db.prepare('UPDATE worker_runs SET ended_at = ?, ended_reason = ? WHERE agent_id = ? AND ended_at IS NULL')
+          .run(nowIso, 'turn-end', row.agent_id)
+        db.exec('COMMIT')
+        events.push({
+          agentId: row.agent_id, runId: row.run_id, reason: 'ended-after-turn-end',
+          summary: `${row.agent_id}: runner exited after a turn end (${currentTurn.turn_state})`, messageId: null,
+        })
+        continue
+      }
+      db.prepare(`
+        UPDATE agents SET turn_state = 'blocked', turn_state_at = ?, turn_summary = ?,
+                          last_heartbeat = ?, last_seen = ?
+         WHERE id = ?
+      `).run(nowIso, summary.slice(0, 2000), nowIso, nowIso, row.agent_id)
+      db.prepare('UPDATE worker_runs SET blocked_at = ?, ended_at = ?, ended_reason = ? WHERE agent_id = ? AND ended_at IS NULL')
+        .run(nowIso, nowIso, 'process-gone', row.agent_id)
+      let messageId: string | null = null
+      if (options.notify !== false) {
+        ensureIntegrator(db, workspaceId)
+        messageId = sendMessage(db, {
+          workspaceId,
+          fromAgent: row.agent_id,
+          toAgent: INTEGRATOR,
+          subject: `swarm run: ${row.agent_id} exited without a turn end`,
+          body: `Worker ${row.agent_id} was started by the Brain and its process is gone before the turn ended.\n` +
+            `Command: ${row.command_text}\nLog: ${row.log_path}\n\nLast log lines:\n${tail.length === 0 ? '(empty)' : tail.join('\n')}`,
+        }).id
+      }
+      db.exec('COMMIT')
+      events.push({ agentId: row.agent_id, runId: row.run_id, reason: 'ended-without-turn-end', summary, messageId })
+    } catch (error: unknown) {
+      db.exec('ROLLBACK')
+      throw error
     }
-    events.push({ agentId: row.agent_id, runId: row.run_id, reason: 'ended-without-turn-end', summary, messageId })
   }
   return events
 }
@@ -824,20 +922,25 @@ export function stopWorkerRun(db: DatabaseSync, input: { agentId: string; worksp
   const hadEndedTurn = endedTurnWithin(row, turn)
 
   if (runAlive(row)) {
-    if (row.via_comspec !== 0) {
-      // The shim is `cmd.exe`; killing it alone would leave the real worker
-      // running with nothing pointing at it, so the tree goes together.
-      try { spawn('taskkill', ['/PID', String(row.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).unref() }
-      catch { /* the fallback below still tries the direct process */ }
+    if (process.platform === 'win32') {
+      if (!isOwnedProcess(row.pid, row.process_started_at)) {
+        throw new AccessDenied(`${input.agentId} pid ${row.pid} no longer matches the recorded process start time`)
+      }
+      try {
+        execFileSync('taskkill.exe', ['/PID', String(row.pid), '/T', '/F'], {
+          windowsHide: true, timeout: 5000, stdio: 'ignore',
+        })
+      } catch { /* a concurrent process exit is confirmed by the identity check below */ }
+    } else {
+      try { process.kill(-row.pid!, 'SIGTERM') } catch { /* already gone */ }
     }
-    try { process.kill(row.pid!, 'SIGTERM') } catch { /* already gone */ }
     const deadline = Date.now() + 3000
-    while (isAlive(row.pid) && Date.now() < deadline) {
+    while (isAlive(row.pid, row.process_started_at) && Date.now() < deadline) {
       // A short, bounded wait: `--stop` must not hang because a worker ignores
       // the signal, and the state written below depends on the process being gone.
       try { execSleep(50) } catch { break }
     }
-    if (isAlive(row.pid)) {
+    if (isAlive(row.pid, row.process_started_at)) {
       throw new AccessDenied(`${input.agentId} (pid ${row.pid}) ignored the stop; its turn stays ${turn.turn_state ?? 'unset'}`)
     }
   }

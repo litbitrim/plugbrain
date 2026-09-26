@@ -17,7 +17,7 @@
  * `swarm runner set --args` stores is what points this script at the log, the
  * prompt file and the CLI.
  */
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const argv = process.argv.slice(2)
@@ -70,6 +70,13 @@ if (mode === 'die') {
   emit({ type: 'item.completed', item: { type: 'agent_message', text: 'about to die without a turn end' } })
   emit({ type: 'item.completed', item: { type: 'command_execution', command: 'node --run build', exit_code: 1 } })
   process.exit(3)
+}
+
+if (mode === 'tree') {
+  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })
+  if (lastDoc !== null) writeFileSync(lastDoc, String(child.pid ?? ''))
+  emit({ type: 'item.completed', item: { type: 'agent_message', text: 'parent and child are running' } })
+  setInterval(() => {}, 1000)
 }
 
 emit({ type: 'item.completed', item: { type: 'agent_message', text: 'hanging on purpose' } })
