@@ -9,7 +9,7 @@ Reference: `bench/v2/RESULTS.md`, `bench/v2/raw/matrix.json`
 
 ## Executive Overview
 
-The v2 benchmark on foreign codebases proved:
+The v2 benchmark on four of the author's own projects proved:
 1. **PlugBrain decisively beats GitNexus** in accuracy (32.5% vs. 17.5%), indexing throughput (202s vs. 482s), and database storage efficiency (1.27 GB vs. 3.61 GB).
 2. **CodeGraph leads PlugBrain** (47.5% vs. 32.5%) primarily through three distinct advantages:
    - Polyglot AST parsing (Java, Python, TypeScript, C++)
@@ -24,7 +24,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 1. Multi-Language AST Extraction: Java & Polyglot Support
 - **Current Defect**: PlugBrain missed 15 out of 20 questions on `mcpz` solely because `.java` files are ignored during AST extraction. 410 Java source files yielded 0 symbols, 0 imports, and 0 call edges.
-- **Source Location**: [`src/indexer/ast.ts:74-85`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/indexer/ast.ts#L74-L85) and [`src/indexer/ast.ts:93-100`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/indexer/ast.ts#L93-L100)
+- **Source Location**: `src/indexer/ast.ts:74-85` and `src/indexer/ast.ts:93-100`
   ```ts
   export function languageOf(ext: string): string | null {
     switch (ext.toLowerCase()) {
@@ -47,7 +47,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 2. Full-Text Inverted Index for Symbols (Trigram / FTS5)
 - **Current Defect**: Query latency on the 38,751-file monorepo (`cowork`) degrades to ~4,000ms p50 and 15,000ms p95. CodeGraph answers the same queries in 343ms.
-- **Source Location**: [`src/intel/search.ts:62-78`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/intel/search.ts#L62-L78) and [`src/store/schema.ts:111-124`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/store/schema.ts#L111-L124)
+- **Source Location**: `src/intel/search.ts:62-78` and `src/store/schema.ts:111-124`
   Currently, `conceptSearch` executes:
   ```sql
   SELECT s.*, f.path as file_path
@@ -74,7 +74,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 3. Deep Blast-Radius & Impact Fallback
 - **Current Defect**: PlugBrain missed all 8 blast-radius / impact questions (`mcpz-05`, `mcpz-06`, `plugmedia-07`, `plugmedia-08`, `cowork-05`, `cowork-06`, `plugengine-07`, `plugengine-08`).
-- **Source Location**: [`src/intel/impact.ts:40-95`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/intel/impact.ts#L40-L95)
+- **Source Location**: `src/intel/impact.ts:40-95`
   `getBlastRadius` requires an exact resolved edge in `edges(dst_symbol)`. When an edge has `resolved = 0` (unresolved import or property access), or when the target is a record component / configuration property, traversal stops immediately and reports 0 impacted nodes.
 - **Concrete Solution**:
   1. In `src/intel/impact.ts`, include edges matching `raw_target = ?` when `dst_symbol` resolution is absent.
@@ -86,7 +86,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 4. Configuration & Environment Variable Indexing
 - **Current Defect**: PlugBrain failed configuration questions (`plugmedia-10` `PLUGMEDIA_PORT`, `plugmedia-11` `PGPORT`, `cowork-08` `PLUGOS_COCKPIT_PORT`, `plugengine-10` `CommandBusOptions`).
-- **Source Location**: [`src/indexer/ast.ts:310-380`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/indexer/ast.ts#L310-L380)
+- **Source Location**: `src/indexer/ast.ts:310-380`
   Currently, `ts.forEachChild` only extracts declarations (`VariableDeclaration`, `FunctionDeclaration`, `ClassDeclaration`). Property accesses like `process.env.VAR` or `cfg.get("key")` are completely ignored as symbols.
 - **Concrete Solution**:
   1. In `src/indexer/ast.ts`, inspect `PropertyAccessExpression`: when expression is `process.env.<NAME>` or equivalent, register `<NAME>` with `kind = 'config'`.
@@ -97,7 +97,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 5. Universal Markdown & Documentation Indexing in Non-Planet Workspaces
 - **Current Defect**: Questions targeting documentation (`mcpz-11` `MASTER_NORTHSTAR.md`, `plugmedia-14` `VS0_FINAL_REPORT.md`, `cowork-13` `CANON.md`, `plugengine-14` `TECH_DEBT_REGISTER.md`) missed because markdown notes were not queryable in standard workspace search.
-- **Source Location**: [`src/indexer/scan.ts:210-245`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/indexer/scan.ts#L210-L245) and [`src/intel/search.ts:130-175`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/intel/search.ts#L130-L175)
+- **Source Location**: `src/indexer/scan.ts:210-245` and `src/intel/search.ts:130-175`
   `note_properties` and note search are gated behind `planets` and `note_roots`. In plain workspace mode (`register <path>`), markdown files are inserted into `files`, but their headings and content are not added to the FTS search index.
 - **Concrete Solution**:
   1. In `src/indexer/scan.ts`, parse markdown headings, aliases, and filenames into `search` FTS unconditionally for every workspace.
@@ -108,7 +108,7 @@ Every single question where PlugBrain lost or tied has been traced to its exact 
 
 ### 6. File-Path & Barrel Entrypoint Boosting
 - **Current Defect**: Queries for entrypoints (`plugmedia-13` `main`, `cowork-10` `fleet`, `plugengine-12` `plugengine-core`) returned internal symbols rather than the top-level barrel / entrypoint file.
-- **Source Location**: [`src/intel/search.ts:85-120`](file:///C:/PLUG/plugpt/Code/PlugBrain-Core--bench/src/intel/search.ts#L85-L120)
+- **Source Location**: `src/intel/search.ts:85-120`
   When multiple symbols match a common term like `main` or `index`, ranking favors symbol name length and export flags, but ignores whether the file is an entrypoint (`index.ts`, `main.ts`, `server.ts`, or defined in `package.json#main`).
 - **Concrete Solution**:
   1. Score boost for files named `index.*`, `main.*`, `server.*`, `cli.*`, or referenced in `package.json` (`main`, `bin`).

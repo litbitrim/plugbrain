@@ -3,10 +3,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const RAW_DIR = join(WORKTREE, 'bench/v2/raw');
-const QUESTIONS_DIR = join(WORKTREE, 'bench/v2/questions');
+import { RAW_DIR, QUESTIONS_DIR } from './paths.mjs';
 
 const repos = ['mcpz', 'plugmedia', 'cowork', 'plugengine'];
 const tools = ['plugbrain', 'gitnexus', 'codegraph'];

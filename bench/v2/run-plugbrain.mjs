@@ -1,18 +1,15 @@
 /**
  * PlugBrain Benchmark Runner (v2)
  *
- * Runs against frozen snapshots in C:/PLUG/bench/ with isolated PLUGBRAIN_HOME
+ * Runs against frozen snapshots under BENCH_REPOS_ROOT with an isolated PLUGBRAIN_HOME
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, statSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const BENCH_DIR = 'C:/PLUG/bench';
-const TEMP_HOME = join(BENCH_DIR, '_plugbrain-home');
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const REPOS_FILE = join(WORKTREE, 'bench/v2/repos.json');
-const QUESTIONS_DIR = join(WORKTREE, 'bench/v2/questions');
-const RAW_DIR = join(WORKTREE, 'bench/v2/raw');
+import { QUESTIONS_DIR, RAW_DIR, WORKTREE, loadRepos, requireReposRoot } from './paths.mjs';
+
+const TEMP_HOME = join(requireReposRoot(), '_plugbrain-home');
 
 function getDirSize(dir) {
   let size = 0;
@@ -43,7 +40,7 @@ function normalizePath(p) {
 }
 
 async function run() {
-  const repos = JSON.parse(readFileSync(REPOS_FILE, 'utf8')).repos;
+  const repos = loadRepos();
   const allResults = [];
 
   for (const repo of repos) {
@@ -255,4 +252,4 @@ async function run() {
   console.log(`========================================\n`);
 }
 
-run().catch(console.error);
+run().catch((err) => { console.error(err); process.exitCode = 1 });

@@ -35,13 +35,22 @@ function tempDir(name: string): { dir: string; cleanup: () => void } {
   return { dir, cleanup }
 }
 
-test('the live workspace root keeps its existing id ws-a2373c999ef3', () => {
-  // The one row the live home already holds was minted for C:\PLUG\plugpt.
-  // Registration of that root — CLI or HTTP API — must land on the SAME row,
-  // which means the derivation must still reproduce this exact string.
-  assert.equal(workspaceIdFor('C:/PLUG/plugpt'), 'ws-a2373c999ef3')
-  // Same folder spelled the other way: Windows paths are case-insensitive.
-  assert.equal(workspaceIdFor('c:\\PLUG\\plugpt'), 'ws-a2373c999ef3')
+test('the workspace id derivation is stable across path spellings', () => {
+  const { dir, cleanup } = tempDir('spelling')
+  try {
+    // The id is minted from the canonical path hash: registration of a root —
+    // CLI or HTTP API — must land on the SAME row, which means the derivation
+    // must still reproduce this exact string.
+    const base = canonicalPath(dir)
+    const derived = `ws-${createHash('sha256').update(canonicalPath(base).toLowerCase()).digest('hex').slice(0, 12)}`
+    assert.equal(workspaceIdFor(base), derived)
+    // Same folder spelled with a different case and separator style: Windows
+    // paths are case-insensitive, so all spellings are the same folder.
+    assert.equal(workspaceIdFor(base.toUpperCase()), derived)
+    assert.equal(workspaceIdFor(base.toLowerCase().split('\\').join('/')), derived)
+  } finally {
+    cleanup()
+  }
 })
 
 test('a pinned marker survives a folder move and worktrees share it', { skip: skipGit }, () => {

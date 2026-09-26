@@ -5,11 +5,9 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, statSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CODEGRAPH_BIN = 'C:/Users/mil/AppData/Roaming/npm/codegraph.cmd';
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const REPOS_FILE = join(WORKTREE, 'bench/v2/repos.json');
-const QUESTIONS_DIR = join(WORKTREE, 'bench/v2/questions');
-const RAW_DIR = join(WORKTREE, 'bench/v2/raw');
+import { QUESTIONS_DIR, RAW_DIR, loadRepos } from './paths.mjs';
+
+const CODEGRAPH_BIN = 'codegraph';
 
 function getDirSize(dir) {
   let size = 0;
@@ -40,7 +38,7 @@ function normalizePath(p) {
 }
 
 async function run() {
-  const repos = JSON.parse(readFileSync(REPOS_FILE, 'utf8')).repos;
+  const repos = loadRepos();
   const allResults = [];
 
   for (const repo of repos) {
@@ -225,4 +223,4 @@ async function run() {
   console.log(`========================================\n`);
 }
 
-run().catch(console.error);
+run().catch((err) => { console.error(err); process.exitCode = 1 });

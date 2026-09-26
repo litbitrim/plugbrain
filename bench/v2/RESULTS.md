@@ -241,3 +241,15 @@ To verify evaluation honesty and eliminate harness bias, 10 sampled misses per t
     - **Expected**: `docs/CREATOR_EDITOR_SPEC.md`
     - **Delivered**: `placementStore.ts`
     - **Root Cause**: Markdown specs not in index; fell back to partial word match in code.
+
+---
+
+## Reproduce
+
+The benchmark corpus locations are not hard-coded: every script in `bench/v2/` and `scripts/index-bench-repos.mjs` derives the local path of each repository from the environment variable `BENCH_REPOS_ROOT` plus the repository name (`$BENCH_REPOS_ROOT/<name>`), and fails with a clear error when the variable is missing. To reproduce the numbers above:
+
+1. Check out the four corpus repositories (`mcpz`, `plugmedia`, `cowork`, `plugengine`) into one folder, one subdirectory per repository, named as in `bench/v2/repos.json`.
+2. Point `BENCH_REPOS_ROOT` at that folder.
+3. Run the harness from the repository root: `node bench/v2/run-bench03.mjs` (question runs), then `node bench/v2/aggregate.mjs` and `node bench/v2/generate-results.mjs` (aggregation and report).
+
+No measurement numbers in this report are affected by that change — it only moves where the corpus is found on disk. Temporary PlugBrain homes are also created under `BENCH_REPOS_ROOT` (`PLUGBRAIN_HOME=<BENCH_REPOS_ROOT>/_plugbrain-home`), never touching live configurations or ports.
