@@ -1,287 +1,141 @@
-# PlugBrain V1
+# PlugBrain
 
-> **Autonome Wissens- und Koordinations-Engine für Code- und Wissens-Planeten**
+[![CI](https://github.com/litbitrim/plugbrain/actions/workflows/ci.yml/badge.svg)](https://github.com/litbitrim/plugbrain/actions/workflows/ci.yml)
 
-PlugBrain V1 ist ein Standalone-Dienst für Software-Monorepos, Multi-Repo-Planeten und Wissensarchive (wie Obsidian-Vaults). Es indiziert Quellcode (TypeScript, JavaScript, Python, Go, Rust, Markdown), löst statische und dynamische Abhängigkeiten auf, verwaltet Vault-Notizen (Frontmatter, Wiki-Links, Volltext) und koordiniert Multi-Agenten-Schwärme in Echtzeit über Claims, Leases, Inboxes und Server-Sent Events (SSE).
+**PlugBrain is a local project and code memory for AI agents** — real AST-based
+code intelligence over your repositories plus an Obsidian-style note vault,
+exposed to Claude Code (and any MCP client) as one set of tools. Everything
+runs on your machine. No cloud, no telemetry.
 
----
+<!-- TODO(integrator): drop the UI screenshots into docs/images/ before publishing. -->
+![Atlas — the graph view](docs/images/atlas.png)
+![City — the code map](docs/images/city.png)
+![Agent Mesh — live fleet board](docs/images/mesh.png)
 
-## Inhaltsverzeichnis
+## Why PlugBrain?
 
-1. [Features](#features)
-2. [Schnellstart & Launcher](#schnellstart--launcher)
-3. [Drei interaktive Benutzeroberflächen](#drei-interaktive-benutzeroberflächen)
-4. [Getestete CLI-Befehle](#getestete-cli-befehle)
-5. [HTTP REST API](#http-rest-api)
-6. [Model Context Protocol (MCP)](#model-context-protocol-mcp)
-7. [Agenten-Koordination & Schwarm-Integration](#agenten-koordination--schwarm-integration)
-8. [Persistenz, Backup & Wiederherstellung](#persistenz-backup--wiederherstellung)
-9. [Tests & Benchmarks](#tests--benchmarks)
+Code assistants forget. Every session starts from zero: the agent re-reads
+files it has already read, misses the note where you wrote down *why* a
+decision was made, and steps on other agents editing the same files.
+Existing code-graph tools help with the code half of that problem:
 
----
+- **GitNexus** indexes one repository into a graph you can query — but it has
+  no notes, no agent coordination, and no MCP surface for your daily driver.
+- **CodeGraph** maps symbols and dependencies well, but is a library you wire
+  up yourself rather than a product an agent can talk to.
 
-## Features
+PlugBrain combines both halves in one local brain:
 
-- **Planet-Verwaltung:** Multi-Repository-Unterstützung (Repositories, Git-Worktrees und Checkouts) kombiniert mit Obsidian-Notes-Vaults unter einem einheitlichen Planeten-Namespace.
-- **Tiefgehende Code-Analyse:** AST-Parser für TypeScript, JavaScript, Python, Go und Rust. Extraktion von Symbolen, Importen, Referenzen und Definitionen mit generationsbasierter Inkrementeller Reindizierung.
-- **Notes & Vault-Engine:** Vollständige Unterstützung von Markdown-Notizen, Frontmatter-Attributen, hierarchischen Tags, Wiki-Links (`[[Ziel]]`) mit Ambiguitätsprüfung und Rückverweisen (Backlinks).
-- **Bases Query Engine:** Abfrage von Notiz-Metadaten via SQL-ähnlicher Filterausdrücke (z. B. `typ=gate UND stand=offen`).
-- **Swarm Mesh Coordination:**
-  - Agenten-Registrierung mit Heartbeats und Liveness-Erkennung.
-  - Exklusive Leases und Claim-Fencing (Pfad-basierte Locks zur Vermeidung von Schreibkollisionen).
-  - Agent-to-Agent Inbox & Handoff-Messaging mit garantierter Zustellung und Quittierung.
-  - Echtzeit-Event-Stream via Server-Sent Events (`/api/live/events`).
-- **Web-Dashboard (Port 4310):**
-  - **Atlas:** Wissens- & Code-Graph, Explorer, semantische Suche (Code + Bases-Property-Query) und Quellansicht mit Backlinks.
-  - **City:** 3D-/2.5D-Code-Metropole (Distrikte = Repositories, Straßen = Ordner, Gebäude = Dateien, Höhe = Zeilenzahl, Farbe = Aktivität/Provenance).
-  - **Agent Mesh:** Live-Schwarm-Dashboard mit aktiven Leases, Event-Ticker und Detail-Inspector (Task, Checkout, Claims, Dateiereignisse, Tools).
-- **Robuste Persistenz:** SQLite-basierter Graph mit Write-Ahead Logging (WAL). Konsistente Online-Backups mittels `VACUUM INTO` ohne Risiko von korrupten Snapshot-Kopien.
+| | GitNexus | CodeGraph | PlugBrain |
+| --- | --- | --- | --- |
+| AST code intelligence (symbols, callers, impact) | ✓ | ✓ | ✓ |
+| Obsidian-style notes with code bindings | – | – | ✓ |
+| Multi-agent leases, fencing and awareness | – | – | ✓ |
+| MCP server for Claude Code & friends | – | – | ✓ |
+| Fully local, single binary, no account | – | – | ✓ |
 
----
+<!-- BENCH -->
+<!-- The integrator fills this section with the measured numbers from BENCH-02
+     (indexing speed, query latency, memory) once that benchmark lane reports. -->
 
-## Schnellstart & Launcher
+## Quickstart
 
-PlugBrain läuft unter Node.js (v22+) und erfordert keine externen Datenbankserver.
+**Windows:** download `PlugBrain-<version>-win-x64.exe` from
+[Releases](https://github.com/litbitrim/plugbrain/releases) and run it. The
+installer bundles a portable Node.js runtime — nothing else to install.
 
-### 1. Abhängigkeiten installieren & UI bauen
-```powershell
+**macOS / Linux:** grab `plugbrain-<version>-<os>-<arch>.tar.gz` from the same
+releases page, unpack it and put `bin/plugbrain` on your `PATH`.
+
+Then, inside your project folder:
+
+```bash
+# One-time: create the brain store and register this folder as a workspace
+plugbrain init
+
+# Start the local brain (UI + API + MCP transport)
+plugbrain serve
+```
+
+Open `http://localhost:4310` for the cockpit. The data directory defaults to
+`~/.plugbrain`; set `PLUGBRAIN_HOME` to choose another location.
+
+### Use it from Claude Code
+
+PlugBrain ships as a Claude Code plugin with its own marketplace entry:
+
+```
+/plugin marketplace add litbitrim/plugbrain
+/plugin install plugbrain@plugbrain
+```
+
+The plugin starts the brain when needed (session hook), and gives Claude the
+`skills/brain` skill: *ask the brain first* — context packs before edits,
+impact analysis before renames, notes before re-deriving decisions.
+
+## MCP tools
+
+`plugbrain mcp` speaks the Model Context Protocol over stdio. The 22 tools:
+
+**Code intelligence**
+
+| Tool | What it does |
+| --- | --- |
+| `search` | Full-text search for code and symbols across the workspace |
+| `read` | Read a file through PlugBrain with access logging and attribution |
+| `query` | Concept search across symbols and notes |
+| `context` | 360-degree context of a symbol (callers, callees, execution flows) |
+| `impact` | Blast-radius analysis for a symbol or file |
+| `context_pack` | Goal-oriented context pack with files, symbols and dependencies |
+| `detect_changes` | Map git diff hunks to affected symbols and flows |
+| `cypher` | Bounded Cypher-like graph query inside one workspace |
+| `rename_preview` | Read-only preview of a symbol rename; never writes files |
+
+**Agent coordination**
+
+| Tool | What it does |
+| --- | --- |
+| `claim` | Exclusive lease on paths or symbols with TTL and fencing epoch |
+| `release` | Release a held lease |
+| `awareness` | Who is working on what: live claims, conflicts, dependency overlaps |
+| `heartbeat` | Keep agent presence alive, prevent lease expiry |
+| `message_send` | Send a message to an agent inbox or topic channel |
+| `inbox_read` | Read agent messages with optional long-polling |
+| `swarm_turn` | Check in at a turn boundary; get messages, next task, host admission |
+| `swarm_board` | The fleet board: every worker, surface, task, leases, attention flags |
+| `swarm_resources` | Host disk/RAM/CPU, quotas, admission for test/build/install work |
+| `plan` | The master ledger joined with the brain queue |
+
+**Notes (the Obsidian replacement)**
+
+| Tool | What it does |
+| --- | --- |
+| `notes_search` | Search the prose of the vault notes, optionally with the matching line |
+| `notes_read` | Read one note with properties, outgoing links and backlinks |
+| `notes_query` | Property query over notes, e.g. `typ=gate AND stand=offen` |
+| `notes_backlinks` | Every note that links to this one |
+
+## Privacy
+
+- Everything stays on your machine: the store is a single SQLite database
+  under `PLUGBRAIN_HOME`, indexing runs locally, the UI is served locally.
+- No telemetry, no analytics, no phone-home. The only network traffic is the
+  local HTTP server on `127.0.0.1`.
+- The HTTP API requires a bearer token that is generated on first start and
+  kept in `<PLUGBRAIN_HOME>/auth.token`.
+
+## Development
+
+```bash
+git clone https://github.com/litbitrim/plugbrain
+cd plugbrain
 npm install
-npm run build:ui
+npm test          # unit + integration tests (node:test)
+npm run serve     # start the brain against the current folder
 ```
 
-### 2. Server starten
-Der Server startet standardmäßig auf Port `4310`:
-```powershell
-# Direkt per npm Script
-npm run serve
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-# Oder über die mitgelieferten Launcher-Skripte (Windows)
-.\bin\serve.cmd
-.\bin\plugbrain.cmd serve 4310
-.\bin\plugbrain.ps1 serve 4310
-```
+## License
 
-### 3. Datenverzeichnis konfigurieren
-Standardmäßig speichert PlugBrain seine Datenbank unter `~/.plugbrain/plugbrain.db`.
-Über die Umgebungsvariable `PLUGBRAIN_HOME` kann ein alternativer Pfad gewählt werden:
-```powershell
-$env:PLUGBRAIN_HOME = "D:\vault\mein-vault\.plugbrain"
-.\bin\plugbrain.cmd serve 4310
-```
-
----
-
-## Drei interaktive Benutzeroberflächen
-
-Öffnen Sie im Browser: `http://localhost:4310`
-
-### 1. Atlas
-- **Galaxy & Planet Graph:** Visualisierung von Repositories, Checkouts und Modulen.
-- **Explorer:** Dateibaum mit Metadaten (LOC, Sprache, Modifikationszeit, Symbolanzahl).
-- **Dual-Mode Suche:**
-  - *Code & Symbole:* Sucht über Klassen, Funktionen, Variablen und Dateien.
-  - *Bases Notiz-Abfrage:* Sucht mit Struktur-Filtern wie `typ=gate UND stand=offen` oder `bereich=brain`.
-- **Quellcodeansicht:** Zeilennummern, Syntax-Highlighting, Provenance (wer hat die Datei zuletzt bearbeitet) und **Backlinks** (Notizen und Dokumente, die auf diese Datei verlinken).
-
-### 2. City
-- **Metapher:**
-  - Distrikte (Stadtteile) = Repositories
-  - Straßen / Blöcke = Ordnerstrukturen
-  - Gebäude = Dateien
-  - Gebäudehöhe = Lines of Code (LOC)
-  - Farbe = Letzte Agenten-Aktivität / Provenance
-- **Interaktivität:** Klick auf ein Gebäude öffnet die Datei direkt in der echten Quellansicht.
-
-### 3. Agent Mesh
-- **Live-Schwarm:** Zeigt alle registrierten Agenten, ihren aktuellen Status (`active`, `idle`, `dead`) und Heartbeat-Timer.
-- **Claim-Fencing:** Zeigt alle gesperrten Verzeichnisse und Dateien mit Lease-Dauer und Owner.
-- **Live Event Stream:** SSE-Empfänger zeigt Ereignisse (`agent.registered`, `lease.acquired`, `lease.released`, `message.sent`) in Echtzeit.
-- **Agent Inspector:** Klick auf einen Agenten öffnet ein Panel mit:
-  - Aktuelle Aufgabe (Task) & Checkout-Pfad
-  - Aktive Claims / Sperren
-  - Dateiereignisse (erstellte/bearbeitete Dateien)
-  - Toolereignisse (ausgeführte Befehle & Tools)
-  - Inbox-Nachrichtenverlauf
-
----
-
-## Getestete CLI-Befehle
-
-Alle CLI-Befehle können direkt über `node --experimental-strip-types src/cli.ts <befehl>` oder über die Launcher in `bin/` ausgeführt werden.
-
-### Planet & Workspace-Verwaltung
-```powershell
-# Registriert einen Planeten und erkennt Repositories und Obsidian-Roots
-plugbrain planet register "D:\vault\mein-vault" "mein-vault"
-
-# Scannt Revisionsvektoren und indiziert geänderte Dateien
-plugbrain planet scan
-
-# Zeigt Status: Repos, Checkouts, Revisions, Symbol- und Kantenanzahl
-plugbrain planet status
-
-# Zeigt Historie gelöschter/verschobener Dateien (Tombstones)
-plugbrain planet history
-```
-
-### Indizierung & Graph
-```powershell
-# Vollständige Indizierung aller registrierten Workspaces
-plugbrain index
-
-# Statusübersicht der Indizes, Sprachen und Agenten
-plugbrain status
-
-# Symbol- und Volltextsuche über den Codebestand
-plugbrain search "indexPlanetWorkspace"
-```
-
-### Notes & Vault
-```powershell
-# Abfrage von Notiz-Eigenschaften (Bases Query)
-plugbrain notes query "typ=gate UND stand=offen"
-plugbrain notes query "prioritaet=hoch"
-
-# Volltextsuche über Obsidian-Notizen mit Text-Snippets
-plugbrain notes search "PlugBrain"
-
-# Notiz lesen mit aufgelösten Links, Backlinks und Properties
-plugbrain notes read "Master/Hauptnotiz-01.md"
-
-# Notiz atomar mit Versionsprüfung schreiben
-plugbrain notes write "Notizen/Test.md" --from "C:\temp\test.md"
-
-# Rückverweise (Backlinks) einer Notiz anzeigen
-plugbrain notes backlinks "Master/Hauptnotiz-01.md"
-```
-
-### Kontext & Impact-Analyse
-```powershell
-# Erstellt ein semantisches Kontext-Briefing für eine Programmieraufgabe
-plugbrain context "Implementiere atomic backup with vacuum into"
-
-# Berechnet den Auswirkungs-Radius einer Dateiänderung
-plugbrain impact "src/store/backup.ts"
-```
-
-### Backup & Restore
-```powershell
-# Erstellt ein atomares Online-Backup mittels SQLite VACUUM INTO
-plugbrain backup "C:\backups\plugbrain-backup.db"
-
-# Stellt eine Datenbank aus einem Backup wieder her (bereinigt alte WAL/SHM)
-plugbrain restore "C:\backups\plugbrain-backup.db"
-```
-
----
-
-## HTTP REST API
-
-PlugBrain stellt eine umfassende REST-Schnittstelle auf Port 4310 bereit:
-
-### System & Health
-- `GET /api/health` — Status und Uptime.
-- `GET /api/planet` — Vollständige Planet-Topologie (Repos, Checkouts, Notizen, Metriken).
-- `POST /api/reindex` — Triggert eine Reindizierung (`{"full": false}`).
-
-### Suche & Code-Navigation
-- `POST /api/agent/search` — Symbol- und Volltextsuche: `{"query": "searchNotes", "limit": 20}`.
-- `GET /api/provenance?path=src/cli.ts` — Letzte Bearbeiter und Revisionshistorie.
-- `GET /api/timeline` — Chronik der letzten Änderungen im Planeten.
-
-### Notizen & Vault
-- `GET /api/notes/query?filter=typ=gate UND stand=offen` — Bases-Property-Query.
-- `GET /api/notes/search?q=Architektur` — Prose-Suche in Notizen.
-- `GET /api/notes/read?path=Master/Hauptnotiz-01.md` — Notizinhalt mit Frontmatter und Links.
-- `GET /api/notes/backlinks?path=Master/Hauptnotiz-01.md` — Eingehende Links auf eine Notiz.
-- `POST /api/notes/write` — Schreibt eine Notiz mit Versionsprüfung.
-
-### Schwarm & Koordination
-- `POST /api/agent/register` — Registriert einen Agenten mit Task und Checkout.
-- `POST /api/agent/heartbeat` — Sendet einen Lebenszeichen-Ping.
-- `POST /api/agent/claim` — Fordert eine exklusive Pfadsperre (Lease) an.
-- `POST /api/agent/release` — Gibt eine Pfadsperre frei.
-- `GET /api/agent/presence` — Liste aller registrierten Agenten und ihres Status.
-- `GET /api/agent/leases` — Liste aller aktuell aktiven Leases.
-- `POST /api/agent/inspect` — Detaildaten eines Agenten (Task, Checkout, Claims, Events, Inbox).
-- `POST /api/agent/inbox/send` — Sendet eine Nachricht an die Inbox eines anderen Agenten.
-- `GET /api/agent/inbox?agentId=...` — Liest ungelesene Nachrichten einer Agenten-Inbox.
-- `GET /api/live/events` — Server-Sent Events (SSE) Stream für Live-Aktualisierungen.
-
-### Backup & Integrität
-- `POST /api/backup` — Erstellt ein atomares Online-Backup: `{"targetPath": "C:\\backups\\snap.db"}`.
-- `POST /api/backup/verify` — Prüft die SQLite-Integrität einer Backup-Datei: `{"backupPath": "C:\\backups\\snap.db"}`.
-
----
-
-## Model Context Protocol (MCP)
-
-PlugBrain bietet einen vollwertigen MCP-Server (`stdio`), der von KI-Assistenten (z. B. Claude, Gemini, Antigravity) direkt eingebunden werden kann:
-
-```powershell
-plugbrain mcp
-```
-
-### Verfügbare MCP-Tools:
-1. `plugbrain_search` — Suche nach Code, Symbolen und Dateien.
-2. `plugbrain_get_symbol` — Symboldefinition mit Kontext abrufen.
-3. `plugbrain_get_file` — Quellcode einer Datei lesen.
-4. `plugbrain_impact` — Abhängigkeits- und Re-Resolve-Radius einer Änderung ermitteln.
-5. `plugbrain_briefing` — Automatisches Kontextpaket für einen Entwicklungsauftrag.
-6. `plugbrain_query_notes` — Obsidian-Notizen nach Frontmatter-Attributen filtern.
-7. `plugbrain_search_notes` — Notiz-Volltextsuche mit Snippets.
-8. `plugbrain_read_note` — Notiz mit Wiki-Links und Backlinks lesen.
-9. `plugbrain_write_note` — Notiz atomar mit Optimistic Locking schreiben.
-10. `plugbrain_register_agent` — Agent im Schwarm registrieren.
-11. `plugbrain_claim_scope` — Exklusive Datei- oder Ordnersperre anfordern.
-12. `plugbrain_release_scope` — Sperre nach Abschluss der Arbeit freigeben.
-13. `plugbrain_send_message` — Nachricht an einen Kollegen-Agenten übergeben.
-14. `plugbrain_read_inbox` — Eigene Agenten-Inbox abrufen.
-
----
-
-## Agenten-Koordination & Schwarm-Integration
-
-PlugBrain wurde speziell entwickelt, um Flotten autonomer Agenten (mehrere KI-Agenten, die parallel am selben Vault arbeiten) vor gegenseitigem Überschreiben zu schützen.
-
-### Registrierung & Claim-Lebenszyklus:
-1. **Registrieren:** Der Agent meldet sich beim Start an:
-   ```json
-   POST /api/agent/register
-   { "agentId": "agent-01", "role": "developer", "task": "Refactor Backup", "checkout": "D:\\vault\\mein-vault\\Code\\mein-repo" }
-   ```
-2. **Claim anfordern (Fencing):** Bevor eine Datei verändert wird, fordert der Agent eine Lease an:
-   ```json
-   POST /api/agent/claim
-   { "agentId": "agent-01", "scope": "src/store/backup.ts", "ttlSeconds": 120 }
-   ```
-   Wenn ein anderer Agent denselben Pfad gesperrt hat, wird der Claim mit Status `conflict` abgewiesen.
-3. **Heartbeat:** Der Agent sendet alle 30 Sekunden einen Ping (`POST /api/agent/heartbeat`). Bleibt der Heartbeat länger als 60 Sekunden aus, gilt der Agent als `dead` und seine Sperren können übernommen werden.
-4. **Freigabe:** Nach erfolgreichem Commit gibt der Agent die Lease frei (`POST /api/agent/release`).
-
----
-
-## Persistenz, Backup & Wiederherstellung
-
-SQLite im WAL-Modus erlaubt gleichzeitige Lese- und Schreibzugriffe. Ein einfaches Kopieren der `.db`-Datei im laufenden Betrieb führt jedoch häufig zu inkonsistenten oder unvollständigen Snapshots.
-
-PlugBrain löst dies über den nativen SQLite-Befehl `VACUUM INTO`:
-- **Atomarer Snapshot:** `VACUUM INTO` erzeugt eine eigenständige, defragmentierte `.db`-Datei, die alle bis zu diesem Moment committeten Transaktionen (auch jene im WAL) enthält.
-- **Sicherer Restore:** Beim Einspielen eines Backups werden verwaiste `-wal` und `-shm`-Dateien automatisch gelöscht, um eine Replay-Verfälschung durch veraltete Log-Segmente auszuschließen.
-- **Integritätsprüfung:** `PRAGMA integrity_check` stellt sicher, dass Backups vor der Archivierung vollständig und unbeschädigt sind.
-
----
-
-## Tests & Benchmarks
-
-Das Test-Suite umfasst Unit- und Integrationstests für alle Teilsysteme:
-```powershell
-# Alle Tests ausführen (109 Tests)
-npm test
-
-# Benchmarks für Abfrage- und Parser-Performance
-npm run bench:retrieval
-npm run bench:notes
-```
-
-Alle 109 Tests laufen deterministisch und unabhängig vom Dateisystem ohne Mocks gegen echte In-Memory- und Disk-SQLite-Instanzen.
+[MIT](LICENSE) — Copyright (c) 2026 litbitrim
