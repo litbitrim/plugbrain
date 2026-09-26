@@ -379,7 +379,7 @@ test('M4: awareness pack reports dependency overlap when another task claims an 
   }
 })
 
-test('M4: MCP server lists all 24 tools and executes tool calls over JSON-RPC', async () => {
+test('M4: MCP server lists all 27 tools and executes tool calls over JSON-RPC', async () => {
   const f = await createCoordFixture()
   try {
     const inStream = new PassThrough()
@@ -422,10 +422,11 @@ test('M4: MCP server lists all 24 tools and executes tool calls over JSON-RPC', 
     const initRes = await sendRpc({ id: 1, method: 'initialize' })
     assert.equal(initRes.result.serverInfo.name, 'plugbrain')
 
-    // 2. tools/list: coordination tools plus the Brain parity read tools.
+    // 2. tools/list: coordination tools plus the Brain parity read tools and
+    //    the hygiene/machine lanes (git guard and hardware awareness).
     const listRes = await sendRpc({ id: 2, method: 'tools/list' })
     const tools = listRes.result.tools as Array<{ name: string }>
-    assert.equal(tools.length, 24, `Expected 24 tools, found ${tools.length}`)
+    assert.equal(tools.length, 27, `Expected 27 tools, found ${tools.length}`)
     const toolNames = tools.map((t) => t.name)
     const expected = [
       'ask', 'search', 'read', 'context_pack', 'query', 'context', 'impact',
@@ -433,6 +434,7 @@ test('M4: MCP server lists all 24 tools and executes tool calls over JSON-RPC', 
       'message_send', 'heartbeat', 'cypher', 'rename_preview',
       'swarm_turn', 'swarm_board', 'swarm_resources',
       'plan', 'notes_search', 'notes_read', 'notes_query', 'notes_backlinks',
+      'hygiene', 'machine', 'repos',
     ]
     for (const exp of expected) {
       assert.ok(toolNames.includes(exp), `Missing MCP tool: ${exp}`)

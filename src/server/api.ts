@@ -20,6 +20,9 @@ import {
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
+import { hygieneReport } from '../hygiene/index.ts'
+import { machineReport } from '../machine/index.ts'
+import { gitCensusCached } from '../machine/git-census.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 
@@ -1092,6 +1095,57 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         workspace: ws,
         ...indexStateOf(db, ws),
         ...graphOf(db, ws, Number(q.get('limit') ?? 1200)),
+      })
+    }
+
+    // ── Hygiene: is work sitting on exactly one disk? ────────────────────
+    //
+    // Read-only and intentionally not cached: a checkout can go dirty a second
+    // after the last tick, and a stale "all clean" is worse than a slow answer.
+    // The same projection is what the MCP tool and `plugbrain hygiene` print, so
+    // a human and an agent always argue about the same numbers.
+    if (p === '/api/hygiene') {
+      const w = access.requireWorkspace(db, ws)
+      return json(res, { ok: true, ...hygieneReport(db, w.id) })
+    }
+
+    // ── Machine: will this host run out of disk before the work is done? ──
+    //
+    // Host-level, so there is no workspace to require: the answer is about the
+    // machine itself, and the contract's /api/machine has no `workspace` field.
+    if (p === '/api/machine') {
+      // The cached census is handed in so a cold first request answers at once
+      // and warms the scan in the background, instead of waiting on a disk walk.
+      return json(res, { ok: true, ...machineReport(db, { census: gitCensusCached(db) }) })
+    }
+
+    // ── Repos: every git repository on this machine, not only registered ones ──
+    //
+    // `?dirty=1` narrows to the repositories holding unsaved work — the view the
+    // owner actually wants when a disk is filling up. Paginated because a whole
+    // disk of repositories must not arrive in one response.
+    if (p === '/api/repos') {
+      const page = clampLimit(q.get('page'), 1, 10_000)
+      const limit = clampLimit(q.get('limit'), 100, 500)
+      const census = gitCensusCached(db, q.get('refresh') === '1' ? { refresh: true } : {})
+      const dirtyOnly = q.get('dirty') === '1' || q.get('dirty') === 'true'
+      const all = dirtyOnly
+        ? census.repos.filter(repo => (repo.dirtyFiles ?? 0) > 0 || (repo.untrackedFiles ?? 0) > 0)
+        : census.repos
+      const offset = (page - 1) * limit
+      return json(res, {
+        ok: true,
+        scannedAt: census.scannedAt,
+        roots: census.roots,
+        complete: census.complete,
+        dirty: dirtyOnly,
+        page,
+        limit,
+        total: all.length,
+        returned: all.slice(offset, offset + limit).length,
+        repos: all.slice(offset, offset + limit),
+        totals: census.totals,
+        unavailable: census.unavailable,
       })
     }
 

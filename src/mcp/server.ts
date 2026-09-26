@@ -11,6 +11,9 @@ import * as intel from '../intel/index.ts'
 import { createAwarenessPort } from '../projections/awareness.ts'
 import { mcpProvenance } from './provenance.ts'
 import { backlinksOf, queryNotes, readNote, searchNotesWithLines } from '../notes/vault.ts'
+import { hygieneReport } from '../hygiene/index.ts'
+import { machineReport } from '../machine/index.ts'
+import { gitCensus } from '../machine/git-census.ts'
 import { planTask, planView } from '../plan.ts'
 import { askQuestion } from '../ask/index.ts'
 
@@ -356,6 +359,32 @@ export const MCP_TOOLS = [
         workspaceId: { type: 'string', description: 'Workspace ID' },
       },
       required: ['path'],
+    },
+  },
+  {
+    name: 'hygiene',
+    description: 'Git chaos guard: unsaved work, stashes, unpushed branches, orphaned worktrees, size and free disk per checkout',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+    },
+  },
+  {
+    name: 'machine',
+    description: 'Hardware awareness: free and total space per drive, pagefile, RAM and CPU, and a forecast of when a drive will be full',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'repos',
+    description: 'Every git repository on this machine: registered or not, dirty/untracked, unpushed branches, worktrees, size',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dirty: { type: 'boolean', description: 'Only repositories with unsaved work' },
+        refresh: { type: 'boolean', description: 'Ignore the cached scan and walk again' },
+      },
     },
   },
 ] as const
@@ -778,6 +807,31 @@ export class McpServer {
         case 'notes_backlinks': {
           const ws = this.getWorkspaceId(args)
           return { ok: true, backlinks: backlinksOf(this.db, ws, String(args.path ?? '')) }
+        }
+
+        case 'hygiene': {
+          const ws = this.getWorkspaceId(args)
+          return { ok: true, ...hygieneReport(this.db, ws) }
+        }
+
+        case 'machine':
+          return { ok: true, ...machineReport(this.db) }
+
+        case 'repos': {
+          const census = gitCensus(this.db, args.refresh === true ? { refresh: true } : {})
+          const repos = args.dirty === true
+            ? census.repos.filter(repo => (repo.dirtyFiles ?? 0) > 0 || (repo.untrackedFiles ?? 0) > 0)
+            : census.repos
+          return {
+            ok: true,
+            scannedAt: census.scannedAt,
+            roots: census.roots,
+            complete: census.complete,
+            dirty: args.dirty === true,
+            repos,
+            totals: census.totals,
+            unavailable: census.unavailable,
+          }
         }
 
         default:
