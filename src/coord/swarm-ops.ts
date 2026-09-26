@@ -17,6 +17,7 @@
  *    worktree branch and uncommitted files) and never infers liveness.
  */
 import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
@@ -58,6 +59,20 @@ export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   if (!has('retired_at')) db.exec('ALTER TABLE agents ADD COLUMN retired_at TEXT')
   ensureInboxSchema(db)
   ensureQueueSchema(db)
+}
+
+function ensureTurnHistorySchema(db: DatabaseSync): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS swarm_turn_history (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    task_id TEXT,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    end_state TEXT,
+    summary TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_swarm_turn_history_workspace ON swarm_turn_history(workspace_id, started_at);`)
 }
 
 interface ProfileRow {
@@ -137,7 +152,6 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   }
   const worktrees = (input.worktrees ?? []).map(path => resolve(path))
   const now = new Date().toISOString()
-
   db.exec('BEGIN IMMEDIATE')
   try {
     if (resourceKey !== null) {
@@ -293,6 +307,8 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   if (summary !== null) assertNotCredential('summary', summary)
 
   const now = new Date().toISOString()
+  const previous = db.prepare('SELECT turn_state, turn_summary FROM agents WHERE id = ?').get(input.agentId) as
+    { turn_state: string | null; turn_summary: string | null } | undefined
   db.prepare(`
     UPDATE agents
        SET turn_state = ?, turn_state_at = ?, turn_summary = COALESCE(?, turn_summary),
@@ -309,6 +325,21 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     }
   }
 
+  if (input.phase === 'start') {
+    ensureTurnHistorySchema(db)
+    const task = currentTaskOf(db, input.workspaceId, input.agentId)
+    db.prepare(`INSERT INTO swarm_turn_history (id, workspace_id, agent_id, task_id, started_at)
+      VALUES (?, ?, ?, ?, ?)`)
+      .run(`turn-${randomUUID().slice(0, 12)}`, input.workspaceId, input.agentId, task?.id ?? null, now)
+  } else {
+    ensureTurnHistorySchema(db)
+    db.prepare(`UPDATE swarm_turn_history SET ended_at = ?, end_state = ?, summary = ?
+      WHERE id = (SELECT id FROM swarm_turn_history
+        WHERE workspace_id = ? AND agent_id = ? AND ended_at IS NULL
+        ORDER BY started_at DESC LIMIT 1)`)
+      .run(now, state, summary, input.workspaceId, input.agentId)
+  }
+
   const host = options.host ?? hostSnapshot()
   const ping: TurnPing = {
     agentId: input.agentId,
@@ -319,7 +350,14 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     currentTask: currentTaskOf(db, input.workspaceId, input.agentId),
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
   }
-  coordEvents.emitLive('agent.turn', { agentId: input.agentId, phase: input.phase, state, at: now })
+  coordEvents.emitLive('agent.turn', {
+    agentId: input.agentId,
+    phase: input.phase,
+    previousState: previous?.turn_state ?? null,
+    state,
+    summary: summary ?? (input.phase === 'end' ? previous?.turn_summary : null) ?? null,
+    at: now,
+  })
   return ping
 }
 
@@ -470,7 +508,8 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
       unread: Number(unread),
       task: currentTaskOf(db, workspaceId, presence.id),
       leases: leases.filter(lease => lease.agentId === presence.id).map(lease => ({
-        id: lease.id, paths: lease.paths, symbols: lease.symbols, mode: lease.mode, expiresAt: lease.expiresAt,
+        id: lease.id, taskId: lease.taskId, paths: lease.paths, symbols: lease.symbols,
+        mode: lease.mode, createdAt: lease.createdAt, expiresAt: lease.expiresAt,
       })),
       worktrees: parseWorktrees(profile.worktrees).map(path => worktreeState(path, options.gitStatus === true)),
       attention,
