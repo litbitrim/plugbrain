@@ -1,0 +1,331 @@
+/**
+ * `swarm run` end to end: the Brain starts a CLI worker itself and watches it.
+ *
+ * The worker is `test/fixtures/fake-worker.mjs`, not Codex — starting Codex
+ * would spend the owner's quota and needs a login. Everything else is real: a
+ * detached OS process, a JSONL log on disk, a store in a temp home, and the
+ * board reading the run back. The fake even checks in and ends its turn through
+ * the same CLI a Codex tab would call, so the turn semantics under test are the
+ * ones the fleet actually has.
+ */
+// First, before anything that could open a store: this test process must never
+// read the owner's live brain home.
+import './helpers/isolated-home.ts'
+import { strict as assert } from 'node:assert'
+import { test } from 'node:test'
+import { spawnSync } from 'node:child_process'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { workspaceIdFor } from '../src/planet.ts'
+import { buildRunnerArgv, discoverProtocolDocs, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
+
+const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
+const FAKE = fileURLToPath(new URL('./fixtures/fake-worker.mjs', import.meta.url))
+
+interface Brain {
+  home: string
+  root: string
+  ws: string
+  run: (...args: string[]) => { code: number | null; out: string; err: string }
+  cleanup: () => void
+}
+
+function brain(): Brain {
+  const home = mkdtempSync(join(tmpdir(), 'plugbrain-swarm-run-'))
+  const root = join(home, 'root')
+  // The workspace configuration the prompt is derived from: a coordination
+  // folder with the protocol, a lane's rules and the Brain's own wrapper.
+  mkdirSync(join(root, 'koordination', 'bin'), { recursive: true })
+  writeFileSync(join(root, 'koordination', 'BRAIN-PROTOKOLL.md'), '# protocol\n')
+  writeFileSync(join(root, 'koordination', 'bin', 'plugbrain'), '#!/bin/sh\n')
+  // Two lanes on purpose: the newer one sorts EARLIER by name, so a comparison
+  // of full paths would pick the wrong rules.
+  mkdirSync(join(root, 'koordination', 'closeout', 'lane-new-20260101', 'briefs'), { recursive: true })
+  writeFileSync(join(root, 'koordination', 'closeout', 'lane-new-20260101', 'briefs', '_REGELN.md'), '# rules of the new lane\n')
+  mkdirSync(join(root, 'koordination', 'closeout', 'zulu-old-20251231', 'briefs'), { recursive: true })
+  writeFileSync(join(root, 'koordination', 'closeout', 'zulu-old-20251231', 'briefs', '_REGELN.md'), '# rules of the old lane\n')
+  const run = (...args: string[]) => {
+    const result = spawnSync(process.execPath, ['--experimental-strip-types', '--no-warnings', CLI, ...args], {
+      env: { ...process.env, PLUGBRAIN_HOME: home, PLUGBRAIN_NO_DAEMON: '1' },
+      encoding: 'utf8',
+      timeout: 120_000,
+    })
+    return { code: result.status, out: result.stdout ?? '', err: result.stderr ?? '' }
+  }
+  assert.equal(run('register', root, 'swarm-runner').code, 0)
+  return { home, root, ws: workspaceIdFor(root), run, cleanup: () => rmSync(home, { recursive: true, force: true }) }
+}
+
+/** The `--args` template that points the fake worker at the real store. */
+const fakeArgs = (b: Brain, mode: string): string =>
+  `${FAKE} --mode ${mode} --agent fake-01 --workspace ${b.ws} --cli ${CLI} ` +
+  `--prompt-file {promptFile} --last {last}`
+
+interface RunJson {
+  pid: number | null
+  runId: string
+  alive: boolean
+  logPath: string
+  lastDocPath: string | null
+  promptPath: string | null
+  commandText: string
+  endedAt: string | null
+  endedReason: string | null
+  stoppedAt: string | null
+  lastEventKind: string | null
+  lastEventText: string | null
+}
+
+interface StatusJson { run: RunJson | null; turnState: string | null; tail: string[] }
+
+const delay = (ms: number) => new Promise<void>(resolve => { setTimeout(resolve, ms) })
+
+/** Poll `--status` (which settles dead runs) until the run has an end. */
+async function settle(b: Brain, agent: string, ms = 90_000): Promise<StatusJson> {
+  const deadline = Date.now() + ms
+  for (;;) {
+    const status = b.run('swarm', 'run', agent, '--status', '--workspace', b.ws, '--json')
+    assert.equal(status.code, 0, status.err)
+    const parsed = JSON.parse(status.out) as StatusJson
+    if (parsed.run !== null && parsed.run.endedAt !== null) return parsed
+    if (Date.now() > deadline) assert.fail(`run never settled: ${status.out}`)
+    await delay(200)
+  }
+}
+
+interface BoardJson {
+  agents: Array<{ id: string; turnState: string; turnSummary: string | null; unread: number; runner: { pid: number; alive: boolean; lastEventKind: string } | null }>
+  settled: Array<{ agentId: string; reason: string; messageId: string | null; summary: string }>
+}
+
+/**
+ * Poll the board itself until it has booked the worker.
+ *
+ * Deliberately not `--status`: the board is the path under test here, and it is
+ * the call that has to notice a process that never came back.
+ */
+async function settleBoard(b: Brain, agent: string, ms = 90_000): Promise<BoardJson> {
+  const deadline = Date.now() + ms
+  for (;;) {
+    const board = b.run('swarm', 'board', '--workspace', b.ws, '--json')
+    assert.equal(board.code, 0, board.err)
+    const parsed = JSON.parse(board.out) as BoardJson
+    if (parsed.agents.find(row => row.id === agent)?.turnState === 'blocked') return parsed
+    if (Date.now() > deadline) assert.fail(`the board never booked the dead run: ${board.out}`)
+    await delay(200)
+  }
+}
+
+test('a runner profile is stored and read back, and a bad sandbox is refused', () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    const set = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'codex', '--model', 'gpt-6-luna',
+      '--effort', 'high', '--sandbox', 'bypass', '--search', '--workspace', b.ws, '--json')
+    assert.equal(set.code, 0, set.err)
+    const profile = JSON.parse(set.out) as RunnerProfile
+    assert.equal(profile.cmd, 'codex')
+    assert.equal(profile.model, 'gpt-6-luna')
+    assert.equal(profile.effort, 'high')
+    assert.equal(profile.sandbox, 'bypass')
+    assert.equal(profile.search, true)
+
+    const show = b.run('swarm', 'runner', 'show', 'cx01', '--workspace', b.ws, '--json')
+    assert.equal(show.code, 0, show.err)
+    assert.deepEqual(JSON.parse(show.out), profile)
+
+    const bad = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'codex', '--sandbox', 'yolo', '--workspace', b.ws)
+    assert.equal(bad.code, 3)
+    assert.match(bad.err, /unknown sandbox: yolo/)
+
+    const unknown = b.run('swarm', 'runner', 'show', 'nobody', '--workspace', b.ws)
+    assert.equal(unknown.code, 3)
+    assert.match(unknown.err, /no runner profile for nobody/)
+  } finally { b.cleanup() }
+})
+
+test('swarm run starts the worker detached, keeps its log, and the board shows pid and last event', async () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    const set = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'ok'), '--workspace', b.ws)
+    assert.equal(set.code, 0, set.err)
+
+    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    assert.equal(started.code, 0, started.err)
+    const run = JSON.parse(started.out) as RunJson
+    assert.ok(Number.isInteger(run.pid) && (run.pid ?? 0) > 0, `expected a pid, got ${started.out}`)
+    assert.match(run.logPath, /runs[\\/]workers[\\/]fake-01-\d{8}-\d{9}\.jsonl$/)
+    assert.ok(run.commandText.includes(FAKE))
+
+    const status = await settle(b, 'fake-01')
+    assert.equal(status.run?.alive, false)
+    // The worker ended its own turn, so the end of the process is not a failure.
+    assert.equal(status.run?.endedReason, 'turn-end')
+    assert.equal(status.turnState, 'needs-task')
+    assert.ok(existsSync(status.run!.logPath), 'the log file must exist')
+    const log = readFileSync(status.run!.logPath, 'utf8')
+    assert.match(log, /"turn\.completed"/)
+    assert.match(log, /"command_execution"/)
+
+    const lastDoc = status.run!.lastDocPath!
+    assert.match(readFileSync(lastDoc, 'utf8'), /fake worker finished its turn/)
+
+    // The prompt is derived from the workspace configuration, not hard-coded.
+    const prompt = readFileSync(status.run!.promptPath!, 'utf8')
+    assert.ok(!prompt.includes('{{'), 'every placeholder must be filled')
+    assert.match(prompt, /fake-01/)
+    assert.match(prompt, /BRAIN-PROTOKOLL\.md/)
+    assert.match(prompt, /_REGELN\.md/)
+    assert.match(prompt, /koordination[\\/]bin[\\/]plugbrain/)
+
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as {
+      agents: Array<{ id: string; turnState: string; runner: { pid: number; alive: boolean; lastEventKind: string; lastEventText: string } | null }>
+      settled: unknown[]
+    }
+    const row = board.agents.find(agent => agent.id === 'fake-01')
+    assert.equal(row?.turnState, 'needs-task')
+    assert.ok((row?.runner?.pid ?? 0) > 0)
+    assert.equal(row?.runner?.alive, false)
+    assert.equal(row?.runner?.lastEventKind, 'turn.completed')
+    assert.match(row?.runner?.lastEventText ?? '', /DONE usage/)
+    assert.deepEqual(board.settled, [])
+  } finally { b.cleanup() }
+})
+
+test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', async () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'run', 'fake-01', '--workspace', b.ws).code, 0)
+
+    const board = await settleBoard(b, 'fake-01')
+    const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
+    assert.equal(status.run?.alive, false)
+    assert.equal(status.run?.endedReason, 'process-gone')
+    assert.equal(status.turnState, 'blocked')
+    assert.equal(board.settled.length, 1)
+    assert.equal(board.settled[0]!.agentId, 'fake-01')
+    assert.equal(board.settled[0]!.reason, 'ended-without-turn-end')
+    assert.match(board.settled[0]!.messageId ?? '', /^msg-/)
+    assert.match(board.settled[0]!.summary, /without a turn end/)
+
+    const worker = board.agents.find(agent => agent.id === 'fake-01')
+    assert.equal(worker?.turnState, 'blocked')
+    assert.match(worker?.turnSummary ?? '', /about to die without a turn end/)
+
+    // The integrator was registered on demand and holds the report unread.
+    const integrator = board.agents.find(agent => agent.id === 'integrator')
+    assert.equal(integrator?.unread, 1)
+  } finally { b.cleanup() }
+})
+
+test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'hang'), '--workspace', b.ws).code, 0)
+    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    assert.equal(started.code, 0, started.err)
+    const run = JSON.parse(started.out) as RunJson
+
+    // Give the process a moment to write its first event, then stop it.
+    const deadline = Date.now() + 30_000
+    while (Date.now() < deadline && !existsSync(run.logPath)) await delay(100)
+    const stopped = b.run('swarm', 'run', 'fake-01', '--stop', '--workspace', b.ws)
+    assert.equal(stopped.code, 0, stopped.err)
+    assert.match(stopped.out, /stopped fake-01 \(pid \d+\); turn paused/)
+
+    const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
+    assert.equal(status.run?.alive, false)
+    assert.equal(status.run?.stoppedAt !== null, true)
+    assert.equal(status.run?.endedReason, 'stopped')
+    assert.equal(status.turnState, 'paused')
+    // A deliberately stopped worker is not a failure: no blocked booking.
+    assert.ok(!readFileSync(status.run!.logPath, 'utf8').includes('spawn_error'))
+  } finally { b.cleanup() }
+})
+
+test('swarm run refuses a worker without a profile and refuses a second live run', async () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    const missing = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(missing.code, 3)
+    assert.match(missing.err, /no runner profile for fake-01/)
+
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'hang'), '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'run', 'fake-01', '--workspace', b.ws).code, 0)
+    const second = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(second.code, 3)
+    assert.match(second.err, /already has a live run/)
+    assert.equal(b.run('swarm', 'run', 'fake-01', '--stop', '--workspace', b.ws).code, 0)
+
+    // A missing program is a refusal, not a run that dies silently.
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'no-such-program-xyz', '--workspace', b.ws).code, 0)
+    const notFound = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(notFound.code, 3)
+    assert.match(notFound.err, /command not found: no-such-program-xyz/)
+  } finally { b.cleanup() }
+})
+
+test('the Codex command line and the log summarizer are what they claim to be', () => {
+  const codex: RunnerProfile = {
+    agentId: 'cx01', cmd: 'codex', args: [], model: 'gpt-6-luna', effort: 'high', sandbox: 'bypass',
+    search: true, cwd: null, updatedAt: '2026-09-26T00:00:00.000Z',
+  }
+  const context = { prompt: 'DO IT', promptPath: 'p.md', logPath: 'l.jsonl', lastDocPath: 'last.md', cwd: 'C:/w' }
+  const plan = buildRunnerArgv(codex, context)
+  assert.deepEqual(plan.args, [
+    'exec', '-m', 'gpt-6-luna', '-c', 'model_reasoning_effort=high',
+    '--dangerously-bypass-approvals-and-sandbox', '-c', 'tools.web_search=true',
+    '--json', '-o', 'last.md', 'DO IT',
+  ])
+  assert.equal(plan.viaComspec, false)
+  assert.ok(plan.commandText.includes('p.md'), 'the prompt is shown as its file, never as its text')
+
+  const sandboxed = buildRunnerArgv({ ...codex, sandbox: 'workspace-write', search: false }, context)
+  assert.deepEqual(sandboxed.args, [
+    'exec', '-m', 'gpt-6-luna', '-c', 'model_reasoning_effort=high', '--sandbox', 'workspace-write',
+    '--json', '-o', 'last.md', 'DO IT',
+  ])
+
+  // A template token that resolves to nothing is dropped, so an unset model
+  // cannot leave a flag without its value behind.
+  const template = buildRunnerArgv(
+    { ...codex, cmd: 'node', args: ['worker.mjs', '--last={last}', '--prompt', '{prompt}', '{model}'], model: null },
+    context,
+  )
+  assert.deepEqual(template.args, ['worker.mjs', '--last=last.md', '--prompt', 'DO IT'])
+
+  assert.deepEqual(summarizeLogEvent('{"type":"item.completed","item":{"type":"command_execution","command":"npm test","exit_code":0}}'),
+    { at: null, kind: 'command_execution', text: 'CMD npm test -> exit 0' })
+  assert.deepEqual(summarizeLogEvent('{"type":"turn.completed","timestamp":"2026-09-26T10:00:00Z","usage":{"input_tokens":1}}'),
+    { at: '2026-09-26T10:00:00Z', kind: 'turn.completed', text: 'DONE usage {"input_tokens":1}' })
+  assert.deepEqual(summarizeLogEvent('not json at all'), { at: null, kind: 'raw', text: 'not json at all' })
+  assert.equal(summarizeLogEvent('   '), null)
+})
+
+test('the prompt names the protocol documents the workspace actually has', () => {
+  const b = brain()
+  try {
+    const docs = discoverProtocolDocs(b.root)
+    assert.match(docs.rulesPath ?? '', /lane-new-20260101/, 'the newest lane wins, not the last name')
+    const prompt = renderRunnerPrompt({ agentId: 'x1', workspaceRoot: b.root, docs })
+    assert.ok(!prompt.includes('{{'))
+    assert.match(prompt, /worker x1/)
+    assert.match(prompt, /BRAIN-PROTOKOLL\.md/)
+    assert.match(prompt, /lane-new-20260101[\\/]briefs[\\/]_REGELN\.md/)
+    assert.ok(!prompt.includes('zulu-old-20251231'))
+
+    const bare = renderRunnerPrompt({
+      agentId: 'x2', workspaceRoot: b.root,
+      docs: { coordinationDir: null, protocolPath: null, rulesPath: null },
+    })
+    assert.ok(!bare.includes('{{'))
+    assert.match(bare, /Read in full: the brief named by your task\./)
+  } finally { b.cleanup() }
+})

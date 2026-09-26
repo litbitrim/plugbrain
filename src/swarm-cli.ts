@@ -21,19 +21,23 @@
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
  *   plugbrain swarm admit <edit|test|index|build|install|worktree>   exit 0 = room, 5 = no room
+ *   plugbrain swarm runner set <agent> --cmd <exe> [--model <m>] [--effort <e>] [--sandbox <s>] [--search]
+ *   plugbrain swarm runner show <agent>
+ *   plugbrain swarm run <agent> [--status|--stop]   the Brain starts and watches the CLI process itself
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
 import type { DatabaseSync } from 'node:sqlite'
-import { AccessDenied, registerAgent } from './access.ts'
+import { AccessDenied } from './access.ts'
 import { deliverTask, enqueueTask } from './queue.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import {
-  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
+  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema, getRunnerProfile,
+  hostSnapshot, listQuotas, reconcileWorkerRuns, setRunnerProfile, startWorkerRun, stopWorkerRun, workerRunStatus,
   recordTurn, releaseLease,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
-  type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
+  type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
 } from './coord/index.ts'
 
 /** Swarm workers check in at turn boundaries, which can be hours apart. */
@@ -72,16 +76,12 @@ const positionals = (args: string[], valued: string[]): string[] => {
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
+  '--cmd', '--args', '--effort', '--sandbox', '--cwd',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
   if (value === null || value === undefined || value.trim() === '') throw new AccessDenied(`usage: ${usage}`)
   return value
-}
-
-function ensureIntegrator(db: DatabaseSync, workspaceId: string, id: string): void {
-  registerAgent(db, id, id === INTEGRATOR ? 'Integrator' : id)
-  db.prepare('UPDATE agents SET workspace_id = COALESCE(workspace_id, ?) WHERE id = ?').run(workspaceId, id)
 }
 
 function printPing(ping: TurnPing): void {
@@ -120,8 +120,57 @@ function printBoard(board: SwarmBoard): void {
         : worktree.branch === null ? '' : `${worktree.branch} @ ${worktree.head} · ${worktree.dirtyFiles} uncommitted`
       console.log(`    Worktree ${worktree.path} ${detail}`)
     }
+    if (row.runner !== null) {
+      const runner = row.runner
+      const life = runner.alive
+        ? `pid ${runner.pid} running since ${runner.startedAt}`
+        : `pid ${runner.pid ?? '?'} gone${runner.endedAt === null ? '' : ` at ${runner.endedAt}`}${runner.endedReason === null ? '' : ` (${runner.endedReason})`}`
+      console.log(`    runner: ${life}`)
+      if (runner.lastEventKind !== null) {
+        console.log(`    last log event ${runner.lastEventAt ?? '?'} ${runner.lastEventKind}: ${runner.lastEventText ?? ''}`)
+      }
+      if (runner.blockedAt !== null) console.log(`    runner died mid-turn; worker booked blocked at ${runner.blockedAt}`)
+    }
   }
   for (const overlap of board.overlaps) console.log(`  ÜBERLAPPUNG ${overlap.worktree}: ${overlap.agents.join(', ')}`)
+}
+
+function printRunnerProfile(profile: RunnerProfile): void {
+  const parts = [`program ${profile.cmd}`]
+  if (profile.model !== null) parts.push(`model ${profile.model}`)
+  if (profile.effort !== null) parts.push(`effort ${profile.effort}`)
+  if (profile.sandbox !== null) parts.push(`sandbox ${profile.sandbox}`)
+  if (profile.search) parts.push('web search')
+  if (profile.cwd !== null) parts.push(`cwd ${profile.cwd}`)
+  console.log(`${profile.agentId}: ${parts.join(' · ')}`)
+  if (profile.args.length > 0) console.log(`  args: ${profile.args.join(' ')}`)
+}
+
+function printRunStatus(db: DatabaseSync, workspaceId: string, agentId: string, asJson: boolean): number {
+  const status = workerRunStatus(db, workspaceId, agentId)
+  if (asJson) { console.log(JSON.stringify(status, null, 2)); return 0 }
+  if (status.run === null) {
+    console.error(`no run recorded for ${agentId}`)
+    return 3
+  }
+  const { run } = status
+  console.log(`${agentId}: ${run.alive ? `running (pid ${run.pid})` : 'not running'}`)
+  console.log(`  run       ${run.runId}`)
+  console.log(`  started   ${run.startedAt}`)
+  console.log(`  cwd       ${run.cwd}`)
+  console.log(`  command   ${run.commandText}`)
+  console.log(`  log       ${run.logPath}`)
+  if (run.lastDocPath !== null) console.log(`  last msg  ${run.lastDocPath}`)
+  if (run.endedAt !== null) console.log(`  ended     ${run.endedAt} (${run.endedReason ?? 'unknown'})`)
+  if (run.stoppedAt !== null) console.log(`  stopped   ${run.stoppedAt}`)
+  console.log(`  last event ${run.lastEventAt ?? 'none'} ${run.lastEventKind ?? ''}${
+    run.lastEventText === null ? '' : `: ${run.lastEventText}`}`)
+  console.log(`  turn      ${status.turnState ?? 'unset'}${status.turnStateAt === null ? '' : ` at ${status.turnStateAt}`}`)
+  if (status.tail.length > 0) {
+    console.log('  log tail:')
+    for (const line of status.tail) console.log(`    ${line}`)
+  }
+  return 0
 }
 
 export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: () => string): number {
@@ -158,6 +207,60 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       })
       if (asJson) console.log(JSON.stringify(profile, null, 2))
       else console.log(`registriert: ${profile.agentId} (${profile.surface}, ${profile.account}${profile.resourceKey ? `, Schlüssel ${profile.resourceKey}` : ''})`)
+      return 0
+    }
+    case 'runner': {
+      const usage = 'plugbrain swarm runner set <agent> --cmd <exe> [--model <m>] [--effort <e>] ' +
+        '[--sandbox bypass|workspace-write|read-only|danger-full-access] [--search] [--args "<template>"] [--cwd <dir>] ' +
+        '| plugbrain swarm runner show <agent>'
+      const action = need(pos[0], usage)
+      const agentId = need(pos[1], usage)
+      if (action === 'show') {
+        const profile = getRunnerProfile(db, agentId)
+        if (profile === null) { console.error(`no runner profile for ${agentId}`); return 3 }
+        if (asJson) console.log(JSON.stringify(profile, null, 2))
+        else printRunnerProfile(profile)
+        return 0
+      }
+      if (action !== 'set') throw new AccessDenied(`usage: ${usage}`)
+      // `--args` is one string so the template can hold spaces; it is split here
+      // rather than by a shell, which the Brain never involves.
+      const argTemplate = flag(rest, '--args')
+      const profile = setRunnerProfile(db, {
+        agentId,
+        cmd: need(flag(rest, '--cmd'), usage),
+        args: argTemplate === null ? undefined : argTemplate.split(/\s+/).filter(token => token !== ''),
+        model: flag(rest, '--model') ?? undefined,
+        effort: flag(rest, '--effort') ?? undefined,
+        sandbox: flag(rest, '--sandbox') ?? undefined,
+        search: rest.includes('--search'),
+        cwd: flag(rest, '--cwd') ?? undefined,
+      })
+      if (asJson) console.log(JSON.stringify(profile, null, 2))
+      else printRunnerProfile(profile)
+      return 0
+    }
+    case 'run': {
+      const usage = 'plugbrain swarm run <agent> [--status] [--stop] [--json]'
+      const agentId = need(pos[0], usage)
+      if (rest.includes('--status')) return printRunStatus(db, workspaceId, agentId, asJson)
+      if (rest.includes('--stop')) {
+        const run = stopWorkerRun(db, { agentId, workspaceId })
+        // A worker that already ended its turn keeps that state; the stop only
+        // pauses one that was still working.
+        const turn = workerRunStatus(db, workspaceId, agentId).turnState
+        if (asJson) { console.log(JSON.stringify({ ...run, turnState: turn }, null, 2)); return 0 }
+        console.log(`stopped ${agentId} (pid ${run.pid ?? '?'}); turn ${turn ?? 'unset'}`)
+        return 0
+      }
+      const run = startWorkerRun(db, { workspaceId, agentId })
+      if (asJson) { console.log(JSON.stringify(run, null, 2)); return 0 }
+      console.log(`started ${agentId}: pid ${run.pid ?? '?'} (${run.runId})`)
+      console.log(`  cwd      ${run.cwd}`)
+      console.log(`  command  ${run.commandText}`)
+      console.log(`  log      ${run.logPath}`)
+      console.log(`  prompt   ${run.promptPath ?? '-'}`)
+      console.log('  the Brain watches it: plugbrain swarm run ' + agentId + ' --status')
       return 0
     }
     case 'turn': {
@@ -218,9 +321,13 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'board': {
+      // Looking at the fleet is also the moment a run that died mid-turn gets
+      // booked: the process is gone, the worker never ended its turn.
+      const settled = reconcileWorkerRuns(db, workspaceId).filter(event => event.reason === 'ended-without-turn-end')
       const board = agentsBoard(db, workspaceId, { gitStatus: rest.includes('--git') })
-      if (asJson) console.log(JSON.stringify(board, null, 2))
-      else printBoard(board)
+      if (asJson) { console.log(JSON.stringify({ ...board, settled }, null, 2)); return 0 }
+      for (const event of settled) console.log(`!! ${event.summary.split('\n')[0]}`)
+      printBoard(board)
       return 0
     }
     case 'send': {
@@ -300,6 +407,6 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return admission.allowed ? 0 : 5
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|approve|resources|quota|admit> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|approve|resources|quota|admit|runner|run> …')
   }
 }

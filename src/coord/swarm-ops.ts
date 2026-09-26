@@ -25,6 +25,7 @@ import { coordEvents } from './events.ts'
 import { ensureInboxSchema, sendMessage } from './inbox.ts'
 import { listActiveLeases } from './leases.ts'
 import { ensureCoordSchema, getAgentPresence } from './registry.ts'
+import { runnerBoardStates, type RunnerBoardState } from './runner.ts'
 import type { InboxMessage, PresenceState } from './types.ts'
 import {
   admitWork, assertNotCredential, hostSnapshot, listQuotas,
@@ -380,6 +381,8 @@ export interface BoardRow {
   task: QueueTaskRef | null
   leases: Array<{ id: string; paths: string[]; symbols: string[]; mode: 'write' | 'read'; expiresAt: string }>
   worktrees: WorktreeState[]
+  /** The CLI process the Brain started for this worker, when it started one. */
+  runner: RunnerBoardState | null
   attention: AttentionFlag[]
 }
 
@@ -433,6 +436,7 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
   const now = Date.now()
   const exhausted = new Set(listQuotas(db).filter(quota => quota.exhausted).map(quota => quota.account))
   const leases = listActiveLeases(db, workspaceId)
+  const runners = runnerBoardStates(db)
 
   const agents: BoardRow[] = getAgentPresence(db, { workspaceId }).map(presence => {
     const profile = loadProfile(db, presence.id)
@@ -473,6 +477,7 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
         id: lease.id, paths: lease.paths, symbols: lease.symbols, mode: lease.mode, expiresAt: lease.expiresAt,
       })),
       worktrees: parseWorktrees(profile.worktrees).map(path => worktreeState(path, options.gitStatus === true)),
+      runner: runners.get(presence.id) ?? null,
       attention,
     }
   })
