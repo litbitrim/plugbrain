@@ -3,7 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError, SwarmSnapshot } from '../types'
 
 export type { RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
 export interface GalaxyPlanet {
@@ -271,6 +271,45 @@ export async function fetchMeshTimeline(
   const data = await res.json()
   if (!data?.ok || !Array.isArray(data.timeline)) throw new Error('Mesh-Zeitleiste unvollständig')
   return data.timeline as MeshTimelineEntry[]
+}
+
+export async function fetchSwarmSnapshot(workspaceId: string): Promise<SwarmSnapshot> {
+  const query = `?workspace=${encodeURIComponent(workspaceId)}`
+  const headers = authHeaders()
+  const [board, turns, messages, approvals, queue] = await Promise.all([
+    fetch(`/api/swarm/board${query}`, { headers }),
+    fetch(`/api/swarm/turns${query}`, { headers }),
+    fetch(`/api/swarm/messages${query}`, { headers }),
+    fetch(`/api/swarm/approvals${query}`, { headers }),
+    fetch(`/api/swarm/queue${query}`, { headers }),
+  ])
+  if ([board, turns, messages, approvals, queue].some(response => !response.ok)) {
+    throw new Error('Die Fleet-Zeitleiste ist nicht verfügbar.')
+  }
+  const [boardData, turnData, messageData, approvalData, queueData] = await Promise.all([
+    board.json(), turns.json(), messages.json(), approvals.json(), queue.json(),
+  ])
+  if (!boardData?.ok || !Array.isArray(boardData.board?.agents)
+    || !turnData?.ok || !Array.isArray(turnData.turns)
+    || !messageData?.ok || !Array.isArray(messageData.messages)
+    || !approvalData?.ok || !Array.isArray(approvalData.approvals)
+    || !queueData?.ok || !Array.isArray(queueData.tasks)) {
+    throw new Error('Die Fleet-Antwort ist unvollständig.')
+  }
+  return {
+    board: boardData.board, turns: turnData.turns, historyAvailable: turnData.historyAvailable === true,
+    messages: messageData.messages, approvals: approvalData.approvals, tasks: queueData.tasks,
+  }
+}
+
+export async function sendSwarmMessage(input: { workspace: string; fromAgent: string; toAgent: string; subject: string; body: string }): Promise<void> {
+  const response = await fetch('/api/agent/message', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  if (!response.ok) throw new Error('Nachricht konnte nicht gesendet werden.')
+}
+
+export async function enqueueSwarmTask(input: { workspace: string; requestedBy: string; title: string; body: string }): Promise<void> {
+  const response = await fetch('/api/queue', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  if (!response.ok) throw new Error('Aufgabe konnte nicht eingereiht werden.')
 }
 
 export async function fetchProvenance(workspaceId: string, path: string): Promise<FileProvenance> {

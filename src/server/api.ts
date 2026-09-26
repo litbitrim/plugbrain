@@ -85,6 +85,7 @@ import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
 import { askQuestion, buildProjectBriefing } from '../ask/index.ts'
 import * as coord from '../coord/index.ts'
+import { swarmApprovals, swarmBoard, swarmMessages, swarmTurns } from '../coord/swarm-read.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
 import { IndexRunBusy, IndexWorkerUnavailable, startIndexRun } from '../index/runner.ts'
@@ -1161,6 +1162,24 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/agents') {
       access.requireWorkspace(db, ws)
       return json(res, { ok: true, agents: agentsOf(db, ws) })
+    }
+
+    // The fleet coordination ledger is the authoritative source for turns,
+    // messages, claims, worktrees and queue state. These endpoints are read-only
+    // and require the same bearer session used by authenticated UI operations.
+    if (p.startsWith('/api/swarm/')) {
+      if (req.method !== 'GET') return json(res, { ok: false, error: 'method not allowed' }, 405)
+      checkAuth(req, ctx)
+      access.requireWorkspace(db, ws)
+      const limit = clampLimit(q.get('limit'), 1000, 5000)
+      if (p === '/api/swarm/board') return json(res, { ok: true, board: swarmBoard(db, ws) })
+      if (p === '/api/swarm/turns') return json(res, { ok: true, ...swarmTurns(db, ws, limit) })
+      if (p === '/api/swarm/messages') return json(res, { ok: true, messages: swarmMessages(db, ws, limit) })
+      if (p === '/api/swarm/approvals') return json(res, { ok: true, approvals: swarmApprovals(db, ws, limit) })
+      if (p === '/api/swarm/queue') return json(res, {
+        ok: true, depth: queue.queueDepth(db, ws), tasks: queue.listQueue(db, ws),
+      })
+      return json(res, { ok: false, error: 'not found' }, 404)
     }
 
     // ── Agent Mesh: one trace-backed projection, never a registry fallback ──
