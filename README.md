@@ -75,45 +75,15 @@ impact analysis before renames, notes before re-deriving decisions.
 
 ## MCP tools
 
-`plugbrain mcp` speaks the Model Context Protocol over stdio. The 22 tools:
+`plugbrain mcp` speaks the Model Context Protocol over stdio, giving agents instant access to code intelligence and knowledge:
 
-**Code intelligence**
+- `ask` — Ask in plain language; routes to the right tool and returns one clear sentence with source citations.
+- `context_pack` — Build goal-oriented context packs with relevant files, symbols, and dependencies.
+- `query` — Concept search across indexed AST symbols, file paths, and notes.
+- `context` — 360-degree symbol context: callers, callees, and execution flow memberships.
+- `impact` — Blast-radius analysis showing upstream and downstream dependency changes before editing.
 
-| Tool | What it does |
-| --- | --- |
-| `search` | Full-text search for code and symbols across the workspace |
-| `read` | Read a file through PlugBrain with access logging and attribution |
-| `query` | Concept search across symbols and notes |
-| `context` | 360-degree context of a symbol (callers, callees, execution flows) |
-| `impact` | Blast-radius analysis for a symbol or file |
-| `context_pack` | Goal-oriented context pack with files, symbols and dependencies |
-| `detect_changes` | Map git diff hunks to affected symbols and flows |
-| `cypher` | Bounded Cypher-like graph query inside one workspace |
-| `rename_preview` | Read-only preview of a symbol rename; never writes files |
-
-**Agent coordination**
-
-| Tool | What it does |
-| --- | --- |
-| `claim` | Exclusive lease on paths or symbols with TTL and fencing epoch |
-| `release` | Release a held lease |
-| `awareness` | Who is working on what: live claims, conflicts, dependency overlaps |
-| `heartbeat` | Keep agent presence alive, prevent lease expiry |
-| `message_send` | Send a message to an agent inbox or topic channel |
-| `inbox_read` | Read agent messages with optional long-polling |
-| `swarm_turn` | Check in at a turn boundary; get messages, next task, host admission |
-| `swarm_board` | The fleet board: every worker, surface, task, leases, attention flags |
-| `swarm_resources` | Host disk/RAM/CPU, quotas, admission for test/build/install work |
-| `plan` | The master ledger joined with the brain queue |
-
-**Notes (the Obsidian replacement)**
-
-| Tool | What it does |
-| --- | --- |
-| `notes_search` | Search the prose of the vault notes, optionally with the matching line |
-| `notes_read` | Read one note with properties, outgoing links and backlinks |
-| `notes_query` | Property query over notes, e.g. `typ=gate AND stand=offen` |
-| `notes_backlinks` | Every note that links to this one |
+For the full reference of all tools (including search, notes, git hygiene, and multi-agent coordination), see [MCP Tools Reference](docs/mcp-tools.md).
 
 ## Privacy
 
