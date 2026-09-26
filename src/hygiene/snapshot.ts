@@ -20,7 +20,7 @@ import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { isAbsolute, join, resolve } from 'node:path'
+import { basename, isAbsolute, join, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 
 export interface WipSnapshotEntry {
@@ -272,6 +272,28 @@ function snapshotOne(
   } finally {
     try { rmSync(indexDir, { recursive: true, force: true }) } catch { /* best effort */ }
   }
+}
+
+/**
+ * Rescue the uncommitted work of ONE repository path, registered or not.
+ *
+ * The machine-wide census finds dirt in repositories the brain never registered
+ * (the owner's 25.09. case: 49 checkouts the brain knew plus others it did not),
+ * and the honest fix for those has to name the path. This is the same rescue as
+ * the per-workspace one — same temp index, same proofs — for a single path, so
+ * `plugbrain hygiene --wip-snapshot --repo <pfad>` can save work outside the
+ * brain without first registering the repository.
+ *
+ * Only call this from an explicit command.
+ */
+export function snapshotRepo(path: string, options: SnapshotOptions = {}): WipSnapshotEntry {
+  const now = options.now ?? new Date()
+  const date = options.date ?? utcDate(now)
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const resolved = resolve(path)
+  const branch = gitTry(resolved, ['rev-parse', '--abbrev-ref', 'HEAD'], process.env, timeoutMs)
+  const name = basename(resolved) || 'repo'
+  return snapshotOne({ id: 'external', path: resolved, branch, relPrefix: name, repo: name }, date, timeoutMs)
 }
 
 /**

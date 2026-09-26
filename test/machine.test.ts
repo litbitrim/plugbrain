@@ -20,7 +20,8 @@ import {
   collectMachine, driveLevel, forecastFrom, linearTrend, pruneSamples, recordSamples,
   seriesSince, type MachineReport,
 } from '../src/machine/collect.ts'
-import { registeredCheckoutPaths, scanGitRepos } from '../src/machine/git-census.ts'
+import { registeredCheckoutPaths, scanGitRepos, type CensusRepo, type CensusReport } from '../src/machine/git-census.ts'
+import { withMachineFindings } from '../src/machine/findings.ts'
 
 const GB = 1024 ** 3
 
@@ -224,6 +225,107 @@ test('a tight directory cap reports complete:false instead of a truncated lie', 
     try { db.close() } catch { /* closed */ }
     rmSync(root, { recursive: true, force: true })
   }
+})
+
+// ---------------------------------------------------------------------------
+// M3 — findings, the sentences a human acts on
+// ---------------------------------------------------------------------------
+
+const censusOf = (repos: Partial<CensusRepo>[]): CensusReport => ({
+  scannedAt: '2026-09-26T12:00:00Z',
+  roots: ['C:\\'],
+  complete: true,
+  repos: repos.map(repo => ({
+    path: 'C:\\x', registered: false, branch: 'main', dirtyFiles: 0, untrackedFiles: 0,
+    unpushed: [], worktrees: 1, orphanWorktrees: 0, stashes: 0, lastCommitDays: 1,
+    gitSizeMb: 1, workTreeSizeMb: 1, ...repo,
+  })),
+  totals: { repos: repos.length, dirty: 0, unpushedBranches: 0, orphanWorktrees: 0 },
+  unavailable: [],
+})
+
+const baseReport = (overrides: Partial<MachineReport> = {}): MachineReport => ({
+  checkedAt: '2026-09-26T12:00:00Z',
+  drives: [{ mount: 'C:\\', freeGb: 48.5, totalGb: 1862, level: 'ok' }],
+  pagefile: { sizeGb: 24 },
+  memory: { freeGb: 6, totalGb: 32 },
+  cpu: { load: 0.42 },
+  forecast: [{ mount: 'C:\\', fullInHours: 3.2, trendGbPerHour: -14.1, basis: 'last 60 min' }],
+  findings: [],
+  unavailable: [],
+  ...overrides,
+})
+
+test('a drive under two hours from full is a risk; three hours is attention', () => {
+  const acute = withMachineFindings(
+    baseReport({ forecast: [{ mount: 'C:\\', fullInHours: 1.2, trendGbPerHour: -40, basis: 'last 60 min' }] }),
+    censusOf([]),
+  )
+  const first = acute.findings[0]
+  assert.equal(first?.level, 'risk')
+  assert.match(first?.text ?? '', /full in about 1 hour/)
+  assert.match(first?.text ?? '', /40 GB per hour/)
+
+  // 3.2 h is real but not yet acute: the brief reserves risk for < 2 h.
+  const soon = withMachineFindings(
+    baseReport({ forecast: [{ mount: 'C:\\', fullInHours: 3.2, trendGbPerHour: -14.1, basis: 'last 60 min' }] }),
+    censusOf([]),
+  )
+  assert.equal(soon.findings[0]?.level, 'attention')
+  assert.match(soon.findings[0]?.text ?? '', /full in about 3 hours/)
+})
+
+test('a healthy machine with a clean census has no findings', () => {
+  const calm = baseReport({
+    pagefile: { sizeGb: 8 },
+    forecast: [{ mount: 'C:\\', fullInHours: null, trendGbPerHour: 0, basis: 'last 60 min' }],
+  })
+  assert.equal(withMachineFindings(calm, censusOf([])).findings.length, 0)
+})
+
+test('a pagefile larger than half the RAM is named as RAM pressure', () => {
+  const merged = withMachineFindings(
+    baseReport({ pagefile: { sizeGb: 31 }, forecast: [{ mount: 'C:\\', fullInHours: null, trendGbPerHour: 0, basis: 'last 60 min' }] }),
+    censusOf([]),
+  )
+  assert.equal(merged.findings.length, 1)
+  assert.equal(merged.findings[0]?.level, 'attention')
+  assert.match(merged.findings[0]?.text ?? '', /31 GB on a 32 GB machine/)
+})
+
+test('unsaved and unpushed work outside the brain is a risk finding', () => {
+  const census = censusOf([
+    { path: 'C:\\a', dirtyFiles: 2, registered: false },
+    { path: 'C:\\b', untrackedFiles: 1, registered: false },
+    { path: 'C:\\c', unpushed: [{ branch: 'feat/x', ahead: 3, upstream: null }], registered: false },
+    // Registered repos are the brain's own business and never named here.
+    { path: 'C:\\d', dirtyFiles: 4, registered: true },
+  ])
+  const merged = withMachineFindings(
+    baseReport({ forecast: [{ mount: 'C:\\', fullInHours: null, trendGbPerHour: 0, basis: 'last 60 min' }] }),
+    census,
+  )
+  const unsaved = merged.findings.find(finding => finding.text.includes('unsaved work'))
+  assert.equal(unsaved?.level, 'risk')
+  assert.match(unsaved?.text ?? '', /^2 repositories outside the brain/)
+  assert.deepEqual(unsaved?.paths, ['C:\\a', 'C:\\b'])
+  assert.equal(unsaved?.fix, 'plugbrain hygiene --wip-snapshot --repo <path>')
+  assert.ok(merged.findings.some(finding => finding.text.includes('never pushed anywhere')))
+})
+
+test('dangling worktrees are a risk finding with the prune command', () => {
+  const census = censusOf([
+    { path: 'C:\\a', orphanWorktrees: 1 },
+    { path: 'C:\\b', orphanWorktrees: 1 },
+  ])
+  const merged = withMachineFindings(
+    baseReport({ forecast: [{ mount: 'C:\\', fullInHours: null, trendGbPerHour: 0, basis: 'last 60 min' }] }),
+    census,
+  )
+  const orphans = merged.findings.find(finding => finding.text.includes('dangling'))
+  assert.equal(orphans?.level, 'risk')
+  assert.match(orphans?.text ?? '', /^2 worktrees are dangling/)
+  assert.equal(orphans?.fix, 'git worktree prune (in the base repo), after checking the worktree is really gone')
 })
 
 // existsSync/utimesSync are kept for later census fixtures that touch mtimes.
