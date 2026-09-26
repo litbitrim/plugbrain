@@ -19,20 +19,25 @@ files it has already read, misses the note where you wrote down *why* a
 decision was made, and steps on other agents editing the same files.
 Existing code-graph tools help with the code half of that problem:
 
-- **GitNexus** indexes one repository into a graph you can query — but it has
-  no notes, no agent coordination, and no MCP surface for your daily driver.
-- **CodeGraph** maps symbols and dependencies well, but is a library you wire
-  up yourself rather than a product an agent can talk to.
+- **GitNexus** and **CodeGraph** are good local code-graph tools. Both index
+  a codebase and answer symbol, caller and impact questions, both run as a
+  CLI and both can serve those answers to an agent over MCP.
 
-PlugBrain combines both halves in one local brain:
+What PlugBrain adds is the other half: the project's written knowledge and
+the agents working on it, in the same local brain as the code.
 
 | | GitNexus | CodeGraph | PlugBrain |
 | --- | --- | --- | --- |
-| AST code intelligence (symbols, callers, impact) | ✓ | ✓ | ✓ |
-| Obsidian-style notes with code bindings | – | – | ✓ |
-| Multi-agent leases, fencing and awareness | – | – | ✓ |
-| MCP server for Claude Code & friends | – | – | ✓ |
-| Fully local, single binary, no account | – | – | ✓ |
+| Code intelligence (symbols, callers, impact) | ✓ | ✓ | ✓ |
+| Local CLI and MCP server | ✓ | ✓ | ✓ |
+| Obsidian-style notes vault with code bindings | – | – | ✓ |
+| Multi-agent claims, fencing and awareness | – | – | ✓ |
+| Plain-language `ask` with cited sources | – | – | ✓ |
+| Git hygiene: unsaved work across all checkouts | – | – | ✓ |
+
+The "–" marks reflect the tools' documented commands as of September 2026.
+If one of them has since gained a feature, please open an issue and we will
+correct the table.
 
 ### How it measures up
 
