@@ -359,7 +359,8 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     summary: summary ?? (input.phase === 'end' ? previous?.turn_summary : null) ?? null,
     at: now,
   })
-  if (input.phase === 'end') runAutoReap(db, input.workspaceId)  return ping
+  if (input.phase === 'end') runAutoReap(db, input.workspaceId)
+  return ping
 }
 
 /** The integrator approves a worker's pending commit. The approval reaches it as a message. */
