@@ -5,7 +5,7 @@ import {
   workspaceIdForRoot,
 } from './lib/workspaces.js'
 import {
-  fetchMesh, fetchPlanetInventory, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
+  fetchMesh, fetchPlanetInventory, fetchSwarmSnapshot, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
   resetAgentAttachments, setPlanetCheckoutSelection, fetchGitState, type GitState, type PlanetInventory,
 } from './lib/brain-client'
 import CityView from './views/CityView'
@@ -19,10 +19,11 @@ import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
 import BriefingView from './views/BriefingView'
 import HygieneView from './views/HygieneView'
+import TurnsView from './views/TurnsView'
 import AskModal from './components/AskModal'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
-import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
+import type { MeshSnapshot, QueueTask, Snapshot, SwarmSnapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
@@ -39,6 +40,7 @@ const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'packs', label: 'Kontext-Pakete', hint: 'Context-Packs für Agenten-Aufgaben zusammenstellen' },
   { id: 'queue', label: 'Aufgaben', hint: 'Wartende Aufgaben; der nächste freie Agent nimmt sie' },
   { id: 'mesh', label: 'Agenten-Netz', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
+  { id: 'turns', label: 'Turns', hint: 'Worker-Turns, Nachrichten, Claims und Freigaben auf einer Zeitachse' },
   { id: 'city', label: 'Code-Stadt', hint: 'Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude' },
 ]
 
@@ -66,6 +68,7 @@ function initialWorkspace(): string {
 export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [mesh, setMesh] = useState<MeshSnapshot | null>(null)
+  const [swarm, setSwarm] = useState<SwarmSnapshot | null>(null)
   const [queue, setQueue] = useState<{ depth: number; tasks: QueueTask[] }>({ depth: 0, tasks: [] })
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -100,6 +103,20 @@ export default function App() {
   const [selectedRevision, setSelectedRevision] = useState<string | null>(null)
   const [meshFocusAgent, setMeshFocusAgent] = useState<string | null>(null)
 
+  const refreshSwarm = useCallback(() => {
+    if (!workspaceId) { setSwarm(null); return }
+    void fetchSwarmSnapshot(workspaceId).then(setSwarm).catch(() => setSwarm(null))
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (view !== 'turns' || !workspaceId) return
+    let alive = true
+    const refresh = () => { void fetchSwarmSnapshot(workspaceId).then(data => { if (alive) setSwarm(data) }).catch(() => { if (alive) setSwarm(null) }) }
+    refresh()
+    const timer = window.setInterval(refresh, 10_000)
+    return () => { alive = false; clearInterval(timer) }
+  }, [view, workspaceId])
+
   // Settings & Theme state
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'appearance' | 'vaults' | 'repos' | 'shortcuts' | 'advanced'>('appearance')
@@ -108,7 +125,7 @@ export default function App() {
       const saved = localStorage.getItem('plugbrain.theme')
       if (saved === 'dark' || saved === 'light' || saved === 'system') return saved
     } catch {}
-    return 'system'
+    return 'dark'
   })
 
   useEffect(() => {
@@ -928,6 +945,8 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {view === 'turns' && <TurnsView workspaceId={workspaceId} data={swarm} onRefresh={refreshSwarm} />}
 
           {view === 'hygiene' && (
             <div className="pb-view">
