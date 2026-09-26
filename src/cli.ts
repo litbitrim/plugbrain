@@ -27,7 +27,7 @@
  *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
  *   plugbrain notes backlinks <path>          who points at this note
  *
- *   plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …
+ *   plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|approve|resources|quota|admit> …
  *                                             the fleet's check-in desk (see src/swarm-cli.ts)
  *
  *   plugbrain hygiene [--workspace <id>] [--json]   what git work sits on exactly one disk
