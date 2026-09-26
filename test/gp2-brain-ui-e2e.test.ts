@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { chromium } from 'playwright-core'
+import { chromium, type Browser } from 'playwright-core'
 import { openStore } from '../src/store/schema.ts'
 import { serve } from '../src/server/api.ts'
 
@@ -28,8 +28,12 @@ test('GP-2: a human can complete standalone knowledge work through the real Brai
   const authKey = 'gp2-local-token'
   const server = await serve({ db, dbFile, uiRoot: join(import.meta.dirname, '..', 'ui-dist'), authKey }, 0)
   const base = `http://127.0.0.1:${server.port}`
-  const browser = await chromium.launch({ headless: true })
+  // Launch inside the try: when the browser is missing (a fresh CI runner), the
+  // finally below must still close the server and the store, or their open
+  // handles keep this test file alive and the whole suite never ends.
+  let browser: Browser | null = null
   try {
+    browser = await chromium.launch({ headless: true })
     const page = await browser.newPage()
     await page.goto(base)
     assert.equal(await page.evaluate('window.__PLUGBRAIN__?.token'), authKey, 'the real served shell hands its local session to the UI')
@@ -86,7 +90,7 @@ test('GP-2: a human can complete standalone knowledge work through the real Brai
     await page.getByRole('button', { name: 'Explorer' }).click()
     await page.getByText('source.ts').first().waitFor()
   } finally {
-    await browser.close()
+    await browser?.close()
     await server.close()
     try { db.close() } catch { /* closed by server on error paths */ }
     rmSync(dir, { recursive: true, force: true, maxRetries: 10 })
