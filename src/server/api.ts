@@ -7,7 +7,7 @@
  * every projection, so a track is visible in every graph without the client
  * having to correlate anything itself.
  */
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, resolve as resolvePath } from 'node:path'
@@ -17,6 +17,7 @@ import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
   activePlanetFileScope, assertPlanetIndexSelectionConfigured, getPlanetIndexSelection,
   listWorkspaceView, noteRootRows, planetHistory, registerPlanet, setPlanetIndexSelection,
+  workspaceIdFor,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
@@ -25,6 +26,8 @@ import { machineReport } from '../machine/index.ts'
 import { gitCensusCached } from '../machine/git-census.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
+import { resolveBrainHome } from '../home.ts'
+import { packageVersion, removeCoreEndpoint, writeCoreEndpoint } from './core-endpoint.ts'
 
 /**
  * The identity a search is attributed to. A read is a read: the provenance
@@ -111,6 +114,12 @@ export interface Ctx {
   authKey?: string | null
   requireAuth?: boolean
   instanceId?: string | null
+  /**
+   * The PlugBrain home this serve publishes itself to (`core.json`). The serve
+   * command passes its resolved home; a test passes a throwaway one. When it
+   * is not set, the server serves without publishing an endpoint file.
+   */
+  home?: string | null
 }
 
 const json = (res: ServerResponse, body: unknown, status = 200): void => {
@@ -2383,7 +2392,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!existsSync(root) || !statSync(root).isDirectory()) {
         return json(res, { ok: false, error: `not a directory: ${root}` }, 400)
       }
-      const id = `ws-${createHash('sha256').update(root.toLowerCase()).digest('hex').slice(0, 12)}`
+      // One identity derivation for both registration sides: the CLI's
+      // `register` and this endpoint must mint the same id for one folder,
+      // including a pinned marker a previous registration left behind.
+      const id = workspaceIdFor(root)
       // Both separators: a Windows root splits on backslashes, and a class of
       // only `/` leaves the whole path as the workspace name.
       const fallback = root.split(/[\\/]/).filter(Boolean).pop() ?? id
@@ -2790,16 +2802,33 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     json(res, { ok: false, error: `no route: ${p}` }, 404)
   }
 
+  // The endpoint file: serve writes where it listens — atomic temp + rename —
+  // and takes it with it on the way down, so a reader never guesses a port
+  // and never points at a serve that is already gone.
+  const home = ctx.home ?? null
   return new Promise((resolve, reject) => {
     server.on('error', reject)
     server.listen(port, '127.0.0.1', () => {
       const address = server.address()
       const actualPort = typeof address === 'object' && address ? address.port : port
+      if (home) {
+        try {
+          writeCoreEndpoint(home, {
+            url: `http://127.0.0.1:${actualPort}`,
+            pid: process.pid,
+            version: packageVersion(),
+            startedAt: new Date().toISOString(),
+          })
+        } catch (error) {
+          process.stderr.write(`PlugBrain: could not write core.json: ${(error as Error).message}\n`)
+        }
+      }
       resolve({
         port: actualPort,
         server,
         close: () => new Promise<void>((res, rej) => {
           server.close(err => (err ? rej(err) : res()))
+          if (home) removeCoreEndpoint(home, process.pid)
         }),
       })
     })

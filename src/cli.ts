@@ -44,7 +44,7 @@ import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
 import {
   assertPlanetIndexSelectionConfigured, listPlanet, planetHistory, registerPlanet,
-  setPlanetIndexSelection, workspaceIdFor,
+  setPlanetIndexSelection, workspaceIdFor, pinWorkspaceId,
 } from './planet.ts'
 import {
   backlinksOf, listNotes, noteGraph, queryNotes, readNote, searchNotesWithLines, writeNote,
@@ -105,6 +105,8 @@ function register(path: string, name?: string): void {
     `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(root) DO UPDATE SET name = excluded.name`
   ).run(id, label, root, new Date().toISOString())
+  // Registration mints identity: pin it so a later move cannot take it away.
+  pinWorkspaceId(root, id)
   console.log(`registered ${label}  ${id}\n  ${root}`)
 }
 
@@ -1140,7 +1142,9 @@ switch (command) {
         }
       }
     }
-    startServer({ db, dbFile: DB_FILE, uiRoot, authKey, requireAuth: true }, port).then(actual => {
+    // The home rides along so the server publishes core.json where consumers
+    // (the operator, the desktop shell) look for the one canonical endpoint.
+    startServer({ db, dbFile: DB_FILE, uiRoot, authKey, requireAuth: true, home: HOME }, port).then(actual => {
       console.log(`PlugBrain serving on http://127.0.0.1:${actual}`)
       console.log(`  UI       http://127.0.0.1:${actual}/`)
       console.log(`  Galaxy   http://127.0.0.1:${actual}/api/galaxy`)

@@ -10,7 +10,7 @@
  * SQLite via node:sqlite (Node >= 22 built-in). WAL so the indexer can keep
  * writing while the UI and the agent API read concurrently.
  */
-import { DatabaseSync } from 'node:sqlite'
+import { DatabaseSync, type StatementSync } from 'node:sqlite'
 import { existsSync, mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
@@ -684,6 +684,60 @@ export function storedWriterGeneration(file: string): number | null {
   }
 }
 
+/** Whether an error is SQLite refusing a statement because another connection
+ *  holds the database: `SQLITE_BUSY` (errcode 5), which node:sqlite surfaces as
+ *  "database is locked". */
+export function isSqliteBusyError(error: unknown): boolean {
+  const e = error as { errcode?: number; errstr?: string; message?: string } | null | undefined
+  if (e === null || e === undefined) return false
+  return e.errcode === 5 || e.errstr === 'SQLITE_BUSY' ||
+    (typeof e.message === 'string' && e.message.includes('database is locked'))
+}
+
+/** A bounded synchronous sleep for a busy retry (no dependency, no event loop). */
+export function sleepSync(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
+
+/**
+ * Retry a failed write a bounded number of times while the database is busy.
+ *
+ * `busy_timeout` makes SQLite wait, but a holder that outlasts it — a long
+ * index run, a stuck writer — still surfaces as SQLITE_BUSY, which crashed the
+ * CLI the first time `swarm admit build` raced a re-index (25.09.2026, 23:47).
+ * A busy statement rolled back before the error, so retrying it never
+ * double-applies; a non-busy error is never retried.
+ */
+export function withBusyRetry<T>(write: () => T, attempts = 4, delayMs = 200): T {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return write()
+    } catch (error) {
+      if (attempt >= attempts || !isSqliteBusyError(error)) throw error
+      sleepSync(delayMs)
+    }
+  }
+}
+
+/**
+ * Give a writable connection statements whose writes retry while the database
+ * is busy. `run` is the only retried call — it is the write intent; reads keep
+ * their plain behavior, because in WAL a reader never contends the writer
+ * lock. The original statement object is kept and only `run` is shadowed:
+ * a copied wrapper would lose the native statement's internal slots and
+ * every other call would die with "Illegal invocation".
+ */
+function withBusyStatementRetry(db: DatabaseSync): DatabaseSync {
+  const realPrepare = DatabaseSync.prototype.prepare as unknown as (this: DatabaseSync, sql: string) => StatementSync
+  db.prepare = function (this: DatabaseSync, sql: string): StatementSync {
+    const stmt = realPrepare.call(this, sql)
+    const originalRun = (stmt.run as unknown as (...a: unknown[]) => { changes: number | bigint; lastInsertRowid: number | bigint }).bind(stmt)
+    ;(stmt as { run: unknown }).run = (...args: unknown[]) => withBusyRetry(() => originalRun(...args))
+    return stmt
+  } as unknown as DatabaseSync['prepare']
+  return db
+}
+
 export interface OpenStoreOptions {
   /** Open read-only on purpose (inspection); skips every migration. */
   readOnly?: boolean
@@ -693,6 +747,13 @@ export interface OpenStoreOptions {
 
 /** Open (creating if needed) the PlugBrain database at `file`. */
 export function openStore(file: string, options: OpenStoreOptions = {}): DatabaseSync {
+  // The whole open — migrations included — waits a bounded number of times
+  // while another writer holds the store, instead of crashing the caller
+  // (the CLI short commands, the daemon and the MCP server all open here).
+  return withBusyRetry(() => openStoreWithoutRetry(file, options))
+}
+
+function openStoreWithoutRetry(file: string, options: OpenStoreOptions = {}): DatabaseSync {
   mkdirSync(dirname(file), { recursive: true })
   const generation = options.writerGeneration ?? WRITER_GENERATION
   const stored = storedWriterGeneration(file)
@@ -718,7 +779,7 @@ export function openStore(file: string, options: OpenStoreOptions = {}): Databas
        ON CONFLICT(key) DO UPDATE SET value = excluded.value
        WHERE CAST(store_meta.value AS INTEGER) < CAST(excluded.value AS INTEGER)`)
       .run(String(generation))
-    return db
+    return withBusyStatementRetry(db)
   } catch (error) {
     db.close()
     throw error
