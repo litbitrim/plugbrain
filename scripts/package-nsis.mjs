@@ -11,9 +11,11 @@ function resolveMakensis() {
   const envPath = process.env.PLUGBRAIN_MAKENSIS?.trim()
   if (envPath && existsSync(envPath)) return envPath
 
+  // Common per-machine installs; anything else comes in via PLUGBRAIN_MAKENSIS
+  // or PATH, so no developer's home directory is baked into the source.
   const candidates = [
-    'C:\\Users\\mil\\AppData\\Local\\tauri\\NSIS\\makensis.exe',
-    'C:\\Users\\mil\\AppData\\Local\\electron-builder\\Cache\\nsis\\nsis-3.0.4.1\\makensis.exe',
+    'C:\\Program Files (x86)\\NSIS\\makensis.exe',
+    'C:\\Program Files\\NSIS\\makensis.exe',
   ]
   for (const c of candidates) {
     if (existsSync(c)) return c

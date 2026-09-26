@@ -2,9 +2,9 @@
  * Planets — one brain, many repositories, many worktrees.
  *
  * The workspace model in `schema.ts` predates the real thing it describes. A
- * planet here is not an abstract grouping: `C:\PLUG\plugpt` holds sixteen git
- * repositories and thirty-two checkouts of them, nine of which are worktrees of
- * PlugHarness alone. The contract forbids a second brain per worktree, so all
+ * planet here is not an abstract grouping: one parent folder can hold a dozen
+ * git repositories and more checkouts than that, several of which are worktrees
+ * of a single project. The contract forbids a second brain per worktree, so all
  * of them have to live in ONE database and be told apart by identity rather
  * than by having been written somewhere else.
  *
@@ -57,8 +57,8 @@ export const workspaceIdFor = (root: string): string =>
 
 /**
  * Fold a path for identity: absolute, forward slashes, no trailing separator,
- * lowercase. Windows paths are case-insensitive, so `C:\PLUG\plugpt` and
- * `c:/plug/plugpt` are the same folder and must not be two repos.
+ * lowercase. Windows paths are case-insensitive, so `C:\code\workspace` and
+ * `c:/code/workspace` are the same folder and must not be two repos.
  */
 export const foldPath = (path: string): string =>
   canonicalPath(path).split('\\').join('/').replace(/\/+$/, '').toLowerCase()

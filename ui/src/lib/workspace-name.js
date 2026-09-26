@@ -8,7 +8,7 @@
  *
  * The separator class must contain the backslash: `[\/]` is a class of one
  * forward slash, so a Windows root splits on nothing and the full path
- * survives — the exact bug that put `C:\PLUG\ws-root\...` on screen twice.
+ * survives — the exact bug that put `C:\code\workspace\...` on screen twice.
  */
 export function folderName(value) {
   if (typeof value !== 'string' || value === '') return value;

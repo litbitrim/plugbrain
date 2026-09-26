@@ -36,18 +36,18 @@ test('a resolved daemon status clears the prior quiet-owner warning', () => {
 
 test('a URL workspace root resolves only to an exact normalized registered id', () => {
   const planets = [
-    { id: 'ws-plugpt', root: 'C:\\PLUG\\plugpt\\Code\\' },
+    { id: 'ws-code', root: 'C:\\code\\workspace\\' },
     { id: 'ws-unix', root: '/srv/Brain/' },
     { id: 'ws-unc', root: '\\\\server\\Share\\Brain\\' },
   ]
-  assert.equal(normalizeWorkspaceRoot(' C:/plugpt//Code/ '), 'c:/plugpt/code')
+  assert.equal(normalizeWorkspaceRoot(' C:/code//workspace/ '), 'c:/code/workspace')
   assert.equal(normalizeWorkspaceRoot('/'), '/')
-  assert.equal(workspaceIdForRoot(planets, 'c:/PLUG/plugpt/code'), 'ws-plugpt')
+  assert.equal(workspaceIdForRoot(planets, 'c:/CODE/WORKSPACE'), 'ws-code')
   assert.equal(workspaceIdForRoot(planets, '/srv/Brain'), 'ws-unix')
   assert.equal(workspaceIdForRoot(planets, '/srv/brain'), '',
     'POSIX roots preserve case instead of selecting a different vault')
   assert.equal(workspaceIdForRoot(planets, '//SERVER/share/brain/'), 'ws-unc')
-  assert.equal(workspaceIdForRoot(planets, 'C:/PLUG/plugpt'), '',
+  assert.equal(workspaceIdForRoot(planets, 'C:/code'), '',
     'a prefix is not a workspace id and must not select a nearby planet')
   assert.equal(workspaceIdForRoot(planets, 'C:/unknown'), '',
     'an unknown root remains on the known-vault landing state')
