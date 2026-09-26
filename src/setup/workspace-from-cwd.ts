@@ -41,7 +41,7 @@ export interface WorkspaceCandidate {
  * would make `C:\Proj` and `C:\proj\src` look like strangers.
  */
 function fold(path: string): string {
-  let value = resolve(path).split(sep).join('/')
+  let value = canonicalPath(path).split(sep).join('/')
   while (value.length > 1 && value.endsWith('/')) value = value.slice(0, -1)
   return value.toLowerCase()
 }
@@ -106,7 +106,7 @@ export interface WorkspaceRecord {
  * changing nothing, so the decision is split from the write.
  */
 export function planWorkspaceRoot(db: DatabaseSync, root: string, name?: string): WorkspaceRecord {
-  const absolute = resolve(root)
+  const absolute = canonicalPath(root)
   const id = workspaceIdFor(absolute)
   const existing = db.prepare('SELECT id FROM workspaces WHERE root = ?').get(absolute) as
     { id: string } | undefined
@@ -124,7 +124,7 @@ export function planWorkspaceRoot(db: DatabaseSync, root: string, name?: string)
 export function registerWorkspaceRoot(
   db: DatabaseSync, root: string, name?: string,
 ): WorkspaceRecord {
-  const absolute = resolve(root)
+  const absolute = canonicalPath(root)
   const record = planWorkspaceRoot(db, root, name)
   db.prepare(
     `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
@@ -188,7 +188,7 @@ export function resolveMcpWorkspace(
     // than failing, and a folder is what a human is most likely to paste.
     const byId = rootOf(db, pinned)
     if (byId !== null) return { workspaceId: pinned, root: byId, source: 'env', needsIndex: false }
-    const absolute = resolve(pinned)
+    const absolute = canonicalPath(pinned)
     const id = workspaceIdFor(absolute)
     if (rootOf(db, id) !== null) {
       return { workspaceId: id, root: absolute, source: 'env', needsIndex: false }

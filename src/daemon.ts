@@ -23,7 +23,7 @@
 import { watch, type FSWatcher } from 'node:fs'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
-import { indexPlanetWorkspace } from './planet.ts'
+import { canonicalPath, indexPlanetWorkspace } from './planet.ts'
 import { IndexRunBusy, IndexRunStartFailed, startIndexRun } from './index/runner.ts'
 import { isNeverIndexedDir } from './indexer/scan.ts'
 import {
@@ -65,8 +65,8 @@ export function isNoisePath(filename: string | null, home = storeHome()): boolea
   if (filename === null) return false
   const segments = filename.split(/[\\/]+/).filter(segment => segment !== '')
   if (segments.some(segment => isNeverIndexedDir(segment))) return true
-  const abs = resolve(filename)
-  const store = resolve(home)
+  const abs = canonicalPath(filename)
+  const store = canonicalPath(home)
   return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
 }
 

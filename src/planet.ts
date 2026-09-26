@@ -28,7 +28,7 @@
  */
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync, type Dirent } from 'node:fs'
-import { basename, isAbsolute, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import type { DatabaseSync, SQLInputValue, SQLOutputValue } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
 import { indexWorkspace, type IndexProgress, type IndexResult } from './indexer/index.ts'
@@ -43,7 +43,20 @@ import { cachedOnce, generationCache, publishedGeneration } from './store/count-
  */
 export const canonicalPath = (path: string): string => {
   const absolute = resolve(path)
-  try { return realpathSync.native(absolute) } catch { return absolute }
+  let existing = absolute
+  const suffix: string[] = []
+  while (!existsSync(existing)) {
+    const parent = dirname(existing)
+    if (parent === existing) return absolute
+    suffix.unshift(relative(parent, existing))
+    existing = parent
+  }
+  try {
+    const real = realpathSync.native(existing)
+    return suffix.length === 0 ? real : join(real, ...suffix)
+  } catch {
+    return absolute
+  }
 }
 
 const WORKSPACE_ID_MARKER = 'plugbrain-workspace-id'
@@ -178,29 +191,30 @@ export interface CheckoutFacts {
  * hashes every file's bytes.
  */
 export function readCheckout(path: string): CheckoutFacts {
-  const abs = canonicalPath(path)
-  const toplevel = gitText(abs, ['rev-parse', '--show-toplevel'])
-  const rawCommon = gitText(abs, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
-    ?? gitText(abs, ['rev-parse', '--git-common-dir'])
+  const abs = resolve(path)
+  const real = canonicalPath(abs)
+  const toplevel = gitText(real, ['rev-parse', '--show-toplevel'])
+  const rawCommon = gitText(real, ['rev-parse', '--path-format=absolute', '--git-common-dir'])
+    ?? gitText(real, ['rev-parse', '--git-common-dir'])
   const commonDir = rawCommon === null || rawCommon === ''
     ? null
-    : (isAbsolute(rawCommon) ? rawCommon : resolve(abs, rawCommon))
+    : canonicalPath(isAbsolute(rawCommon) ? rawCommon : resolve(real, rawCommon))
 
-  const branch = gitText(abs, ['rev-parse', '--abbrev-ref', 'HEAD'])
-  const head = gitText(abs, ['rev-parse', 'HEAD'])
+  const branch = gitText(real, ['rev-parse', '--abbrev-ref', 'HEAD'])
+  const head = gitText(real, ['rev-parse', 'HEAD'])
 
   // The first entry of `git worktree list` is the main worktree; its folder
   // name is the repository's own name, which is the one a human uses.
-  const worktreeList = gitText(abs, ['worktree', 'list', '--porcelain']) ?? ''
+  const worktreeList = gitText(real, ['worktree', 'list', '--porcelain']) ?? ''
   const mainWorktree = worktreeList.split('\n').find(line => line.startsWith('worktree '))
     ?.slice('worktree '.length).trim() ?? toplevel
 
-  const porcelain = gitText(abs, ['status', '--porcelain']) ?? ''
+  const porcelain = gitText(real, ['status', '--porcelain']) ?? ''
   const changed = porcelain.split('\n').filter(Boolean)
   const untrackedCount = changed.filter(line => line.startsWith('??')).length
-  const diff = gitText(abs, ['diff', 'HEAD', '--no-color', '--no-ext-diff', '--unified=0'])
-    ?? (gitText(abs, ['diff', '--cached', '--no-color', '--unified=0']) ?? '')
-      + (gitText(abs, ['diff', '--no-color', '--unified=0']) ?? '')
+  const diff = gitText(real, ['diff', 'HEAD', '--no-color', '--no-ext-diff', '--unified=0'])
+    ?? (gitText(real, ['diff', '--cached', '--no-color', '--unified=0']) ?? '')
+      + (gitText(real, ['diff', '--no-color', '--unified=0']) ?? '')
   const dirtyHash = changed.length === 0 ? null : `d-${shortHash(porcelain + '\n' + diff)}`
 
   return {
@@ -214,7 +228,7 @@ export function readCheckout(path: string): CheckoutFacts {
     dirtyCount: changed.length,
     untrackedCount,
     revision: `rev-${shortHash(`${branch ?? ''}|${head ?? ''}|${dirtyHash ?? 'clean'}`)}`,
-    remoteUrl: gitText(abs, ['remote', 'get-url', 'origin']),
+    remoteUrl: gitText(real, ['remote', 'get-url', 'origin']),
   }
 }
 
@@ -598,7 +612,9 @@ export function registerPlanet(db: DatabaseSync, root: string, name?: string): R
   // root merely by still existing under Code/.
   ensureIndexSelectionTables(db)
 
-  const discovered = discoverCheckouts(join(absRoot, 'Code'), planetId)
+  // Retain the caller's spelling for display; discovery identities fold every
+  // path through canonicalPath, so alternate spellings still register once.
+  const discovered = discoverCheckouts(join(resolve(root), 'Code'), planetId)
 
   const insertRepo = db.prepare(
     `INSERT INTO repos (id, planet_id, name, common_dir, remote_url, created_at)
