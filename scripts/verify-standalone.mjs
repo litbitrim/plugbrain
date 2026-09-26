@@ -6,7 +6,7 @@
  * not an installer-wizard claim.
  */
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -168,7 +168,22 @@ try {
   await page.locator('.notes-workbench').waitFor()
   await page.locator('.notes-search input').fill('Standalone Wissenssuche')
   await page.getByRole('button', { name: 'Suchen' }).click()
-  await page.getByText('Standalone Wissenssuche.').waitFor()
+  await page.getByText('Standalone Wissenssuche.').waitFor().catch(async error => {
+    // A timeout alone says nothing about why. Print what the daemon and the
+    // page saw, so a failure on a CI runner can be read instead of guessed.
+    const api = async path => {
+      try { return JSON.stringify(await (await fetch(`http://127.0.0.1:${port}${path}`)).json()).slice(0, 600) }
+      catch (reason) { return `unreadable: ${reason instanceof Error ? reason.message : String(reason)}` }
+    }
+    const scope = `workspace=${encodeURIComponent(workspace.id)}`
+    console.error('[Tier 1 diagnostics] root', JSON.stringify({
+      workspaceRoot, realpath: realpathSync(workspaceRoot), native: realpathSync.native(workspaceRoot),
+    }))
+    console.error('[Tier 1 diagnostics] search', await api(`/api/notes/search?${scope}&q=Standalone%20Wissenssuche&lines=1`))
+    console.error('[Tier 1 diagnostics] read', await api(`/api/notes/read?${scope}&path=Notizen%2FAlpha.md&agentId=portable-ui`))
+    console.error('[Tier 1 diagnostics] page', (await page.locator('.notes-workbench').innerText().catch(() => '')).slice(0, 800))
+    throw error
+  })
 
   const editor = page.getByLabel('Notizinhalt')
   await editor.fill('# Alpha\n\nGespeichert über das paketierte UI.\n\n[[Entscheidung]]\n')
