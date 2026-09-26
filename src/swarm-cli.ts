@@ -39,15 +39,12 @@ import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from './coord/chron
 import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.ts'
 import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd } from './coord/turn-delivery.ts'
 import {
-  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
-  readReviewPool, recordTurn, releaseLease,
+  acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
+  getRunnerProfile, hostSnapshot, listQuotas, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
   reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
-  setReviewAuto, setReviewPool, setSilentAfterMinutes, touchAgentContact, watchdogSettings,
-  ensureIntegrator, getRunnerProfile,
-  hostSnapshot, listQuotas, reconcileWorkerRuns, setRunnerProfile, startWorkerRun, stopWorkerRun, workerRunStatus,
-  recordTurn, releaseLease,
-  registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
+  setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
+  touchAgentContact, watchdogSettings, workerRunStatus,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
 } from './coord/index.ts'
