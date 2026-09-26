@@ -512,20 +512,12 @@ CREATE TABLE IF NOT EXISTS store_meta (
 );
 `
 
-interface SqlDefinition { sql: string | null }
-
-/**
- * Upgrade the original all-in-one FTS5 table before the current schema is
- * applied. `CREATE VIRTUAL TABLE IF NOT EXISTS` cannot change an existing
- * virtual-table definition, so treating schema creation as migration would
- * silently leave the old layout active while the new queries join against an
- * empty `search_rows` table.
- */
 function migrateLegacySearch(db: DatabaseSync): void {
-  const definition = db.prepare(
+  const row = db.prepare(
     "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'search'"
-  ).get() as SqlDefinition | undefined
-  if (!definition?.sql || /content\s*=\s*['\"]search_rows['\"]/i.test(definition.sql)) return
+  ).get()
+  const sql = typeof row?.sql === 'string' ? row.sql : null
+  if (!sql || /content\s*=\s*['\"]search_rows['\"]/i.test(sql)) return
 
   const hasSearchRows = Boolean(db.prepare(
     "SELECT 1 present FROM sqlite_master WHERE type = 'table' AND name = 'search_rows'"

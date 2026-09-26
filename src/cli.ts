@@ -1322,7 +1322,7 @@ switch (command) {
     const override = flagValue(args, '--workspace')
     const authKey = flagValue(args, '--auth-key') ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
     const resolution = resolveMcpWorkspace({ db, cwd: process.cwd(), override })
-    if (resolution.workspaceId === null) {
+    if (resolution.source === 'none') {
       // Start anyway: a refusal must reach the client as a tool error, not as a
       // server that died before it could answer `initialize`.
       console.error(`plugbrain mcp: ${resolution.reason}`)

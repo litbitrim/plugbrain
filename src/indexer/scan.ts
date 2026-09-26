@@ -32,7 +32,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, type Dirent } from 'node:fs'
 import { extname, join, posix, relative } from 'node:path'
 import { extractFromSource, languageOf } from './ast.ts'
 import { extractFromMarkdown } from './markdown.ts'
@@ -275,7 +275,7 @@ function walkInto(
   const stack: Array<{ dir: string; depth: number }> = [{ dir: root.abs, depth: 0 }]
   while (stack.length > 0) {
     const { dir, depth } = stack.pop() as { dir: string; depth: number }
-    let entries: ReturnType<typeof readdirSync>
+    let entries: Dirent<string>[]
     try { entries = readdirSync(dir, { withFileTypes: true }) } catch { continue }
     for (const entry of entries) {
       const abs = join(dir, entry.name)
@@ -578,18 +578,19 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
     const declared = new Set(md.properties
       .filter(property => property.key.toLowerCase() === 'tags')
       .map(property => property.value.replace(/^#/, '').toLowerCase()))
+    const refs: ParsedFile['refs'] = [
+      ...md.refs.map((r): ParsedFile['refs'][number] => ({
+        kind: 'references', target: r.target, receiver: r.wiki ? 'wiki' : null,
+        from: null, scope: 'md-link', line: r.line,
+      })),
+      ...md.tags.map((tag): ParsedFile['refs'][number] => ({
+        kind: 'references', target: tag, receiver: null, from: null, scope: 'md-tag', line: 1,
+      })),
+    ]
     return {
       rel, ext, lang: null, processingStatus: 'parsed', processingReason: null, loc: md.loc,
       symbols: md.symbols.map(s => ({ ...s, exported: false, endLine: s.line, container: s.container ?? null })),
-      refs: [
-        ...md.refs.map(r => ({
-          kind: 'references', target: r.target, receiver: r.wiki ? 'wiki' : null,
-          from: null, scope: 'md-link', line: r.line,
-        })),
-        ...md.tags.map(tag => ({
-          kind: 'references', target: tag, receiver: null, from: null, scope: 'md-tag', line: 1,
-        })),
-      ],
+      refs,
       imports: [],
       properties: md.properties.map(p => ({
         key: p.key, value: p.value, raw: p.raw, ordinal: p.ordinal, isLink: p.isLink, line: p.line,
