@@ -47,7 +47,7 @@ import * as intel from './intel/index.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
-import { IndexRunBusy, runIndexInProcess } from './index/runner.ts'
+import { IndexRunBusy, runIndexInProcess, startIndexRun } from './index/runner.ts'
 import { appraiseRun, describeRun, listRunStates } from './index/runs.ts'
 import type { IndexProgress } from './indexer/index.ts'
 import type { IndexResult } from './indexer/scan.ts'
@@ -57,6 +57,7 @@ import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
 import { resolveBrainHome } from './home.ts'
+import { resolveMcpWorkspace } from './setup/workspace-from-cwd.ts'
 
 const HOME = resolveBrainHome()
 
@@ -918,9 +919,32 @@ switch (command) {
     break
   }
   case 'mcp': {
-    const ws = flagValue(args, '--workspace') ?? undefined
+    // No `--workspace` is the normal case now: the client starts the server in
+    // the project folder, so the folder states the workspace. `--workspace`
+    // stays as an explicit override and `PLUGBRAIN_WORKSPACE` as the machine's.
+    const override = flagValue(args, '--workspace')
     const authKey = flagValue(args, '--auth-key') ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
-    startMcpServer({ db, workspaceId: ws, authKey })
+    const resolution = resolveMcpWorkspace({ db, cwd: process.cwd(), override })
+    if (resolution.workspaceId === null) {
+      // Start anyway: a refusal must reach the client as a tool error, not as a
+      // server that died before it could answer `initialize`.
+      console.error(`plugbrain mcp: ${resolution.reason}`)
+      startMcpServer({ db, authKey, workspaceError: resolution.reason })
+      break
+    }
+    if (resolution.needsIndex) {
+      // A just-registered git root has a cold index; warm it in the background
+      // so the server answers at once. Indexing is best-effort: a busy or
+      // unpackaged worker is reported, never fatal.
+      try {
+        startIndexRun(resolution.workspaceId, { dbFile: DB_FILE })
+        console.error(`plugbrain mcp: indexing ${resolution.root} in the background …`)
+      } catch (error) {
+        console.error(`plugbrain mcp: could not start indexing ${resolution.root}: ` +
+          `${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    startMcpServer({ db, workspaceId: resolution.workspaceId, authKey })
     break
   }
   case 'backup': {
@@ -954,7 +978,7 @@ switch (command) {
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
       '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
-      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
+      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
       '       plugbrain backup [target_path]\n' +
       '       plugbrain restore <backup_path>')
     process.exit(1)

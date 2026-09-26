@@ -19,6 +19,15 @@ export interface McpServerOptions {
   authKey?: string | null
   inStream?: Readable
   outStream?: Writable
+  /**
+   * Why no workspace could be resolved, when the CLI already tried.
+   *
+   * A bare `plugbrain mcp` discovers its workspace from the cwd; when that
+   * fails the server must still speak MCP — it starts, answers `initialize`,
+   * and returns this sentence as a tool error instead of dying at startup
+   * where the client can only report a broken pipe.
+   */
+  workspaceError?: string
 }
 
 export const MCP_TOOLS = [
@@ -357,6 +366,7 @@ export class McpServer {
   private readonly db: DatabaseSync
   private defaultWorkspaceId?: string
   private readonly authKey?: string | null
+  private readonly workspaceError?: string
   private readonly inStream: Readable
   private readonly outStream: Writable
   private buffer = ''
@@ -365,6 +375,7 @@ export class McpServer {
     this.db = options.db
     this.defaultWorkspaceId = options.workspaceId
     this.authKey = options.authKey ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
+    this.workspaceError = options.workspaceError
     this.inStream = options.inStream ?? process.stdin
     this.outStream = options.outStream ?? process.stdout
   }
@@ -450,9 +461,10 @@ export class McpServer {
         Array<{ id: string }>
       if (rows.length !== 1) {
         throw new Error(
-          rows.length === 0
+          this.workspaceError ??
+          (rows.length === 0
             ? 'workspaceId is required: no workspace is registered'
-            : 'workspaceId is required: multiple workspaces are registered')
+            : 'workspaceId is required: multiple workspaces are registered'))
       }
       this.defaultWorkspaceId = rows[0].id
       return rows[0].id
