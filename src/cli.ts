@@ -5,6 +5,7 @@
  *   plugbrain index [workspaceId]      (re)index one or every workspace
  *   plugbrain status                   what the brain currently holds
  *   plugbrain search <query>           find code without touching the disk
+ *   plugbrain ask "<question>" [--json]  ask in plain language; the brain picks the tool
  *   plugbrain serve [port]             run the API + UI daemon
  *
  *   plugbrain planet register [path] [name]   register a planet, discover its repos
@@ -45,6 +46,7 @@ import * as access from './access.ts'
 import { ensureAgent } from './access.ts'
 import * as intel from './intel/index.ts'
 import { buildBriefing, renderBriefing } from './context/briefing.ts'
+import { askQuestion } from './ask/index.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
 import { IndexRunBusy, runIndexInProcess } from './index/runner.ts'
@@ -615,6 +617,49 @@ function intelQuery(args: string[]): void {
   }
 }
 
+/**
+ * `plugbrain ask "where is X defined?"` — the same plain-language answer the
+ * HTTP route and the MCP tool give, printed for a human or emitted as JSON.
+ * One workspace has to be named when several are registered, exactly as for the
+ * read routes: guessing which project a question is about would be a lie.
+ */
+function askCommand(args: string[]): void {
+  const question = textArgs(args, ['--workspace', '--limit']).join(' ').trim()
+  if (!question) {
+    console.error('usage: plugbrain ask "<question>" [--workspace <id>] [--limit <n>] [--json]')
+    process.exit(1)
+  }
+  let workspaceId = flagValue(args, '--workspace')
+  if (!workspaceId) {
+    const rows = db.prepare('SELECT id FROM workspaces ORDER BY created_at LIMIT 2').all() as
+      Array<{ id: string }>
+    if (rows.length !== 1) {
+      console.error(rows.length === 0
+        ? 'no workspace registered'
+        : 'several workspaces registered — name one with --workspace <id>')
+      process.exit(2)
+    }
+    workspaceId = rows[0].id
+  }
+  const limit = Number(flagValue(args, '--limit') ?? 5)
+  const answer = askQuestion(db, { workspaceId, question, limit })
+  if (args.includes('--json')) {
+    jsonOut(answer)
+    return
+  }
+  console.log(answer.answer)
+  if (answer.sources.length > 0) {
+    console.log('')
+    for (const source of answer.sources) {
+      console.log(`  ${source.path}:${source.line}  ${source.symbol}  (${source.why})`)
+    }
+  }
+  console.log('')
+  console.log(`intent ${answer.intent} · tool ${answer.tool} · confidence ${answer.confidence}`)
+  if (answer.unavailable.length > 0) console.log(`unavailable: ${answer.unavailable.join('; ')}`)
+  if (answer.followUps.length > 0) console.log(`follow-ups: ${answer.followUps.join(' · ')}`)
+}
+
 function intelContext(args: string[]): void {
   const name = args.find(a => !a.startsWith('--'))
   if (!name) {
@@ -862,6 +907,7 @@ switch (command) {
     }
     break
   }
+  case 'ask': askCommand(args); break
   case 'query': intelQuery(args); break
   case 'context': intelContext(args); break
   case 'impact': intelImpact(args); break

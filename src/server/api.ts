@@ -77,6 +77,7 @@ import { searchWorkspace } from '../store/search.ts'
 import { ingestTraceEvents, ensureTraceSchema } from '../trace.ts'
 import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
+import { askQuestion, buildProjectBriefing } from '../ask/index.ts'
 import * as coord from '../coord/index.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
@@ -2677,6 +2678,38 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     // An unknown API path is a 404 in JSON. Falling through to the UI shell
     // answered a missing route with 200 HTML, which makes a client's
     // `response.json()` throw and hides the fact that nothing was wired.
+    // ── Ask your project (ASK-01) ────────────────────────────────────────
+    // One plain-language question in, one plain sentence plus clickable
+    // sources out. POST is the contract's verb even though the store is only
+    // read: the question travels in the body so a long one is not squeezed
+    // onto a URL.
+    if (p === '/api/ask' && req.method === 'POST') {
+      const body = await readBody(req)
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? ws ?? ''))
+      if (workspaceId === null) {
+        return json(res, {
+          ok: false,
+          error: 'workspace is required for ask when zero or multiple workspaces are registered',
+        }, 400)
+      }
+      const question = String(body.question ?? body.q ?? q.get('question') ?? q.get('q') ?? '').trim()
+      if (!question) return json(res, { ok: false, error: 'question parameter required' }, 400)
+      const limit = Number(body.limit ?? q.get('limit') ?? 5)
+      return json(res, { ok: true, workspace: workspaceId, ...askQuestion(db, { workspaceId, question, limit }) })
+    }
+
+    // ── Project briefing (ASK-01, milestone A4) ──────────────────────────
+    if (p === '/api/briefing' && req.method === 'GET') {
+      const workspaceId = requiredIntelWorkspace(db, ws)
+      if (workspaceId === null) {
+        return json(res, {
+          ok: false,
+          error: 'workspace is required for briefing when zero or multiple workspaces are registered',
+        }, 400)
+      }
+      return json(res, { ok: true, ...buildProjectBriefing(db, workspaceId) })
+    }
+
     if (p.startsWith('/api/')) return json(res, { ok: false, error: `no route: ${p}` }, 404)
 
     // ── static UI ────────────────────────────────────────────────────────
