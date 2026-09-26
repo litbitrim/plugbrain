@@ -13,16 +13,17 @@ usage: plugbrain <command> [options]
 ### `init`
 Initialize PlugBrain in the current directory or specified path with a single command.
 
-Discovers the git repository root (or uses the directory path), registers the workspace, executes initial code indexing with a live progress report, prints the local web UI URL, and detects installed AI coding assistants (Claude Code, Codex, Cursor, Windsurf, Hermes, AGY, OpenCode) to enroll PlugBrain into their MCP client configurations. Running `init` multiple times is idempotent.
+Discovers the git repository root (or uses the directory path), registers the workspace, executes initial code indexing with a live progress report, prints the local web UI URL, detects installed AI coding assistants (Claude Code, Codex, Cursor, Windsurf, Hermes, AGY, OpenCode) to enroll PlugBrain into their MCP client configurations, and adds the PlugBrain agent-protocol block to `AGENTS.md` (plus `CLAUDE.md` when present and not already referencing `AGENTS.md`). Running `init` multiple times is idempotent.
 
 ```bash
-plugbrain init [path] [--no-clients] [--dry-run]
+plugbrain init [path] [--no-clients] [--no-agents-file] [--dry-run]
 ```
 
 **Flags:**
 - `[path]`: Directory path to initialize (defaults to the current working directory).
 - `--dry-run`: Preview planning actions without making any changes to disk.
 - `--no-clients`: Skip detecting and updating AI coding assistant client configurations.
+- `--no-agents-file`: Skip adding or updating the agent-protocol block.
 
 **Behavior of `--dry-run`:**
 - Does not create or modify `plugbrain.db` on disk. If a database file already exists, it opens it strictly read-only; if no database exists, it uses an in-memory database (`:memory:`).
@@ -65,6 +66,24 @@ plugbrain setup [--all|<client_name>] [--dry-run] [--undo]
 ```bash
 plugbrain setup --all
 plugbrain setup --undo
+```
+
+### `agents-file`
+
+Add or refresh the instructions from `docs/agent-protocol.md` between managed markers. Text outside those markers is preserved. The default writes `AGENTS.md` and also `CLAUDE.md` when that file exists without an `AGENTS.md` reference.
+
+```bash
+plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]
+```
+
+`--dry-run` prints the proposed content without writing. `--undo` restores the pre-change backup, or removes the managed block when no backup exists. Duplicate or incomplete markers are refused with a repair hint.
+
+### `doctor`
+
+`doctor --agents` performs read-only checks for each supported client: installation, PlugBrain MCP config, the local daemon health endpoint, current-directory workspace registration, and the managed agent block. Each row includes a repair command. Use `--json` for machine-readable rows. Doctor never starts the daemon or edits configuration.
+
+```bash
+plugbrain doctor --agents [--json]
 ```
 
 ---

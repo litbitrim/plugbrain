@@ -22,6 +22,7 @@ That is the whole setup. It
 2. indexes it, printing progress as it goes,
 3. prints the URL of the local dashboard,
 4. adds a `plugbrain` MCP entry to every client it finds installed.
+5. adds the PlugBrain agent instructions to `AGENTS.md` (and to an unlinked `CLAUDE.md`, when present).
 
 Run it twice and nothing changes the second time — `init` is idempotent.
 
@@ -32,6 +33,20 @@ plugbrain init ./my-notes --no-clients
 ```
 
 `--no-clients` registers and indexes without touching any client config.
+Use `--no-agents-file` to skip the managed agent-instructions block.
+
+The managed block sits between `<!-- plugbrain:agent-protocol:start -->` and
+`<!-- plugbrain:agent-protocol:end -->`; text outside it stays intact. Preview,
+target, or undo it with:
+
+```sh
+plugbrain agents-file --dry-run
+plugbrain agents-file --target both
+plugbrain agents-file --undo
+```
+
+To check client setup without changing files or starting services, run
+`plugbrain doctor --agents` (or add `--json` for machine-readable output).
 
 ## 2. See what would happen first
 

@@ -79,6 +79,7 @@ import {
 import {
   buildEntry, CLIENTS, parseClientSelection, setupClients, type ClientSetupResult,
 } from './setup/clients.ts'
+import { doctorAgents, manageAgentFile, selectAgentFiles, validateAgentFiles, type AgentFileTarget } from './setup/agent-protocol.ts'
 
 const HOME = resolveBrainHome()
 
@@ -104,8 +105,9 @@ const DB_FILE = join(HOME, 'plugbrain.db')
  * does, so a dry run creates no database file at all.
  */
 const DRY_RUN_INIT = process.argv[2] === 'init' && process.argv.includes('--dry-run')
+const READ_ONLY_DOCTOR = process.argv[2] === 'doctor' && process.argv.includes('--agents')
 
-const db = DRY_RUN_INIT
+const db = DRY_RUN_INIT || READ_ONLY_DOCTOR
   ? (existsSync(DB_FILE) ? openStore(DB_FILE, { readOnly: true }) : openStore(':memory:'))
   : openStore(DB_FILE)
 
@@ -1165,6 +1167,14 @@ function initCommand(args: string[]): void {
 
   console.log(`\nUI: http://127.0.0.1:${UI_PORT_DEFAULT}/  (start it with: plugbrain serve)`)
 
+  if (!args.includes('--no-agents-file')) {
+    const files = selectAgentFiles(root)
+    validateAgentFiles(files)
+    const results = files.map(file => manageAgentFile(file, { dryRun }))
+    console.log('\nagent instructions:')
+    for (const result of results) console.log(`  ${result.action.padEnd(10)} ${result.path}`)
+  }
+
   if (args.includes('--no-clients')) return
   const home = clientHome()
   const entry = buildEntry(selfCliPath())
@@ -1194,6 +1204,48 @@ function setupCommand(args: string[]): void {
   else if (dryRun) console.log('dry run (nothing is written):')
   else console.log('setup:')
   printClientResults(results, home)
+}
+
+function agentsFileCommand(args: string[]): void {
+  const rawTarget = flagValue(args, '--target')
+  if (rawTarget !== undefined && !['AGENTS.md', 'CLAUDE.md', 'both'].includes(rawTarget)) {
+    console.error('usage: plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]')
+    process.exit(1)
+  }
+  const target = rawTarget as AgentFileTarget | undefined
+  const root = findGitRoot(process.cwd()) ?? process.cwd()
+  const files = selectAgentFiles(root, target)
+  const undo = args.includes('--undo')
+  validateAgentFiles(files, undo)
+  const results = files.map(file => manageAgentFile(file, {
+    dryRun: args.includes('--dry-run'), undo,
+  }))
+  for (const result of results) {
+    console.log(`${result.action.padEnd(10)} ${result.path}`)
+    if (args.includes('--dry-run') && result.before !== result.after) {
+      console.log('  --- before')
+      if (result.before !== null) console.log(result.before)
+      console.log('  +++ after')
+      if (result.after !== null) console.log(result.after)
+    }
+    if (result.backup) console.log(`  backup: ${result.backup}`)
+  }
+}
+
+async function doctorCommand(args: string[]): Promise<void> {
+  if (!args.includes('--agents')) {
+    console.error('usage: plugbrain doctor --agents [--json]')
+    process.exit(1)
+  }
+  const rows = await doctorAgents({ db, port: Number(process.env.PLUGBRAIN_DOCTOR_PORT ?? UI_PORT_DEFAULT) })
+  if (args.includes('--json')) {
+    console.log(JSON.stringify(rows, null, 2))
+    return
+  }
+  console.log('Client         Installed  MCP   Daemon  Workspace  Agent block  Fix')
+  for (const row of rows) {
+    console.log(`${row.client.padEnd(14)} ${row.installed.padEnd(10)} ${row.mcp.padEnd(5)} ${row.daemon.padEnd(7)} ${row.workspace.padEnd(10)} ${row.agentBlock.padEnd(12)} ${row.fix}`)
+  }
 }
 
 const [command, ...args] = process.argv.slice(2)
@@ -1323,6 +1375,8 @@ switch (command) {
   }
   case 'init': initCommand(args); break
   case 'setup': setupCommand(args); break
+  case 'agents-file': agentsFileCommand(args); break
+  case 'doctor': await doctorCommand(args); break
   case 'mcp': {
     // No `--workspace` is the normal case now: the client starts the server in
     // the project folder, so the folder states the workspace. `--workspace`
@@ -1376,9 +1430,11 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <init|setup|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
-      '       plugbrain init [path] [--no-clients] [--dry-run]  register + index + enroll clients\n' +
+      'usage: plugbrain <init|setup|agents-file|doctor|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      '       plugbrain init [path] [--no-clients] [--no-agents-file] [--dry-run]  register + index + enroll clients\n' +
       '       plugbrain setup [--all|claude|codex|cursor|windsurf|hermes|agy|opencode] [--dry-run] [--undo]\n' +
+      '       plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]\n' +
+      '       plugbrain doctor --agents [--json]\n' +
       '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
