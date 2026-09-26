@@ -25,3 +25,11 @@ serves a UI and HTTP API on `127.0.0.1` only. Of particular interest:
 ## Supported versions
 
 Only the latest release gets security fixes.
+
+## Known advisories
+
+Development-only dependencies in the `ui` package currently report two advisories in `npm audit`:
+- **esbuild (moderate):** Request exposure on the local development server (affects development mode only).
+- **vite (high):** Transitive dependency on the affected esbuild version with dev-server path traversal concerns in development mode.
+
+Neither issue affects production builds or the shipped standalone distributions, which serve pre-compiled static assets and run without the Vite development server. An upgrade is planned for the next release cycle.
