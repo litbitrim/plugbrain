@@ -163,6 +163,11 @@ function extractPython(content: string): FileExtract {
       continue
     }
 
+    const constMatch = container === null && line.match(/^([A-Z][A-Z0-9_]{2,})\s*(?::[^=]+)?=/)
+    if (constMatch) {
+      out.symbols.push({ name: constMatch[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: null })
+    }
+
     const envMatch = raw.match(/\b(?:os\.environ(?:\[\s*['"]([A-Z0-9_]+)['"]\s*\]|\.get\(\s*['"]([A-Z0-9_]+)['"])|os\.getenv\(\s*['"]([A-Z0-9_]+)['"])/)
     if (envMatch) {
       const envName = envMatch[1] || envMatch[2] || envMatch[3]
