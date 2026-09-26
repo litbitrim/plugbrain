@@ -65,7 +65,7 @@ npm run serve
 Standardmäßig speichert PlugBrain seine Datenbank unter `~/.plugbrain/plugbrain.db`.
 Über die Umgebungsvariable `PLUGBRAIN_HOME` kann ein alternativer Pfad gewählt werden:
 ```powershell
-$env:PLUGBRAIN_HOME = "C:\PLUG\plugpt\.plugbrain"
+$env:PLUGBRAIN_HOME = "D:\vault\mein-vault\.plugbrain"
 .\bin\plugbrain.cmd serve 4310
 ```
 
@@ -112,7 +112,7 @@ Alle CLI-Befehle können direkt über `node --experimental-strip-types src/cli.t
 ### Planet & Workspace-Verwaltung
 ```powershell
 # Registriert einen Planeten und erkennt Repositories und Obsidian-Roots
-plugbrain planet register "C:\PLUG\plugpt" "plugpt"
+plugbrain planet register "D:\vault\mein-vault" "mein-vault"
 
 # Scannt Revisionsvektoren und indiziert geänderte Dateien
 plugbrain planet scan
@@ -146,13 +146,13 @@ plugbrain notes query "prioritaet=hoch"
 plugbrain notes search "PlugBrain"
 
 # Notiz lesen mit aufgelösten Links, Backlinks und Properties
-plugbrain notes read "Master/PLUGPT-MASTER-01.md"
+plugbrain notes read "Master/Hauptnotiz-01.md"
 
 # Notiz atomar mit Versionsprüfung schreiben
 plugbrain notes write "Notizen/Test.md" --from "C:\temp\test.md"
 
 # Rückverweise (Backlinks) einer Notiz anzeigen
-plugbrain notes backlinks "Master/PLUGPT-MASTER-01.md"
+plugbrain notes backlinks "Master/Hauptnotiz-01.md"
 ```
 
 ### Kontext & Impact-Analyse
@@ -192,8 +192,8 @@ PlugBrain stellt eine umfassende REST-Schnittstelle auf Port 4310 bereit:
 ### Notizen & Vault
 - `GET /api/notes/query?filter=typ=gate UND stand=offen` — Bases-Property-Query.
 - `GET /api/notes/search?q=Architektur` — Prose-Suche in Notizen.
-- `GET /api/notes/read?path=Master/PLUGPT-MASTER-01.md` — Notizinhalt mit Frontmatter und Links.
-- `GET /api/notes/backlinks?path=Master/PLUGPT-MASTER-01.md` — Eingehende Links auf eine Notiz.
+- `GET /api/notes/read?path=Master/Hauptnotiz-01.md` — Notizinhalt mit Frontmatter und Links.
+- `GET /api/notes/backlinks?path=Master/Hauptnotiz-01.md` — Eingehende Links auf eine Notiz.
 - `POST /api/notes/write` — Schreibt eine Notiz mit Versionsprüfung.
 
 ### Schwarm & Koordination
@@ -242,13 +242,13 @@ plugbrain mcp
 
 ## Agenten-Koordination & Schwarm-Integration
 
-PlugBrain wurde speziell entwickelt, um Flotten autonomer Agenten (wie den Key-Swarm unter `C:\PLUG\coordination\plugpt-0.1-20260905\fleet`) vor gegenseitigem Überschreiben zu schützen.
+PlugBrain wurde speziell entwickelt, um Flotten autonomer Agenten (mehrere KI-Agenten, die parallel am selben Vault arbeiten) vor gegenseitigem Überschreiben zu schützen.
 
 ### Registrierung & Claim-Lebenszyklus:
 1. **Registrieren:** Der Agent meldet sich beim Start an:
    ```json
    POST /api/agent/register
-   { "agentId": "agent-01", "role": "developer", "task": "Refactor Backup", "checkout": "C:\\PLUG\\plugpt\\Code\\PlugBrain-Core--v1" }
+   { "agentId": "agent-01", "role": "developer", "task": "Refactor Backup", "checkout": "D:\\vault\\mein-vault\\Code\\mein-repo" }
    ```
 2. **Claim anfordern (Fencing):** Bevor eine Datei verändert wird, fordert der Agent eine Lease an:
    ```json

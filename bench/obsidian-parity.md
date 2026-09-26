@@ -1,10 +1,10 @@
 # Obsidian-Parität — ehrliche Fehlerliste
 
-Auftrag: FB-BRAIN-03. Arbeitsort `C:\PLUG\plugpt\Code\PlugBrain-Core--v1`, Branch `brain/v1-standalone`,
-Basis `018b926`. Brain-Daten ausschließlich unter `PLUGBRAIN_HOME=C:\PLUG\plugpt\.plugbrain-test\fb-brain-03`.
+Auftrag: FB-BRAIN-03. Arbeitsort ein lokaler Checkout des Projekts, Branch `brain/v1-standalone`,
+Basis `018b926`. Brain-Daten ausschließlich unter `PLUGBRAIN_HOME=<temp>\.plugbrain-test\fb-brain-03`.
 
 Vorgehen: Produkt wie ein Nutzer gestartet (`node --experimental-strip-types src/cli.ts serve 4310`,
-Launcher-Weg: `npm run serve`), echten Vault `C:\PLUG\plugpt` registriert und indexiert, dann mit
+Launcher-Weg: `npm run serve`), echten Beispiel-Vault `D:\vault\demo` registriert und indexiert, dann mit
 dem laufenden Produkt über UI und API gearbeitet. Jeder Eintrag ist eine tatsächlich beobachtete
 Handlung mit Kommando und Ausgabe, keine Vermutung aus dem Code.
 
@@ -66,9 +66,9 @@ Klick läuft in einen Timeout, und es gibt keinen Hinweis, dass überhaupt etwas
 
 | | |
 | --- | --- |
-| Schritt | `serve` starten (DB noch leer), danach `plugbrain planet register C:\PLUG\plugpt plugpt` |
+| Schritt | `serve` starten (DB noch leer), danach `plugbrain planet register D:\vault\demo demo` |
 | Erwartung | Der Daemon überwacht den neuen Planeten und hält ihn aktuell |
-| Beobachtung | Keine Zeile `[daemon] watching plugpt …`; der Planet wird weder beobachtet noch vom Sweep erfasst |
+| Beobachtung | Keine Zeile `[daemon] watching demo …`; der Planet wird weder beobachtet noch vom Sweep erfasst |
 | Beleg | `/tmp/serve.log` enthält nur die vier Startzeilen; die Startzeile `[daemon] watching …` erschien nie, obwohl der Planet 74 s nach dem Start registriert wurde |
 | Ursache | `const tracked = db.prepare('SELECT … FROM workspaces').all()` wird einmal beim Start gelesen; Watcher **und** Sweep arbeiten für immer mit dieser Liste |
 | Datei:Zeile | `src/daemon.ts:75` (`tracked`), `src/daemon.ts:96` (Sweep über `tracked`) |

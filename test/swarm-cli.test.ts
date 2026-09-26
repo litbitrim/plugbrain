@@ -96,7 +96,7 @@ test('quotas, resources and admission are available to every worker', () => {
     assert.deepEqual(parsed.quotas.map(row => row.account), ['owner:chatgpt'])
     assert.deepEqual(parsed.admission.map(row => row.kind), ['edit', 'test', 'index', 'build', 'install', 'worktree'])
     assert.equal(b.run('swarm', 'admit', 'edit', '--workspace', b.ws).code, 0)
-    const bad = b.run('swarm', 'quota', 'nvidia:key-02', '5', 'rpm', '--note', 'nvapi-AbCdEf0123456789AbCdEf0123456789xyz', '--workspace', b.ws)
+    const bad = b.run('swarm', 'quota', 'nvidia:key-02', '5', 'rpm', '--note', 'nvapi-' + 'x'.repeat(36), '--workspace', b.ws)
     assert.equal(bad.code, 3)
     assert.match(bad.err, /looks like a credential/)
   } finally { b.cleanup() }

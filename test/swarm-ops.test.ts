@@ -27,6 +27,11 @@ import {
 } from '../src/coord/swarm-ops.ts'
 import { admitWork, reportQuota, listQuotas, type HostSnapshot } from '../src/coord/resources.ts'
 
+// Synthetic credential-shaped fakes, generated at run time so that no
+// key-like string is ever stored in this repository.
+const FAKE_NVIDIA_KEY = 'nvapi-' + 'x'.repeat(36)
+const FAKE_OPENAI_KEY = 'sk-' + 'x'.repeat(36)
+
 const WS = 'ws-swarm-ops'
 const GB = 1024 ** 3
 
@@ -100,7 +105,7 @@ test('account labels are names, never credentials', () => {
   try {
     registerSwarmAgent(f.db, { agentId: 'leaky', workspaceId: WS })
     assert.throws(
-      () => registerWorkerProfile(f.db, { agentId: 'leaky', surface: 'freebuff', account: 'nvapi-AbCdEf0123456789AbCdEf0123456789xyz' }),
+      () =>    registerWorkerProfile(f.db, { agentId: 'leaky', surface: 'freebuff', account: FAKE_NVIDIA_KEY }),
       /looks like a credential/,
     )
     assert.throws(
@@ -206,7 +211,7 @@ test('quota reports are stored per account and refuse credential-looking notes',
     assert.deepEqual(quotas.map(row => row.account).sort(), ['freebuff:freebucks', 'owner:chatgpt'])
     assert.equal(quotas.find(row => row.account === 'owner:chatgpt')?.exhausted, true)
     assert.throws(
-      () => reportQuota(f.db, { account: 'nvidia:key-03', remaining: 10, unit: 'rpm', note: 'sk-live-0123456789abcdef0123456789abcdef', reportedBy: 'x' }),
+      () => reportQuota(f.db, { account: 'nvidia:key-03', remaining: 10, unit: 'rpm', note: FAKE_OPENAI_KEY, reportedBy: 'x' }),
       /looks like a credential/,
     )
   } finally { f.cleanup() }
@@ -241,7 +246,7 @@ test('the HTTP API carries the same contract: profile, turn, board, approval and
     assert.equal((await post('/api/agent/register', { agentId: 'integrator', workspaceId: WS })).status, 200)
     const profile = await post('/api/agent/profile', { agentId: 'agy-sonnet', surface: 'agy', account: 'owner:google', model: 'claude-sonnet-4.6' })
     assert.equal(profile.status, 200)
-    const leaky = await post('/api/agent/profile', { agentId: 'agy-sonnet', surface: 'agy', account: 'sk-live-0123456789abcdefABCDEF0123456789' })
+    const leaky = await post('/api/agent/profile', { agentId: 'agy-sonnet', surface: 'agy', account: 'sk-' + 'x'.repeat(36) })
     assert.equal(leaky.status, 403)
 
     const turn = await post('/api/agent/turn', { agentId: 'agy-sonnet', workspaceId: WS, phase: 'end', state: 'awaiting-commit', summary: 'EP-M17 fertig' })

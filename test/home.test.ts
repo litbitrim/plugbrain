@@ -23,13 +23,13 @@ test('resolveBrainHome: reads Windows registry when env lacks PLUGBRAIN_HOME', (
   let regCalled = false
   const mockReg = () => {
     regCalled = true
-    return 'C:\\PLUG\\plugpt\\.plugbrain'
+    return 'C:\\registry\\plugbrain'
   }
   const result = resolveBrainHome(
     {} as NodeJS.ProcessEnv,
     mockReg
   )
-  assert.equal(result, 'C:\\PLUG\\plugpt\\.plugbrain')
+  assert.equal(result, 'C:\\registry\\plugbrain')
   assert.equal(regCalled, true, 'registry must be queried when env var is missing')
 })
 
