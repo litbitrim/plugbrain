@@ -447,7 +447,7 @@ export function listNotes(
     .all(workspaceId) as unknown as Array<{ id: number; n: number }>) {
     inLinks.set(row.id, Number(row.n))
   }
-  const notes: NoteListView[] = rows.slice(offset, offset + limit).map(row => {
+  const notes: NoteListView[] = rows.slice(offset, offset + limit).map((row): NoteListView => {
     const properties = propertiesOf(db, workspaceId, row.id)
     return {
       id: row.id,

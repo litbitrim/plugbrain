@@ -12,7 +12,7 @@
  * mesh that renders a registry entry as a live agent is worse than an empty
  * mesh, because it is confidently wrong.
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { ensureTraceSchema, type ProvenanceMode } from '../trace.ts'
 import { cachedTraceProjection } from '../store/projection-cache.ts'
 
@@ -377,7 +377,7 @@ export function meshTimeline(
 ): TimelineEntry[] {
   ensureTraceSchema(db)
   const where: string[] = ['workspace_id = ?']
-  const params: unknown[] = [workspaceId]
+  const params: SQLInputValue[] = [workspaceId]
   if (filter.agentId !== undefined) { where.push('agent_id = ?'); params.push(filter.agentId) }
   if (filter.taskId !== undefined) { where.push('task_id = ?'); params.push(filter.taskId) }
   if (filter.workerId !== undefined) { where.push('worker_id = ?'); params.push(filter.workerId) }

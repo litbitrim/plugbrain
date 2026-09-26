@@ -23,7 +23,7 @@
  * and are persisted per building id, so business data and layout can change
  * independently.
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 
 /** Simple generation-scoped cache for expensive per-generation sums. */
 interface CacheEntry<T> {
@@ -163,7 +163,7 @@ function buildingsFrom(
   db: DatabaseSync,
   workspaceId: string,
   where: string,
-  params: readonly unknown[],
+  params: readonly SQLInputValue[],
   generation?: number,
 ): CityBuilding[] {
   const files = db.prepare(

@@ -247,7 +247,7 @@ export function startIndexRun(
 
   // A rejected promise nobody awaits would take the process down. The state
   // file already carries the failure, so the promise is only a convenience.
-  done.catch(() => undefined)
+  done.catch((): undefined => undefined)
   return { state, done }
 }
 

@@ -31,6 +31,7 @@
 import { readFileSync, statSync } from 'node:fs'
 import { extname, resolve as resolvePath } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
+import { rowAs } from '../store/rows.ts'
 import { readGit, storeGit } from './git.ts'
 import { resolveMarkdownTarget } from './markdown.ts'
 import { PackageResolver } from './packages.ts'
@@ -141,11 +142,11 @@ function activeFileScope(
 }
 
 function readState(db: DatabaseSync, workspaceId: string): IndexState {
-  const row = db.prepare(
+  const row = rowAs<IndexState>(db.prepare(
     `SELECT generation, git_head, file_count, symbol_count, edge_count,
             unresolved_count, ambiguous_count
        FROM workspace_index_state WHERE workspace_id = ?`)
-    .get(workspaceId) as IndexState | undefined
+    .get(workspaceId))
   return row ?? {
     generation: 0, git_head: null, file_count: 0, symbol_count: 0,
     edge_count: 0, unresolved_count: 0, ambiguous_count: 0,
@@ -295,8 +296,11 @@ export function indexWorkspace(
     // Computed BEFORE anything is deleted: an edge from an untouched file into
     // a changed file is destroyed by the symbols cascade, so that untouched
     // file must be re-resolved or it silently loses the edge.
+    // Every modified row is listed: `Classified.modified` never carries file
+    // content, so the historical `item.content !== null` guard was always true
+    // and is dropped here rather than kept as dead code.
     const changedIds = [
-      ...change.modified.filter(item => item.content !== null).map(item => item.id),
+      ...change.modified.map(item => item.id),
       ...change.renamed.map(item => item.id),
     ]
     const deletedIds = change.deleted.map(row => row.id)

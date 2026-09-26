@@ -107,7 +107,7 @@ export function searchNotes(
     query,
     total,
     returned: rows.length,
-    hits: rows.map(row => ({
+    hits: rows.map((row): NoteHit => ({
       path: row.path,
       fileId: row.fileId,
       title: titleOf(row.path),
