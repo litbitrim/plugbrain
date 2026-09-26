@@ -87,7 +87,7 @@ export const isSkippedDir = (name: string, depth: number): boolean =>
 /** Extensions we record as files even when we cannot parse them. */
 export const TEXTUAL: ReadonlySet<string> = new Set([
   '.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs',
-  '.json', '.md', '.yml', '.yaml', '.css', '.html', '.py', '.rs', '.go', '.sql', '.sh',
+  '.json', '.md', '.yml', '.yaml', '.css', '.html', '.py', '.rs', '.go', '.sql', '.sh', '.java',
 ])
 
 export const MAX_BYTES = 2_000_000   // a 2 MB source file is generated; parsing it helps nobody
