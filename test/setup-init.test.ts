@@ -126,6 +126,30 @@ function rpc(child: ChildProcess) {
   return { request, notify }
 }
 
+test('S5: init --dry-run reports but writes neither a workspace nor a client', () => {
+  const f = makeFixture()
+  const env = tempEnv(f.home)
+  try {
+    writeFileSync(join(f.home, '.claude.json'), '{}\n')
+    const out = runCli(['init', f.repo, '--dry-run'], env, f.repo)
+    assert.match(out, /dry run \(nothing is written\)/)
+    assert.match(out, /would register workspace/)
+    assert.match(out, /would index/)
+    assert.match(out, /would change/)
+
+    assert.equal(readFileSync(join(f.home, '.claude.json'), 'utf8'), '{}\n')
+    const db = openStore(join(f.home, 'plugbrain.db'))
+    try {
+      const rows = db.prepare('SELECT id FROM workspaces').all() as Array<{ id: string }>
+      assert.equal(rows.length, 0, 'a dry run must not register a workspace')
+    } finally {
+      db.close()
+    }
+  } finally {
+    f.cleanup()
+  }
+})
+
 test('S4: init then mcp over stdio answers tools/list and finds the symbol', async () => {
   const f = makeFixture()
   const env = tempEnv(f.home)

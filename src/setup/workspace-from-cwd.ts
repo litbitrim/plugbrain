@@ -89,6 +89,28 @@ export function findGitRoot(cwd: string): string | null {
   return canonicalPath(top)
 }
 
+export interface WorkspaceRecord {
+  id: string
+  name: string
+  /** Not registered yet, so this call would be the one that creates it. */
+  created: boolean
+}
+
+/**
+ * What `registerWorkspaceRoot` WOULD write, without writing it.
+ *
+ * `init --dry-run` needs to name the workspace and say whether it is new while
+ * changing nothing, so the decision is split from the write.
+ */
+export function planWorkspaceRoot(db: DatabaseSync, root: string, name?: string): WorkspaceRecord {
+  const absolute = resolve(root)
+  const id = workspaceIdFor(absolute)
+  const existing = db.prepare('SELECT id FROM workspaces WHERE root = ?').get(absolute) as
+    { id: string } | undefined
+  const label = name ?? basename(absolute) ?? id
+  return { id, name: label, created: existing === undefined }
+}
+
 /**
  * Register a folder as a workspace, idempotently.
  *
@@ -98,17 +120,14 @@ export function findGitRoot(cwd: string): string | null {
  */
 export function registerWorkspaceRoot(
   db: DatabaseSync, root: string, name?: string,
-): { id: string; name: string; created: boolean } {
+): WorkspaceRecord {
   const absolute = resolve(root)
-  const id = workspaceIdFor(absolute)
-  const existing = db.prepare('SELECT id FROM workspaces WHERE root = ?').get(absolute) as
-    { id: string } | undefined
-  const label = name ?? basename(absolute) ?? id
+  const record = planWorkspaceRoot(db, root, name)
   db.prepare(
     `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(root) DO UPDATE SET name = excluded.name`
-  ).run(id, label, absolute, new Date().toISOString())
-  return { id, name: label, created: existing === undefined }
+  ).run(record.id, record.name, absolute, new Date().toISOString())
+  return record
 }
 
 export type WorkspaceSource = 'flag' | 'env' | 'registered' | 'git'

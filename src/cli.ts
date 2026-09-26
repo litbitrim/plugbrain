@@ -57,7 +57,9 @@ import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
 import { resolveBrainHome } from './home.ts'
-import { findGitRoot, registerWorkspaceRoot, resolveMcpWorkspace } from './setup/workspace-from-cwd.ts'
+import {
+  findGitRoot, planWorkspaceRoot, registerWorkspaceRoot, resolveMcpWorkspace,
+} from './setup/workspace-from-cwd.ts'
 import {
   buildEntry, CLIENTS, parseClientSelection, setupClients, type ClientSetupResult,
 } from './setup/clients.ts'
@@ -885,6 +887,7 @@ function printClientResults(results: ClientSetupResult[], home: string = homedir
  * start us. Running it twice changes nothing.
  */
 function initCommand(args: string[]): void {
+  const dryRun = args.includes('--dry-run')
   const given = args.find(arg => !arg.startsWith('--'))
   const dir = resolve(given ?? process.cwd())
   if (!existsSync(dir) || !statSync(dir).isDirectory()) {
@@ -892,19 +895,27 @@ function initCommand(args: string[]): void {
     process.exit(2)
   }
   const root = findGitRoot(dir) ?? dir
-  const record = registerWorkspaceRoot(db, root)
-  console.log(`${record.created ? 'registered' : 'already known'} workspace ${record.name}`)
+  if (dryRun) console.log('dry run (nothing is written):')
+  const record = dryRun ? planWorkspaceRoot(db, root) : registerWorkspaceRoot(db, root)
+  const state = record.created
+    ? (dryRun ? 'would register' : 'registered')
+    : 'already known'
+  console.log(`${state} workspace ${record.name}`)
   console.log(`  workspace ${record.id}`)
   console.log(`  root      ${resolve(root)}`)
-  process.stdout.write(`indexing ${record.name} …\n`)
-  reportIndex(record.name, runIndexInProcess(db, record.id, { onProgress: progressPrinter(record.name) }))
+  if (dryRun) {
+    console.log(`  would index ${record.name}`)
+  } else {
+    process.stdout.write(`indexing ${record.name} …\n`)
+    reportIndex(record.name, runIndexInProcess(db, record.id, { onProgress: progressPrinter(record.name) }))
+  }
 
   console.log(`\nUI: http://127.0.0.1:${UI_PORT_DEFAULT}/  (start it with: plugbrain serve)`)
 
   if (args.includes('--no-clients')) return
   const home = clientHome()
   const entry = buildEntry(selfCliPath())
-  const results = setupClients({ home, entry })
+  const results = setupClients({ home, entry, dryRun })
   console.log('\nclients:')
   printClientResults(results, home)
   console.log(`\nOpen your project in a client above and ask it to use PlugBrain.`)
@@ -1100,7 +1111,7 @@ switch (command) {
   default:
     console.log(
       'usage: plugbrain <init|setup|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
-      '       plugbrain init [path] [--no-clients]              register + index + enroll clients\n' +
+      '       plugbrain init [path] [--no-clients] [--dry-run]  register + index + enroll clients\n' +
       '       plugbrain setup [--all|claude|codex|cursor|windsurf|hermes|agy|opencode] [--dry-run] [--undo]\n' +
       '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
