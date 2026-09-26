@@ -14,13 +14,15 @@
  *   plugbrain swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]   write lease, shown on the board
  *   plugbrain swarm release <agent> [<path>...] [--task <id>]
  *   plugbrain swarm board [--git] [--json]
- *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
- *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]
+ *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]   sender from --from or PLUGBRAIN_AGENT
+ *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
  *   plugbrain swarm admit <edit|test|index|build|install|worktree>   exit 0 = room, 5 = no room
+ *   plugbrain swarm watchdog [--json] [--dry-run] | watchdog silent-after <minutes>
+ *   plugbrain swarm review-pool set <agent>... | review-pool auto on|off | review-pool show
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
@@ -30,8 +32,9 @@ import { deliverTask, enqueueTask } from './queue.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
-  recordTurn, releaseLease,
-  registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
+  readReviewPool, recordTurn, releaseLease,
+  registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
+  setReviewAuto, setReviewPool, setSilentAfterMinutes, touchAgentContact, watchdogSettings,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
 } from './coord/index.ts'
@@ -72,6 +75,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
+  '--after',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -113,6 +117,7 @@ function printBoard(board: SwarmBoard): void {
     console.log(`- ${row.id.padEnd(18)} ${(row.surface ?? '?').padEnd(11)} ${(row.account ?? '-').padEnd(20)} ` +
       `${(row.turnState ?? 'unbekannt').padEnd(15)} ungelesen ${row.unread}${flagsText}`)
     if (row.task) console.log(`    Aufgabe ${row.task.id}: ${row.task.title}`)
+    if (row.silentMinutes !== null) console.log(`    still? seit ${row.silentMinutes} min ohne Kontakt`)
     if (row.turnSummary) console.log(`    zuletzt: ${row.turnSummary.split('\n')[0]}`)
     for (const lease of row.leases) console.log(`    schreibt (Lease): ${lease.paths.join(', ')}`)
     for (const worktree of row.worktrees) {
@@ -193,6 +198,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         agentId, taskId: flag(rest, '--task') ?? `task-${agentId}`, paths, symbols: [], mode: 'write',
         ttlMs: ttlMin === null ? 4 * 60 * 60_000 : Number(ttlMin) * 60_000,
       })
+      touchAgentContact(db, agentId)
       if (!result.acquired) {
         const holder = result.conflict?.holder
         console.error(`refused: ${result.conflict?.path ?? paths.join(', ')} gehört ${holder?.agentId ?? '?'} (${holder?.taskId ?? '?'}): ${result.conflict?.reason ?? ''}`)
@@ -208,12 +214,15 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       const result = releaseLease(db, {
         agentId, workspaceId, taskId: flag(rest, '--task') ?? undefined, paths: paths.length > 0 ? paths : undefined,
       })
+      touchAgentContact(db, agentId)
       console.log(result.released ? `freigegeben: ${result.count} Lease(s)` : 'nichts freizugeben')
       return 0
     }
     case 'ack': {
       const usage = 'plugbrain swarm ack <agent> <messageId>'
-      const read = confirmDelivery(db, need(pos[1], usage), need(pos[0], usage))
+      const agentId = need(pos[0], usage)
+      const read = confirmDelivery(db, need(pos[1], usage), agentId)
+      touchAgentContact(db, agentId)
       console.log(read ? 'quittiert' : 'nichts zu quittieren')
       return 0
     }
@@ -225,18 +234,28 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     }
     case 'send': {
       const usage = 'plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]'
-      const from = flag(rest, '--from') ?? INTEGRATOR
+      // The sender is the author of the message. Defaulting it to the integrator
+      // made every message in the inbox look like it came from the integrator,
+      // even when cx01, cx03 or nv03 wrote it. An unnamed sender is refused
+      // rather than misattributed.
+      const from = (flag(rest, '--from') ?? process.env.PLUGBRAIN_AGENT ?? '').trim()
+      if (from === '') {
+        console.error('refused: no sender — pass --from <agent> or set PLUGBRAIN_AGENT')
+        return 2
+      }
       ensureIntegrator(db, workspaceId, from)
       const message = sendMessage(db, {
         workspaceId, fromAgent: from, toAgent: need(pos[0], usage),
         subject: need(flag(rest, '--subject'), usage), body: need(flag(rest, '--body'), usage),
       })
+      touchAgentContact(db, from)
       console.log(`gesendet ${message.id}`)
       return 0
     }
     case 'enqueue': {
-      const usage = 'plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]'
+      const usage = 'plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]'
       const by = flag(rest, '--by') ?? INTEGRATOR
+      const afterTaskId = flag(rest, '--after') ?? undefined
       ensureIntegrator(db, workspaceId, by)
       const title = need(pos.join(' '), usage)
       // A master task named in the title counts as the link too, so a planner
@@ -244,10 +263,11 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       const planRef = flag(rest, '--plan') ?? PLAN_REF.exec(title)?.[1] ?? null
       const task = enqueueTask(db, workspaceId, {
         title, body: flag(rest, '--body') ?? '',
-        addressedTo: flag(rest, '--to') ?? undefined, requestedBy: by,
+        addressedTo: flag(rest, '--to') ?? undefined, requestedBy: by, afterTaskId,
       })
       if (planRef !== null) setPlanRef(db, task.id, planRef)
       console.log(`eingereiht ${task.id}: ${task.title}${task.addressed_to ? ` → ${task.addressed_to}` : ''}` +
+        (afterTaskId === undefined ? '' : `  nach ${afterTaskId}`) +
         (planRef === null ? '' : `  [${planRef}]`))
       return 0
     }
@@ -256,7 +276,9 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       // moves to `delivered` and points at the evidence. Acceptance is not
       // decided here — that is the review and the integrator's approval.
       const usage = 'plugbrain swarm deliver <agent> <taskId> --path <evidence>'
-      const task = deliverTask(db, need(pos[1], usage), need(pos[0], usage), need(flag(rest, '--path'), usage))
+      const deliveredBy = need(pos[0], usage)
+      const task = deliverTask(db, need(pos[1], usage), deliveredBy, need(flag(rest, '--path'), usage))
+      touchAgentContact(db, deliveredBy)
       console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0
     }
@@ -284,11 +306,13 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     }
     case 'quota': {
       const usage = 'plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]'
+      const reportedBy = flag(rest, '--by') ?? INTEGRATOR
       const report = reportQuota(db, {
         account: need(pos[0], usage), remaining: Number(need(pos[1], usage)), unit: need(pos[2], usage) as QuotaUnit,
         resetsAt: flag(rest, '--resets') ?? undefined, note: flag(rest, '--note') ?? undefined,
-        reportedBy: flag(rest, '--by') ?? INTEGRATOR,
+        reportedBy,
       })
+      touchAgentContact(db, reportedBy)
       console.log(`${report.account}: ${report.remaining} ${report.unit}${report.exhausted ? ' (erschöpft)' : ''}`)
       return 0
     }
@@ -299,7 +323,51 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       console.log(admission.allowed ? `ok: ${kind}` : `kein Platz für ${kind}: ${admission.reasons.join('; ')}`)
       return admission.allowed ? 0 : 5
     }
+    case 'watchdog': {
+      const usage = 'plugbrain swarm watchdog [--json] [--dry-run] | plugbrain swarm watchdog silent-after <minutes>'
+      if (pos[0] === 'silent-after') {
+        const settings = setSilentAfterMinutes(db, workspaceId, Number(need(pos[1], usage)))
+        console.log(`Still-Erkennung: working ohne Kontakt ab ${settings.silentAfterMinutes} min`)
+        return 0
+      }
+      const report = scanWatchdog(db, workspaceId, { alert: !rest.includes('--dry-run') })
+      if (asJson) { console.log(JSON.stringify(report, null, 2)); return 0 }
+      console.log(`Watchdog ${report.workspaceId} · still ab ${report.silentAfterMinutes} min · ` +
+        `${report.silent.length} still · ${report.alerted.length} gemeldet · ${report.released.length} freigegeben`)
+      for (const row of report.silent) {
+        console.log(`- ${row.agentId} still seit ${row.minutes} min${row.alerted ? ' (jetzt gemeldet)' : ''}`)
+      }
+      for (const id of report.released) console.log(`  freigegeben: ${id}`)
+      return 0
+    }
+    case 'review-pool': {
+      const usage = 'plugbrain swarm review-pool set <agent>... | plugbrain swarm review-pool auto on|off | review-pool show'
+      const verb = pos[0]
+      if (verb === 'set') {
+        const pool = setReviewPool(db, workspaceId, pos.slice(1))
+        console.log(pool.length === 0 ? 'Reviewer: keine' : `Reviewer: ${pool.map(entry => entry.agentId).join(', ')}`)
+        return 0
+      }
+      if (verb === 'auto') {
+        const mode = need(pos[1], usage)
+        if (mode !== 'on' && mode !== 'off') throw new AccessDenied(`usage: ${usage}`)
+        const settings = setReviewAuto(db, workspaceId, mode === 'on')
+        console.log(`Review-Routing: ${settings.reviewAuto ? 'an' : 'aus'}`)
+        return 0
+      }
+      if (verb === 'show' || verb === undefined) {
+        const settings = watchdogSettings(db, workspaceId)
+        const pool = readReviewPool(db, workspaceId)
+        if (asJson) { console.log(JSON.stringify({ ...settings, pool }, null, 2)); return 0 }
+        console.log(`Review-Routing: ${settings.reviewAuto ? 'an' : 'aus'} · Still-Erkennung ab ${settings.silentAfterMinutes} min`)
+        for (const entry of pool) {
+          console.log(`- ${entry.agentId} (${entry.account ?? 'Konto unbekannt'}${entry.retired ? ', abgemeldet' : ''})`)
+        }
+        return 0
+      }
+      throw new AccessDenied(`usage: ${usage}`)
+    }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|approve|resources|quota|admit> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool> …')
   }
 }

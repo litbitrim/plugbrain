@@ -56,7 +56,7 @@ plugbrain swarm release codex-1 --task <task-id>
 # The integrator looks, approves, and sends the next hint
 plugbrain swarm board --git
 plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
-plugbrain swarm send codex-1 --subject "Next" --body "Rebase on main after your commit"
+plugbrain swarm send codex-1 --subject "Next" --body "Rebase on main after your commit" --from integrator
 ```
 
 A turn ends in one of four states: `needs-task` (done, give me work),

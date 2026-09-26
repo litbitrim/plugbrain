@@ -34,8 +34,9 @@ You are one agent in a team coordinated by PlugBrain. Your agent id is `<id>`.
 2. **Before you write:** claim the paths you will change:
    `plugbrain swarm claim <id> <path>... --task <taskId>`. If the claim is
    refused, another agent owns the path. Message that agent
-   (`plugbrain swarm send <agent> --subject "..." --body "..."`) instead of
-   writing anyway.
+   (`plugbrain swarm send <agent> --subject "..." --body "..." --from <your id>`) instead of
+   writing anyway. Set `PLUGBRAIN_AGENT=<your id>` once in your shell and every
+   message is signed with your id; a message without a sender is refused.
 3. **Before tests, builds, installs or new worktrees:** run
    `plugbrain swarm admit test|build|install|worktree`. Exit code 5 means the
    machine has no room. Do not start the work; end the turn as `blocked`.
@@ -61,8 +62,10 @@ role.
 | Task | Command |
 | --- | --- |
 | See every agent, its turn, task, claims and worktree | `plugbrain swarm board --git` |
-| Queue work, optionally for one agent | `plugbrain swarm enqueue "<title>" --body "<brief>" [--to <id>]` |
-| Send a message | `plugbrain swarm send <id> --subject "<s>" --body "<b>"` |
+| Queue work, optionally for one agent, optionally after another task | `plugbrain swarm enqueue "<title>" --body "<brief>" [--to <id>] [--after <taskId>]` |
+| Send a message | `plugbrain swarm send <id> --subject "<s>" --body "<b>" --from integrator` |
+| See who is still, and release arrivals | `plugbrain swarm watchdog` |
+| Reviewer list and automatic review routing | `plugbrain swarm review-pool set <id>... && plugbrain swarm review-pool auto on` |
 | Let an agent commit | `plugbrain swarm approve <id> [--note "<n>"]` |
 | Machine room and quotas | `plugbrain swarm resources` |
 | Take an agent off the board | `plugbrain swarm retire <id> --note "<reason>"` |

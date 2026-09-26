@@ -21,7 +21,9 @@ import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { claimNextTask, ensureQueueSchema } from '../queue.ts'
+import { syncDependencies, UNBLOCKED_TASK_SQL } from './dependencies.ts'
 import { coordEvents } from './events.ts'
+import { ensureWatchdogSchema, silenceMinutesFor, watchdogSettings, watchTurnEnd } from './watchdog.ts'
 import { ensureInboxSchema, sendMessage } from './inbox.ts'
 import { listActiveLeases } from './leases.ts'
 import { ensureCoordSchema, getAgentPresence } from './registry.ts'
@@ -39,13 +41,14 @@ export type TurnState =
 export type TurnEndState = 'needs-task' | 'awaiting-commit' | 'blocked' | 'paused'
 export const TURN_END_STATES: readonly TurnEndState[] = ['needs-task', 'awaiting-commit', 'blocked', 'paused']
 
-export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn'
+export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn' | 'silent'
 
 const DEFAULT_STALE_TURN_MS = 30 * 60_000
 const MAX_SUMMARY = 2000
 
 export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   ensureCoordSchema(db)
+  ensureWatchdogSchema(db)
   const columns = db.prepare('PRAGMA table_info(agents)').all() as unknown as Array<{ name: string }>
   const has = (name: string) => columns.some(column => column.name === name)
   if (!has('surface')) db.exec('ALTER TABLE agents ADD COLUMN surface TEXT')
@@ -71,6 +74,7 @@ interface ProfileRow {
   turn_summary: string | null
   worktrees: string | null
   retired_at: string | null
+  last_contact_at: string | null
 }
 
 export interface WorkerProfile {
@@ -104,7 +108,7 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
 })
 
 const loadProfile = (db: DatabaseSync, agentId: string): ProfileRow =>
-  db.prepare(`SELECT id, model, surface, account, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at
+  db.prepare(`SELECT id, model, surface, account, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at
                 FROM agents WHERE id = ?`).get(agentId) as unknown as ProfileRow
 
 export interface RegisterWorkerInput {
@@ -254,6 +258,7 @@ function nextTaskFor(db: DatabaseSync, workspaceId: string, agentId: string): Qu
   return taskRef(db.prepare(`
     SELECT id, title, body FROM queue_tasks
      WHERE workspace_id = ? AND state = 'pending' AND (addressed_to IS NULL OR addressed_to = ?)
+       AND ${UNBLOCKED_TASK_SQL}
      ORDER BY created_at ASC, rowid ASC LIMIT 1
   `).get(workspaceId, agentId) as { id: string; title: string; body: string } | undefined)
 }
@@ -282,12 +287,14 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   if (profile.retired_at !== null) throw new AccessDenied(`${input.agentId} is retired; register it again to resume`)
 
   let state: TurnState
+  let endState: TurnEndState | null = null
   if (input.phase === 'start') {
     state = 'working'
   } else {
     const wanted = input.state ?? 'needs-task'
     if (!TURN_END_STATES.includes(wanted)) throw new AccessDenied(`unknown turn end state: ${String(wanted)}`)
     state = wanted
+    endState = wanted
   }
   const summary = input.summary === undefined ? null : input.summary.slice(0, MAX_SUMMARY)
   if (summary !== null) assertNotCredential('summary', summary)
@@ -296,9 +303,16 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   db.prepare(`
     UPDATE agents
        SET turn_state = ?, turn_state_at = ?, turn_summary = COALESCE(?, turn_summary),
-           last_heartbeat = ?, last_seen = ?
+           last_heartbeat = ?, last_seen = ?, last_contact_at = ?
      WHERE id = ?
-  `).run(state, now, summary, now, now, input.agentId)
+  `).run(state, now, summary, now, now, now, input.agentId)
+
+  // A turn boundary is Brain contact by definition. An ending turn can be the
+  // event another task was waiting for and can owe the fleet a review; a
+  // starting turn reconciles dependencies that a missed event left behind, so
+  // a release notice lands in this very ping.
+  if (endState !== null) watchTurnEnd(db, input.workspaceId, input.agentId, endState)
+  else syncDependencies(db, input.workspaceId)
 
   let claimedTask: QueueTaskRef | null = null
   if (input.claimNext === true) {
@@ -375,6 +389,8 @@ export interface BoardRow {
   turnState: TurnState | null
   turnStateAt: string | null
   turnSummary: string | null
+  /** Whole minutes a `working` worker has been without Brain contact, or null. */
+  silentMinutes: number | null
   retired: boolean
   unread: number
   task: QueueTaskRef | null
@@ -430,7 +446,9 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
   requireWorkspace(db, workspaceId)
   const host = options.host ?? hostSnapshot()
   const staleTurnMs = options.staleTurnMs ?? DEFAULT_STALE_TURN_MS
+  const silentAfterMinutes = watchdogSettings(db, workspaceId).silentAfterMinutes
   const now = Date.now()
+  const nowDate = new Date(now)
   const exhausted = new Set(listQuotas(db).filter(quota => quota.exhausted).map(quota => quota.account))
   const leases = listActiveLeases(db, workspaceId)
 
@@ -443,8 +461,15 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
        WHERE workspace_id = ? AND (to_agent = ? OR to_agent IS NULL) AND read_at IS NULL
     `).get(workspaceId, presence.id) as { n: number }).n
 
+    // The still-reading answers "has this working worker been in touch?" — it is
+    // a reading with a minute count, never a verdict about the process.
+    const silentMinutes = turnState === 'working' && !retired
+      ? silenceMinutesFor(nowDate, profile.turn_state_at, profile.last_contact_at, silentAfterMinutes)
+      : null
+
     const attention: AttentionFlag[] = []
     if (!retired) {
+      if (silentMinutes !== null) attention.push('silent')
       if (turnState === 'awaiting-commit') attention.push('awaiting-commit')
       if (turnState === 'needs-task') attention.push('needs-task')
       if (turnState === 'blocked') attention.push('blocked')
@@ -466,6 +491,7 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
       turnState,
       turnStateAt: profile.turn_state_at,
       turnSummary: profile.turn_summary,
+      silentMinutes,
       retired,
       unread: Number(unread),
       task: currentTaskOf(db, workspaceId, presence.id),

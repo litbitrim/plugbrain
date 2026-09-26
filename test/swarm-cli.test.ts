@@ -43,13 +43,14 @@ test('a worker registers, gets pinged at its turn end, claims work and shows on 
     assert.match(clash.err, /already carried by nv01/)
 
     assert.equal(b.run('swarm', 'enqueue', 'Lint', 'ratchet', '--workspace', b.ws).code, 0)
-    assert.equal(b.run('swarm', 'send', 'nv01', '--subject', 'Hallo', '--body', 'Bitte starten', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'send', 'nv01', '--subject', 'Hallo', '--body', 'Bitte starten', '--from', 'cx03', '--workspace', b.ws).code, 0)
 
     const end = b.run('swarm', 'turn', 'nv01', 'end', '--state', 'needs-task', '--summary', 'R1 fertig', '--workspace', b.ws, '--json')
     assert.equal(end.code, 0, end.err)
-    const ping = JSON.parse(end.out) as { state: string; inbox: Array<{ id: string; subject: string }>; nextTask: { title: string } | null }
+    const ping = JSON.parse(end.out) as { state: string; inbox: Array<{ id: string; subject: string; fromAgent: string }>; nextTask: { title: string } | null }
     assert.equal(ping.state, 'needs-task')
     assert.deepEqual(ping.inbox.map(message => message.subject), ['Hallo'])
+    assert.equal(ping.inbox[0]?.fromAgent, 'cx03', 'the sender is the worker that wrote it, not the integrator')
     assert.equal(ping.nextTask?.title, 'Lint ratchet')
 
     const start = b.run('swarm', 'turn', 'nv01', 'start', '--claim', '--workspace', b.ws)
@@ -82,6 +83,54 @@ test('a worker hands in its claimed task with the evidence path, and only the ho
     const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', 'closeout/M15/DONE.md', '--workspace', b.ws)
     assert.equal(delivered.code, 0, delivered.err)
     assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays → closeout\/M15\/DONE\.md/)
+  } finally { b.cleanup() }
+})
+
+test('waiting tasks, the reviewer pool and the watchdog cycle all work through the CLI', () => {
+  const b = brain()
+  try {
+    for (const [id, account] of [['cx01', 'owner:chatgpt'], ['nv03', 'nvidia:key-03'], ['nv04', 'nvidia:key-04']] as const) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', account, '--workspace', b.ws).code, 0)
+    }
+
+    // A task with --after stays out of reach until its predecessor arrives.
+    const basis = b.run('swarm', 'enqueue', 'Basis', '--to', 'cx01', '--workspace', b.ws)
+    assert.equal(basis.code, 0, basis.err)
+    const basisId = /eingereiht (task-[0-9a-f-]+)/.exec(basis.out)?.[1]
+    assert.ok(basisId, basis.out)
+    assert.equal(b.run('swarm', 'enqueue', 'Nachlauf', '--to', 'nv03', '--after', basisId, '--workspace', b.ws).code, 0)
+
+    const blocked = b.run('swarm', 'turn', 'nv03', 'start', '--claim', '--workspace', b.ws, '--json')
+    assert.equal(blocked.code, 0, blocked.err)
+    assert.equal((JSON.parse(blocked.out) as { claimedTask: unknown }).claimedTask, null)
+
+    const claimed = b.run('swarm', 'turn', 'cx01', 'start', '--claim', '--workspace', b.ws, '--json')
+    const claimedTask = (JSON.parse(claimed.out) as { claimedTask: { id: string; title: string } }).claimedTask
+    assert.equal(claimedTask.title, 'Basis')
+
+    // The reviewer pool routes a finished turn to another account.
+    assert.match(b.run('swarm', 'review-pool', 'set', 'nv03', 'nv04', '--workspace', b.ws).out, /Reviewer: nv03, nv04/)
+    assert.match(b.run('swarm', 'review-pool', 'auto', 'on', '--workspace', b.ws).out, /Review-Routing: an/)
+    assert.equal(b.run('swarm', 'turn', 'cx01', 'end', '--state', 'awaiting-commit', '--summary', 'fertig', '--workspace', b.ws).code, 0)
+
+    const waiting = b.run('swarm', 'turn', 'nv03', 'start', '--claim', '--workspace', b.ws, '--json')
+    assert.equal((JSON.parse(waiting.out) as { claimedTask: { title: string } }).claimedTask.title, 'Nachlauf')
+    const review = b.run('swarm', 'turn', 'nv04', 'start', '--claim', '--workspace', b.ws, '--json')
+    assert.equal((JSON.parse(review.out) as { claimedTask: unknown }).claimedTask, null,
+      'a review addressed to nv03 is not offered to nv04')
+
+    // The workspace threshold is a setting, and the scan reads it.
+    assert.match(b.run('swarm', 'watchdog', 'silent-after', '30', '--workspace', b.ws).out, /ab 30 min/)
+    const scan = JSON.parse(b.run('swarm', 'watchdog', '--workspace', b.ws, '--json').out) as
+      { silentAfterMinutes: number; silent: unknown[]; alerted: unknown[] }
+    assert.equal(scan.silentAfterMinutes, 30)
+    assert.deepEqual(scan.silent, [])
+    assert.deepEqual(scan.alerted, [])
+    const show = JSON.parse(b.run('swarm', 'review-pool', 'show', '--workspace', b.ws, '--json').out) as
+      { reviewAuto: boolean; silentAfterMinutes: number; pool: Array<{ agentId: string }> }
+    assert.equal(show.reviewAuto, true)
+    assert.equal(show.silentAfterMinutes, 30)
+    assert.deepEqual(show.pool.map(entry => entry.agentId), ['nv03', 'nv04'])
   } finally { b.cleanup() }
 })
 

@@ -538,21 +538,42 @@ Without `--workspace` the single registered workspace is used.
 - `swarm retire <agent> --note <reason>`: take an agent off the board.
 
 **Work**
-- `swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]`:
-  queue a task, for one agent (`--to`) or for whoever takes it first.
+- `swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]`:
+  queue a task, for one agent (`--to`) or for whoever takes it first. `--after`
+  makes it wait: it is neither offered nor claimable until the predecessor is
+  delivered or its holder has ended a turn with `awaiting-commit` or
+  `needs-task`; the addressee then gets one message that the task is free.
 - `swarm deliver <agent> <taskId> --path <evidence>`: hand in a claimed task with its evidence.
 - `swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]`: take a write
   lease on paths. A path another agent holds is refused.
 - `swarm release <agent> [<path>...] [--task <id>]`: release leases (all of the agent's, or the given ones).
 - `swarm send <agent> --subject <s> --body <b> [--from <agent>]`: message an
-  agent. The first argument is the recipient.
+  agent. The first argument is the recipient. The sender comes from `--from`
+  or from `PLUGBRAIN_AGENT`; with neither, the message is refused (exit 2) —
+  the Brain never books a message to the integrator that somebody else wrote.
 - `swarm approve <agent> [--note <n>] [--by <agent>]`: let an agent that ended
   with `awaiting-commit` commit. It arrives as a message.
 
 **Overview and machine**
 - `swarm board [--git] [--json]`: every agent once with account, turn state,
   unread messages, task, leases and worktree; `--git` adds branch, head and
-  uncommitted files, plus overlaps where two agents write in one worktree.
+  uncommitted files, plus overlaps where two agents write in one worktree. A
+  `working` worker without Brain contact is marked `silent` and shown with its
+  minutes (`still? seit 47 min ohne Kontakt`).
+- `swarm watchdog [--json] [--dry-run]`: one watchdog cycle. It reports every
+  silent worker, tells the integrator once per case (`--dry-run` only reads),
+  and releases waiting tasks whose predecessor has arrived. A worker is silent
+  when it has been `working` longer than the workspace threshold (default 45
+  minutes) without any Brain contact — turn, claim, release, ack, message,
+  delivery or quota. Contact resets the reading; the Brain never calls a worker
+  dead.
+- `swarm watchdog silent-after <minutes>`: set that threshold for the workspace.
+- `swarm review-pool set <agent>...`: replace the workspace's ordered reviewer
+  list.
+- `swarm review-pool auto on|off`: switch automatic review routing (default
+  off). When on, a turn that ends with `awaiting-commit` queues one review task
+  for the first reviewer whose account differs from the author's.
+- `swarm review-pool show [--json]`: pool, routing switch and threshold.
 - `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
 - `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
   report how much of an account's quota is left. Numbers only, never keys.
