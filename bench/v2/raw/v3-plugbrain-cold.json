@@ -1,39 +1,39 @@
 {
   "benchmark": "plugbrain-cold",
-  "timestamp": "2026-09-26T04:00:35.368Z",
-  "grandOldHits": 66,
+  "timestamp": "2026-09-26T04:42:57.667Z",
+  "grandOldHits": 68,
   "grandOldTotal": 80,
-  "grandOldAccuracy": 82.5,
-  "grandHoldoutHits": 39,
+  "grandOldAccuracy": 85,
+  "grandHoldoutHits": 38,
   "grandHoldoutTotal": 40,
-  "grandHoldoutAccuracy": 97.5,
-  "grandTotalHits": 105,
+  "grandHoldoutAccuracy": 95,
+  "grandTotalHits": 106,
   "grandTotal": 120,
-  "grandTotalAccuracy": 87.5,
+  "grandTotalAccuracy": 88.3,
   "grandErrorCount": 0,
   "grandErrorRate": 0,
-  "latencyP50": 267.7,
-  "latencyP95": 488.5,
+  "latencyP50": 265.2,
+  "latencyP95": 478.1,
   "repos": [
     {
       "repo": "mcpz",
-      "oldHits": 16,
+      "oldHits": 15,
       "oldTotal": 20,
-      "oldAccuracy": 80,
-      "holdoutHits": 9,
+      "oldAccuracy": 75,
+      "holdoutHits": 8,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 90,
-      "totalHits": 25,
+      "holdoutAccuracy": 80,
+      "totalHits": 23,
       "totalCount": 30,
-      "totalAccuracy": 83.3,
+      "totalAccuracy": 76.7,
       "errorCount": 0,
       "errorRate": 0,
-      "latencyOldP50": 278.3,
-      "latencyOldP95": 525.6,
-      "latencyHoldoutP50": 278.7,
-      "latencyHoldoutP95": 388.6,
-      "latencyAllP50": 278.7,
-      "latencyAllP95": 525.6,
+      "latencyOldP50": 273.1,
+      "latencyOldP95": 516.9,
+      "latencyHoldoutP50": 284.2,
+      "latencyHoldoutP95": 404.1,
+      "latencyAllP50": 280.2,
+      "latencyAllP95": 516.9,
       "questions": [
         {
           "id": "mcpz-01",
@@ -49,7 +49,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 959.1,
+          "latencyMs": 915.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"MOD_ID\",\n  \"symbols\": [\n    {\n      \"id\": 1114,\n      \"name\": \"MOD_ID\",\n      \"kind\": \"constant\",\n      \"file\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"line\": 5,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": \"McpzConstants\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"src/main/java/n"
         },
@@ -67,7 +67,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 282,
+          "latencyMs": 275.8,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CameraConfig\",\n  \"symbols\": [\n    {\n      \"id\": 1821,\n      \"name\": \"CameraConfig\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"line\": 9,\n      \"endLine\": 9,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1822,\n      \"name\": \"from\",\n   "
         },
@@ -88,7 +88,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 230.9,
+          "latencyMs": 226.5,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"candidates\": [\n    {\n      \"id\": 1623,\n      \"name\": \"init\",\n      \"kind\": \"method\",\n      \"file\": \"src/main/java/net/mcpz/save/McpzSaveData.java\",\n      \"line\": 48,\n      \"endLine\": 48,\n      \"exported\": true,\n      \"container\": \"McpzSaveData\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1912,\n      \"name\": \"init\","
         },
@@ -109,7 +109,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 237.7,
+          "latencyMs": 240.3,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1900,\n    \"name\": \"registerKeybindings\",\n    \"kind\": \"method\",\n    \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n    \"line\": 87,\n    \"endLine\": 87,\n    \"exported\": false,\n    \"container\": \"McpzClient\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 1897,\n        "
         },
@@ -132,7 +132,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 236.8,
+          "latencyMs": 245.8,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"FLOOR_HEIGHT_BLOCKS\",\n    \"file\": \"src/main/java/net/mcpz/McpzConstants.java\",\n    \"id\": 1121\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
@@ -155,8 +155,8 @@
             "details": "CameraConfig is passed from McpzClient into McpzRuntime and McpzCameraController."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 278.3,
+          "rank": 1,
+          "latencyMs": 267.9,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"CameraConfig\",\n    \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n    \"id\": 1821\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 258,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": -136,\n        \"name\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n        \"kind\": \"file\",\n        \"file\": \"src/test/java/net/mcpz/CameraMathT"
         },
@@ -180,7 +180,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 303.5,
+          "latencyMs": 297.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CameraConfig\",\n  \"symbols\": [\n    {\n      \"id\": 1821,\n      \"name\": \"CameraConfig\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"line\": 9,\n      \"endLine\": 9,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1822,\n      \"name\": \"from\",\n   "
         },
@@ -198,7 +198,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 289.9,
+          "latencyMs": 307.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"cameraYawDefaultDegrees\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"title\": \"CameraConfig.java\",\n      \"snippet\": \"… cfg) { return new CameraConfig( CameraMode.ISOMETRIC, cfg.getDouble(\\\"[cameraYawDefaultDegrees]\\\"), cfg.getDouble(\\\"cameraPitchDefaultDegrees\\\"), cfg.getDouble(\\\"cameraPitchMinDegrees\\\"), cfg.getDouble(\\"
         },
@@ -216,7 +216,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 299.7,
+          "latencyMs": 273.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"McpzMod\",\n  \"symbols\": [\n    {\n      \"id\": 1124,\n      \"name\": \"McpzMod\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"line\": 19,\n      \"endLine\": 19,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1126,\n      \"name\": \"onInitialize\",\n      \"kind\": \""
         },
@@ -234,7 +234,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 301.3,
+          "latencyMs": 280.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"McpzClient\",\n  \"symbols\": [\n    {\n      \"id\": 1897,\n      \"name\": \"McpzClient\",\n      \"kind\": \"class\",\n      \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"line\": 45,\n      \"endLine\": 45,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 2567,\n      \"name\": \"McpzClientRe"
         },
@@ -252,7 +252,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 443.6,
+          "latencyMs": 424.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"MASTER_NORTHSTAR.md\",\n  \"symbols\": [\n    {\n      \"id\": -11,\n      \"name\": \"MASTER_NORTHSTAR.md\",\n      \"kind\": \"file\",\n      \"file\": \"MASTER_NORTHSTAR.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 54,\n      \"name\": \"Commands\",\n      \"kind\": \"pr"
         },
@@ -270,7 +270,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 488.5,
+          "latencyMs": 478.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"MASTER_CAMERA_PLAN.md\",\n  \"symbols\": [\n    {\n      \"id\": -6,\n      \"name\": \"MASTER_CAMERA_PLAN.md\",\n      \"kind\": \"file\",\n      \"file\": \"MASTER_CAMERA_PLAN.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 26,\n      \"name\": \"Docs\",\n      \"kind\": \"p"
         },
@@ -291,8 +291,8 @@
             "details": "McpzClient and CameraMixin call rt.camera()."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 265.5,
+          "rank": 1,
+          "latencyMs": 259.9,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"camera\",\n    \"file\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n    \"id\": 1914\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 235,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 1897,\n        \"name\": \"McpzClient\",\n        \"kind\": \"class\",\n        \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n        \"repoId\": nu"
         },
@@ -312,8 +312,8 @@
             "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 249.1,
+          "rank": 1,
+          "latencyMs": 258.5,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"derive_evidence_class\",\n    \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n    \"id\": 280\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 10,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 282,\n        \"name\": \"write_manifest\",\n        \"kind\": \"function\",\n        \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n        \"repoId\": null,\n      "
         },
@@ -331,7 +331,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 525.6,
+          "latencyMs": 516.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"derive_evidence_class\",\n  \"symbols\": [\n    {\n      \"id\": 280,\n      \"name\": \"derive_evidence_class\",\n      \"kind\": \"function\",\n      \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"line\": 43,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tes"
         },
@@ -352,7 +352,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 226.6,
+          "latencyMs": 222.3,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 281,\n    \"name\": \"validate_manifest\",\n    \"kind\": \"function\",\n    \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n    \"line\": 50,\n    \"endLine\": 50,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 274,\n        \"name\": \"_cmd_check\",\n   "
         },
@@ -370,7 +370,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 274.3,
+          "latencyMs": 283,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"McpzAtmosphereController\",\n  \"symbols\": [\n    {\n      \"id\": 2846,\n      \"name\": \"McpzAtmosphereController\",\n      \"kind\": \"class\",\n      \"file\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }"
         },
@@ -393,7 +393,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 236,
+          "latencyMs": 233.9,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"ROTATE_LEFT\",\n    \"file\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\n    \"id\": 2648\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
@@ -411,7 +411,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 282.5,
+          "latencyMs": 289.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"MinecraftItemRepresentationRegistry\",\n  \"symbols\": [\n    {\n      \"id\": 1693,\n      \"name\": \"MinecraftItemRepresentationRegistry\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java\",\n      \"line\": 27,\n      \"endLine\": 27,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVe"
         },
@@ -431,9 +431,9 @@
             ],
             "details": "McpzClient and McpzCameraController obtain scoped loggers via McpzLog.get()."
           },
-          "hit": true,
-          "rank": 1,
-          "latencyMs": 236.2,
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 238.5,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1690,\n    \"name\": \"McpzLog\",\n    \"kind\": \"class\",\n    \"file\": \"src/main/java/net/mcpz/log/McpzLog.java\",\n    \"line\": 10,\n    \"endLine\": 10,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 1690,\n        \"name\": \"McpzLog\",\n        \"ki"
         },
@@ -451,7 +451,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 290.2,
+          "latencyMs": 285.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PzTrait\",\n  \"symbols\": [\n    {\n      \"id\": 1804,\n      \"name\": \"PzTrait\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1805,\n      \"name\": \"Kind\",\n      \"kind\":"
         },
@@ -469,7 +469,7 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 304.5,
+          "latencyMs": 274.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"costLabel\",\n  \"symbols\": [\n    {\n      \"id\": 1782,\n      \"name\": \"costLabel\",\n      \"kind\": \"method\",\n      \"file\": \"src/main/java/net/mcpz/character/PzStep2Layout.java\",\n      \"line\": 170,\n      \"endLine\": 170,\n      \"exported\": true,\n      \"container\": \"PzStep2Layout\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1806,\n      \"name"
         },
@@ -487,7 +487,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 287,
+          "latencyMs": 300.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PzProfession\",\n  \"symbols\": [\n    {\n      \"id\": 1754,\n      \"name\": \"PzProfession\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/character/PzProfession.java\",\n      \"line\": 11,\n      \"endLine\": 11,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"src/ma"
         },
@@ -505,7 +505,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 276.2,
+          "latencyMs": 288.8,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ModuleRegistry\",\n  \"symbols\": [\n    {\n      \"id\": 1682,\n      \"name\": \"ModuleRegistry\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n      \"line\": 16,\n      \"endLine\": 16,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1688,\n      \"name\": \"al"
         },
@@ -524,9 +524,9 @@
             ],
             "details": "McpzMod calls ModuleRegistry.initializeAll() during mod setup."
           },
-          "hit": true,
-          "rank": 1,
-          "latencyMs": 229.5,
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 232.8,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1685,\n    \"name\": \"initializeAll\",\n    \"kind\": \"method\",\n    \"file\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n    \"line\": 34,\n    \"endLine\": 34,\n    \"exported\": true,\n    \"container\": \"ModuleRegistry\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoi"
         },
@@ -544,7 +544,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 278.7,
+          "latencyMs": 284.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"SaveSchema\",\n  \"symbols\": [\n    {\n      \"id\": 1630,\n      \"name\": \"SaveSchema\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/save/SaveSchema.java\",\n      \"line\": 6,\n      \"endLine\": 6,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1633,\n      \"name\": \"isSupported\",\n    "
         },
@@ -562,7 +562,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 303.6,
+          "latencyMs": 287,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"AimTargetSnapshot\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"src/test/java/net/mcpz/McpzPlacementAssistTest.java\",\n      \"title\": \"McpzPlacementAssistTest.java\",\n      \"snippet\": \"… McpzPlacementAssist.cellFor(null)); [AimTargetSnapshot] none = new [AimTargetSnapshot]([AimTargetSnapshot].TargetKind.NONE, 0, 0, 0, [AimTargetSnapshot].Face.NONE, CameraVec3.ZERO …\"\n    },\n    "
         },
@@ -580,7 +580,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 271.5,
+          "latencyMs": 280.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"clampBrightness\",\n  \"symbols\": [\n    {\n      \"id\": 2858,\n      \"name\": \"clampBrightness\",\n      \"kind\": \"method\",\n      \"file\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"line\": 76,\n      \"endLine\": 76,\n      \"exported\": true,\n      \"container\": \"McpzAtmosphereController\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n"
         },
@@ -598,7 +598,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 388.6,
+          "latencyMs": 404.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"HALF_HEIGHT_FACTOR\",\n  \"symbols\": [\n    {\n      \"id\": 1838,\n      \"name\": \"HALF_HEIGHT_FACTOR\",\n      \"kind\": \"constant\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": \"CameraProjection\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"i"
         },
@@ -619,8 +619,8 @@
             "details": "CameraMathTest and RaycastTest rely on CameraProjection.orthographic for projection math."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 264,
+          "rank": 1,
+          "latencyMs": 264.6,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"orthographic\",\n    \"file\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n    \"id\": 1839\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 43,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 528,\n        \"name\": \"CameraMathTest\",\n        \"kind\": \"class\",\n        \"file\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n        \"repoI"
         }
@@ -628,23 +628,23 @@
     },
     {
       "repo": "plugmedia",
-      "oldHits": 18,
+      "oldHits": 19,
       "oldTotal": 20,
-      "oldAccuracy": 90,
+      "oldAccuracy": 95,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 28,
+      "totalHits": 29,
       "totalCount": 30,
-      "totalAccuracy": 93.3,
+      "totalAccuracy": 96.7,
       "errorCount": 0,
       "errorRate": 0,
-      "latencyOldP50": 256.2,
-      "latencyOldP95": 278.2,
-      "latencyHoldoutP50": 240,
-      "latencyHoldoutP95": 261.8,
-      "latencyAllP50": 250.7,
-      "latencyAllP95": 278.2,
+      "latencyOldP50": 252.6,
+      "latencyOldP95": 286.5,
+      "latencyHoldoutP50": 241,
+      "latencyHoldoutP95": 258.5,
+      "latencyAllP50": 246.1,
+      "latencyAllP95": 286.5,
       "questions": [
         {
           "id": "plugmedia-01",
@@ -660,7 +660,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 287.3,
+          "latencyMs": 271.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"SCHEMA_VERSION\",\n  \"symbols\": [\n    {\n      \"id\": 9216,\n      \"name\": \"SCHEMA_VERSION\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/index.ts\",\n      \"line\": 5,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6301,\n      \"name\": \"schema_version\",\n  "
         },
@@ -678,7 +678,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 260.2,
+          "latencyMs": 257,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"QA_AXES\",\n  \"symbols\": [\n    {\n      \"id\": 9218,\n      \"name\": \"QA_AXES\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/index.ts\",\n      \"line\": 16,\n      \"endLine\": 16,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/contracts/src/index.ts\""
         },
@@ -699,7 +699,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 248.9,
+          "latencyMs": 225.9,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 9207,\n    \"name\": \"topoSort\",\n    \"kind\": \"function\",\n    \"file\": \"packages/graph/src/compute/topo.ts\",\n    \"line\": 7,\n    \"endLine\": 25,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"graph.test.ts\",\n       "
         },
@@ -717,7 +717,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 268.4,
+          "latencyMs": 252.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CycleError\",\n  \"symbols\": [\n    {\n      \"id\": 9205,\n      \"name\": \"CycleError\",\n      \"kind\": \"class\",\n      \"file\": \"packages/graph/src/compute/topo.ts\",\n      \"line\": 2,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/graph/src/compute/t"
         },
@@ -735,7 +735,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 251.8,
+          "latencyMs": 249.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"casPath\",\n  \"symbols\": [\n    {\n      \"id\": 7270,\n      \"name\": \"casPath\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/cas.ts\",\n      \"line\": 30,\n      \"endLine\": 32,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/cas.ts\",\n      "
         },
@@ -756,7 +756,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 278.1,
+          "latencyMs": 245.2,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7276,\n    \"name\": \"storeContent\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/cas.ts\",\n    \"line\": 48,\n    \"endLine\": 83,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 8253,\n        \"name\": \"commitArtifact\",\n        "
         },
@@ -777,9 +777,9 @@
             "expected_count": 2,
             "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 250.7,
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 243.3,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"PGCONFIG\",\n    \"file\": \"services/runtime/src/db.ts\",\n    \"id\": 7307\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
@@ -800,8 +800,8 @@
             "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 256.2,
+          "rank": 1,
+          "latencyMs": 254.3,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"SCHEMA_VERSION\",\n    \"file\": \"packages/contracts/src/index.ts\",\n    \"id\": 9216\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 79,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7297,\n        \"name\": \"Handler\",\n        \"kind\": \"type_alias\",\n        \"file\": \"services/runtime/src/commands.ts\",\n        \"repoId\": null,\n        \"checkoutId"
         },
@@ -822,7 +822,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 250.9,
+          "latencyMs": 255.8,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"storeContent\",\n  \"symbols\": [\n    {\n      \"id\": 7276,\n      \"name\": \"storeContent\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/cas.ts\",\n      \"line\": 48,\n      \"endLine\": 83,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/cas.t"
         },
@@ -840,7 +840,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 278.2,
+          "latencyMs": 276.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PLUGMEDIA_PORT\",\n  \"symbols\": [\n    {\n      \"id\": 7362,\n      \"name\": \"PLUGMEDIA_PORT\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/index.ts\",\n      \"line\": 36,\n      \"endLine\": 36,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src"
         },
@@ -858,7 +858,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 262.4,
+          "latencyMs": 243,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PGPORT\",\n  \"symbols\": [\n    {\n      \"id\": 7309,\n      \"name\": \"PGPORT\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/db.ts\",\n      \"line\": 15,\n      \"endLine\": 15,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/db.ts\",\n      \"tit"
         },
@@ -876,7 +876,7 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 264.1,
+          "latencyMs": 253.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"Fastify\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"package.json\",\n      \"title\": \"package.json\",\n      \"snippet\": \"… 3\\\", \\\"vite\\\": \\\"^8.3.0\\\" }, \\\"dependencies\\\": { \\\"@[fastify]/cors\\\": \\\"^11.3.0\\\", \\\"[fastify]\\\": \\\"^5.12.4\\\", \\\"pg\\\": \\\"^8.23 …\"\n    },\n    {\n      \"path\": \"services/runtime/src/index.ts\",\n      \"title\": \"index.ts\",\n      \"snippet\": \"… does not match (A06). "
         },
@@ -894,7 +894,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 273.4,
+          "latencyMs": 273.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"main\",\n  \"symbols\": [\n    {\n      \"id\": 6377,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"file\": \"workers/media/d1_characters.py\",\n      \"line\": 430,\n      \"endLine\": 430,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6392,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n   "
         },
@@ -912,7 +912,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 270.5,
+          "latencyMs": 297.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"VS0_FINAL_REPORT.md\",\n  \"symbols\": [\n    {\n      \"id\": -922,\n      \"name\": \"VS0_FINAL_REPORT.md\",\n      \"kind\": \"file\",\n      \"file\": \"VS0_FINAL_REPORT.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6290,\n      \"name\": \"2. Gates\",\n      \"kind\": "
         },
@@ -930,7 +930,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 262.9,
+          "latencyMs": 286.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ARCHIVE_MANIFEST.md\",\n  \"symbols\": [\n    {\n      \"id\": -918,\n      \"name\": \"ARCHIVE_MANIFEST.md\",\n      \"kind\": \"file\",\n      \"file\": \"ARCHIVE_MANIFEST.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6264,\n      \"name\": \"Enthalten\",\n      \"kind\":"
         },
@@ -950,8 +950,8 @@
             "details": "ensureCas is called inside storeContent and registerContent."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 229.8,
+          "rank": 1,
+          "latencyMs": 244.6,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"ensureCas\",\n    \"file\": \"services/runtime/src/cas.ts\",\n    \"id\": 7269\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 12,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7276,\n        \"name\": \"storeContent\",\n        \"kind\": \"function\",\n        \"file\": \"services/runtime/src/cas.ts\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n  "
         },
@@ -971,8 +971,8 @@
             "details": "applyMigrations executes database schema migrations."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 236.3,
+          "rank": 1,
+          "latencyMs": 259.3,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"applyMigrations\",\n    \"file\": \"services/runtime/src/db.ts\",\n    \"id\": 7322\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 27,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7151,\n        \"name\": \"migrate\",\n        \"kind\": \"function\",\n        \"file\": \"tools/admin/plug-admin.mjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n   "
         },
@@ -990,7 +990,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 236.9,
+          "latencyMs": 240.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"schedulerTick\",\n  \"symbols\": [\n    {\n      \"id\": 7631,\n      \"name\": \"schedulerTick\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/engine/scheduler.ts\",\n      \"line\": 215,\n      \"endLine\": 235,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/"
         },
@@ -1011,7 +1011,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 228.5,
+          "latencyMs": 239.3,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7299,\n    \"name\": \"register\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/commands.ts\",\n    \"line\": 12,\n    \"endLine\": 12,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"index.ts\",\n        \"kind"
         },
@@ -1029,7 +1029,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 250.7,
+          "latencyMs": 246.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ALLOWED_ORIGINS\",\n  \"symbols\": [\n    {\n      \"id\": 7225,\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 24,\n      \"endLine\": 28,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
@@ -1047,7 +1047,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 250.8,
+          "latencyMs": 246.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ALLOWED_ORIGINS\",\n  \"symbols\": [\n    {\n      \"id\": 7225,\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 24,\n      \"endLine\": 28,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
@@ -1065,7 +1065,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 250.2,
+          "latencyMs": 241,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"issueCapability\",\n  \"symbols\": [\n    {\n      \"id\": 7234,\n      \"name\": \"issueCapability\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 48,\n      \"endLine\": 55,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
@@ -1083,7 +1083,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 238.8,
+          "latencyMs": 239.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"verifyCapability\",\n  \"symbols\": [\n    {\n      \"id\": 7240,\n      \"name\": \"verifyCapability\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 57,\n      \"endLine\": 67,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/"
         },
@@ -1101,7 +1101,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 237.5,
+          "latencyMs": 234.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"csrfGuard\",\n  \"symbols\": [\n    {\n      \"id\": 7263,\n      \"name\": \"csrfGuard\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 124,\n      \"endLine\": 128,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/auth.ts\""
         },
@@ -1119,7 +1119,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 261.8,
+          "latencyMs": 258.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n  \"symbols\": [\n    {\n      \"id\": 7597,\n      \"name\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/engine/scheduler.ts\",\n      \"line\": 46,\n      \"endLine\": 46,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n  "
         },
@@ -1137,7 +1137,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 243.4,
+          "latencyMs": 243,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"computeNodeCacheKey\",\n  \"symbols\": [\n    {\n      \"id\": 9201,\n      \"name\": \"computeNodeCacheKey\",\n      \"kind\": \"function\",\n      \"file\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"line\": 27,\n      \"endLine\": 33,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"t"
         },
@@ -1155,7 +1155,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 246.2,
+          "latencyMs": 246.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"NODE_VERSIONS\",\n  \"symbols\": [\n    {\n      \"id\": 9203,\n      \"name\": \"NODE_VERSIONS\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"line\": 13,\n      \"endLine\": 26,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
@@ -1173,7 +1173,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 240,
+          "latencyMs": 242.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"implementationDigest\",\n  \"symbols\": [\n    {\n      \"id\": 9204,\n      \"name\": \"implementationDigest\",\n      \"kind\": \"function\",\n      \"file\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"line\": 28,\n      \"endLine\": 30,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"pat"
         },
@@ -1194,7 +1194,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 229.5,
+          "latencyMs": 232.8,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7631,\n    \"name\": \"schedulerTick\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/engine/scheduler.ts\",\n    \"line\": 215,\n    \"endLine\": 235,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 7421,\n        \"name\": \"scheduler"
         },
@@ -1214,8 +1214,8 @@
             "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 233.5,
+          "rank": 1,
+          "latencyMs": 238.1,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"computeNodeCacheKey\",\n    \"file\": \"packages/graph/src/compute/cacheKey.ts\",\n    \"id\": 9201\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 44,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7760,\n        \"name\": \"processJob\",\n        \"kind\": \"function\",\n        \"file\": \"services/runtime/src/engine/worker.ts\",\n        \"repoId\": null,\n "
         }
@@ -1223,23 +1223,23 @@
     },
     {
       "repo": "cowork",
-      "oldHits": 16,
+      "oldHits": 18,
       "oldTotal": 20,
-      "oldAccuracy": 80,
+      "oldAccuracy": 90,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 26,
+      "totalHits": 28,
       "totalCount": 30,
-      "totalAccuracy": 86.7,
+      "totalAccuracy": 93.3,
       "errorCount": 0,
       "errorRate": 0,
-      "latencyOldP50": 256.7,
-      "latencyOldP95": 333.3,
-      "latencyHoldoutP50": 252.4,
-      "latencyHoldoutP95": 289.7,
-      "latencyAllP50": 256.7,
-      "latencyAllP95": 333.3,
+      "latencyOldP50": 254.7,
+      "latencyOldP95": 338.4,
+      "latencyHoldoutP50": 247.7,
+      "latencyHoldoutP95": 285.7,
+      "latencyAllP50": 250.7,
+      "latencyAllP95": 338.4,
       "questions": [
         {
           "id": "cowork-01",
@@ -1255,7 +1255,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 267.7,
+          "latencyMs": 287.8,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"DEFAULT_LANES\",\n  \"symbols\": [\n    {\n      \"id\": 10840,\n      \"name\": \"DEFAULT_LANES\",\n      \"kind\": \"constant\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 43,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"ruflo-workers/tools/fl"
         },
@@ -1273,7 +1273,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 259.2,
+          "latencyMs": 254.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"scrub\",\n  \"symbols\": [\n    {\n      \"id\": 10842,\n      \"name\": \"scrub\",\n      \"kind\": \"function\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 59,\n      \"endLine\": 59,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10963,\n      \"name\": \"scrub\",\n      \"kind\": \"function\",\n  "
         },
@@ -1294,7 +1294,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 229.4,
+          "latencyMs": 240.6,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10970,\n    \"name\": \"post_event\",\n    \"kind\": \"function\",\n    \"file\": \"ruflo-workers/tools/worker.py\",\n    \"line\": 42,\n    \"endLine\": 42,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10972,\n        \"name\": \"fleet_patch\",\n        \""
         },
@@ -1315,7 +1315,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 247.8,
+          "latencyMs": 232.7,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10971,\n    \"name\": \"codegraph_context\",\n    \"kind\": \"function\",\n    \"file\": \"ruflo-workers/tools/worker.py\",\n    \"line\": 54,\n    \"endLine\": 54,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10980,\n        \"name\": \"run_part_as_work"
         },
@@ -1337,8 +1337,8 @@
             "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 249.1,
+          "rank": 1,
+          "latencyMs": 239.4,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"CONFIG\",\n    \"file\": \"ruflo-workers/tools/fleet.py\",\n    \"id\": 10839\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 54,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10911,\n        \"name\": \"HERE\",\n        \"kind\": \"constant\",\n        \"file\": \"ruflo-workers/tools/planner.py\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n       "
         },
@@ -1358,9 +1358,9 @@
             "expected_count": 1,
             "details": "RATE determines cost calculation for different AI model providers."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 243.6,
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 229.3,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"RATE\",\n    \"file\": \"cockpit/server.cjs\",\n    \"id\": 11346\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
@@ -1382,7 +1382,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 254.9,
+          "latencyMs": 250.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"writeConfig\",\n  \"symbols\": [\n    {\n      \"id\": 11355,\n      \"name\": \"writeConfig\",\n      \"kind\": \"function\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 44,\n      \"endLine\": 49,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"cockpit/server.cjs\",\n      \"title\":"
         },
@@ -1400,7 +1400,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 325.2,
+          "latencyMs": 311.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PLUGOS_COCKPIT_PORT\",\n  \"symbols\": [\n    {\n      \"id\": 11349,\n      \"name\": \"PLUGOS_COCKPIT_PORT\",\n      \"kind\": \"constant\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 35,\n      \"endLine\": 35,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"cockpit/server.cjs\","
         },
@@ -1418,7 +1418,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 337.7,
+          "latencyMs": 341.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"swarm-chain.config.json\",\n  \"symbols\": [\n    {\n      \"id\": -1143,\n      \"name\": \"ruflo-workers/swarm-chain.config.json\",\n      \"kind\": \"file\",\n      \"file\": \"ruflo-workers/swarm-chain.config.json\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10770"
         },
@@ -1434,9 +1434,9 @@
             "kind": "entrypoint",
             "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 256.7,
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 250.8,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"fleet\",\n  \"symbols\": [\n    {\n      \"id\": 10852,\n      \"name\": \"Fleet\",\n      \"kind\": \"class\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 208,\n      \"endLine\": 208,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10784,\n      \"name\": \"fleet\",\n      \"kind\": \"property\",\n   "
         },
@@ -1454,7 +1454,7 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 271.1,
+          "latencyMs": 265.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"server.cjs\",\n  \"symbols\": [\n    {\n      \"id\": -1095,\n      \"name\": \"station/server.cjs\",\n      \"kind\": \"file\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": -1207,\n      \"name\": \"cockpit/server.cjs\",\n      \"kind\":"
         },
@@ -1472,7 +1472,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 319.4,
+          "latencyMs": 313.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"produce_one\",\n  \"symbols\": [\n    {\n      \"id\": 10587,\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"file\": \"shortsfactory/pipeline/run.py\",\n      \"line\": 13,\n      \"endLine\": 13,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"shortsfactory/pipeline/ru"
         },
@@ -1490,7 +1490,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 285.5,
+          "latencyMs": 289.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CANON.md\",\n  \"symbols\": [\n    {\n      \"id\": -1057,\n      \"name\": \"CANON.md\",\n      \"kind\": \"file\",\n      \"file\": \"CANON.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 9958,\n      \"name\": \"The one rule\",\n      \"kind\": \"property\",\n      \"file\": \"C"
         },
@@ -1508,7 +1508,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 333.3,
+          "latencyMs": 338.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CONTENT_STYLE_GUIDE.md\",\n  \"symbols\": [\n    {\n      \"id\": -1062,\n      \"name\": \"CONTENT_STYLE_GUIDE.md\",\n      \"kind\": \"file\",\n      \"file\": \"CONTENT_STYLE_GUIDE.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10019,\n      \"name\": \"7. Cadence & R"
         },
@@ -1528,8 +1528,8 @@
             "details": "produce_one is called in main loop of run.py."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 243.7,
+          "rank": 1,
+          "latencyMs": 228.1,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"produce_one\",\n    \"file\": \"shortsfactory/pipeline/run.py\",\n    \"id\": 10587\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 2,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10588,\n        \"name\": \"main\",\n        \"kind\": \"function\",\n        \"file\": \"shortsfactory/pipeline/run.py\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n   "
         },
@@ -1549,8 +1549,8 @@
             "details": "writeConfig is called by lane and runner mutation handlers."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 233.5,
+          "rank": 1,
+          "latencyMs": 237.2,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"writeConfig\",\n    \"file\": \"cockpit/server.cjs\",\n    \"id\": 11355\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 22,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 11381,\n        \"name\": \"upsertLane\",\n        \"kind\": \"function\",\n        \"file\": \"cockpit/server.cjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n        \"relationT"
         },
@@ -1568,7 +1568,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 312.4,
+          "latencyMs": 325.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"produce_one\",\n  \"symbols\": [\n    {\n      \"id\": 10587,\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"file\": \"shortsfactory/pipeline/run.py\",\n      \"line\": 13,\n      \"endLine\": 13,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"shortsfactory/pipeline/ru"
         },
@@ -1589,7 +1589,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 233.1,
+          "latencyMs": 237.3,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10597,\n    \"name\": \"synth_voiceover\",\n    \"kind\": \"function\",\n    \"file\": \"shortsfactory/pipeline/tts.py\",\n    \"line\": 53,\n    \"endLine\": 53,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"calls\": [\n     "
         },
@@ -1607,7 +1607,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 260.8,
+          "latencyMs": 272.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ROLES\",\n  \"symbols\": [\n    {\n      \"id\": 11352,\n      \"name\": \"ROLES\",\n      \"kind\": \"constant\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 38,\n      \"endLine\": 38,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10728,\n      \"name\": \"ROLES\",\n      \"kind\": \"constant\",\n      \"file"
         },
@@ -1629,7 +1629,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 239.1,
+          "latencyMs": 262.5,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"KEY_ALIAS\",\n    \"file\": \"cockpit/fleet-direct.cjs\",\n    \"id\": 11271\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
@@ -1647,7 +1647,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 264.6,
+          "latencyMs": 249.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"readLedger\",\n  \"symbols\": [\n    {\n      \"id\": 10316,\n      \"name\": \"readLedger\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 44,\n      \"endLine\": 54,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\": \""
         },
@@ -1665,7 +1665,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 261.1,
+          "latencyMs": 244.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"writeLedger\",\n  \"symbols\": [\n    {\n      \"id\": 10320,\n      \"name\": \"writeLedger\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 55,\n      \"endLine\": 58,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\":"
         },
@@ -1701,7 +1701,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 261.6,
+          "latencyMs": 262.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"FLEET_PARALLELISM\",\n  \"symbols\": [\n    {\n      \"id\": 10311,\n      \"name\": \"FLEET_PARALLELISM\",\n      \"kind\": \"constant\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 31,\n      \"endLine\": 31,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10312,\n      \"name\": \"PLUGOS_FLEET_PARALLEL"
         },
@@ -1719,7 +1719,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 289.7,
+          "latencyMs": 285.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"decompose_room\",\n  \"symbols\": [\n    {\n      \"id\": 10296,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"file\": \"tools/decompose_room.py\",\n      \"line\": 27,\n      \"endLine\": 27,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tools/decompose_room.py\",\n      \"ti"
         },
@@ -1737,7 +1737,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 245.1,
+          "latencyMs": 247.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"verdictOf\",\n  \"symbols\": [\n    {\n      \"id\": 10322,\n      \"name\": \"verdictOf\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 59,\n      \"endLine\": 64,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 11386,\n      \"name\": \"verdictOf\",\n      \"kind\": \"function\","
         },
@@ -1758,7 +1758,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 229.6,
+          "latencyMs": 224.8,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10320,\n    \"name\": \"writeLedger\",\n    \"kind\": \"function\",\n    \"file\": \"station/server.cjs\",\n    \"line\": 55,\n    \"endLine\": 58,\n    \"exported\": false,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10336,\n        \"name\": \"movePrio\",\n        \"kind\": \"func"
         },
@@ -1776,7 +1776,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 273.2,
+          "latencyMs": 270,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"DEFAULT_EFFORT\",\n  \"symbols\": [\n    {\n      \"id\": 10310,\n      \"name\": \"DEFAULT_EFFORT\",\n      \"kind\": \"constant\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 30,\n      \"endLine\": 30,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"t"
         },
@@ -1796,8 +1796,8 @@
             "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 225.1,
+          "rank": 1,
+          "latencyMs": 246.6,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"readLedger\",\n    \"file\": \"station/server.cjs\",\n    \"id\": 10316\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 6,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10324,\n        \"name\": \"buildProgress\",\n        \"kind\": \"function\",\n        \"file\": \"station/server.cjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n        \"relation"
         },
@@ -1815,7 +1815,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 252.4,
+          "latencyMs": 249.3,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"effortOf\",\n  \"symbols\": [\n    {\n      \"id\": 10315,\n      \"name\": \"effortOf\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 40,\n      \"endLine\": 42,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\": \"serv"
         }
@@ -1834,12 +1834,12 @@
       "totalAccuracy": 86.7,
       "errorCount": 0,
       "errorRate": 0,
-      "latencyOldP50": 306.3,
-      "latencyOldP95": 579.4,
-      "latencyHoldoutP50": 313.2,
-      "latencyHoldoutP95": 390.7,
-      "latencyAllP50": 307.4,
-      "latencyAllP95": 579.4,
+      "latencyOldP50": 298.7,
+      "latencyOldP95": 560,
+      "latencyHoldoutP50": 299.8,
+      "latencyHoldoutP95": 386.9,
+      "latencyAllP50": 299.3,
+      "latencyAllP95": 560,
       "questions": [
         {
           "id": "plugengine-01",
@@ -1855,7 +1855,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 307.4,
+          "latencyMs": 321.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CommandBus\",\n  \"symbols\": [\n    {\n      \"id\": 31909,\n      \"name\": \"CommandBus\",\n      \"kind\": \"class\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 40,\n      \"endLine\": 122,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOpt"
         },
@@ -1873,7 +1873,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 405.4,
+          "latencyMs": 439.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"DEFAULT_LIMIT\",\n  \"symbols\": [\n    {\n      \"id\": 31902,\n      \"name\": \"DEFAULT_LIMIT\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 10,\n      \"endLine\": 10,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 50252,\n      \"name\": \"DEFA"
         },
@@ -1892,9 +1892,9 @@
             ],
             "details": "bus.test.ts executes dispatches against CommandBus instances."
           },
-          "hit": true,
-          "rank": 1,
-          "latencyMs": 233.5,
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 239.6,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 31915,\n    \"name\": \"dispatch\",\n    \"kind\": \"method\",\n    \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n    \"line\": 60,\n    \"endLine\": 68,\n    \"exported\": false,\n    \"container\": \"CommandBus\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"c"
         },
@@ -1912,7 +1912,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 457.5,
+          "latencyMs": 444.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"PLUG_PACKAGE_KINDS\",\n  \"symbols\": [\n    {\n      \"id\": 33883,\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/addon.ts\",\n      \"line\": 37,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
@@ -1930,7 +1930,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 298.5,
+          "latencyMs": 291.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"isPlugPackageKind\",\n  \"symbols\": [\n    {\n      \"id\": 33884,\n      \"name\": \"isPlugPackageKind\",\n      \"kind\": \"function\",\n      \"file\": \"packages/contracts/src/addon.ts\",\n      \"line\": 45,\n      \"endLine\": 47,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/co"
         },
@@ -1949,9 +1949,9 @@
             ],
             "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
           },
-          "hit": true,
-          "rank": 1,
-          "latencyMs": 240.2,
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 228.8,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33884,\n    \"name\": \"isPlugPackageKind\",\n    \"kind\": \"function\",\n    \"file\": \"packages/contracts/src/addon.ts\",\n    \"line\": 45,\n    \"endLine\": 47,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"calls\": [\n "
         },
@@ -1973,8 +1973,8 @@
             "details": "Limits default undo history buffer size in CommandBus constructor."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 268.4,
+          "rank": 1,
+          "latencyMs": 266.4,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"DEFAULT_LIMIT\",\n    \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n    \"id\": 31902\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 2,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 31404,\n        \"name\": \"ENGINE_VERSION\",\n        \"kind\": \"constant\",\n        \"file\": \"packages/plugengine-core/src/index.ts\",\n        \"repoId\": nul"
         },
@@ -1996,8 +1996,8 @@
             "details": "PlugPackageKind union and package kind validation in addon contracts."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 300.4,
+          "rank": 1,
+          "latencyMs": 299.3,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"PLUG_PACKAGE_KINDS\",\n    \"file\": \"packages/contracts/src/addon.ts\",\n    \"id\": 33883\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 263,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": -1962,\n        \"name\": \"packages/contracts/src/addon.test.ts\",\n        \"kind\": \"file\",\n        \"file\": \"packages/contracts/src/addon.test.ts\",\n        \""
         },
@@ -2017,8 +2017,8 @@
             "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
           },
           "hit": true,
-          "rank": 3,
-          "latencyMs": 306.3,
+          "rank": 1,
+          "latencyMs": 301.6,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CommandBus\",\n  \"symbols\": [\n    {\n      \"id\": 31909,\n      \"name\": \"CommandBus\",\n      \"kind\": \"class\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 40,\n      \"endLine\": 122,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOpt"
         },
@@ -2036,7 +2036,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 294,
+          "latencyMs": 288.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CommandBusOptions\",\n  \"symbols\": [\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOptions\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 3,\n      \"endLine\": 6,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \""
         },
@@ -2054,7 +2054,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 299.6,
+          "latencyMs": 298.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"workspaces\",\n  \"symbols\": [\n    {\n      \"id\": 12843,\n      \"name\": \"workspaces\",\n      \"kind\": \"property\",\n      \"file\": \"package.json\",\n      \"line\": 7,\n      \"endLine\": 7,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"package.json\",\n      \"title\": \"package.json\",\n"
         },
@@ -2070,9 +2070,9 @@
             "kind": "entrypoint",
             "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 500.1,
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 501.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"plugengine-core\",\n  \"symbols\": [\n    {\n      \"id\": 31404,\n      \"name\": \"ENGINE_VERSION\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-core/src/index.ts\",\n      \"line\": 10,\n      \"endLine\": 10,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31446,\n      \"name\": \"Problems"
         },
@@ -2090,7 +2090,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 339,
+          "latencyMs": 356.2,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"contracts\",\n  \"symbols\": [\n    {\n      \"id\": 13154,\n      \"name\": \"contracts\",\n      \"kind\": \"constant\",\n      \"file\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"line\": 94,\n      \"endLine\": 94,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 14827,\n      \"name\": \"contracts\",\n      \"kin"
         },
@@ -2108,7 +2108,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 579.4,
+          "latencyMs": 560,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"TECH_DEBT_REGISTER.md\",\n  \"symbols\": [\n    {\n      \"id\": -2145,\n      \"name\": \"docs/TECH_DEBT_REGISTER.md\",\n      \"kind\": \"file\",\n      \"file\": \"docs/TECH_DEBT_REGISTER.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 39784,\n      \"name\": \"Product"
         },
@@ -2126,7 +2126,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 689.6,
+          "latencyMs": 583,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"CREATOR_EDITOR_SPEC.md\",\n  \"symbols\": [\n    {\n      \"id\": -2125,\n      \"name\": \"docs/CREATOR_EDITOR_SPEC.md\",\n      \"kind\": \"file\",\n      \"file\": \"docs/CREATOR_EDITOR_SPEC.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 39494,\n      \"name\": \"5. U"
         },
@@ -2147,7 +2147,7 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 345.1,
+          "latencyMs": 292.7,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"canUndo\",\n    \"file\": \"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts\",\n    \"id\": 45649\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 32,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 45585,\n        \"name\": \"render\",\n        \"kind\": \"function\",\n        \"file\": \"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel"
         },
@@ -2166,9 +2166,9 @@
             ],
             "details": "impactToEdit converts projectile block hits into voxel edits."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 335.3,
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 297.9,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"impactToEdit\",\n    \"file\": \"packages/plugengine-combat/src/blockDestruction.ts\",\n    \"id\": 32200\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 19,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 32460,\n        \"name\": \"advance\",\n        \"kind\": \"method\",\n        \"file\": \"packages/plugengine-combat/src/projectiles.ts\",\n        \"repoId"
         },
@@ -2186,7 +2186,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 522.6,
+          "latencyMs": 502.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"COMBAT_PACKAGE\",\n  \"symbols\": [\n    {\n      \"id\": 32390,\n      \"name\": \"COMBAT_PACKAGE\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-combat/src/index.ts\",\n      \"line\": 11,\n      \"endLine\": 11,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tsconfig."
         },
@@ -2204,7 +2204,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 227.3,
+          "latencyMs": 224.6,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 32486,\n    \"name\": \"canHit\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-combat/src/teams.ts\",\n    \"line\": 51,\n    \"endLine\": 66,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 32466,\n        \"name\": \"resolveEnemyHit\","
         },
@@ -2222,7 +2222,7 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 296.6,
+          "latencyMs": 298.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ProjectilePool\",\n  \"symbols\": [\n    {\n      \"id\": 19161,\n      \"name\": \"ProjectilePool\",\n      \"kind\": \"class\",\n      \"file\": \"reference/build-battle/src/plugmil/projectiles.ts\",\n      \"line\": 45,\n      \"endLine\": 151,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 32448,\n      \"name\": "
         },
@@ -2240,7 +2240,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 295.6,
+          "latencyMs": 313.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"createKeyVault\",\n  \"symbols\": [\n    {\n      \"id\": 33742,\n      \"name\": \"createKeyVault\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"line\": 22,\n      \"endLine\": 44,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/p"
         },
@@ -2258,7 +2258,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 293.3,
+          "latencyMs": 313.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"KeyVaultHandle\",\n  \"symbols\": [\n    {\n      \"id\": 33735,\n      \"name\": \"KeyVaultHandle\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"line\": 11,\n      \"endLine\": 20,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
@@ -2280,7 +2280,7 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 229.1,
+          "latencyMs": 226.8,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33742,\n    \"name\": \"createKeyVault\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n    \"line\": 22,\n    \"endLine\": 44,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"ai-builder-"
         },
@@ -2298,7 +2298,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 390.7,
+          "latencyMs": 386.9,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"generate\",\n  \"symbols\": [\n    {\n      \"id\": 33642,\n      \"name\": \"generate\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/aiBuilder.ts\",\n      \"line\": 26,\n      \"endLine\": 37,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 49537,\n      \"name\": \"generate\",\n      \"k"
         },
@@ -2316,7 +2316,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 313.7,
+          "latencyMs": 317.1,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"ArtProfile\",\n  \"symbols\": [\n    {\n      \"id\": 34017,\n      \"name\": \"ArtProfile\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/contracts/src/artProfile.ts\",\n      \"line\": 58,\n      \"endLine\": 66,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 34041,\n      \"name\": \"artProfileById\",\n"
         },
@@ -2334,7 +2334,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 317.5,
+          "latencyMs": 322.4,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"StagingDiff\",\n  \"symbols\": [\n    {\n      \"id\": 33802,\n      \"name\": \"StagingDiff\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/stagingDiff.ts\",\n      \"line\": 10,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 40558,\n      \"name\": \"stagingDif"
         },
@@ -2352,7 +2352,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 313.2,
+          "latencyMs": 295.5,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"BuildJob\",\n  \"symbols\": [\n    {\n      \"id\": 33650,\n      \"name\": \"BuildJob\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/buildJob.ts\",\n      \"line\": 14,\n      \"endLine\": 19,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 33660,\n      \"name\": \"createBuildJob\",\n  "
         },
@@ -2370,7 +2370,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 333.3,
+          "latencyMs": 294.7,
           "error": null,
           "rawAnswer": "{\n  \"query\": \"generateMockPlan\",\n  \"symbols\": [\n    {\n      \"id\": 33782,\n      \"name\": \"generateMockPlan\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/mockProvider.ts\",\n      \"line\": 110,\n      \"endLine\": 130,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \""
         },
@@ -2392,7 +2392,7 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 253.5,
+          "latencyMs": 225.3,
           "error": null,
           "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33782,\n    \"name\": \"generateMockPlan\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-ai/src/mockProvider.ts\",\n    \"line\": 110,\n    \"endLine\": 130,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"aiB"
         },
@@ -2414,8 +2414,8 @@
             "details": "Consumers importing createKeyVault for BYOK secret management are impacted."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 313.3,
+          "rank": 1,
+          "latencyMs": 299.8,
           "error": null,
           "rawAnswer": "{\n  \"target\": {\n    \"name\": \"createKeyVault\",\n    \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n    \"id\": 33742\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 108,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 49521,\n        \"name\": \"AiBuilderModel\",\n        \"kind\": \"class\",\n        \"file\": \"apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts\",\n        \""
         }

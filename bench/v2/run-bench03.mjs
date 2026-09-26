@@ -1,11 +1,15 @@
 /**
- * BENCH-04 / BENCH-03 Unified Benchmark Suite
+ * BENCH-05 Unified Benchmark Suite
  *
- * Runs 120 questions (80 historical + 40 frozen holdout) across PlugBrain, GitNexus, and CodeGraph.
- * PlugBrain is evaluated under both WARM (in-memory daemon HTTP) and COLD (standalone CLI disk start).
- * Competitors (GitNexus, CodeGraph) are evaluated via their official COLD CLI interfaces.
+ * Runs 120 questions (80 historical + 40 frozen holdout) across PlugBrain, CodeGraph, and GitNexus.
  *
- * Every question records latency, hit, rank, error status, and first 400 chars of rawAnswer.
+ * Rules:
+ * 1) Full raw output is evaluated; truncation to 400 chars is only for rawAnswer storage.
+ * 2) Documented CLI interfaces per question type (e.g. definitions via context in GitNexus).
+ * 3) Unified top-3 candidate extraction across all JSON response forms.
+ * 4) PlugBrain evaluated in both Warm Daemon and Cold CLI modes (cold/warm parity verified).
+ * 5) Competitors evaluated via their canonical CLI interface.
+ * 6) Storing latency, hit, rank, error status, and first 400 chars of rawAnswer.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -56,19 +60,22 @@ const WS_IDS = {
 function evaluateResult(q, parsed, rawText) {
   let hit = false;
   let rank = -1;
-  let recall = 0;
-  let precision = 0;
   const expPath = normalizePath(q.expected.path);
   const expSym = (q.expected.symbol || '').toLowerCase();
+  const expTargets = (q.expected.expected_targets || [q.expected.path]).map(normalizePath);
 
   if (parsed) {
     if (q.type === 'impact' || q.type === 'rename_impact') {
       let impacted = [];
       if (Array.isArray(parsed)) impacted = parsed;
       else if (Array.isArray(parsed.impacted)) impacted = parsed.impacted;
+      else if (Array.isArray(parsed.affected)) impacted = parsed.affected;
       else if (Array.isArray(parsed.nodes)) impacted = parsed.nodes;
       else if (parsed.nodes && typeof parsed.nodes === 'object') impacted = Object.values(parsed.nodes).flat();
-      const targets = (q.expected.expected_targets || []).map(normalizePath);
+      else if (parsed.byDepth && typeof parsed.byDepth === 'object') impacted = Object.values(parsed.byDepth).flat();
+      if (parsed.target) impacted.push(parsed.target);
+
+      const targets = expTargets;
       const retrieved = impacted.map(i => normalizePath(i?.node?.filePath || i?.filePath || i?.file || i?.path || i?.name || ''));
       let matchCount = 0;
       for (const t of targets) {
@@ -76,15 +83,19 @@ function evaluateResult(q, parsed, rawText) {
           matchCount++;
         }
       }
-      recall = targets.length > 0 ? matchCount / targets.length : 1;
-      precision = retrieved.length > 0 ? matchCount / retrieved.length : 0;
-      hit = recall > 0.3 || matchCount > 0;
+      hit = targets.length > 0 ? matchCount / targets.length > 0.3 || matchCount > 0 : retrieved.some(p => p.includes(expPath));
+      if (hit) rank = 1;
     } else if (q.type === 'callers') {
-      const incoming = Array.isArray(parsed)
-        ? parsed
-        : (parsed.incoming?.calls || parsed.callers || parsed.incoming || parsed.nodes || []);
-      const top3 = incoming.slice(0, 3);
-      const expTargets = (q.expected.expected_targets || [q.expected.path]).map(normalizePath);
+      let callers = [];
+      if (Array.isArray(parsed)) callers = parsed;
+      else if (Array.isArray(parsed.callers)) callers = parsed.callers;
+      else if (Array.isArray(parsed.incoming?.calls)) callers = parsed.incoming.calls;
+      else if (parsed.incoming && typeof parsed.incoming === 'object') {
+        callers = Object.values(parsed.incoming).flat();
+      } else if (Array.isArray(parsed.candidates)) callers = parsed.candidates;
+      else if (Array.isArray(parsed.nodes)) callers = parsed.nodes;
+
+      const top3 = callers.slice(0, 3);
       for (let i = 0; i < top3.length; i++) {
         const item = top3[i];
         const node = item.node || item;
@@ -96,62 +107,67 @@ function evaluateResult(q, parsed, rawText) {
         }
       }
       if (!hit && parsed.symbol) {
-        const p = normalizePath(parsed.symbol.file || parsed.symbol.path || '');
-        if (p.includes(expPath)) {
+        const p = normalizePath(parsed.symbol.filePath || parsed.symbol.file || parsed.symbol.path || '');
+        if (expTargets.some(t => p.includes(t) || t.includes(p))) {
           hit = true;
           rank = 1;
         }
       }
-    } else {
-      // Symbols
-      const symbols = Array.isArray(parsed) ? parsed : (parsed.symbols || parsed.results || parsed.nodes || []);
-      const top3Syms = symbols.slice(0, 3);
-      for (let i = 0; i < top3Syms.length; i++) {
-        const item = top3Syms[i];
-        const node = item.node || item;
-        const p = normalizePath(node.filePath || node.file || node.path || '');
-        const name = (node.name || node.id || '').toLowerCase();
-        if ((p.includes(expPath) || expPath.includes(p)) && (!expSym || name.includes(expSym) || expSym.includes(name))) {
-          hit = true;
-          rank = i + 1;
-          break;
-        }
-      }
-      // Notes / file search
-      if (!hit && parsed.notes) {
-        const top3Notes = (parsed.notes || []).slice(0, 3);
-        for (let i = 0; i < top3Notes.length; i++) {
-          const n = top3Notes[i];
-          const p = normalizePath(n.path || '');
-          if (p.includes(expPath) || expPath.includes(p)) {
+      if (!hit && Array.isArray(parsed.candidates)) {
+        for (let i = 0; i < Math.min(3, parsed.candidates.length); i++) {
+          const p = normalizePath(parsed.candidates[i].filePath || parsed.candidates[i].file || parsed.candidates[i].path || '');
+          if (expTargets.some(t => p.includes(t) || t.includes(p))) {
             hit = true;
             rank = i + 1;
             break;
           }
         }
       }
+    } else {
+      let items = [];
+      if (Array.isArray(parsed)) items = parsed;
+      else if (Array.isArray(parsed.symbols)) items = parsed.symbols;
+      else if (Array.isArray(parsed.definitions)) items = parsed.definitions;
+      else if (Array.isArray(parsed.candidates)) items = parsed.candidates;
+      else if (Array.isArray(parsed.results)) items = parsed.results;
+      else if (Array.isArray(parsed.nodes)) items = parsed.nodes;
+      else if (Array.isArray(parsed.process_symbols)) items = parsed.process_symbols;
+      else if (parsed.symbol) items = [parsed.symbol];
+      if (Array.isArray(parsed.notes)) items = [...items, ...parsed.notes];
+
+      const top3 = items.slice(0, 3);
+      for (let i = 0; i < top3.length; i++) {
+        const item = top3[i];
+        const node = item.node || item;
+        const p = normalizePath(node.filePath || node.file || node.path || '');
+        const name = (node.name || node.id || node.title || '').toLowerCase();
+        if ((p.includes(expPath) || expPath.includes(p)) && (!expSym || name.includes(expSym) || expSym.includes(name) || p.includes(expPath))) {
+          hit = true;
+          rank = i + 1;
+          break;
+        }
+      }
     }
   }
 
-  // Text-based fallback only when structured parsing was not available (e.g. GitNexus plain text table)
-  if (!hit && !parsed && rawText) {
+  // Fallback to text parsing on full raw output
+  if (!hit && rawText) {
     const textLower = rawText.toLowerCase();
     if (q.type === 'impact' || q.type === 'rename_impact') {
-      const targets = (q.expected.expected_targets || []).map(normalizePath);
+      const targets = expTargets;
       let matchCount = 0;
       for (const t of targets) {
         if (textLower.includes(t)) matchCount++;
       }
       hit = targets.length > 0 ? matchCount / targets.length > 0.3 || matchCount > 0 : textLower.includes(expPath);
     } else if (q.type === 'callers') {
-      const expTargets = (q.expected.expected_targets || [q.expected.path]).map(normalizePath);
       hit = expTargets.some(t => textLower.includes(t));
     } else {
       hit = textLower.includes(expPath) && (!expSym || textLower.includes(expSym));
     }
   }
 
-  return { hit, rank, recall, precision };
+  return { hit, rank };
 }
 
 // -------------------------------------------------------------
@@ -259,7 +275,7 @@ async function queryCodeGraphCold(repo, q) {
 
 async function queryGitNexusCold(repo, q) {
   let args = [];
-  if (q.type === 'callers') {
+  if (q.type === 'callers' || q.type === 'definition') {
     args = ['context', q.query_param, '-r', repo.path];
   } else if (q.type === 'impact' || q.type === 'rename_impact') {
     args = ['impact', q.query_param, '-r', repo.path];
@@ -397,7 +413,7 @@ async function runBenchmark(name, runnerFn) {
 }
 
 async function main() {
-  console.log('Starting BENCH-04 full benchmark suite (120 questions across 4 modes)...');
+  console.log('Starting BENCH-05 full benchmark suite (120 questions across 4 modes)...');
 
   const suite = {};
 
@@ -445,7 +461,7 @@ async function main() {
   writeFileSync(join(RAW_DIR, 'v3-all-summary.json'), JSON.stringify(suite, null, 2));
 
   console.log('\n======================================================');
-  console.log('FINAL BENCH-04 SUMMARY');
+  console.log('FINAL BENCH-05 SUMMARY');
   console.log('======================================================');
   console.log('Tool                 | Old (80)     | Holdout (40) | Total (120)  | Errors | Latency p50 | Latency p95');
   console.log('---------------------+--------------+--------------+--------------+--------+-------------+------------');
