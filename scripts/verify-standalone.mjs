@@ -254,22 +254,90 @@ try {
   await page.locator('.source-table, .source-lines, .source-line-row').first().waitFor()
   console.log('[Tier 3] Explorer and SourceView line highlighting passed cleanly.')
 
-  // ── Tier 4: Viewport, CSS Tokens & All 8 View Transitions ────────────
-  console.log('[Tier 4] Verifying viewport, CSS tokens, and transitions across all 8 views...')
-  // 4.1 CSS Design Tokens Validation
-  const cssTokens = await page.evaluate(() => {
-    const root = getComputedStyle(document.documentElement)
-    return {
-      bg: root.getPropertyValue('--bg').trim(),
-      panel: root.getPropertyValue('--panel').trim(),
-      mono: root.getPropertyValue('--mono').trim() || root.getPropertyValue('--font-mono').trim(),
+  // ── Tier 4: Viewport, CSS Tokens & All Current View Transitions ───────
+  console.log('[Tier 4] Verifying viewport, CSS tokens, and transitions across all views...')
+
+  // Helper to parse design tokens for dark and light themes from kit.css
+  function readThemeTokensFromKit() {
+    const kitCssPath = join(root, 'ui', 'src', 'styles', 'kit.css')
+    const css = readFileSync(kitCssPath, 'utf8')
+    const parseSection = (selector) => {
+      const idx = css.indexOf(selector)
+      if (idx === -1) return {}
+      const start = css.indexOf('{', idx)
+      const end = css.indexOf('}', start)
+      const block = css.slice(start + 1, end)
+      const tokens = {}
+      for (const line of block.split('\n')) {
+        const match = line.trim().match(/^--([a-z0-9-]+)\s*:\s*([^;]+);/i)
+        if (match) tokens[match[1]] = match[2].trim()
+      }
+      return tokens
     }
-  })
-  console.log(`[Tier 4 Tokens] Active: --bg '${cssTokens.bg}', --panel '${cssTokens.panel}'`)
-  const validDarkBg = ['#050706', '#070908', '#0b0c0e']
-  if (!validDarkBg.includes(cssTokens.bg.toLowerCase())) {
-    throw new Error(`CSS token validation failed: --bg '${cssTokens.bg}' is not in valid dark palette`)
+    return {
+      dark: parseSection(':root[data-theme="dark"]'),
+      light: parseSection(':root[data-theme="light"]'),
+    }
   }
+
+  // 4.1 CSS Design Tokens Validation (Active theme + switched theme from kit.css)
+  const kitThemes = readThemeTokensFromKit()
+  const readComputedTokens = async () => {
+    return await page.evaluate(() => {
+      const rootEl = document.documentElement
+      const comp = getComputedStyle(rootEl)
+      const dataTheme = rootEl.getAttribute('data-theme') || rootEl.dataset?.theme || ''
+      return {
+        theme: dataTheme,
+        bg: comp.getPropertyValue('--bg').trim(),
+        panel: comp.getPropertyValue('--panel').trim(),
+        mono: comp.getPropertyValue('--mono').trim() || comp.getPropertyValue('--font-mono').trim(),
+      }
+    })
+  }
+
+  // Verify active theme against its palette in kit.css
+  const initialTokens = await readComputedTokens()
+  const activeTheme = initialTokens.theme === 'light' ? 'light' : 'dark'
+  const expectedActive = kitThemes[activeTheme]
+  console.log(`[Tier 4 Tokens] Active theme '${activeTheme}': --bg '${initialTokens.bg}', --panel '${initialTokens.panel}'`)
+
+  if (!expectedActive || !expectedActive.bg) {
+    throw new Error(`CSS token validation failed: could not parse '${activeTheme}' theme from kit.css`)
+  }
+  if (initialTokens.bg.toLowerCase() !== expectedActive.bg.toLowerCase()) {
+    throw new Error(`CSS token validation failed: active --bg '${initialTokens.bg}' does not match kit.css ${activeTheme} palette '${expectedActive.bg}'`)
+  }
+  if (expectedActive.panel && initialTokens.panel.toLowerCase() !== expectedActive.panel.toLowerCase()) {
+    throw new Error(`CSS token validation failed: active --panel '${initialTokens.panel}' does not match kit.css ${activeTheme} palette '${expectedActive.panel}'`)
+  }
+
+  // Switch to the other theme and verify its tokens as well
+  const otherTheme = activeTheme === 'light' ? 'dark' : 'light'
+  await page.evaluate((t) => {
+    document.documentElement.dataset.theme = t
+  }, otherTheme)
+  await page.waitForTimeout(100)
+
+  const otherTokens = await readComputedTokens()
+  const expectedOther = kitThemes[otherTheme]
+  console.log(`[Tier 4 Tokens] Switched theme '${otherTheme}': --bg '${otherTokens.bg}', --panel '${otherTokens.panel}'`)
+
+  if (!expectedOther || !expectedOther.bg) {
+    throw new Error(`CSS token validation failed: could not parse '${otherTheme}' theme from kit.css`)
+  }
+  if (otherTokens.bg.toLowerCase() !== expectedOther.bg.toLowerCase()) {
+    throw new Error(`CSS token validation failed: switched --bg '${otherTokens.bg}' does not match kit.css ${otherTheme} palette '${expectedOther.bg}'`)
+  }
+  if (expectedOther.panel && otherTokens.panel.toLowerCase() !== expectedOther.panel.toLowerCase()) {
+    throw new Error(`CSS token validation failed: switched --panel '${otherTokens.panel}' does not match kit.css ${otherTheme} palette '${expectedOther.panel}'`)
+  }
+
+  // Restore the active theme
+  await page.evaluate((t) => {
+    document.documentElement.dataset.theme = t
+  }, activeTheme)
+  await page.waitForTimeout(100)
 
   // 4.2 Status Pill Validation
   const statusPills = page.locator('.pb-status')
@@ -286,27 +354,53 @@ try {
     console.warn('[Tier 4 Viewport Notice] scrollHeight exceeds windowHeight; verify viewport flex containment')
   }
 
-  // 4.4 View Transitions Across All 9 Views (Graph, Wissen, Explorer, Suche, Packs, City, Mesh, Queue, Roadmap)
+  // 4.4 View Transitions Across All Current Views (Briefing, Notizen, Graph, Suche, Dateien, Aufräumen, Kontext-Pakete, Aufgaben, Agenten-Netz, Code-Stadt)
+  const viewErrors = []
+  const pageErrorHandler = (err) => viewErrors.push(err.message)
+  page.on('pageerror', pageErrorHandler)
+
   const viewsToTest = [
-    { name: /Atlas|Graph/, selector: '.atlas-app, #stage, .pb-graph, .brain-view' },
-    { name: 'Wissen', selector: '.notes-workbench' },
-    { name: 'Explorer', selector: '.explorer-view' },
-    { name: 'Suche', selector: '.search-view' },
-    { name: 'Packs', selector: '.workbench-split, .context-packs' },
-    { name: 'City', selector: '.pb-city, #city, canvas' },
-    { name: 'Mesh', selector: '.pb-mesh, .mesh-view, .brain-view-mesh' },
-    { name: 'Queue', selector: '.queue-view, .brain-view-queue, .queue, .brain-empty' },
-    { name: 'Roadmap', selector: '.roadmap-view' },
+    { name: /Briefing/, label: 'Briefing', selector: '.briefing-view' },
+    { name: /Wissen|Notizen/, label: 'Notizen', selector: '.notes-workbench' },
+    { name: /Atlas|Graph/, label: 'Graph', selector: '.atlas-app, #stage, .pb-graph, .brain-view' },
+    { name: /Suche/, label: 'Suche', selector: '.search-view' },
+    { name: /Explorer|Dateien/, label: 'Dateien', selector: '.explorer-view' },
+    { name: /Hygiene|Aufräumen/, label: 'Aufräumen', selector: '.hygiene-view' },
+    { name: /Kontext-Pakete/, label: 'Kontext-Pakete', selector: '.workbench-split, .context-packs', agent: true },
+    { name: /Aufgaben/, label: 'Aufgaben', selector: '.queue-view, .brain-view-queue, .queue, .brain-empty', agent: true },
+    { name: /Agenten-Netz/, label: 'Agenten-Netz', selector: '.pb-mesh, .mesh-view, .brain-view-mesh', agent: true },
+    { name: /Code-Stadt/, label: 'Code-Stadt', selector: '.pb-city, #city, canvas', agent: true },
   ]
 
   for (const v of viewsToTest) {
-    const tab = page.locator('.pb-tabs').getByRole('button', { name: v.name })
-    if (await tab.count() > 0) {
-      await tab.click()
-      await page.locator(v.selector).first().waitFor({ timeout: 5000 })
+    if (v.agent) {
+      const agentGroup = page.locator('.pb-tab-group')
+      if (await agentGroup.count() > 0) {
+        await agentGroup.hover()
+      }
+      const item = page.locator('.pb-tab-group-menu').getByRole('button', { name: v.name })
+      if (await item.count() > 0) {
+        await item.first().click({ force: true })
+      } else {
+        throw new Error(`Tab for agent view ${v.label} not found in agent menu`)
+      }
+    } else {
+      const tab = page.locator('.pb-tabs').getByRole('button', { name: v.name })
+      if (await tab.count() > 0) {
+        await tab.first().click()
+      } else {
+        throw new Error(`Tab for main view ${v.label} not found`)
+      }
     }
+    await page.locator(v.selector).first().waitFor({ timeout: 5000 })
+    console.log(`[Tier 4 View Transition] View '${v.label}' rendered cleanly.`)
   }
-  console.log('[Tier 4] All 9 view transitions verified operational.')
+
+  page.off('pageerror', pageErrorHandler)
+  if (viewErrors.length > 0) {
+    throw new Error(`Browser errors occurred during view transitions: ${viewErrors.join('; ')}`)
+  }
+  console.log(`[Tier 4] All ${viewsToTest.length} view transitions verified operational.`)
 
   // The packed server must support real knowledge work, not merely serve a
   // graph shell: attach a local actor, find, read, save, then reject a stale
