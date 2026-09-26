@@ -2,9 +2,9 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
-import { fetchMesh, fetchMeshTimeline, getStoredToken } from '../ui/src/lib/brain-client.ts'
+import { fetchMesh, fetchMeshTimeline, getStoredToken } from './brain-client.ts'
 
-const UI_ROOT = join(import.meta.dirname, '..', 'ui', 'src')
+const UI_ROOT = join(import.meta.dirname, '..')
 
 const emptyMesh = {
   schema: 1,
