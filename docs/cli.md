@@ -531,6 +531,6 @@ plugbrain swarm <subcommand> [args]
 
 **Example:**
 ```bash
-plugbrain swarm turn worker-1 start
+plugbrain swarm turn agent-1 start
 plugbrain swarm board
 ```

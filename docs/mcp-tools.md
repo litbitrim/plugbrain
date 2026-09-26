@@ -738,7 +738,7 @@ Acquire a mutual-exclusion lease on workspace paths or symbols with time-to-live
 {
   "name": "claim",
   "arguments": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "taskId": "TASK-DOCS",
     "paths": ["docs/mcp-tools.md"]
   }
@@ -751,7 +751,7 @@ Acquire a mutual-exclusion lease on workspace paths or symbols with time-to-live
   "ok": true,
   "lease": {
     "id": "lease-12345",
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "taskId": "TASK-DOCS",
     "paths": ["docs/mcp-tools.md"],
     "symbols": [],
@@ -778,7 +778,7 @@ Release an existing lease held by an agent.
 {
   "name": "release",
   "arguments": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "leaseId": "lease-12345"
   }
 }
@@ -847,7 +847,7 @@ Retrieve messages for an agent with optional long-polling wait.
 {
   "name": "inbox_read",
   "arguments": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "unreadOnly": true
   }
 }
@@ -889,7 +889,7 @@ Send a peer message to an agent inbox or broadcast to a mission topic channel.
 {
   "name": "message_send",
   "arguments": {
-    "fromAgent": "worker-1",
+    "fromAgent": "agent-1",
     "toAgent": "integrator",
     "subject": "review ready",
     "body": "Completed docs/mcp-tools.md."
@@ -903,7 +903,7 @@ Send a peer message to an agent inbox or broadcast to a mission topic channel.
   "ok": true,
   "message": {
     "id": "msg-988",
-    "fromAgent": "worker-1",
+    "fromAgent": "agent-1",
     "toAgent": "integrator",
     "channel": null,
     "subject": "review ready",
@@ -927,7 +927,7 @@ Maintain agent presence and renew active lease expirations.
 {
   "name": "heartbeat",
   "arguments": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "taskId": "TASK-DOCS"
   }
 }
@@ -937,7 +937,7 @@ Maintain agent presence and renew active lease expirations.
 ```json
 {
   "ok": true,
-  "agentId": "worker-1",
+  "agentId": "agent-1",
   "lastSeen": "2026-09-26T08:25:00.000Z",
   "renewedLeases": 1
 }
@@ -961,7 +961,7 @@ Turn boundary checkpoint: check in at turn start or submit a turn summary at tur
 {
   "name": "swarm_turn",
   "arguments": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "phase": "end",
     "state": "awaiting-commit",
     "summary": "Completed docs/mcp-tools.md reference"
@@ -974,7 +974,7 @@ Turn boundary checkpoint: check in at turn start or submit a turn summary at tur
 {
   "ok": true,
   "ping": {
-    "agentId": "worker-1",
+    "agentId": "agent-1",
     "phase": "end",
     "state": "awaiting-commit",
     "unreadCount": 0,
@@ -1009,7 +1009,7 @@ Fleet overview showing every worker's status, unread messages, active leases, wo
   "board": {
     "workers": [
       {
-        "agentId": "worker-1",
+        "agentId": "agent-1",
         "surface": "cli",
         "state": "working",
         "unreadMessages": 0,

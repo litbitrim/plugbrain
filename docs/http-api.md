@@ -45,11 +45,18 @@ When the SQLite database is currently locked by a background indexer run, store-
 ```json
 {
   "ok": false,
-  "error": "store is busy: indexer is running",
-  "holder": "index-run-worker",
-  "progress": { "filesDone": 120, "filesTotal": 450 }
+  "status": "busy",
+  "busy": true,
+  "jobId": "run-3f9c2a7b1d04",
+  "runningSince": "2026-09-26T14:02:11.000Z",
+  "workspace": "ws-1a2b3c4d5e6f",
+  "reason": "an index run for ws-1a2b3c4d5e6f is already in progress (phase write, 120/450 files, job run-3f9c2a7b1d04); this request would wait for that run's writer lock",
+  "progress": { "jobId": "run-3f9c2a7b1d04", "phase": "write", "processed": 120, "total": 450, "fraction": 0.27 },
+  "retryAfterMs": 1000
 }
 ```
+
+`progress` carries more counters than shown here (`scanned`, `symbols`, `edges`, `generation`, …). Retry after `retryAfterMs`.
 
 ### The `unavailable` Invariant
 Whenever an endpoint reports system measurements, environment scans, or multi-repo states (e.g., `/api/ask`, `/api/hygiene`, `/api/machine`, `/api/repos`), the response **always** contains an `unavailable` field of type `string[]`.
