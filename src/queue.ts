@@ -21,6 +21,7 @@
 import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from './access.ts'
+import { rowAs, rowsAs } from './store/rows.ts'
 
 export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled'
 
@@ -67,7 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state
 export function ensureQueueSchema(db: DatabaseSync): void { db.exec(SCHEMA) }
 
 const load = (db: DatabaseSync, id: string): QueueTask => {
-  const row = db.prepare('SELECT * FROM queue_tasks WHERE id = ?').get(id) as QueueTask | undefined
+  const row = rowAs<QueueTask>(db.prepare('SELECT * FROM queue_tasks WHERE id = ?').get(id))
   if (!row) throw new AccessDenied(`unknown task: ${id}`)
   return row
 }
@@ -207,9 +208,9 @@ export function listQueue(
   requireWorkspace(db, workspaceId)
   const threshold = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS
   const now = Date.now()
-  const rows = db.prepare(
+  const rows = rowsAs<QueueRow>(db.prepare(
     `SELECT * FROM queue_tasks WHERE workspace_id = ? ORDER BY created_at ASC`,
-  ).all(workspaceId) as unknown as QueueTask[]
+  ).all(workspaceId))
 
   return rows.map(row => {
     const at = row.claimed_at === null ? null : Date.parse(row.claimed_at)

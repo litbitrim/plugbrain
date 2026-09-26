@@ -19,8 +19,9 @@ import { execFileSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { requireAgent, requireWorkspace } from './access.ts'
+import { rowAs, rowsAs } from './store/rows.ts'
 
 export type MissionState =
   | 'draft' | 'running' | 'review' | 'repair' | 'committed' | 'verified' | 'merged' | 'abandoned'
@@ -76,14 +77,14 @@ export interface Mission {
 export function ensureMissionSchema(db: DatabaseSync): void { db.exec(SCHEMA) }
 
 const load = (db: DatabaseSync, id: string): Mission => {
-  const row = db.prepare('SELECT * FROM missions WHERE id = ?').get(id) as Mission | undefined
+  const row = rowAs<Mission>(db.prepare('SELECT * FROM missions WHERE id = ?').get(id))
   if (!row) throw new MissionError(`unknown mission: ${id}`)
   return row
 }
 
 const touch = (db: DatabaseSync, id: string, state: MissionState, extra: Record<string, string> = {}): void => {
   const sets = ['state = ?', 'updated_at = ?']
-  const values: unknown[] = [state, new Date().toISOString()]
+  const values: SQLInputValue[] = [state, new Date().toISOString()]
   for (const [column, value] of Object.entries(extra)) { sets.push(`${column} = ?`); values.push(value) }
   db.prepare(`UPDATE missions SET ${sets.join(', ')} WHERE id = ?`).run(...values, id)
 }
@@ -233,8 +234,8 @@ export function closeMission(db: DatabaseSync, missionId: string): void {
 
 export function listMissions(db: DatabaseSync, workspaceId: string): (Mission & { gates: unknown[] })[] {
   ensureMissionSchema(db)
-  const rows = db.prepare(
-    'SELECT * FROM missions WHERE workspace_id = ? ORDER BY created_at DESC').all(workspaceId) as Mission[]
+  const rows = rowsAs<Mission>(db.prepare(
+    'SELECT * FROM missions WHERE workspace_id = ? ORDER BY created_at DESC').all(workspaceId))
   return rows.map(m => ({
     ...m,
     gates: db.prepare(

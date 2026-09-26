@@ -18,6 +18,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { evaluateClaim, type ConflictVerdict } from './projections/conflicts.ts'
 import { checkWriteFencing } from './coord/leases.ts'
 import { ownerOf } from './indexer/index.ts'
+import { rowAs } from './store/rows.ts'
 import { searchWorkspace } from './store/search.ts'
 import type { Action } from './store/schema.ts'
 
@@ -50,8 +51,7 @@ export class WriteConflictError extends AccessDenied {
 /** Look up a registered workspace, or throw — an unregistered folder is not reachable. */
 export function requireWorkspace(db: DatabaseSync, workspaceId: string): Workspace {
   if (!workspaceId || typeof workspaceId !== 'string') throw new AccessDenied(`invalid workspace: ${workspaceId}`)
-  const row = db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').get(workspaceId) as
-    Workspace | undefined
+  const row = rowAs<Workspace>(db.prepare('SELECT id, name, root FROM workspaces WHERE id = ?').get(workspaceId))
   if (!row) throw new AccessDenied(`unknown workspace: ${workspaceId}`)
   return row
 }
@@ -63,8 +63,7 @@ export function requireWorkspace(db: DatabaseSync, workspaceId: string): Workspa
  */
 export function requireAgent(db: DatabaseSync, agentId: string): AgentIdentity {
   if (!agentId || typeof agentId !== 'string') throw new AccessDenied(`invalid agentId: ${agentId}`)
-  const existing = db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId) as
-    AgentIdentity | undefined
+  const existing = rowAs<AgentIdentity>(db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId))
   if (!existing) throw new AccessDenied(`unknown or unauthorized agent: ${agentId}`)
   const now = new Date().toISOString()
   db.prepare('UPDATE agents SET last_seen = ? WHERE id = ?').run(now, agentId)
@@ -79,8 +78,7 @@ export function requireAgent(db: DatabaseSync, agentId: string): AgentIdentity {
 export function registerAgent(db: DatabaseSync, agentId: string, name?: string): AgentIdentity {
   if (!agentId || typeof agentId !== 'string') throw new AccessDenied(`invalid agentId: ${agentId}`)
   const now = new Date().toISOString()
-  const existing = db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId) as
-    AgentIdentity | undefined
+  const existing = rowAs<AgentIdentity>(db.prepare('SELECT id, name, color, hue FROM agents WHERE id = ?').get(agentId))
   if (existing) {
     db.prepare('UPDATE agents SET last_seen = ? WHERE id = ?').run(now, agentId)
     return existing
