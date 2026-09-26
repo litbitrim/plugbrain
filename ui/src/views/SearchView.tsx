@@ -55,7 +55,7 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
       }
     }
     navigator.clipboard.writeText(md).then(() => {
-      setSearchCopyFeedback('✓ Suchergebnisse als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
+      setSearchCopyFeedback('Suchergebnisse als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
       setTimeout(() => setSearchCopyFeedback(''), 3000)
     }).catch(() => {
       setSearchCopyFeedback('Fehler beim Kopieren in die Zwischenablage')
@@ -276,7 +276,7 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
                 title="Alle Suchtreffer als Markdown-Kontext kopieren"
                 style={{ fontSize: '11px', padding: '4px 10px' }}
               >
-                📋 Als Kontext kopieren
+                Als Kontext kopieren
               </button>
             )}
           </div>

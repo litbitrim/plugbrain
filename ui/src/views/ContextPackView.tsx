@@ -98,7 +98,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
       textToCopy = `# Kontext-Paket für Agenten / LLM\nZiel: ${goal}\nWorkspace-ID: ${workspaceId}\nVersion: ${pack.version}\nQuellen: ${pack.sources}\n\n${pack.body}`
     }
     navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopyFeedback('✓ Als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
+      setCopyFeedback('Als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
       setTimeout(() => setCopyFeedback(''), 3000)
     }).catch(() => {
       setCopyFeedback('Fehler beim Kopieren in die Zwischenablage')
@@ -163,7 +163,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
                   aria-label="Als Kontext kopieren"
                   style={{ fontSize: '12px', padding: '6px 14px' }}
                 >
-                  📋 Als Kontext kopieren
+                  Als Kontext kopieren
                 </button>
                 <div className="pack-card__staleness">
                   {stalenessLoading ? (

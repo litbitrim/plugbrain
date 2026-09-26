@@ -214,7 +214,7 @@ export default function CityView({
                 style={{ marginTop: '10px', marginBottom: '14px', width: '100%', padding: '8px 12px' }}
                 onClick={() => onSelectFile(sel.path)}
               >
-                📄 Datei in Quellansicht öffnen
+                Datei in Quellansicht öffnen
               </button>
             )}
             <dl>

@@ -25,7 +25,7 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
     color: 'var(--info)',
     border: 'var(--info)',
     bg: 'color-mix(in srgb, var(--info) 8%, transparent)',
-    glyph: 'ℹ️',
+    glyph: '[i]',
   },
   important: {
     type: 'important',
@@ -33,7 +33,7 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
     color: 'var(--accent)',
     border: 'var(--accent)',
     bg: 'var(--accent-soft)',
-    glyph: '📌',
+    glyph: '[!]',
   },
   warning: {
     type: 'warning',
@@ -41,7 +41,7 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
     color: 'var(--warn)',
     border: 'var(--warn)',
     bg: 'color-mix(in srgb, var(--warn) 8%, transparent)',
-    glyph: '⚠️',
+    glyph: '[!]',
   },
   tip: {
     type: 'tip',
@@ -49,7 +49,7 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
     color: 'var(--pos)',
     border: 'var(--pos)',
     bg: 'var(--accent-soft)',
-    glyph: '💡',
+    glyph: '[*]',
   },
   caution: {
     type: 'caution',
@@ -57,7 +57,7 @@ const CALLOUT_MAP: Record<CalloutType, CalloutMeta> = {
     color: 'var(--neg)',
     border: 'var(--neg)',
     bg: 'color-mix(in srgb, var(--neg) 8%, transparent)',
-    glyph: '🛑',
+    glyph: '[!]',
   },
 }
 
@@ -165,7 +165,7 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
       <div className="md-code-header">
         <span className="md-code-lang">{language || 'text'}</span>
         <button type="button" className="md-code-copy" onClick={handleCopy}>
-          {copied ? '✓ Kopiert' : 'Kopieren'}
+          {copied ? 'Kopiert' : 'Kopieren'}
         </button>
       </div>
       <pre className="md-code-pre">

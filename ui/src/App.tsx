@@ -669,7 +669,7 @@ export default function App() {
                     </button>
                   ))}
                   <button type="button" className="pb-tab-menu-item" onClick={() => { setAskModalOpen(true); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
-                    💬 Frag das Projekt (Strg+K)
+                    Frag das Projekt (Strg+K)
                   </button>
                </div>
             </div>
