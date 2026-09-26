@@ -3,30 +3,64 @@ import {
   searchAgent, searchNoteText, queryNotes,
   type SearchHit, type NoteQueryResult, type NoteTextHit,
 } from '../lib/brain-client'
+import { Icon, ICON } from '../ui/Icon'
 
 interface SearchViewProps {
   workspaceId: string
   onSelectHit: (path: string, line?: number | null) => void
 }
 
-type SearchMode = 'code' | 'notes' | 'prose'
+type SearchMode = 'all' | 'code' | 'notes' | 'prose'
+
+interface UnifiedHit {
+  id: string
+  type: 'code' | 'note'
+  name: string
+  kind: string
+  path: string
+  line: number | null
+  snippet?: string | null
+  stand?: string | null
+}
 
 export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps) {
-  // A search is worth linking to: `?view=search&mode=prose&q=…` is a link a
-  // person can send to a colleague, and it opens the same search they ran.
   const [mode, setMode] = useState<SearchMode>(() => {
     const wanted = new URLSearchParams(window.location.search).get('mode')
-    return wanted === 'notes' || wanted === 'prose' ? wanted : 'code'
+    if (wanted === 'code' || wanted === 'notes' || wanted === 'prose') return wanted
+    return 'all'
   })
   const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') || '')
-  const [hits, setHits] = useState<SearchHit[]>([])
+  const [unifiedHits, setUnifiedHits] = useState<UnifiedHit[]>([])
   const [noteHits, setNoteHits] = useState<NoteQueryResult['notes']>([])
-  const [proseHits, setProseHits] = useState<NoteTextHit[]>([])
-  const [proseTotal, setProseTotal] = useState(0)
   const [elapsedMs, setElapsedMs] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchedQuery, setSearchedQuery] = useState('')
+  const [searchCopyFeedback, setSearchCopyFeedback] = useState('')
+
+  const handleCopySearchContext = () => {
+    let md = `# Suchtreffer-Kontext: "${searchedQuery}"\nWorkspace: ${workspaceId}\n\n`
+    if (mode === 'notes') {
+      md += `Gefundene Notizen (${noteHits.length}):\n`
+      for (const n of noteHits) {
+        md += `- **${n.title}** (\`${n.path}\`)${n.stand ? ` [${n.stand}]` : ''}\n`
+      }
+    } else {
+      md += `Gefundene Treffer (${unifiedHits.length}):\n`
+      for (const h of unifiedHits) {
+        md += `- **${h.name}** (${h.kind}) — \`${h.path}${h.line ? `:${h.line}` : ''}\`\n`
+        if (h.snippet) {
+          md += `  > ${h.snippet.replace(/\n/g, ' ')}\n`
+        }
+      }
+    }
+    navigator.clipboard.writeText(md).then(() => {
+      setSearchCopyFeedback('Suchergebnisse als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
+      setTimeout(() => setSearchCopyFeedback(''), 3000)
+    }).catch(() => {
+      setSearchCopyFeedback('Fehler beim Kopieren in die Zwischenablage')
+    })
+  }
 
   const handleSearch = async (e?: React.FormEvent, overrideQ?: string, overrideMode?: SearchMode) => {
     if (e) e.preventDefault()
@@ -39,30 +73,73 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
     setElapsedMs(null)
     const started = performance.now()
     try {
-      if (activeMode === 'code') {
-        const results = await searchAgent(workspaceId, q)
-        setHits(results)
+      if (activeMode === 'all') {
+        const [codeResults, noteResults] = await Promise.allSettled([
+          searchAgent(workspaceId, q),
+          searchNoteText(workspaceId, q),
+        ])
+        const list: UnifiedHit[] = []
+        if (codeResults.status === 'fulfilled') {
+          for (const c of codeResults.value) {
+            list.push({
+              id: `code-${c.path}-${c.name}-${c.line ?? 0}`,
+              type: 'code',
+              name: c.name,
+              kind: c.kind,
+              path: c.path,
+              line: c.line,
+            })
+          }
+        }
+        if (noteResults.status === 'fulfilled') {
+          for (const n of noteResults.value.hits || []) {
+            list.push({
+              id: `note-${n.path}-${n.line ?? 0}`,
+              type: 'note',
+              name: n.title,
+              kind: 'Notiz',
+              path: n.path,
+              line: n.line,
+              snippet: n.snippet,
+            })
+          }
+        }
+        setUnifiedHits(list)
         setNoteHits([])
-        setProseHits([])
+      } else if (activeMode === 'code') {
+        const results = await searchAgent(workspaceId, q)
+        setUnifiedHits(results.map((c, i) => ({
+          id: `code-${c.path}-${c.name}-${c.line ?? i}`,
+          type: 'code',
+          name: c.name,
+          kind: c.kind,
+          path: c.path,
+          line: c.line,
+        })))
+        setNoteHits([])
       } else if (activeMode === 'prose') {
         const result = await searchNoteText(workspaceId, q)
-        setProseHits(result.hits || [])
-        setProseTotal(result.total ?? 0)
-        setHits([])
+        setUnifiedHits((result.hits || []).map((n, i) => ({
+          id: `note-${n.path}-${n.line ?? i}`,
+          type: 'note',
+          name: n.title,
+          kind: 'Notiz',
+          path: n.path,
+          line: n.line,
+          snippet: n.snippet,
+        })))
         setNoteHits([])
       } else {
         const noteResult = await queryNotes(workspaceId, q)
         setNoteHits(noteResult.notes || [])
-        setHits([])
-        setProseHits([])
+        setUnifiedHits([])
       }
       setElapsedMs(Math.round(performance.now() - started))
       setSearchedQuery(q)
     } catch (err: any) {
       setError(err?.message || `Fehler bei der Suche (${activeMode})`)
-      setHits([])
+      setUnifiedHits([])
       setNoteHits([])
-      setProseHits([])
     } finally {
       setLoading(false)
     }
@@ -80,18 +157,32 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
     <div className="search-view">
       <div className="search-view__header">
         <div className="search-view__title">
-          <span className="search-view__icon">🔍</span>
+          <Icon path={ICON.search} />
           <strong>
-            {mode === 'code' ? 'Agent Code- & Symbolsuche'
-              : mode === 'prose' ? 'Notiz-Volltextsuche' : 'Notizen- & Property-Abfrage'}
+            {mode === 'all' ? 'Suche über Notizen & Code'
+              : mode === 'code' ? 'Code- & Symbolsuche'
+              : mode === 'prose' ? 'Notiz-Volltextsuche'
+              : 'Notizen- & Property-Filter'}
           </strong>
           <span className="search-view__endpoint mono">
-            {mode === 'code' ? '/api/agent/search'
-              : mode === 'prose' ? '/api/notes/search' : '/api/notes/query'}
+            {mode === 'all' ? 'Notizen + Code'
+              : mode === 'code' ? '/api/agent/search'
+              : mode === 'prose' ? '/api/notes/search'
+              : '/api/notes/query'}
           </span>
         </div>
 
         <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+          <button
+            type="button"
+            className={`tb ${mode === 'all' ? 'on' : ''}`}
+            onClick={() => {
+              setMode('all')
+              if (query.trim()) handleSearch(undefined, query, 'all')
+            }}
+          >
+            Alle
+          </button>
           <button
             type="button"
             className={`tb ${mode === 'code' ? 'on' : ''}`}
@@ -100,29 +191,29 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
               if (query.trim()) handleSearch(undefined, query, 'code')
             }}
           >
-            Code & Symbole
-          </button>
-          <button
-            type="button"
-            className={`tb ${mode === 'notes' ? 'on' : ''}`}
-            onClick={() => {
-              setMode('notes')
-              if (!query.trim()) setQuery('typ=gate UND stand=offen')
-              handleSearch(undefined, query.trim() || 'typ=gate UND stand=offen', 'notes')
-            }}
-          >
-            Notizen & Properties (Bases)
+            Code &amp; Symbole
           </button>
           <button
             type="button"
             className={`tb ${mode === 'prose' ? 'on' : ''}`}
             onClick={() => {
               setMode('prose')
-              if (!query.trim()) setQuery('Gateway Owner')
-              handleSearch(undefined, query.trim() || 'Gateway Owner', 'prose')
+              if (query.trim()) handleSearch(undefined, query, 'prose')
             }}
           >
-            Notiz-Volltext
+            Notizen-Volltext
+          </button>
+          <button
+            type="button"
+            className={`tb ${mode === 'notes' ? 'on' : ''}`}
+            onClick={() => {
+              setMode('notes')
+              const q = query.trim() || 'typ=gate UND stand=offen'
+              setQuery(q)
+              handleSearch(undefined, q, 'notes')
+            }}
+          >
+            Properties (Bases)
           </button>
         </div>
       </div>
@@ -133,17 +224,19 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
             type="search"
             className="search-input"
             placeholder={
-              mode === 'code'
-                ? 'Symbol, Variable, Klasse, Datei (z. B. authKey) …'
-                : mode === 'prose'
-                  ? 'Satz oder Stichwörter aus dem Notiztext (z. B. Gateway Owner) …'
-                  : 'Bases-Filter: typ=gate UND stand=offen oder typ=mission …'
+              mode === 'all'
+                ? 'Symbol, Datei oder Notiztext (z. B. workspaceIdFor, Brain) …'
+                : mode === 'code'
+                  ? 'Symbol, Variable, Klasse, Datei (z. B. authKey) …'
+                  : mode === 'prose'
+                    ? 'Satz oder Stichwörter aus dem Notiztext …'
+                    : 'Bases-Filter: typ=gate UND stand=offen …'
             }
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoFocus
           />
-          <button type="submit" className="search-submit-btn" disabled={loading || !query.trim()}>
+          <button type="submit" className="search-submit-btn pb-button pb-button--primary" disabled={loading || !query.trim()}>
             {loading ? 'Suche …' : 'Suchen'}
           </button>
         </div>
@@ -151,77 +244,60 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
 
       {error && (
         <div className="search-error-alert" role="alert">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
       <div className="search-results">
         {searchedQuery && (
-          <div className="search-results-summary">
-            {mode === 'code' ? (
-              hits.length === 0
-                ? `Keine Code-Treffer für "${searchedQuery}" im Brain-Index`
-                : `${hits.length} Treffer für "${searchedQuery}":`
-            ) : mode === 'prose' ? (
-              proseHits.length === 0
-                ? `Kein Notiztext enthält "${searchedQuery}"`
-                : `${proseTotal} Notiz(en) im Text, ${proseHits.length} angezeigt`
-            ) : (
-              noteHits.length === 0
-                ? `Keine Notizen entsprechen dem Filter "${searchedQuery}"`
-                : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
-            )}
-            {elapsedMs !== null && (
-              <span className="search-results-time mono" style={{ marginLeft: '8px', opacity: .7 }}>
-                {elapsedMs} ms
-              </span>
+          <div className="search-results-summary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              {mode === 'notes' ? (
+                noteHits.length === 0
+                  ? `Keine Notizen entsprechen dem Filter "${searchedQuery}"`
+                  : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
+              ) : (
+                unifiedHits.length === 0
+                  ? `Keine Treffer für "${searchedQuery}" im Brain-Index`
+                  : `${unifiedHits.length} Treffer für "${searchedQuery}":`
+              )}
+              {elapsedMs !== null && (
+                <span className="search-results-time mono" style={{ marginLeft: '8px', opacity: .7 }}>
+                  {elapsedMs} ms
+                </span>
+              )}
+            </div>
+
+            {((mode === 'notes' && noteHits.length > 0) || (mode !== 'notes' && unifiedHits.length > 0)) && (
+              <button
+                type="button"
+                className="pb-button pb-button--secondary"
+                onClick={() => handleCopySearchContext()}
+                title="Alle Suchtreffer als Markdown-Kontext kopieren"
+                style={{ fontSize: '11px', padding: '4px 10px' }}
+              >
+                Als Kontext kopieren
+              </button>
             )}
           </div>
         )}
 
-        {mode === 'code' ? (
-          <div className="search-hits-list">
-            {hits.map((hit, idx) => (
-              <div
-                key={`${hit.path}-${hit.name}-${hit.line ?? idx}`}
-                className="search-hit-card"
-                onClick={() => onSelectHit(hit.path, hit.line)}
-              >
-                <div className="search-hit-card__head">
-                  <span className="search-hit-name mono">{hit.name}</span>
-                  <span className={`search-hit-kind search-hit-kind--${hit.kind}`}>{hit.kind}</span>
-                  {hit.line !== null && (
-                    <span className="search-hit-line mono">Zeile {hit.line}</span>
-                  )}
-                </div>
-                <div className="search-hit-path mono" title={hit.path}>
-                  📄 {hit.path}
-                </div>
-              </div>
-            ))}
+        {searchCopyFeedback && (
+          <div style={{
+            margin: '8px 0',
+            padding: '6px 12px',
+            background: 'var(--accent-soft)',
+            border: '1px solid var(--pos)',
+            borderRadius: 'var(--r)',
+            fontSize: '12px',
+            color: 'var(--ink)',
+            fontFamily: 'var(--mono)',
+          }}>
+            {searchCopyFeedback}
           </div>
-        ) : mode === 'prose' ? (
-          <div className="search-hits-list">
-            {proseHits.map(hit => (
-              <div
-                key={`${hit.path}-${hit.line ?? 0}`}
-                className="search-hit-card"
-                onClick={() => onSelectHit(hit.path, hit.line)}
-              >
-                <div className="search-hit-card__head">
-                  <span className="search-hit-name">{hit.title}</span>
-                  {hit.line !== null && (
-                    <span className="search-hit-line mono">Zeile {hit.line}</span>
-                  )}
-                </div>
-                {hit.snippet && <div className="search-hit-snippet">{hit.snippet}</div>}
-                <div className="search-hit-path mono" title={hit.path} style={{ marginTop: '4px' }}>
-                  📝 {hit.path}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
+        )}
+
+        {mode === 'notes' ? (
           <div className="search-hits-list">
             {noteHits.map(note => (
               <div
@@ -239,13 +315,35 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
                   )}
                 </div>
                 <div className="search-hit-path mono" title={note.path} style={{ marginTop: '4px' }}>
-                  📝 {note.path}
+                  {note.path}
                 </div>
                 {(note.inLinks !== undefined || note.outLinks !== undefined) && (
                   <div style={{ fontSize: '11px', color: 'var(--faint)', marginTop: '4px' }}>
                     Verlinkungen: → {note.outLinks ?? 0} ausgehend · ← {note.inLinks ?? 0} Rückverweise
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="search-hits-list">
+            {unifiedHits.map(hit => (
+              <div
+                key={hit.id}
+                className="search-hit-card"
+                onClick={() => onSelectHit(hit.path, hit.line)}
+              >
+                <div className="search-hit-card__head">
+                  <span className="search-hit-name mono">{hit.name}</span>
+                  <span className={`search-hit-kind search-hit-kind--${hit.kind.toLowerCase()}`}>{hit.kind}</span>
+                  {hit.line !== null && (
+                    <span className="search-hit-line mono">Zeile {hit.line}</span>
+                  )}
+                </div>
+                {hit.snippet && <div className="search-hit-snippet">{hit.snippet}</div>}
+                <div className="search-hit-path mono" title={hit.path} style={{ marginTop: '4px' }}>
+                  {hit.path}
+                </div>
               </div>
             ))}
           </div>

@@ -17,22 +17,32 @@ import SearchView from './views/SearchView'
 import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
+import BriefingView from './views/BriefingView'
+import HygieneView from './views/HygieneView'
+import AskModal from './components/AskModal'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
-const VIEWS: { id: ViewId; label: string; hint: string }[] = [
-  { id: 'atlas', label: 'Atlas', hint: 'Wissensgraph der indexierten Objekte' },
-  { id: 'notes', label: 'Wissen', hint: 'Notizen, Links, Backlinks, Tags und Anhänge' },
-  { id: 'explorer', label: 'Explorer', hint: 'Echter Quellbaum aus dem Brain' },
-  { id: 'search', label: 'Suche', hint: 'Code- & Symbolsuche über /api/agent/search' },
-  { id: 'packs', label: 'Packs', hint: 'Context-Pack-Inspector' },
-  { id: 'city', label: 'City', hint: 'Workspaces als Distrikte, Objekte als Gebäude' },
-  { id: 'mesh', label: 'Mesh', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
-  { id: 'queue', label: 'Queue', hint: 'Wartende Arbeit; der erste freie Agent nimmt sie' },
+const MAIN_VIEWS: { id: ViewId; label: string; testName?: string; hint: string }[] = [
+  { id: 'briefing', label: 'Briefing', testName: 'Briefing', hint: 'Projekt-Briefing: Zusammenfassung, Kennzahlen, Hotspots' },
+  { id: 'notes', label: 'Notizen', testName: 'Wissen', hint: 'Notizen lesen, schreiben und verknüpfen' },
+  { id: 'atlas', label: 'Graph', testName: 'Atlas', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
+  { id: 'search', label: 'Suche', hint: 'Code und Notizen durchsuchen' },
+  { id: 'explorer', label: 'Dateien', testName: 'Explorer', hint: 'Quelldateien mit echtem Inhalt und Zeilennummern' },
+  { id: 'hygiene', label: 'Aufräumen', testName: 'Hygiene', hint: 'Checkouts, ungepushte Branches und ungesicherte Arbeit auf einen Blick' },
 ]
+
+const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
+  { id: 'packs', label: 'Kontext-Pakete', hint: 'Context-Packs für Agenten-Aufgaben zusammenstellen' },
+  { id: 'queue', label: 'Aufgaben', hint: 'Wartende Aufgaben; der nächste freie Agent nimmt sie' },
+  { id: 'mesh', label: 'Agenten-Netz', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
+  { id: 'city', label: 'Code-Stadt', hint: 'Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude' },
+]
+
+const VIEWS = [...MAIN_VIEWS, ...AGENT_VIEWS]
 
 const shortLabel = folderName
 const SNAPSHOT_FILE_LIMIT = 2000
@@ -41,7 +51,7 @@ function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
   const stored = (() => { try { return localStorage.getItem('plugbrain.view') } catch { return null } })()
   const candidate = fromUrl || stored
-  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'atlas'
+  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'briefing'
 }
 
 function initialWorkspace(): string {
@@ -90,6 +100,35 @@ export default function App() {
   const [selectedRevision, setSelectedRevision] = useState<string | null>(null)
   const [meshFocusAgent, setMeshFocusAgent] = useState<string | null>(null)
 
+  // Settings & Theme state
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsTab, setSettingsTab] = useState<'appearance' | 'vaults' | 'repos' | 'shortcuts' | 'advanced'>('appearance')
+  const [theme, setTheme] = useState<'dark' | 'light' | 'system'>(() => {
+    try {
+      const saved = localStorage.getItem('plugbrain.theme')
+      if (saved === 'dark' || saved === 'light' || saved === 'system') return saved
+    } catch {}
+    return 'system'
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('plugbrain.theme', theme) } catch {}
+    const applyTheme = (t: 'dark' | 'light' | 'system') => {
+      let resolved = t
+      if (t === 'system') {
+        resolved = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+      }
+      document.documentElement.dataset.theme = resolved
+    }
+    applyTheme(theme)
+    if (theme === 'system' && typeof window !== 'undefined' && window.matchMedia) {
+      const mq = window.matchMedia('(prefers-color-scheme: light)')
+      const listener = () => applyTheme('system')
+      mq.addEventListener('change', listener)
+      return () => mq.removeEventListener('change', listener)
+    }
+  }, [theme])
+
   // Token Modal state
   const [tokenModalOpen, setTokenModalOpen] = useState(false)
   const [tokenInput, setTokenInput] = useState(getStoredToken())
@@ -100,16 +139,27 @@ export default function App() {
   const [selectionBusy, setSelectionBusy] = useState(false)
   const [selectionError, setSelectionError] = useState('')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [askModalOpen, setAskModalOpen] = useState(false)
+  const [askInitialQuery, setAskInitialQuery] = useState('')
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       const target = event.target as HTMLElement | null
       if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
-      if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setAskModalOpen(true)
+      } else if (event.key === '/' && !event.shiftKey) {
+        event.preventDefault()
+        setAskModalOpen(true)
+      } else if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
         event.preventDefault(); setShortcutsOpen(true)
       } else if (event.key === 'Escape') {
         setShortcutsOpen(false)
-      } else if (event.key.toLowerCase() === 'o') {
+        setSettingsOpen(false)
+        setSelectionModalOpen(false)
+        setAskModalOpen(false)
+      } else if (event.key.toLowerCase() === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault(); setVaultOpen(true)
       }
     }
@@ -215,9 +265,17 @@ export default function App() {
       setVaultPath('')
       setVaultOpen(false)
       applyWorkspace(id)
+      setView('notes')
       setAttempt(a => a + 1)
     } catch (cause) {
-      setVaultError(cause instanceof Error ? cause.message : String(cause))
+      const raw = cause instanceof Error ? cause.message : String(cause)
+      let msg = raw
+      if (/ENOENT|not found|nicht gefunden/i.test(raw)) {
+        msg = `Ordner nicht gefunden oder nicht lesbar: "${root}". Bitte überprüfe den Pfad.`
+      } else if (/fetch|network|connection refused|econnrefused/i.test(raw)) {
+        msg = 'Brain-Kern nicht erreichbar. Bitte prüfe, ob "plugbrain serve" im Terminal läuft.'
+      }
+      setVaultError(msg)
     } finally {
       setVaultBusy(false)
       setVaultProgress('')
@@ -277,7 +335,7 @@ export default function App() {
     setTokenModalOpen(false)
   }
 
-  const openSelection = async (): Promise<void> => {
+  const openSelection = async (showModal = false): Promise<void> => {
     if (!workspaceId || selectionBusy) return
     setSelectionBusy(true)
     setSelectionError('')
@@ -287,10 +345,10 @@ export default function App() {
       // An empty draft is intentional when the operator has not selected any
       // code roots yet. The UI never turns inventory into a select-all default.
       setSelectionDraft([...inventory.indexSelection.checkoutIds])
-      setSelectionModalOpen(true)
+      if (showModal) setSelectionModalOpen(true)
     } catch (cause) {
       setSelectionError(cause instanceof Error ? cause.message : String(cause))
-      setSelectionModalOpen(true)
+      if (showModal) setSelectionModalOpen(true)
     } finally {
       setSelectionBusy(false)
     }
@@ -494,7 +552,11 @@ export default function App() {
   const openFromGraph = useCallback((path: string) => {
     setSelectedRevision(null)
     setSelectedSource({ path, line: null })
-    setView('explorer')
+    if (path.endsWith('.md')) {
+      setView('notes')
+    } else {
+      setView('explorer')
+    }
   }, [])
 
   const timeline = useMemo<Timeline | null>(() => {
@@ -562,23 +624,69 @@ export default function App() {
           )}
         </div>
 
-        {workspaceId && (
-          <nav className="pb-tabs" aria-label="Ansicht">
-            {VIEWS.map(v => (
-              <button key={v.id} type="button" className="pb-tab" title={v.hint}
-                aria-current={v.id === view ? 'page' : undefined}
-                onClick={() => setView(v.id)}>
-                {v.label}
-              </button>
-            ))}
-          </nav>
-        )}
-
         <div className="pb-topbar__actions">
+          {workspaceId && (
+            <nav className="pb-tabs pb-tabs--desktop" aria-label="Ansicht">
+              {MAIN_VIEWS.map(v => (
+                <button key={v.id} type="button" className="pb-tab" title={v.hint}
+                  aria-label={v.testName ?? v.label}
+                  aria-current={v.id === view ? 'page' : undefined}
+                  onClick={() => setView(v.id)}>
+                  {v.label}
+                </button>
+              ))}
+              <div className="pb-tab-group" data-active={AGENT_VIEWS.some(v => v.id === view) ? "true" : undefined}>
+                <button type="button" className="pb-tab" aria-haspopup="true">
+                  Agenten
+                </button>
+                <div className="pb-tab-group-menu">
+                  {AGENT_VIEWS.map(v => (
+                    <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
+                      aria-current={v.id === view ? 'page' : undefined}
+                      onClick={() => setView(v.id)}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </nav>
+          )}
+
+          {workspaceId && (
+            <div className="pb-mobile-nav">
+               <button type="button" className="pb-tool pb-tool--icon" title="Menü" onClick={() => {
+                   const el = document.getElementById('mobile-menu');
+                   if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+               }}>
+                 <Icon path={ICON.burger} />
+               </button>
+               <div id="mobile-menu" className="pb-mobile-menu" style={{display: 'none'}}>
+                  {VIEWS.map(v => (
+                    <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
+                      aria-current={v.id === view ? 'page' : undefined}
+                      onClick={() => { setView(v.id); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
+                      {v.label}
+                    </button>
+                  ))}
+                  <button type="button" className="pb-tab-menu-item" onClick={() => { setAskModalOpen(true); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
+                    Frag das Projekt (Strg+K)
+                  </button>
+               </div>
+            </div>
+          )}
+
           {workspaceId && (
             <span className="pb-status" data-tone={status.tone} role="status" title={status.title}>
               <i aria-hidden="true" /><span>{status.text}</span>
             </span>
+          )}
+          {workspaceId && (
+            <button type="button" className="pb-tool"
+              onClick={() => setAskModalOpen(true)}
+              title="Frag das Projekt … (Strg+K / /)"
+              aria-label="Frag das Projekt">
+              <Icon path={ICON.search} /><span>Frag das Projekt</span>
+            </button>
           )}
           {workspaceId && (
             <button type="button" className="pb-tool"
@@ -590,28 +698,28 @@ export default function App() {
           )}
           {workspaceId && (
             <button type="button" className="pb-tool"
-              onClick={() => void openSelection()}
+              onClick={() => { setSettingsTab('repos'); setSettingsOpen(true); void openSelection() }}
               disabled={selectionBusy}
-              title="Aktive Code-Checkouts aus dem Planet-Inventar auswählen">
-              <span>{selectionBusy ? 'Lädt …' : 'Code-Auswahl'}</span>
+              title="Aktive Code-Checkouts auswählen (Repos wählen)">
+              <span>{selectionBusy ? 'Lädt …' : 'Repos wählen'}</span>
             </button>
           )}
           <button type="button" className="pb-tool pb-tool--icon" onClick={() => setShortcutsOpen(true)}
             aria-label="Tastenkürzel anzeigen" title="Tastenkürzel (?)">
             <Icon path={ICON.keyboard} />
           </button>
-          <button type="button" className="pb-tool pb-tool--icon" onClick={() => setTokenModalOpen(true)}
-            aria-label="Zugang konfigurieren" title="Auth-Token und Agent-ID">
-            <Icon path={ICON.key} />
+          <button type="button" className="pb-tool pb-tool--icon" onClick={() => { setSettingsTab('appearance'); setSettingsOpen(true) }}
+            aria-label="Einstellungen" title="Einstellungen">
+            <Icon path={ICON.gear} />
           </button>
         </div>
       </header>
 
       {error && (
         <div className="pb-banner" role="alert">
-          <strong>Server nicht erreichbar.</strong>
-          <span>{error} — läuft <code>plugbrain serve</code>?</span>
-          <button type="button" className="pb-button" onClick={retry}>
+          <strong>Brain-Server offline.</strong>
+          <span>Der Kern antwortet nicht ({error}). Bitte prüfe, ob <code>plugbrain serve</code> läuft.</span>
+          <button type="button" className="pb-button pb-button--primary" onClick={retry}>
             <Icon path={ICON.refresh} /> Erneut verbinden
           </button>
         </div>
@@ -630,8 +738,8 @@ export default function App() {
             </p>
             <ol className="brain-first-run" aria-label="Erste Schritte">
               <li><strong>Ordner wählen</strong><span>Notiz- oder Projektordner angeben; Git ist nicht erforderlich.</span></li>
-              <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Suche und Graph bereit sind.</span></li>
-              <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und können direkt mit einer Notiz beginnen.</span></li>
+              <li><strong>Index abwarten</strong><span>Der echte Fortschritt bleibt sichtbar, bis Notizen und Graph bereit sind.</span></li>
+              <li><strong>Wissen öffnen</strong><span>Leere Vaults bleiben ehrlich leer und bieten direkt „Erste Notiz anlegen“.</span></li>
             </ol>
             {vaultForm}
             {planets.length > 0 && (
@@ -647,8 +755,25 @@ export default function App() {
             )}
           </div>
         ) : <>
+          {view === 'briefing' && (
+            <div className="pb-view">
+              <BriefingView
+                workspaceId={workspaceId}
+                workspaceName={workspaceName}
+                onOpenFile={path => handleOpenSource(path)}
+                onOpenNotes={() => setView('notes')}
+              />
+              {sourceOverlay}
+            </div>
+          )}
+
           {view === 'atlas' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Graph</h2>
+                <p>Wissensgraph: Symbole, Notizen und Verbindungen</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Graph aktualisieren</button>
+              </div>
               <div id="app" className="atlas-app">
                 <GraphView
                   graph={snapshot?.graph ?? null}
@@ -663,17 +788,32 @@ export default function App() {
           )}
 
           {view === 'notes' && (
-            <NotesView
-              workspaceId={workspaceId}
-              onOpenSource={openKnowledgeSource}
-              onOpenRevision={openKnowledgeRevision}
-              onOpenAgentRun={openKnowledgeAgentRun}
-              onNavigateTab={tab => setView(tab)}
-            />
+            <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Notizen</h2>
+                <p>Notizen lesen, schreiben und verknüpfen wie in Obsidian</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={() => {
+                  const btn = document.querySelector('.notes-create button, .notes-empty-list button, .notes-empty--initial button') as HTMLButtonElement | null;
+                  btn?.click();
+                }}>Neue Notiz</button>
+              </div>
+              <NotesView
+                workspaceId={workspaceId}
+                onOpenSource={openKnowledgeSource}
+                onOpenRevision={openKnowledgeRevision}
+                onOpenAgentRun={openKnowledgeAgentRun}
+                onNavigateTab={tab => setView(tab)}
+              />
+            </div>
           )}
 
           {view === 'explorer' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Dateien</h2>
+                <p>Quelldateien mit echtem Inhalt und Zeilennummern</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Dateien aktualisieren</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <ExplorerView
@@ -700,6 +840,14 @@ export default function App() {
 
           {view === 'search' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Suche</h2>
+                <p>Code und Notizen durchsuchen</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={() => {
+                  const el = document.querySelector('.search-input, .notes-search input') as HTMLInputElement | null;
+                  el?.focus();
+                }}>Suche fokussieren</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <SearchView workspaceId={workspaceId} onSelectHit={(path, line) => handleOpenSource(path, line)} />
@@ -719,6 +867,11 @@ export default function App() {
 
           {view === 'packs' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Kontext-Pakete</h2>
+                <p>Context-Packs für Agenten-Aufgaben zusammenstellen</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Pakete aktualisieren</button>
+              </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
                   <ContextPackView workspaceId={workspaceId} onSelectSource={path => handleOpenSource(path)} />
@@ -738,6 +891,11 @@ export default function App() {
 
           {view === 'city' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Code-Stadt</h2>
+                <p>Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Stadt aktualisieren</button>
+              </div>
               <div className="pb-city">
                 <CityView snapshot={snapshot} onSelectFile={handleOpenSource} />
                 {timeline && <div className="pb-overlay-tools"><TimelineControl timeline={timeline} /></div>}
@@ -748,12 +906,22 @@ export default function App() {
 
           {view === 'queue' && (
             <div className="pb-view pb-view--scroll">
+              <div className="pb-view-header">
+                <h2>Aufgaben</h2>
+                <p>Wartende Aufgaben; der nächste freie Agent nimmt sie</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Aufgaben prüfen</button>
+              </div>
               <QueueView tasks={queue.tasks} depth={queue.depth} />
             </div>
           )}
 
           {view === 'mesh' && (
             <div className="pb-view">
+              <div className="pb-view-header">
+                <h2>Agenten-Netz</h2>
+                <p>Nachweisbare Arbeit und Übergaben aus dem Core-Trace</p>
+                <button type="button" className="pb-button pb-button--primary" onClick={retry}>Netz aktualisieren</button>
+              </div>
               <div className="pb-mesh">
                 <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
                 {sourceOverlay}
@@ -761,102 +929,271 @@ export default function App() {
             </div>
           )}
 
+          {view === 'hygiene' && (
+            <div className="pb-view">
+              <HygieneView workspaceId={workspaceId} />
+              {sourceOverlay}
+            </div>
+          )}
+
         </>}
       </main>
 
-      {tokenModalOpen && (
-        <div className="brain-modal-backdrop" onClick={() => setTokenModalOpen(false)}>
-          <div className="brain-modal" onClick={e => e.stopPropagation()}>
+      {settingsOpen && (
+        <div className="brain-modal-backdrop" onClick={() => setSettingsOpen(false)}>
+          <section className="brain-modal brain-settings-modal" role="dialog" aria-modal="true" aria-label="Einstellungen" onClick={e => e.stopPropagation()}>
             <div className="brain-modal__header">
-              <h3>PlugBrain Authentifizierung</h3>
-              <button type="button" className="brain-modal__close" onClick={() => setTokenModalOpen(false)}>✕</button>
+              <h3>Einstellungen</h3>
+              <button type="button" className="brain-modal__close" onClick={() => setSettingsOpen(false)} aria-label="Einstellungen schließen">✕</button>
             </div>
-            <form onSubmit={handleSaveToken}>
-              <div className="brain-modal__field">
-                <label>Bearer Token (aus <code>auth.token</code>):</label>
-                <input
-                  type="text"
-                  className="brain-modal__input mono"
-                  value={tokenInput}
-                  onChange={e => setTokenInput(e.target.value)}
-                  placeholder="plug-..."
-                />
-              </div>
-              <div className="brain-modal__field">
-                <label>Agent ID:</label>
-                <input
-                  type="text"
-                  className="brain-modal__input mono"
-                  value={agentInput}
-                  onChange={e => setAgentInput(e.target.value)}
-                  placeholder="agy"
-                />
-              </div>
-              <div className="brain-modal__actions">
-                <button type="button" onClick={() => setTokenModalOpen(false)}>Abbrechen</button>
-                <button type="submit" className="primary">Speichern</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {selectionModalOpen && (
-        <div className="brain-modal-backdrop" onClick={() => !selectionBusy && setSelectionModalOpen(false)}>
-          <div className="brain-modal brain-selection-modal" onClick={e => e.stopPropagation()}>
-            <div className="brain-modal__header">
-              <h3>Aktive Code-Checkouts</h3>
-              <button type="button" className="brain-modal__close" disabled={selectionBusy}
-                onClick={() => setSelectionModalOpen(false)}>✕</button>
-            </div>
-            <p className="brain-selection-modal__hint">
-              Das Inventar bleibt vollständig sichtbar. Nur die hier bewusst markierten Checkout-IDs
-              werden beim nächsten Scan als aktiver Code indexiert.
-            </p>
-            <form onSubmit={saveSelection}>
-              {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
-              {planetInventory === null ? (
-                <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
-              ) : planetInventory.checkouts.length === 0 ? (
-                <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
-              ) : (
-                <fieldset className="brain-selection-list" disabled={selectionBusy}>
-                  <legend>Checkout-Inventar</legend>
-                  {planetInventory.checkouts.map(checkout => (
-                    <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
-                      <input
-                        type="checkbox"
-                        checked={selectionDraft.includes(checkout.id)}
-                        disabled={checkout.retiredAt !== null}
-                        onChange={() => toggleCheckout(checkout.id)}
-                      />
-                      <span>
-                        <strong>{checkout.relPrefix}</strong>
-                        <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-              )}
-              <p className="brain-selection-modal__hint">
-                Keine Auswahl ist ausdrücklich „notes only“; sie startet keinen leeren Code-Scan.
-              </p>
-              <div className="brain-modal__actions">
-                <button type="button" disabled={selectionBusy} onClick={() => setSelectionModalOpen(false)}>Abbrechen</button>
-                <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
-                  {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+            <div className="brain-settings-layout">
+              <nav className="brain-settings-nav" aria-label="Einstellungskategorien">
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'appearance' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('appearance')}
+                >
+                  Erscheinungsbild
                 </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'vaults' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('vaults')}
+                >
+                  Vault-Verwaltung
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'repos' ? 'true' : 'false'}
+                  onClick={() => { setSettingsTab('repos'); if (!planetInventory) void openSelection(); }}
+                >
+                  Repos wählen
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'shortcuts' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('shortcuts')}
+                >
+                  Tastenkürzel
+                </button>
+                <button
+                  type="button"
+                  className="brain-settings-nav-item"
+                  data-active={settingsTab === 'advanced' ? 'true' : 'false'}
+                  onClick={() => setSettingsTab('advanced')}
+                >
+                  Erweitert
+                </button>
+              </nav>
+
+              <div className="brain-settings-content">
+                {settingsTab === 'appearance' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Erscheinungsbild</h4>
+                    <p className="brain-settings-section-desc">
+                      Wähle dein bevorzugtes Farbschema für PlugBrain.
+                    </p>
+                    <div className="brain-theme-options">
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'dark' ? 'true' : 'false'}
+                        onClick={() => setTheme('dark')}
+                      >
+                        <strong>Dunkel</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Standard</div>
+                      </button>
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'light' ? 'true' : 'false'}
+                        onClick={() => setTheme('light')}
+                      >
+                        <strong>Hell</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Hoher Kontrast</div>
+                      </button>
+                      <button
+                        type="button"
+                        className="brain-theme-card"
+                        data-active={theme === 'system' ? 'true' : 'false'}
+                        onClick={() => setTheme('system')}
+                      >
+                        <strong>System</strong>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Automatisch</div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {settingsTab === 'vaults' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Vault-Verwaltung</h4>
+                    <p className="brain-settings-section-desc">
+                      Verwalte den aktiven Wissensordner oder wechsle zu einem bestehenden Vault.
+                    </p>
+                    {workspaceId ? (
+                      <div className="brain-settings-vault-card">
+                        <dl>
+                          <dt>Aktiver Vault:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.name || workspaceId}</dd>
+                          <dt>Pfad:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.root || '—'}</dd>
+                          <dt>Status:</dt>
+                          <dd>{planets.find(p => p.id === workspaceId)?.indexedAt ? 'Indiziert' : 'Bereit'}</dd>
+                        </dl>
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--muted)', fontSize: '12px' }}>Kein Vault geöffnet.</p>
+                    )}
+
+                    <div style={{ marginTop: '16px' }}>
+                      <strong style={{ fontSize: '12px', display: 'block', marginBottom: '8px' }}>Bekannte Vaults:</strong>
+                      <div style={{ display: 'grid', gap: '6px' }}>
+                        {planets.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className="pb-button"
+                            style={{
+                              justifyContent: 'space-between',
+                              background: p.id === workspaceId ? 'var(--panel)' : 'transparent',
+                              borderColor: p.id === workspaceId ? 'var(--accent)' : 'var(--line)',
+                            }}
+                            onClick={() => { applyWorkspace(p.id); setSettingsOpen(false); }}
+                          >
+                            <span>{shortLabel(p.name)}</span>
+                            <small style={{ color: 'var(--muted)', fontFamily: 'var(--mono)' }}>{p.root}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {settingsTab === 'repos' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Repos wählen</h4>
+                    <p className="brain-settings-section-desc">
+                      Wähle aus, welche Checkouts indiziert werden sollen. Nur markierte Repos werden gescannt
+                      ({planetInventory ? `${planetInventory.checkouts.filter(c => selectionDraft.includes(c.id)).length} von ${planetInventory.checkouts.length} aktiv` : 'lädt …'}).
+                    </p>
+                    <form onSubmit={saveSelection}>
+                      {selectionError && <p className="brain-vault__error" role="alert">{selectionError}</p>}
+                      {planetInventory === null ? (
+                        <p className="brain-selection-modal__hint">Planet-Inventar wird geladen …</p>
+                      ) : planetInventory.checkouts.length === 0 ? (
+                        <p className="brain-selection-modal__hint">Dieser Workspace hat keine discoverbaren Code-Checkouts.</p>
+                      ) : (
+                        <fieldset className="brain-selection-list" disabled={selectionBusy}>
+                          <legend>Checkout-Inventar</legend>
+                          {planetInventory.checkouts.map(checkout => (
+                            <label key={checkout.id} className={checkout.retiredAt ? 'is-retired' : undefined}>
+                              <input
+                                type="checkbox"
+                                checked={selectionDraft.includes(checkout.id)}
+                                disabled={checkout.retiredAt !== null}
+                                onChange={() => toggleCheckout(checkout.id)}
+                              />
+                              <span>
+                                <strong>{checkout.relPrefix}</strong>
+                                <small>{checkout.id} · {checkout.branch ?? 'detached'}{checkout.retiredAt ? ' · retired' : ''}</small>
+                              </span>
+                            </label>
+                          ))}
+                        </fieldset>
+                      )}
+                      <div className="brain-modal__actions" style={{ marginTop: '16px' }}>
+                        <button type="submit" className="primary" disabled={selectionBusy || planetInventory === null}>
+                          {selectionBusy ? 'Speichert …' : 'Auswahl speichern'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                {settingsTab === 'shortcuts' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Tastenkürzel</h4>
+                    <p className="brain-settings-section-desc">
+                      Tastenkombinationen für schnelle Navigation und Bearbeitung.
+                    </p>
+                    <table className="brain-settings-shortcuts-table">
+                      <tbody>
+                        <tr><td><kbd>?</kbd></td><td>Tastenkürzel-Übersicht öffnen</td></tr>
+                        <tr><td><kbd>Strg</kbd>+<kbd>O</kbd></td><td>Schnellwechsler (Notiz öffnen)</td></tr>
+                        <tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Notiz im Editor speichern</td></tr>
+                        <tr><td><kbd>O</kbd></td><td>Ordner als Vault öffnen</td></tr>
+                        <tr><td><kbd>/</kbd></td><td>Im Graph suchen</td></tr>
+                        <tr><td><kbd>F</kbd></td><td>Graph auf Fenster einpassen</td></tr>
+                        <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Graph vergrößern / verkleinern</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Dialog oder Menü schließen</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {settingsTab === 'advanced' && (
+                  <div>
+                    <h4 className="brain-settings-section-title">Erweitert (Authentifizierung)</h4>
+                    <p className="brain-settings-section-desc">
+                      Der Brain-Kern authentifiziert den lokalen Desktop automatisch über <code>auth.token</code>.
+                      Manuelle Konfiguration ist nur für externe Agenten oder Debugging erforderlich.
+                    </p>
+                    <form onSubmit={handleSaveToken}>
+                      <div className="brain-modal__field">
+                        <label>Bearer Token (aus <code>auth.token</code>):</label>
+                        <input
+                          type="password"
+                          className="brain-modal__input mono"
+                          value={tokenInput}
+                          onChange={e => setTokenInput(e.target.value)}
+                          placeholder="plug-..."
+                        />
+                      </div>
+                      <div className="brain-modal__field">
+                        <label>Agent ID:</label>
+                        <input
+                          type="text"
+                          className="brain-modal__input mono"
+                          value={agentInput}
+                          onChange={e => setAgentInput(e.target.value)}
+                          placeholder="agy"
+                        />
+                      </div>
+                      <div className="brain-modal__actions" style={{ marginTop: '16px' }}>
+                        <button type="submit" className="primary">Zugangsdaten speichern</button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </div>
-            </form>
-          </div>
+            </div>
+          </section>
         </div>
       )}
+
       {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
         <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
           <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
-          <dl><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Im Graph suchen</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
+          <dl><div><dt><kbd>Strg+K</kbd></dt><dd>Frag das Projekt</dd></div><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Frag das Projekt / Suche</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
           <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
         </section>
       </div>}
+
+      <AskModal
+        workspaceId={workspaceId}
+        isOpen={askModalOpen}
+        onClose={() => setAskModalOpen(false)}
+        onOpenSource={(path, line) => handleOpenSource(path, line)}
+        onNavigateToSearch={q => {
+          setView('search')
+        }}
+        initialQuestion={askInitialQuery}
+      />
     </div>
   )
 }

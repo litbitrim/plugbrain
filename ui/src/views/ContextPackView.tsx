@@ -5,6 +5,7 @@ import {
   type ContextPackResult,
   type PackStalenessResult,
 } from '../lib/brain-client'
+import { Icon, ICON } from '../ui/Icon'
 
 interface ContextPackViewProps {
   workspaceId: string
@@ -88,16 +89,35 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
     }
   }
 
+  const [copyFeedback, setCopyFeedback] = useState('')
+
+  const handleCopyContext = (format: 'full' | 'chatgpt' = 'chatgpt') => {
+    if (!pack?.body) return
+    let textToCopy = pack.body
+    if (format === 'chatgpt') {
+      textToCopy = `# Kontext-Paket für Agenten / LLM\nZiel: ${goal}\nWorkspace-ID: ${workspaceId}\nVersion: ${pack.version}\nQuellen: ${pack.sources}\n\n${pack.body}`
+    }
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setCopyFeedback('Als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
+      setTimeout(() => setCopyFeedback(''), 3000)
+    }).catch(() => {
+      setCopyFeedback('Fehler beim Kopieren in die Zwischenablage')
+    })
+  }
+
   const sources = pack?.body ? parseSourcesFromBody(pack.body) : []
 
   return (
     <div className="pack-view">
       <div className="pack-view__header">
         <div className="pack-view__title">
-          <span className="pack-view__icon">📦</span>
+          <Icon path={ICON.open} />
           <strong>Context-Pack-Inspector</strong>
           <span className="pack-view__endpoint mono">/api/context/pack</span>
         </div>
+        <p className="pack-view__lead" style={{ fontSize: '12px', color: 'var(--muted)', margin: '4px 0 0' }}>
+          Stellt einen deterministischen Kontext-Ausschnitt aus Code und Notizen für eine Agenten-Aufgabe zusammen.
+        </p>
       </div>
 
       <form className="pack-form" onSubmit={handleCreate}>
@@ -112,7 +132,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
               onChange={e => setGoal(e.target.value)}
               placeholder="z. B. authKey security tests"
             />
-            <button type="submit" className="pack-create-btn" disabled={loading || !goal.trim()}>
+            <button type="submit" className="pack-create-btn pb-button pb-button--primary" disabled={loading || !goal.trim()}>
               {loading ? 'Erzeuge …' : 'Pack erzeugen'}
             </button>
           </div>
@@ -121,7 +141,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
 
       {error && (
         <div className="pack-error-alert" role="alert">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
@@ -134,27 +154,57 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
                 <span className="pack-badge pack-badge--version">v{pack.version}</span>
                 <span className="pack-badge pack-badge--sources">{pack.sources} Quellen</span>
               </div>
-              <div className="pack-card__staleness">
-                {stalenessLoading ? (
-                  <span className="pack-staleness-badge pack-staleness-badge--loading">Prüfe …</span>
-                ) : staleness ? (
-                  <span
-                    className={`pack-staleness-badge ${staleness.stale ? 'pack-staleness-badge--stale' : 'pack-staleness-badge--fresh'}`}
-                  >
-                    {staleness.stale ? '🔴 Veraltet' : '🟢 Frisch'}
-                  </span>
-                ) : null}
+              <div className="pack-card__actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  className="pack-staleness-btn"
-                  onClick={() => checkStaleness(pack.id)}
-                  disabled={stalenessLoading}
-                  title="Staleness gegen aktuellen Brain-Index prüfen"
+                  className="pb-button pb-button--primary"
+                  onClick={() => handleCopyContext('chatgpt')}
+                  title="Markdown-Kontext für ChatGPT oder Claude in die Zwischenablage kopieren"
+                  aria-label="Als Kontext kopieren"
+                  style={{ fontSize: '12px', padding: '6px 14px' }}
                 >
-                  Neu prüfen
+                  Als Kontext kopieren
                 </button>
+                <div className="pack-card__staleness">
+                  {stalenessLoading ? (
+                    <span className="pack-staleness-badge pack-staleness-badge--loading">Prüfe …</span>
+                  ) : staleness ? (
+                    <span
+                      className="pb-status"
+                      data-tone={staleness.stale ? 'bad' : 'ok'}
+                      style={{ marginRight: '8px' }}
+                    >
+                      <i aria-hidden="true" />
+                      <span>{staleness.stale ? 'VERALTET' : 'AKTUELL'}</span>
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="pack-staleness-btn"
+                    onClick={() => checkStaleness(pack.id)}
+                    disabled={stalenessLoading}
+                    title="Staleness gegen aktuellen Brain-Index prüfen"
+                  >
+                    Neu prüfen
+                  </button>
+                </div>
               </div>
             </div>
+
+            {copyFeedback && (
+              <div className="pack-copy-feedback" style={{
+                margin: '10px 0',
+                padding: '8px 12px',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--pos)',
+                borderRadius: 'var(--r)',
+                fontSize: '12px',
+                color: 'var(--ink)',
+                fontFamily: 'var(--mono)',
+              }}>
+                {copyFeedback}
+              </div>
+            )}
 
             {staleness && staleness.stale && (
               <div className="pack-stale-warning">
@@ -183,7 +233,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
                       onClick={() => onSelectSource(s.path)}
                       title={`Klicken, um ${s.path} in Quellansicht zu öffnen`}
                     >
-                      <div className="pack-source-path mono">📄 {s.path}</div>
+                      <div className="pack-source-path mono">{s.path}</div>
                       <div className="pack-source-why">{s.reasons}</div>
                     </div>
                   ))}

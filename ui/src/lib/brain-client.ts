@@ -3,8 +3,9 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
 
+export type { RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
 export interface GalaxyPlanet {
   id: string
   name: string
@@ -657,4 +658,79 @@ export async function fetchAgentInspect(agentId: string, workspaceId?: string): 
   const res = await fetch(`/api/agent/inspect${query}`)
   if (!res.ok) return null
   return res.json()
+}
+
+export async function fetchBriefing(workspaceId: string): Promise<BriefingData | ApiError> {
+  try {
+    const res = await fetch(`/api/briefing?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { routeMissing: true }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      return { serverError: true, status: res.status, error: body?.error ?? `HTTP ${res.status}` }
+    }
+    return await res.json() as BriefingData
+  } catch (cause) {
+    return { unreachable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function askQuestion(workspaceId: string, question: string, limit = 5): Promise<AskResponse | ApiError> {
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ workspace: workspaceId, question, limit }),
+    })
+    if (res.status === 404 || res.status === 501) return { routeMissing: true }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      return { serverError: true, status: res.status, error: body?.error ?? `HTTP ${res.status}` }
+    }
+    return await res.json() as AskResponse
+  } catch (cause) {
+    return { unreachable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function fetchHygiene(workspaceId: string): Promise<HygieneData | ApiError> {
+  try {
+    const res = await fetch(`/api/hygiene?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { routeMissing: true }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      return { serverError: true, status: res.status, error: body?.error ?? `HTTP ${res.status}` }
+    }
+    return await res.json() as HygieneData
+  } catch (cause) {
+    return { unreachable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function fetchMachine(): Promise<MachineData | ApiError> {
+  try {
+    const res = await fetch('/api/machine', { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { routeMissing: true }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      return { serverError: true, status: res.status, error: body?.error ?? `HTTP ${res.status}` }
+    }
+    return await res.json() as MachineData
+  } catch (cause) {
+    return { unreachable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function fetchRepos(dirtyOnly = false): Promise<ReposData | ApiError> {
+  try {
+    const query = dirtyOnly ? '?dirty=1&page=1' : '?page=1'
+    const res = await fetch(`/api/repos${query}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { routeMissing: true }
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      return { serverError: true, status: res.status, error: body?.error ?? `HTTP ${res.status}` }
+    }
+    return await res.json() as ReposData
+  } catch (cause) {
+    return { unreachable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
 }

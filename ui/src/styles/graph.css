@@ -166,6 +166,76 @@
 }
 .pb-graph__stale { color: var(--warn) }
 
+/* ── Graph Legend Card ──────────────────────────────────────────────────── */
+
+.pb-graph-legend {
+  position: absolute;
+  right: var(--s3);
+  bottom: var(--s3);
+  z-index: var(--z-toolbar);
+  width: 260px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: var(--s2) var(--s3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  font-size: var(--fs-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.pb-graph-legend__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+.pb-graph-legend__head strong {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pb-graph-legend__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pb-graph-legend__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.pb-graph-legend__row strong {
+  color: var(--ink);
+}
+.pb-legend-dot-sample {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  margin-top: 2px;
+}
+.pb-legend-line-sample {
+  width: 12px;
+  height: 2px;
+  background: var(--muted);
+  flex: none;
+  margin-top: 6px;
+}
+.pb-legend-color-sample {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--graph-g0);
+  flex: none;
+  margin-top: 2px;
+}
+
 /* Loading, empty and offline. One calm block in the middle of the stage. */
 .pb-state {
   position: absolute; inset: 0; display: grid; place-content: center; justify-items: center;

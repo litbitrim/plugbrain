@@ -6,6 +6,7 @@ import {
 } from '../lib/brain-client'
 import KnowledgeGraphView from './KnowledgeGraphView'
 import MarkdownPreview from '../components/MarkdownPreview'
+import { Icon, ICON } from '../ui/Icon'
 import type { ViewId } from '../types'
 
 type UndoState = { path: string; content: string; savedHash: string }
@@ -66,6 +67,13 @@ export default function NotesView({
   const [metaCollapsed, setMetaCollapsed] = useState(() => {
     try { return localStorage.getItem('plugbrain.notes_meta_collapsed') === '1' } catch { return false }
   })
+  const [overflowOpen, setOverflowOpen] = useState(false)
+  const [renameModalOpen, setRenameModalOpen] = useState(false)
+  const [renamePathInput, setRenamePathInput] = useState('')
+  const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false)
+  const [quickSwitcherQuery, setQuickSwitcherQuery] = useState('')
+  const [quickSwitcherIndex, setQuickSwitcherIndex] = useState(0)
+
   const toggleMeta = () => {
     setMetaCollapsed(c => {
       const next = !c
@@ -205,6 +213,76 @@ export default function NotesView({
     } catch (error) { setNotice(error instanceof Error ? error.message : String(error)) }
     finally { setBusy(false) }
   }
+
+  // Insert [[Wiki-Link]] at cursor position
+  const insertWikiLink = () => {
+    const textarea = document.querySelector('.notes-editor textarea') as HTMLTextAreaElement | null
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selected = draft.substring(start, end)
+    const replacement = `[[${selected || 'Notizname'}]]`
+    const next = draft.substring(0, start) + replacement + draft.substring(end)
+    setDraft(next)
+    setTimeout(() => {
+      textarea.focus()
+      const newCursor = start + (selected ? replacement.length : 2)
+      textarea.setSelectionRange(newCursor, newCursor + (selected ? 0 : 9))
+    }, 10)
+  }
+
+  // Rename current note
+  const handleRenameNote = async (newTitleOrPath: string) => {
+    if (!active || !newTitleOrPath.trim()) return
+    let targetPath = newTitleOrPath.trim()
+    if (!targetPath.endsWith('.md')) targetPath += '.md'
+    if (targetPath === active.path) {
+      setRenameModalOpen(false)
+      return
+    }
+    setBusy(true)
+    try {
+      await writeNote(workspaceId, targetPath, draft, undefined, undefined, true)
+      await refreshList()
+      await open(targetPath)
+      setRenameModalOpen(false)
+      setNotice(`Notiz umbenannt nach "${targetPath}".`)
+    } catch (err: any) {
+      setNotice(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Keyboard shortcuts (Ctrl+O quick switcher, Escape to close modals)
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o') {
+        event.preventDefault()
+        setQuickSwitcherOpen(true)
+        setQuickSwitcherQuery('')
+        setQuickSwitcherIndex(0)
+      } else if (event.key === 'Escape') {
+        if (quickSwitcherOpen) setQuickSwitcherOpen(false)
+        if (renameModalOpen) setRenameModalOpen(false)
+        if (overflowOpen) setOverflowOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [quickSwitcherOpen, renameModalOpen, overflowOpen])
+
+  // Quick Switcher filtered results
+  const quickHits = useMemo(() => {
+    if (!quickSwitcherQuery.trim()) return notes.slice(0, 15)
+    const q = quickSwitcherQuery.toLowerCase()
+    return notes.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      n.path.toLowerCase().includes(q) ||
+      (n.tags || []).some(t => t.toLowerCase().includes(q)),
+    ).slice(0, 20)
+  }, [notes, quickSwitcherQuery])
+
 
   const create = async (): Promise<void> => {
     const raw = prompt('Dateiname der neuen Notiz (z.B. Architektur.md):')
@@ -385,7 +463,7 @@ export default function NotesView({
           <strong>Wissen</strong>
           <span>
             <button type="button" className={mode === 'editor' ? 'on' : ''} onClick={() => setMode('editor')}>Editor</button>
-            <button type="button" className={mode === 'graph' ? 'on' : ''} onClick={() => setMode('graph')} aria-label="Wissensgraph">Graph-Ansicht</button>
+            <button type="button" className={mode === 'graph' ? 'on' : ''} onClick={() => setMode('graph')} aria-label="Graph-Ansicht">Graph-Ansicht</button>
           </span>
         </div>
 
@@ -521,13 +599,22 @@ export default function NotesView({
         )}
 
         <div className="notes-list">
-          {filtered.map(note => (
-            <button type="button" key={note.path} className={active?.path === note.path ? 'on' : ''} onClick={() => void open(note.path)}>
-              <strong>{note.title}</strong>
-              <span>{note.path}</span>
-              <small>{(note.tags || []).map(value => `#${value}`).join(' ')} {note.inLinks ? `←${note.inLinks}` : ''}</small>
-            </button>
-          ))}
+          {notes.length === 0 ? (
+            <div className="notes-empty-list">
+              <p>Noch keine Notizen</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Erste Notiz anlegen
+              </button>
+            </div>
+          ) : (
+            filtered.map(note => (
+              <button type="button" key={note.path} className={active?.path === note.path ? 'on' : ''} onClick={() => void open(note.path)}>
+                <strong>{note.title}</strong>
+                <span>{note.path}</span>
+                <small>{(note.tags || []).map(value => `#${value}`).join(' ')} {note.inLinks ? `←${note.inLinks}` : ''}</small>
+              </button>
+            ))
+          )}
         </div>
       </aside>
 
@@ -536,12 +623,23 @@ export default function NotesView({
         {mode === 'editor' && (active ? <>
           <header className="notes-editor__head">
             <div className="notes-editor__title">
-              <strong title={active.title}>{active.title}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <strong title={active.title}>{active.title}</strong>
+                <button
+                  type="button"
+                  className="pb-tool pb-tool--icon"
+                  style={{ width: '24px', height: '24px', padding: 0 }}
+                  onClick={() => { setRenamePathInput(active.path); setRenameModalOpen(true); }}
+                  title="Notiz umbenennen"
+                >
+                  <Icon path={ICON.pencil} />
+                </button>
+              </div>
               <span>{active.path}</span>
               {active.typ && <small>{active.typ}{active.stand ? ` · ${active.stand}` : ''}</small>}
             </div>
 
-            <div className="notes-editor__actions" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', flexShrink: 0 }}>
+            <div className="notes-editor__actions">
               {/* 3-Way Segmented View Mode Toggle: [Edit] [Split] [Lesen] */}
               <div className="notes-view-mode-toggle" role="group" aria-label="Editor-Ansichtsmodus">
                 <button
@@ -570,32 +668,81 @@ export default function NotesView({
                 </button>
               </div>
 
-              <span
-                className={`pb-status notes-save-status notes-save-status--${saveStatus}`}
-                data-status={saveStatus}
-              >
-                {saveStatus === 'saving' ? 'Speichert...' : saveStatus === 'dirty' ? 'Ungespeicherte Änderungen' : saveStatus === 'conflict' ? 'Konflikt' : 'Gespeichert'}
-              </span>
-
-              <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--muted)' }} title="Automatisches Speichern nach 1.2s Pause">
-                <input type="checkbox" checked={autosaveEnabled} onChange={e => setAutosaveEnabled(e.target.checked)} />
-                Autosave
-              </label>
-
+              {/* Wiki-Link Einfügen */}
               <button
                 type="button"
-                className={showBacklinks ? 'on' : ''}
-                onClick={() => setShowBacklinks(v => !v)}
-                title="Wissensnetz-Seitenleiste ein-/ausblenden"
-                style={{ fontSize: '11px' }}
+                className="pb-tool"
+                onClick={insertWikiLink}
+                title="Wiki-Link [[...]] an Cursorposition einfügen"
               >
-                Netz ({active.backlinks.length + liveOutboundLinks.length})
+                [[ Link ]]
               </button>
 
-              <a href={exportNotesUrl(workspaceId, active.path)}>Notiz exportieren</a>
-              <a href={exportNotesUrl(workspaceId)}>Vault exportieren</a>
-              <button type="button" disabled={busy || !undo || undo.path !== active.path} onClick={() => void undoSave()}>Rückgängig</button>
-              <button type="button" className="primary" disabled={busy} onClick={() => void save(false)}>Speichern</button>
+              {/* Status-Pille: Mono, Uppercase, Punkt + Text */}
+              <span
+                className="pb-status"
+                data-tone={saveStatus === 'saved' ? 'ok' : saveStatus === 'saving' ? 'idle' : saveStatus === 'conflict' ? 'bad' : 'warn'}
+                title={saveStatus === 'conflict' ? 'Konflikt beim Speichern' : saveStatus === 'dirty' ? 'Ungespeicherte Änderungen' : 'Gespeichert'}
+              >
+                <i aria-hidden="true" />
+                <span>{saveStatus === 'saving' ? 'SPEICHERT' : saveStatus === 'dirty' ? 'GEÄNDERT' : saveStatus === 'conflict' ? 'KONFLIKT' : 'GESPEICHERT'}</span>
+              </span>
+
+              {/* Primäraktion: Speichern */}
+              <button
+                type="button"
+                className="pb-button pb-button--primary"
+                disabled={busy || saveStatus === 'saved'}
+                onClick={() => void save(false)}
+                title="Notiz speichern (Strg+S)"
+              >
+                Speichern
+              </button>
+
+              {/* Rechte Seitenleiste: Rückverweise & Eigenschaften */}
+              <button
+                type="button"
+                className={`pb-tool ${showBacklinks ? 'is-active' : ''}`}
+                onClick={() => setShowBacklinks(v => !v)}
+                title="Rückverweise und Eigenschaften anzeigen/verbergen"
+              >
+                Rückverweise ({active.backlinks.length})
+              </button>
+
+              {/* Überlaufmenü (⋯) */}
+              <div className="notes-overflow-wrap" style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="pb-tool pb-tool--icon"
+                  onClick={() => setOverflowOpen(v => !v)}
+                  title="Weitere Aktionen"
+                  aria-expanded={overflowOpen}
+                >
+                  ⋯
+                </button>
+                {overflowOpen && (
+                  <div
+                    className="notes-overflow-dropdown"
+                    onClick={() => setOverflowOpen(false)}
+                  >
+                    <button type="button" onClick={() => setAutosaveEnabled(v => !v)}>
+                      Autosave: {autosaveEnabled ? 'Aktiv' : 'Aus'}
+                    </button>
+                    <button type="button" disabled={busy || !undo || undo.path !== active.path} onClick={() => void undoSave()}>
+                      Rückgängig
+                    </button>
+                    <button type="button" onClick={() => { setRenamePathInput(active.path); setRenameModalOpen(true); }}>
+                      Notiz umbenennen …
+                    </button>
+                    <a href={exportNotesUrl(workspaceId, active.path)} download>
+                      Notiz exportieren
+                    </a>
+                    <a href={exportNotesUrl(workspaceId)} download>
+                      Vault exportieren
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 
@@ -906,8 +1053,128 @@ export default function NotesView({
               <section><h3>Anhänge ({attachments.length})</h3><input ref={upload} type="file" hidden onChange={event => void attach(event.target.files?.[0])}/><button type="button" disabled={busy || active.hash === ''} title={active.hash === '' ? 'Die Notiz zuerst speichern' : undefined} onClick={() => upload.current?.click()}>Datei anhängen</button>{active.hash === '' && <span>Notiz zuerst speichern.</span>}{attachments.map(file => <a key={file.path} href={attachmentUrl(workspaceId, active.path, file.name)}>{file.name} · {file.bytes} B</a>)}</section>
             </footer>
           )}
-        </> : <p className="notes-empty">Keine Notiz im gewählten Vault.</p>)}
+        </> : (
+          notes.length === 0 ? (
+            <div className="notes-empty--initial">
+              <div className="notes-empty__icon"><Icon path={ICON.notes} /></div>
+              <h3>Dieser Vault ist noch leer</h3>
+              <p>Erstelle deine erste Notiz mit Wiki-Links, Tags und Eigenschaften — genau wie in Obsidian.</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Erste Notiz anlegen
+              </button>
+            </div>
+          ) : (
+            <div className="notes-empty--initial">
+              <div className="notes-empty__icon"><Icon path={ICON.notes} /></div>
+              <h3>Keine Notiz ausgewählt</h3>
+              <p>Wähle eine Notiz in der linken Seitenleiste aus oder erstelle eine neue.</p>
+              <button type="button" className="pb-button pb-button--primary" onClick={create}>
+                Neue Notiz anlegen
+              </button>
+            </div>
+          )
+        ))}
       </section>
+
+      {/* Quick Switcher (Ctrl+O) Modal */}
+      {quickSwitcherOpen && (
+        <div className="brain-modal-backdrop" onClick={() => setQuickSwitcherOpen(false)}>
+          <div className="brain-modal brain-quick-switcher" onClick={e => e.stopPropagation()}>
+            <div className="brain-modal__header">
+              <h3>Schnellwechsler (Notiz öffnen)</h3>
+              <button type="button" className="brain-modal__close" onClick={() => setQuickSwitcherOpen(false)}>✕</button>
+            </div>
+            <div className="quick-switcher-input-wrap">
+              <input
+                type="text"
+                className="brain-modal__input"
+                autoFocus
+                placeholder="Notiz nach Titel, Pfad oder #Tag suchen …"
+                value={quickSwitcherQuery}
+                onChange={e => { setQuickSwitcherQuery(e.target.value); setQuickSwitcherIndex(0); }}
+                onKeyDown={e => {
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setQuickSwitcherIndex(i => Math.min(quickHits.length - 1, i + 1))
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setQuickSwitcherIndex(i => Math.max(0, i - 1))
+                  } else if (e.key === 'Enter') {
+                    e.preventDefault()
+                    if (quickHits[quickSwitcherIndex]) {
+                      void open(quickHits[quickSwitcherIndex].path)
+                      setQuickSwitcherOpen(false)
+                    }
+                  } else if (e.key === 'Escape') {
+                    setQuickSwitcherOpen(false)
+                  }
+                }}
+              />
+            </div>
+            <div className="quick-switcher-list" role="listbox">
+              {quickHits.length === 0 ? (
+                <p className="quick-switcher-empty">Keine passende Notiz gefunden.</p>
+              ) : (
+                quickHits.map((item, idx) => (
+                  <button
+                    type="button"
+                    key={item.path}
+                    className={`quick-switcher-item ${idx === quickSwitcherIndex ? 'is-selected' : ''}`}
+                    onClick={() => { void open(item.path); setQuickSwitcherOpen(false); }}
+                    onMouseEnter={() => setQuickSwitcherIndex(idx)}
+                  >
+                    <div className="quick-switcher-item__title">{item.title}</div>
+                    <div className="quick-switcher-item__path">{item.path}</div>
+                    {item.tags && item.tags.length > 0 && (
+                      <div className="quick-switcher-item__tags">{item.tags.map(t => `#${t}`).join(' ')}</div>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="quick-switcher-hint">
+              <span><kbd>↑</kbd><kbd>↓</kbd> Auswählen</span>
+              <span><kbd>Enter</kbd> Öffnen</span>
+              <span><kbd>Esc</kbd> Schließen</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Modal */}
+      {renameModalOpen && (
+        <div className="brain-modal-backdrop" onClick={() => setRenameModalOpen(false)}>
+          <div className="brain-modal" onClick={e => e.stopPropagation()}>
+            <div className="brain-modal__header">
+              <h3>Notiz umbenennen</h3>
+              <button type="button" className="brain-modal__close" onClick={() => setRenameModalOpen(false)}>✕</button>
+            </div>
+            <form onSubmit={e => { e.preventDefault(); void handleRenameNote(renamePathInput); }}>
+              <div className="brain-modal__field">
+                <label>Neuer Pfad / Dateiname (im Vault):</label>
+                <input
+                  type="text"
+                  className="brain-modal__input"
+                  autoFocus
+                  value={renamePathInput}
+                  onChange={e => setRenamePathInput(e.target.value)}
+                  placeholder="Ordner/NeueNotiz.md"
+                />
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', margin: '0 0 16px' }}>
+                Die Notiz wird unter dem neuen Pfad gespeichert und im Wissensgraphen indiziert.
+              </p>
+              <div className="brain-modal__actions">
+                <button type="button" onClick={() => setRenameModalOpen(false)}>Abbrechen</button>
+                <button type="submit" className="pb-button pb-button--primary" disabled={busy || !renamePathInput.trim()}>
+                  {busy ? 'Speichert …' : 'Umbenennen'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
+

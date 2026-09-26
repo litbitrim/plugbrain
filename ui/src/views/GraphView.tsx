@@ -59,6 +59,7 @@ export default function GraphView({ graph, coverage, error, onRetry, onOpenSourc
   const [hiddenGroups, setHiddenGroups] = useState<ReadonlySet<string>>(new Set())
   const [labelMode, setLabelMode] = useState<LabelMode>('auto')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [showLegend, setShowLegend] = useState(true)
 
   const openNode = useCallback((id: string) => {
     const node = model?.byId.get(id)
@@ -297,6 +298,15 @@ export default function GraphView({ graph, coverage, error, onRetry, onOpenSourc
                   onClick={() => setLabelMode(mode)}>{label}</button>
               ))}
             </div>
+            <span className="pb-toolbar__sep" aria-hidden="true" />
+            <button
+              type="button"
+              className={`pb-tool ${showLegend ? 'pb-tool--active' : ''}`}
+              onClick={() => setShowLegend(v => !v)}
+              title="Graph-Legende ein-/ausblenden"
+            >
+              <span>Legende</span>
+            </button>
             {timeline && (
               <>
                 <span className="pb-toolbar__sep" aria-hidden="true" />
@@ -304,6 +314,44 @@ export default function GraphView({ graph, coverage, error, onRetry, onOpenSourc
               </>
             )}
           </div>
+        )}
+
+        {state === 'ready' && showLegend && (
+          <aside className="pb-graph-legend" aria-label="Graph-Legende">
+            <header className="pb-graph-legend__head">
+              <strong>Graph-Legende</strong>
+              <button
+                type="button"
+                className="pb-tool pb-tool--icon"
+                style={{ width: '20px', height: '20px', padding: 0 }}
+                onClick={() => setShowLegend(false)}
+                aria-label="Legende ausblenden"
+                title="Ausblenden"
+              >
+                ✕
+              </button>
+            </header>
+            <div className="pb-graph-legend__body">
+              <div className="pb-graph-legend__row">
+                <span className="pb-legend-dot-sample" />
+                <div>
+                  <strong>Knotengröße:</strong> Vernetzungsgrad (mehr Verbindungen = größerer Knoten)
+                </div>
+              </div>
+              <div className="pb-graph-legend__row">
+                <span className="pb-legend-line-sample" />
+                <div>
+                  <strong>Kanten:</strong> Beziehungen (Code-Importe, Symbol-Definitionen, Wiki-Links)
+                </div>
+              </div>
+              <div className="pb-graph-legend__row">
+                <span className="pb-legend-color-sample" />
+                <div>
+                  <strong>Farben:</strong> Repositories &amp; Wissensbereiche (Farben links zugeordnet)
+                </div>
+              </div>
+            </div>
+          </aside>
         )}
 
         {state === 'ready' && model && (
@@ -414,7 +462,7 @@ function Inspector({ node, model, onClose, onSelect, onOpen, onCentre }: {
       <div className="pb-inspector__actions">
         {node.path && (
           <button type="button" className="pb-button pb-button--primary" onClick={onOpen}>
-            <Icon path={ICON.open} /> Quelle öffnen
+            <Icon path={ICON.open} /> {node.kind === 'note' ? 'Notiz öffnen' : 'Quelle öffnen'}
           </button>
         )}
         <button type="button" className="pb-button" onClick={onCentre}>

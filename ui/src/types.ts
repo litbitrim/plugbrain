@@ -89,7 +89,7 @@ export type BoardTask = {
 }
 
 /** Which of the renderings or tools of the same brain is on screen. */
-export type ViewId = 'atlas' | 'notes' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue'
+export type ViewId = 'briefing' | 'atlas' | 'notes' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue' | 'hygiene'
 
 /** A row of the workspace queue, as the Brain reports it. */
 export type QueueTask = {
@@ -103,3 +103,169 @@ export type QueueTask = {
   /** A claim that has gone quiet. A reading, never a decision. */
   stale: boolean
 }
+
+/* ── UX-02 Contracts (ASK-01 & HYG-01) ────────────────────────────────── */
+
+export type BriefingStats = {
+  repos: number
+  files: number
+  symbols: number
+  notes: number
+  languages: Array<{ name: string; files: number }>
+}
+
+export type BriefingEntrypoint = {
+  path: string
+  why: string
+}
+
+export type BriefingRecentChange = {
+  path: string
+  when: string
+  kind: string
+}
+
+export type BriefingHotspot = {
+  path: string
+  degree: number
+}
+
+export type BriefingData = {
+  workspace: string
+  name: string
+  summary: string
+  stats: BriefingStats
+  entrypoints: BriefingEntrypoint[]
+  recentChanges: BriefingRecentChange[]
+  hotspots: BriefingHotspot[]
+  unavailable?: string[]
+}
+
+export type AskIntent = 'definition' | 'usage' | 'impact' | 'changes' | 'overview' | 'notes' | 'search'
+
+export type AskSource = {
+  path: string
+  line: number
+  symbol?: string
+  why?: string
+}
+
+export type AskResponse = {
+  question: string
+  intent: AskIntent
+  answer: string
+  sources: AskSource[]
+  tool: string
+  confidence: 'high' | 'medium' | 'low'
+  followUps: string[]
+  unavailable?: string[]
+}
+
+export type HygieneCheckout = {
+  path: string
+  repo: string
+  branch: string
+  dirtyFiles: number
+  untrackedFiles: number
+  stashes: number
+  unpushed: Array<{ branch: string; ahead: number; upstream: string | null }>
+  staleDays: number
+  sizeMb: number
+  orphan: boolean
+  claims: Array<{ agent: string; paths: string[]; conflictsWith: string[] }>
+}
+
+export type HygieneFinding = {
+  level: 'ok' | 'attention' | 'risk'
+  text: string
+  fix: string
+  paths: string[]
+}
+
+export type HygieneData = {
+  workspace: string
+  checkedAt: string
+  diskFreeGb: number
+  summary: {
+    level: 'ok' | 'attention' | 'risk'
+    text: string
+  }
+  checkouts: HygieneCheckout[]
+  findings: HygieneFinding[]
+  unavailable?: string[]
+}
+
+export type MachineDrive = {
+  mount: string
+  freeGb: number
+  totalGb: number
+  level: 'ok' | 'attention' | 'risk'
+}
+
+export type MachineForecast = {
+  mount: string
+  fullInHours: number
+  trendGbPerHour: number
+  basis: string
+}
+
+export type MachineData = {
+  checkedAt: string
+  drives: MachineDrive[]
+  pagefile?: { sizeGb: number }
+  memory?: { freeGb: number; totalGb: number }
+  cpu?: { load: number }
+  forecast?: MachineForecast[]
+  findings?: Array<{ level: 'ok' | 'attention' | 'risk'; text: string; fix?: string }>
+  unavailable?: string[]
+}
+
+export type RepoInventory = {
+  path: string
+  registered: boolean
+  branch: string
+  dirtyFiles: number
+  untrackedFiles: number
+  unpushed: Array<{ branch: string; ahead: number; upstream: string | null }>
+  worktrees: number
+  orphanWorktrees: number
+  stashes: number
+  lastCommitDays: number
+  gitSizeMb: number
+  workTreeSizeMb: number
+}
+
+export type ReposData = {
+  scannedAt: string
+  roots: string[]
+  complete: boolean
+  repos: RepoInventory[]
+  totals: {
+    repos: number
+    dirty: number
+    unpushedBranches: number
+    orphanWorktrees: number
+  }
+  unavailable?: string[]
+}
+
+/** Route not mounted: HTTP 404 or 501 only. */
+export type RouteMissing = {
+  routeMissing: true
+}
+
+/** Network-level failure (fetch threw — server unreachable, DNS, timeout). */
+export type ApiNetworkError = {
+  unreachable: true
+  error: string
+}
+
+/** Server replied with a non-OK status that is not 404/501 (e.g. 500, 503). */
+export type ApiServerError = {
+  serverError: true
+  status: number
+  error: string
+}
+
+/** Union of all client-side error results from the five API wrappers. */
+export type ApiError = RouteMissing | ApiNetworkError | ApiServerError

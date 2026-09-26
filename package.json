@@ -29,7 +29,7 @@
     "plugbrain": "./src/cli.ts"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/*.test.ts desktop/*.test.cjs",
+    "test": "node --experimental-strip-types --test test/*.test.ts desktop/*.test.cjs ui/src/lib/*.test.ts ui/src/lib/*.test.js",
     "index": "node --experimental-strip-types src/cli.ts index",
     "serve": "node --experimental-strip-types src/cli.ts serve",
     "status": "node --experimental-strip-types src/cli.ts status",
