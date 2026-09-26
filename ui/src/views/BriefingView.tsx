@@ -38,7 +38,7 @@ export default function BriefingView({
     fetchBriefing(workspaceId).then(res => {
       if (!active) return
       setLoading(false)
-      if ('unavailable' in res && res.unavailable) {
+      if ('routeMissing' in res && res.routeMissing) {
         setUnavailable(true)
       } else {
         setData(res as BriefingData)
@@ -84,6 +84,12 @@ export default function BriefingView({
           <div className="briefing-card briefing-card--error" role="alert">
             <h3>Fehler beim Laden des Briefings</h3>
             <p>{error}</p>
+          </div>
+        )}
+
+        {data && data.unavailable && data.unavailable.length > 0 && (
+          <div className="briefing-card briefing-card--notice" role="status">
+            <p>Hinweis: Folgende Bereiche sind nicht verfügbar: {data.unavailable.join(', ')}</p>
           </div>
         )}
 

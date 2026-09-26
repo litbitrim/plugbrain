@@ -249,4 +249,7 @@ export type ReposData = {
   unavailable?: string[]
 }
 
-
+export type RouteMissing = {
+  routeMissing: true
+  error?: string
+}

@@ -49,7 +49,7 @@ export default function AskModal({
 
     try {
       const res = await askQuestion(workspaceId, q)
-      if ('unavailable' in res && res.unavailable) {
+      if ('routeMissing' in res && res.routeMissing) {
         setUnavailable(true)
         setResponse(null)
       } else {
@@ -220,6 +220,12 @@ export default function AskModal({
                   )}
                 </div>
               </div>
+
+              {response.unavailable && response.unavailable.length > 0 && (
+                <div className="ask-modal__unavailable-note" style={{ fontSize: '12px', color: 'var(--muted)', margin: '8px 0' }}>
+                  Hinweis: Folgende Bereiche sind nicht verfügbar: {response.unavailable.join(', ')}
+                </div>
+              )}
 
               {/* Quellen */}
               {response.sources && response.sources.length > 0 && (

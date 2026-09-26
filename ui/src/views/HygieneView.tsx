@@ -39,7 +39,7 @@ function CopyableCommand({ cmd, label }: { cmd: string; label?: string }) {
         title={label ?? "Befehl in Zwischenablage kopieren"}
         aria-label={label ?? "Befehl kopieren"}
       >
-        {copied ? '✓ Kopiert' : 'Kopieren'}
+        {copied ? 'Kopiert' : 'Kopieren'}
       </button>
     </div>
   )
@@ -91,7 +91,7 @@ function CheckoutCard({ co }: { co: HygieneCheckout }) {
             </div>
             {co.orphan && (
               <div className="hygiene-stat hygiene-stat-full">
-                <span className="hygiene-badge hygiene-badge-risk">⚠ Verwaister Checkout / Worktree</span>
+                <span className="hygiene-badge hygiene-badge-risk">Verwaister Checkout / Worktree</span>
               </div>
             )}
           </div>
@@ -121,7 +121,7 @@ function CheckoutCard({ co }: { co: HygieneCheckout }) {
                   <span className="hygiene-agent">{c.agent}</span>
                   <span className="hygiene-claim-paths">{c.paths.join(', ')}</span>
                   {c.conflictsWith.length > 0 && (
-                    <span className="hygiene-conflicts">⚡ Konflikt mit: {c.conflictsWith.join(', ')}</span>
+                    <span className="hygiene-conflicts">Konflikt mit: {c.conflictsWith.join(', ')}</span>
                   )}
                 </div>
               ))}
@@ -178,7 +178,7 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
     }
     setHygieneState('loading')
     fetchHygiene(workspaceId).then(result => {
-      if ('unavailable' in result && result.unavailable) {
+      if ('routeMissing' in result && result.routeMissing) {
         setHygieneState('unavailable')
       } else {
         setHygieneData(result as HygieneData)
@@ -193,7 +193,7 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
   const loadMachine = useCallback(() => {
     setMachineState('loading')
     fetchMachine().then(result => {
-      if ('unavailable' in result && result.unavailable) {
+      if ('routeMissing' in result && result.routeMissing) {
         setMachineState('unavailable')
       } else {
         setMachineData(result as MachineData)
@@ -207,7 +207,7 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
   const loadRepos = useCallback(() => {
     setReposState('loading')
     fetchRepos().then(result => {
-      if ('unavailable' in result && result.unavailable) {
+      if ('routeMissing' in result && result.routeMissing) {
         setReposState('unavailable')
       } else {
         setReposData(result as ReposData)
@@ -238,7 +238,7 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
             onClick={() => setWipModalOpen(true)}
             title="Befehl zum Sichern ungesicherter Arbeit anzeigen"
           >
-            💾 WIP sichern
+            WIP sichern
           </button>
           <button
             type="button"
