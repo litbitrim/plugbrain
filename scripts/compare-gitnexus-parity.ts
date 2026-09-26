@@ -4,7 +4,7 @@
  */
 import { createHash } from 'node:crypto'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
@@ -165,7 +165,10 @@ export async function runGitNexusComparison(options: {
     if (!receipt.assertions.sameQuestionsExecuted || !receipt.assertions.brainProvenanceComplete || !receipt.assertions.renamePreviewReadOnly) {
       throw new Error('B-MCP comparison assertions failed')
     }
-    if (options.receiptPath) writeFileSync(options.receiptPath, JSON.stringify(receipt, null, 2) + '\n')
+    if (options.receiptPath) {
+      mkdirSync(dirname(options.receiptPath), { recursive: true })
+      writeFileSync(options.receiptPath, JSON.stringify(receipt, null, 2) + '\n')
+    }
     return receipt
   } finally {
     db.close()
@@ -175,7 +178,11 @@ export async function runGitNexusComparison(options: {
 
 const invoked = process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(import.meta.filename)
 if (invoked) {
-  const evidencePath = resolve(import.meta.dirname, '..', '..', '..', 'koordination', 'closeout', 'native-orch-20260923', 'B-MCP', 'gitnexus-comparison-receipt.json')
+  // Without --receipt the receipt stays inside the checkout: release/ is gitignored.
+  const receiptFlag = process.argv.indexOf('--receipt')
+  const evidencePath = receiptFlag >= 0 && process.argv[receiptFlag + 1] !== undefined
+    ? resolve(process.argv[receiptFlag + 1])
+    : resolve(import.meta.dirname, '..', 'release', 'evidence', 'gitnexus-comparison-receipt.json')
   runGitNexusComparison({ receiptPath: evidencePath })
     .then(receipt => process.stdout.write(`B-MCP comparison passed: ${receipt.questions.length} questions\n`))
     .catch(error => { process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1 })

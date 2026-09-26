@@ -2,8 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright-core');
 
-const BASE_URL = 'http://127.0.0.1:5299';
-const OUT_DIR = 'C:\\PLUG\\plugpt\\koordination\\closeout\\brain-standalone-20260926\\ux\\screens\\u7';
+// Screenshots of the settings and top bar at three window sizes.
+// Usage: node scripts/take-ux-screens.cjs <out-dir> [ui-url]
+const OUT_DIR = process.argv[2];
+const BASE_URL = process.argv[3] || 'http://127.0.0.1:5299';
+if (!OUT_DIR) {
+  console.error('usage: node scripts/take-ux-screens.cjs <out-dir> [ui-url]');
+  process.exit(1);
+}
 
 const SIZES = [
   { name: '1440x900', width: 1440, height: 900 },

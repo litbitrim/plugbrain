@@ -38,7 +38,8 @@ const write = (root: string, relative: string, body: string): void => {
   const file = join(root, relative); mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, body, 'utf8')
   const future = new Date(Date.now() + 2_000); utimesSync(file, future, future)
 }
-const defaultReceipt = resolve(import.meta.dirname, '../../..', 'koordination', 'closeout', 'native-orch-20260923', 'P1', 'prevention-receipt.json')
+// Without --receipt the proof stays inside the checkout: release/ is gitignored.
+const defaultReceipt = resolve(import.meta.dirname, '..', 'release', 'evidence', 'prevention-receipt.json')
 
 function spawnAgent(input: { url: string; auth: string; workspace: string; agent: string; task: string; path: string; checkout: string; role: 'first' | 'second' }): Agent {
   const child = spawn(process.execPath, ['--experimental-strip-types', join(import.meta.dirname, 'prevention-agent.ts'),
