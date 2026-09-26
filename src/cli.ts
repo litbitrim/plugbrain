@@ -78,7 +78,10 @@ import {
 import {
   buildEntry, CLIENTS, parseClientSelection, setupClients, type ClientSetupResult,
 } from './setup/clients.ts'
-import { doctorAgents, manageAgentFile, selectAgentFiles, validateAgentFiles, type AgentFileTarget } from './setup/agent-protocol.ts'
+import {
+  doctorAgents, InvalidAgentMarkersError, manageAgentFile, selectAgentFiles,
+  validateAgentFiles, type AgentFileTarget,
+} from './setup/agent-protocol.ts'
 
 const HOME = resolveBrainHome()
 
@@ -1207,7 +1210,7 @@ function setupCommand(args: string[]): void {
 
 function agentsFileCommand(args: string[]): void {
   const rawTarget = flagValue(args, '--target')
-  if (rawTarget !== undefined && !['AGENTS.md', 'CLAUDE.md', 'both'].includes(rawTarget)) {
+  if (rawTarget !== null && !['AGENTS.md', 'CLAUDE.md', 'both'].includes(rawTarget)) {
     console.error('usage: plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]')
     process.exit(1)
   }
@@ -1453,6 +1456,10 @@ switch (command) {
   if (error instanceof access.AccessDenied) {
     console.error(`refused: ${error.message}`)
     process.exit(3)
+  }
+  if (error instanceof InvalidAgentMarkersError) {
+    console.error(`refused: ${error.message}`)
+    process.exit(2)
   }
   // Not a failure of the command: another process is already doing this work.
   // A stack trace would suggest a bug where there is only a busy brain.

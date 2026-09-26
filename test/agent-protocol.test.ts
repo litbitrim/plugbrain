@@ -1,9 +1,12 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { AGENT_PROTOCOL_BLOCK, doctorAgents, manageAgentFile, renderAgentFile, selectAgentFiles } from '../src/setup/agent-protocol.ts'
+
+const CLI = join(import.meta.dirname, '..', 'src', 'cli.ts')
 
 test('agent block is inserted, replaced, byte-preserving outside markers and undoable', () => {
   const before = 'first\r\n\r\nlast\n'
@@ -45,8 +48,30 @@ test('dry-run and undo preserve existing content and select the expected files',
     assert.equal(preview.action, 'dry-run')
     assert.equal(readFileSync(agents, 'utf8'), 'custom')
     manageAgentFile(agents)
+    const managed = readFileSync(agents, 'utf8')
+    const directoryBeforePreview = readdirSync(dir).sort()
+    const undoPreview = manageAgentFile(agents, { undo: true, dryRun: true })
+    assert.equal(undoPreview.action, 'dry-run')
+    assert.equal(undoPreview.after, 'custom')
+    assert.equal(readFileSync(agents, 'utf8'), managed, 'undo --dry-run must not change the file')
+    assert.deepEqual(readdirSync(dir).sort(), directoryBeforePreview, 'undo --dry-run must not remove or create backups')
     assert.equal(manageAgentFile(agents, { undo: true }).action, 'undone')
     assert.equal(readFileSync(agents, 'utf8'), 'custom')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('undo --dry-run keeps a newly created managed file and its marker backup', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-agent-undo-created-'))
+  try {
+    const file = join(dir, 'AGENTS.md')
+    manageAgentFile(file)
+    const managed = readFileSync(file, 'utf8')
+    const filesBeforePreview = readdirSync(dir).sort()
+    const preview = manageAgentFile(file, { undo: true, dryRun: true })
+    assert.equal(preview.action, 'dry-run')
+    assert.equal(preview.after, null)
+    assert.equal(readFileSync(file, 'utf8'), managed, 'undo --dry-run must not unlink the managed file')
+    assert.deepEqual(readdirSync(dir).sort(), filesBeforePreview, 'undo --dry-run must preserve the creation marker backup')
   } finally { rmSync(dir, { recursive: true, force: true }) }
 })
 
@@ -70,6 +95,7 @@ test('doctor reports missing, wrong and valid client state without writes', asyn
     assert.equal(claude.mcp, 'missing')
     assert.equal(claude.workspace, 'ok')
     assert.equal(claude.agentBlock, 'missing')
+    assert.match(claude.fix, /install.*claude code.*plugbrain setup claude/i)
 
     writeFileSync(config, JSON.stringify({ mcpServers: { plugbrain: { command: process.execPath, args: [cli, 'mcp'] } } }))
     const valid = await doctorAgents({ ...options, fetcher: async () => new Response('{}', { status: 200 }) })
@@ -83,5 +109,25 @@ test('doctor reports missing, wrong and valid client state without writes', asyn
     const wrong = await doctorAgents(options)
     assert.equal(wrong.find(row => row.client === 'Claude Code')!.mcp, 'wrong')
     assert.equal(readFileSync(config, 'utf8'), '{broken')
+  } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('embedded agent protocol stays synchronized with the documentation block', () => {
+  const docs = readFileSync(join(import.meta.dirname, '..', 'docs', 'agent-protocol.md'), 'utf8')
+  const normalizedDocs = docs.replace(/\r\n/g, '\n')
+  assert.ok(normalizedDocs.includes(AGENT_PROTOCOL_BLOCK.replace(/\r\n/g, '\n').trim()),
+    'docs/agent-protocol.md must contain the same block as the embedded CLI copy')
+})
+
+test('malformed agent markers produce a concise CLI error and exit code 2', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-agent-invalid-markers-'))
+  try {
+    writeFileSync(join(dir, 'AGENTS.md'), '<!-- plugbrain:agent-protocol:start -->\nincomplete')
+    const result = spawnSync(process.execPath, ['--experimental-strip-types', CLI, 'agents-file'], {
+      cwd: dir, encoding: 'utf8', env: { ...process.env },
+    })
+    assert.equal(result.status, 2, result.stderr)
+    assert.match(result.stderr, /invalid or duplicate PlugBrain markers; repair the markers and retry/)
+    assert.doesNotMatch(result.stderr, /\n\s+at /, 'expected a one-line refusal without a stack trace')
   } finally { rmSync(dir, { recursive: true, force: true }) }
 })
