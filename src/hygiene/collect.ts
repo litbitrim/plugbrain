@@ -103,8 +103,12 @@ const MB = 1024 * 1024
  * no `git` config change, no index refresh. A failing command (not a repo, path
  * gone, timeout) answers `null` instead of throwing, because "git did not
  * answer" is a fact about the checkout, not a crash of the brain.
+ *
+ * Exported so the machine-wide census (src/machine/git-census.ts) reads git
+ * through exactly this path — the same flags, the same timeout, the same
+ * read-only guarantee — instead of growing a second, subtly different copy.
  */
-function gitText(
+export function gitText(
   cwd: string,
   args: string[],
   timeoutMs: number,
@@ -125,7 +129,7 @@ function gitText(
 }
 
 /** Count dirty (tracked) and untracked paths in one `git status` pass. */
-function statusCounts(cwd: string, timeoutMs: number): { dirty: number; untracked: number } | null {
+export function statusCounts(cwd: string, timeoutMs: number): { dirty: number; untracked: number } | null {
   const out = gitText(cwd, ['status', '--porcelain=v1', '--untracked-files=all'], timeoutMs)
   if (out === null) return null
   let dirty = 0
@@ -138,7 +142,7 @@ function statusCounts(cwd: string, timeoutMs: number): { dirty: number; untracke
   return { dirty, untracked }
 }
 
-function stashCount(cwd: string, timeoutMs: number): number | null {
+export function stashCount(cwd: string, timeoutMs: number): number | null {
   const out = gitText(cwd, ['stash', 'list', '--format=%gd'], timeoutMs)
   if (out === null) return null
   return out.split(/\r?\n/).filter(line => line.trim() !== '').length
@@ -149,7 +153,7 @@ function stashCount(cwd: string, timeoutMs: number): number | null {
  * does not have. `%(upstream:track)` prints `[ahead 3, behind 1]` when there is
  * an upstream and an empty string when there is none.
  */
-function unpushedBranches(cwd: string, timeoutMs: number): HygieneUnpushedBranch[] {
+export function unpushedBranches(cwd: string, timeoutMs: number): HygieneUnpushedBranch[] {
   const out = gitText(
     cwd,
     ['for-each-ref', '--format=%(refname:short)%09%(upstream:short)%09%(upstream:track)', 'refs/heads'],
@@ -172,7 +176,7 @@ function unpushedBranches(cwd: string, timeoutMs: number): HygieneUnpushedBranch
 }
 
 /** Days since the last commit on the currently checked-out branch. */
-function staleDays(cwd: string, timeoutMs: number, now: Date): number | null {
+export function staleDays(cwd: string, timeoutMs: number, now: Date): number | null {
   const out = gitText(cwd, ['log', '-1', '--format=%ct'], timeoutMs)
   if (out === null || out.trim() === '') return null
   const seconds = Number(out.trim())
@@ -186,7 +190,7 @@ function staleDays(cwd: string, timeoutMs: number, now: Date): number | null {
  * Also true when the checkout path itself disappeared: then nothing on this
  * disk can be read from it at all, and calling that "clean" would be a lie.
  */
-function isOrphan(path: string): boolean {
+export function isOrphan(path: string): boolean {
   if (!existsSync(path)) return true
   const dotGit = join(path, '.git')
   if (!existsSync(dotGit)) return true
@@ -211,7 +215,7 @@ function isOrphan(path: string): boolean {
  * read it as the size. `.git` is included — it is exactly the part that grows
  * without anybody noticing.
  */
-function boundedSizeMb(
+export function boundedSizeMb(
   root: string,
   budgetMs: number,
   maxEntries: number,

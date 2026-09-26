@@ -10,6 +10,7 @@
  */
 import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
+import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -19,6 +20,7 @@ import {
   collectMachine, driveLevel, forecastFrom, linearTrend, pruneSamples, recordSamples,
   seriesSince, type MachineReport,
 } from '../src/machine/collect.ts'
+import { registeredCheckoutPaths, scanGitRepos } from '../src/machine/git-census.ts'
 
 const GB = 1024 ** 3
 
@@ -108,9 +110,122 @@ test('collectMachine reports the injected host and marks an unreadable pagefile'
   } finally { fx.cleanup() }
 })
 
-// A note for the reader: existsSync/utimesSync are imported for the census
-// tests added in M2; keeping the import list in one place avoids churn.
+// ---------------------------------------------------------------------------
+// M2 — the global git census, against real repositories
+// ---------------------------------------------------------------------------
+
+const HAS_GIT = ((): boolean => {
+  try { execFileSync('git', ['--version'], { stdio: 'ignore' }); return true } catch { return false }
+})()
+const skipGit = HAS_GIT ? false : 'git is not available on this machine'
+
+const git = (cwd: string, args: string[]): void => {
+  execFileSync('git', ['-c', 'user.email=brain@test', '-c', 'user.name=brain',
+    '-c', 'commit.gpgsign=false', ...args], {
+    cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
+  })
+}
+
+function makeRepo(path: string): void {
+  mkdirSync(path, { recursive: true })
+  git(path, ['init', '-q', '-b', 'main'])
+  writeFileSync(join(path, 'readme.md'), 'hello\n')
+  git(path, ['add', '.'])
+  git(path, ['commit', '-q', '-m', 'initial'])
+}
+
+test('the census finds real repos, skips node_modules, and tells unsaved and unpushed apart', { skip: skipGit }, () => {
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-census-'))
+  const db = openStore(join(root, 'brain.db'))
+  try {
+    const clean = join(root, 'clean')
+    const dirty = join(root, 'dirty')
+    const unpushed = join(root, 'unpushed')
+    makeRepo(clean)
+    // A real remote, so `main` genuinely has an upstream and the word "clean"
+    // is reachable instead of every fresh repo counting as never pushed.
+    const origin = join(root, 'clean-origin.git')
+    git(root, ['init', '-q', '--bare', origin])
+    git(clean, ['remote', 'add', 'origin', origin])
+    git(clean, ['push', '-q', '-u', 'origin', 'main'])
+    makeRepo(dirty)
+    writeFileSync(join(dirty, 'hero.ts'), 'unsaved\n')
+    makeRepo(unpushed)
+    git(unpushed, ['checkout', '-q', '-b', 'feature/local-only'])
+    writeFileSync(join(unpushed, 'feature.ts'), 'x\n')
+    git(unpushed, ['add', '.'])
+    git(unpushed, ['commit', '-q', '-m', 'a branch nobody pushed'])
+
+    // A dependency tree that happens to contain a .git must never be reported.
+    const decoy = join(root, 'node_modules', 'left-pad')
+    mkdirSync(decoy, { recursive: true })
+    writeFileSync(join(decoy, '.git'), 'gitdir: nowhere\n')
+
+    // The clean repo is registered with the brain; the others are not.
+    const registered = registeredCheckoutPaths(db)
+    registered.add(clean.replace(/\\/g, '/'))
+
+    const { repos, complete } = scanGitRepos(registered, { roots: [root], budgetMs: 30_000 })
+    assert.equal(complete, true)
+    const byName = new Map(repos.map(repo => [repo.path.split(/[\\/]/).pop(), repo]))
+    assert.equal(byName.has('node_modules'), false)
+    assert.equal(repos.some(repo => repo.path.includes('left-pad')), false)
+    assert.equal(repos.length, 3)
+
+    assert.equal(byName.get('clean')?.registered, true)
+    assert.equal(byName.get('clean')?.dirtyFiles, 0)
+    assert.equal(byName.get('clean')?.unpushed.length, 0)
+
+    assert.equal(byName.get('dirty')?.registered, false)
+    assert.equal(byName.get('dirty')?.untrackedFiles, 1)
+
+    const localOnly = byName.get('unpushed')?.unpushed ?? []
+    assert.ok(localOnly.some(branch => branch.branch === 'feature/local-only' && branch.upstream === null))
+  } finally {
+    try { db.close() } catch { /* closed */ }
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('the census counts worktrees and flags the orphaned one', { skip: skipGit }, () => {
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-worktree-'))
+  const db = openStore(join(root, 'brain.db'))
+  try {
+    const base = join(root, 'base')
+    makeRepo(base)
+    const linked = join(root, 'linked')
+    git(base, ['worktree', 'add', '-q', '-b', 'side', linked])
+    // Remove the directory behind git's back: the registration now dangles.
+    rmSync(linked, { recursive: true, force: true })
+
+    const { repos } = scanGitRepos(new Set(), { roots: [root], budgetMs: 30_000 })
+    const measured = repos.find(repo => repo.path.endsWith('base'))
+    assert.ok(measured, 'the base repo is found')
+    assert.equal(measured?.worktrees, 2)
+    assert.equal(measured?.orphanWorktrees, 1)
+  } finally {
+    try { db.close() } catch { /* closed */ }
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('a tight directory cap reports complete:false instead of a truncated lie', { skip: skipGit }, () => {
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-cap-'))
+  const db = openStore(join(root, 'brain.db'))
+  try {
+    for (let index = 0; index < 30; index += 1) {
+      const filler = join(root, `dir-${index}`, 'sub')
+      mkdirSync(filler, { recursive: true })
+      writeFileSync(join(filler, 'file.txt'), 'x')
+    }
+    const { complete } = scanGitRepos(new Set(), { roots: [root], maxDirs: 5, budgetMs: 30_000 })
+    assert.equal(complete, false)
+  } finally {
+    try { db.close() } catch { /* closed */ }
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+// existsSync/utimesSync are kept for later census fixtures that touch mtimes.
 void existsSync
 void utimesSync
-void writeFileSync
-void mkdirSync
