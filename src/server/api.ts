@@ -1063,10 +1063,20 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
       })
+      // A reconnect may carry `Last-Event-ID`; replay what the buffer still has
+      // and never send an id twice (the live listener and the replay can both
+      // carry the same event when it fires while we are catching up).
+      const requested = req.headers['last-event-id']
+      const lastEventId = Array.isArray(requested) ? requested[0] : requested
+      let highestSent = Number.isFinite(Number(lastEventId)) ? Number(lastEventId) : 0
+      const send = (evt: { id: number; type: string; data: unknown }) => {
+        if (evt.id <= highestSent) return
+        highestSent = evt.id
+        res.write(`id: ${evt.id}\nevent: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
+      }
+      const unsubscribe = coord.coordEvents.onLive(send)
+      for (const evt of coord.coordEvents.replaySince(lastEventId)) send(evt)
       res.write(': connected\n\n')
-      const unsubscribe = coord.coordEvents.onLive((evt) => {
-        res.write(`event: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
-      })
       req.on('close', () => {
         unsubscribe()
       })

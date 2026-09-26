@@ -188,7 +188,16 @@ export function deliverTask(
   db.prepare(
     `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, updated_at = ? WHERE id = ?`,
   ).run(deliveredPath, now, taskId)
-  return load(db, taskId)
+  const delivered = load(db, taskId)
+  coordEvents.emitLive('task.delivered', {
+    taskId: delivered.id,
+    title: delivered.title,
+    agentId: delivered.claimed_by,
+    addressedTo: delivered.addressed_to,
+    evidence: delivered.delivered_path,
+    deliveredAt: delivered.updated_at,
+  })
+  return delivered
 }
 
 /** How many tasks are waiting. The one number that predicts trouble. */
