@@ -17,9 +17,9 @@
  *   - BOUNDED. The series keeps 24 h at a five-minute cadence and the forecast
  *     looks at at most the last hour, so the cost never grows with uptime.
  */
-import { existsSync, statSync } from 'node:fs'
+import { statSync } from 'node:fs'
 import type { DatabaseSync } from 'node:sqlite'
-import { hostSnapshot, type DriveSnapshot } from '../coord/resources.ts'
+import { driveRoots, hostSnapshot, type DriveSnapshot } from '../coord/resources.ts'
 
 const GB = 1024 ** 3
 
@@ -92,20 +92,12 @@ const round1 = (value: number): number => Math.round(value * 10) / 10
 /**
  * Every drive letter that answers, on Windows; `/` elsewhere.
  *
- * `node:os` does not enumerate volumes, so the honest way is to ask each mount
- * and keep the ones `statfs` can read. A: and B: are historically floppies and
- * are skipped; a network drive that hangs is not statfs'ed because Windows
- * reports it as a remote type we filter by trying, which is bounded by the
- * filesystem call itself.
+ * The enumeration lives in `coord/resources.ts` so that admission (`swarm
+ * admit`) and the machine report are looking at the exact same volumes; this
+ * is a thin re-export kept because the metric is named after the machine lane.
  */
 export function defaultDriveRoots(): string[] {
-  if (process.platform !== 'win32') return ['/']
-  const roots: string[] = []
-  for (let code = 'C'.charCodeAt(0); code <= 'Z'.charCodeAt(0); code += 1) {
-    const root = `${String.fromCharCode(code)}:\\`
-    if (existsSync(root)) roots.push(root)
-  }
-  return roots
+  return driveRoots()
 }
 
 /**

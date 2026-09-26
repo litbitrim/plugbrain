@@ -12,7 +12,9 @@ import { withFindings } from './findings.ts'
 
 export * from './collect.ts'
 export { withFindings } from './findings.ts'
-export { createWipSnapshots, type WipSnapshotEntry, type WipSnapshotResult } from './snapshot.ts'
+export {
+  createWipSnapshots, snapshotRepo, type WipSnapshotEntry, type WipSnapshotResult,
+} from './snapshot.ts'
 
 /** Collect and judge in one call — what every surface actually wants. */
 export function hygieneReport(

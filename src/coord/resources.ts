@@ -11,7 +11,7 @@
  * to a local process, so the integrator or the worker records what the app
  * shows. Labels and notes are names, never credentials.
  */
-import { statfsSync } from 'node:fs'
+import { existsSync, statfsSync } from 'node:fs'
 import { cpus, freemem, totalmem } from 'node:os'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied } from '../access.ts'
@@ -55,13 +55,26 @@ function cpuTotals(): { idle: number; total: number } {
   return { idle, total }
 }
 
-function defaultRoots(): string[] {
-  if (process.platform === 'win32') return [`${process.env.SystemDrive ?? 'C:'}\\`]
-  return ['/']
+/**
+ * Every drive that answers, on Windows; `/` elsewhere.
+ *
+ * The machine lane and admission must look at the same volumes, or admission
+ * would call a build safe while `D:` is the disk that is actually full. So this
+ * is the one place that decides what "the host's drives" means: `C:`..`Z:`
+ * when the letter exists, and `/` on POSIX.
+ */
+export function driveRoots(): string[] {
+  if (process.platform !== 'win32') return ['/']
+  const roots: string[] = []
+  for (let code = 'C'.charCodeAt(0); code <= 'Z'.charCodeAt(0); code += 1) {
+    const root = `${String.fromCharCode(code)}:\\`
+    if (existsSync(root)) roots.push(root)
+  }
+  return roots
 }
 
 /** Measure the host now. Unreadable drives are skipped rather than guessed. */
-export function hostSnapshot(roots: string[] = defaultRoots()): HostSnapshot {
+export function hostSnapshot(roots: string[] = driveRoots()): HostSnapshot {
   const drives: DriveSnapshot[] = []
   for (const root of roots) {
     try {

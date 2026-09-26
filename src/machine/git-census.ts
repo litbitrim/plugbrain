@@ -287,6 +287,38 @@ export function refreshInBackground(db: DatabaseSync, options: CensusOptions = {
   timer.unref?.()
 }
 
+/** An honest empty answer for a census that has not run yet. */
+function emptyCensus(roots: string[]): CensusReport {
+  return {
+    scannedAt: new Date().toISOString(),
+    roots,
+    complete: false,
+    repos: [],
+    totals: { repos: 0, dirty: 0, unpushedBranches: 0, orphanWorktrees: 0 },
+    unavailable: ['census'],
+  }
+}
+
+/**
+ * The census WITHOUT ever blocking on a cold scan.
+ *
+ * An HTTP request must not wait 20 s for a disk walk. This returns the last
+ * scan at once, starts a background one when the cache is cold or stale, and
+ * on the very first call answers `complete: false` with `unavailable: ['census']`
+ * rather than pretending the machine has no repositories. Call it from routes;
+ * call `gitCensus` only when a human typed a command and expects to wait.
+ */
+export function gitCensusCached(db: DatabaseSync, options: CensusOptions = {}): CensusReport {
+  const ttl = DEFAULTS.cacheTtlMs
+  if (cache !== null) {
+    if (Date.now() - cache.atMs >= ttl) refreshInBackground(db, options)
+    return cache.report
+  }
+  const roots = (options.roots ?? defaultCensusRoots()).map(root => resolve(root))
+  refreshInBackground(db, options)
+  return emptyCensus(roots)
+}
+
 /** Test hook: forget the cached scan so the next call walks again. */
 export function resetCensusCache(): void {
   cache = null

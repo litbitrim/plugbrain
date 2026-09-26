@@ -14,12 +14,18 @@ export * from './collect.ts'
 export { withMachineFindings } from './findings.ts'
 export * from './git-census.ts'
 
-/** Measure the host, walk the census, and judge both in one call. */
+/**
+ * Measure the host and judge it in one call.
+ *
+ * `options.census` lets a caller that must not block (an HTTP route) hand in
+ * the cached census instead of letting this trigger a whole-disk walk. Without
+ * it, the census is read synchronously.
+ */
 export function machineReport(
   db: DatabaseSync,
-  options: MachineOptions & CensusOptions = {},
+  options: MachineOptions & CensusOptions & { census?: CensusReport } = {},
 ): MachineReport {
   const report = collectMachine(db, options)
-  const census = gitCensus(db, options)
+  const census = options.census ?? gitCensus(db, options)
   return withMachineFindings(report, census)
 }

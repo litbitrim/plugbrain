@@ -31,6 +31,10 @@
  *
  *   plugbrain hygiene [--workspace <id>] [--json]   what git work sits on exactly one disk
  *   plugbrain hygiene --wip-snapshot [--json]       save uncommitted work into refs/wip/<date>/<name>
+ *   plugbrain hygiene --wip-snapshot --repo <path>  rescue one repository the brain never registered
+ *
+ *   plugbrain machine [--json]                      drives, pagefile, RAM, CPU and when a disk fills
+ *   plugbrain repos [--dirty] [--json]              every git repository on this machine
  */
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -57,8 +61,11 @@ import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
 import {
-  createWipSnapshots, hygieneReport, type HygieneReport, type WipSnapshotResult,
+  createWipSnapshots, hygieneReport, snapshotRepo, type HygieneReport,
+  type WipSnapshotEntry, type WipSnapshotResult,
 } from './hygiene/index.ts'
+import { machineReport, type MachineReport } from './machine/index.ts'
+import { gitCensus, type CensusReport } from './machine/git-census.ts'
 import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
@@ -542,7 +549,13 @@ function renderSnapshots(result: WipSnapshotResult): void {
 function hygieneCommand(args: string[]): void {
   const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
   if (args.includes('--wip-snapshot')) {
-    const result = createWipSnapshots(db, workspaceId)
+    // `--repo <path>` rescues one repository the brain never registered — the
+    // fix the machine-wide census names for work outside the brain. Only ever
+    // reached because a human typed the command.
+    const repo = flagValue(args, '--repo')
+    const result = repo === null
+      ? createWipSnapshots(db, workspaceId)
+      : singleRepoSnapshot(resolve(repo))
     if (args.includes('--json')) return jsonOut(result)
     renderSnapshots(result)
     return
@@ -550,6 +563,84 @@ function hygieneCommand(args: string[]): void {
   const report = hygieneReport(db, workspaceId)
   if (args.includes('--json')) return jsonOut(report)
   renderHygiene(report)
+}
+
+/** Wrap one repository's rescue in the same result shape the batch prints. */
+function singleRepoSnapshot(path: string): WipSnapshotResult {
+  const entries: WipSnapshotEntry[] = [snapshotRepo(path)]
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    created: entries.filter(entry => entry.ref !== null).length,
+    skipped: entries.filter(entry => entry.ref === null && entry.error === null).length,
+    entries,
+    unavailable: [],
+  }
+}
+
+/* ── machine / repos: the hardware and every git repository ─────────────── */
+
+function renderMachine(report: MachineReport): void {
+  console.log(`machine checked ${report.checkedAt}`)
+  for (const drive of report.drives) {
+    console.log(`  ${LEVEL_WORD[drive.level].padEnd(9)} ${drive.mount.padEnd(4)} ` +
+      `${drive.freeGb} GB free of ${drive.totalGb} GB`)
+  }
+  const pagefile = report.pagefile.sizeGb === null ? 'unavailable' : `${report.pagefile.sizeGb} GB`
+  const ram = report.memory.freeGb === null || report.memory.totalGb === null
+    ? 'unavailable'
+    : `${report.memory.freeGb} GB free of ${report.memory.totalGb} GB`
+  const cpu = report.cpu.load === null ? 'unavailable' : `${Math.round(report.cpu.load * 100)} % busy`
+  console.log(`  pagefile  ${pagefile}`)
+  console.log(`  memory    ${ram}`)
+  console.log(`  cpu       ${cpu}`)
+  for (const forecast of report.forecast) {
+    const full = forecast.fullInHours === null
+      ? `steady (${forecast.trendGbPerHour} GB/h)`
+      : `full in ~${forecast.fullInHours} h (${forecast.trendGbPerHour} GB/h)`
+    console.log(`  forecast  ${forecast.mount} ${full}, ${forecast.basis}`)
+  }
+  for (const finding of report.findings) {
+    console.log(`\n    ${LEVEL_WORD[finding.level]}: ${finding.text}`)
+    console.log(`    fix: ${finding.fix}`)
+  }
+  if (report.unavailable.length > 0) console.log(`\nunavailable: ${report.unavailable.join(', ')}`)
+}
+
+function machineCommand(args: string[]): void {
+  const report = machineReport(db)
+  if (args.includes('--json')) return jsonOut(report)
+  renderMachine(report)
+}
+
+function renderRepos(census: CensusReport, dirtyOnly: boolean): void {
+  console.log(`${census.repos.length} repo(s)${dirtyOnly ? ' with unsaved work' : ''}` +
+    `${census.complete ? '' : ' (scan hit its limit; run again with --json to see the roots)'}`)
+  for (const repo of census.repos) {
+    const flags = [
+      repo.registered ? 'registered' : 'outside brain',
+      (repo.dirtyFiles ?? 0) > 0 ? `${repo.dirtyFiles} dirty` : null,
+      (repo.untrackedFiles ?? 0) > 0 ? `${repo.untrackedFiles} untracked` : null,
+      repo.unpushed.length > 0 ? `${repo.unpushed.length} unpushed` : null,
+      repo.orphanWorktrees > 0 ? `${repo.orphanWorktrees} orphan worktree(s)` : null,
+      repo.stashes !== null && repo.stashes > 0 ? `${repo.stashes} stash` : null,
+      repo.lastCommitDays !== null ? `${repo.lastCommitDays}d old` : null,
+      repo.gitSizeMb !== null ? `${repo.gitSizeMb} MB` : null,
+    ].filter((flag): flag is string => flag !== null)
+    console.log(`  ${(repo.branch ?? '-').padEnd(24)} ${repo.path}`)
+    console.log(`      ${flags.join('   ')}`)
+  }
+  if (census.unavailable.length > 0) console.log(`\nunavailable: ${census.unavailable.join(', ')}`)
+}
+
+function reposCommand(args: string[]): void {
+  const dirtyOnly = args.includes('--dirty')
+  const census = gitCensus(db, args.includes('--refresh') ? { refresh: true } : {})
+  const repos = dirtyOnly
+    ? census.repos.filter(repo => (repo.dirtyFiles ?? 0) > 0 || (repo.untrackedFiles ?? 0) > 0)
+    : census.repos
+  const view: CensusReport = { ...census, repos }
+  if (args.includes('--json')) return jsonOut(view)
+  renderRepos(view, dirtyOnly)
 }
 
 function notesSearch(args: string[]): void {
@@ -930,6 +1021,8 @@ switch (command) {
   case 'compact': compact(); break
   case 'plan': planCommand(args); break
   case 'hygiene': hygieneCommand(args); break
+  case 'machine': machineCommand(args); break
+  case 'repos': reposCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)
@@ -1045,7 +1138,9 @@ switch (command) {
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
-      '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot]\n' +
+      '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot] [--repo <path>]\n' +
+      '       plugbrain machine [--json]\n' +
+      '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
       '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
       '       plugbrain backup [target_path]\n' +
