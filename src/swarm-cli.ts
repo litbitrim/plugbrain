@@ -286,6 +286,30 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       }
       return 0
     }
+    case 'reap': {
+      const auto = flag(rest, '--auto')
+      if (auto !== null) {
+        if (auto !== 'on' && auto !== 'off') throw new AccessDenied('usage: plugbrain swarm reap --auto on|off')
+        setReapAuto(db, workspaceId, auto === 'on')
+        console.log(`reap.auto ${auto}`)
+        return 0
+      }
+      const result = reapWorktrees(db, workspaceId, {
+        repo: flag(rest, '--repo') ?? undefined, target: flag(rest, '--target') ?? undefined,
+        apply: rest.includes('--apply'),
+      })
+      if (asJson) console.log(JSON.stringify(result, null, 2))
+      else {
+        for (const row of result.candidates) console.log(`${row.eligible ? 'reapable' : 'retained'} ${row.path}: ${row.reason}`)
+        for (const row of result.removed) console.log(`removed ${row.path}; restore with: ${row.restoreCommand}`)
+        for (const row of result.missing) console.log(`missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`)
+        if (result.pruneCommand) {
+          console.log(`prune dry run only: ${result.pruneCommand}`)
+          for (const line of result.pruneReport) console.log(`  ${line}`)
+        }
+      }
+      return 0
+    }
     case 'chronik': {
       const usage = 'plugbrain swarm chronik [--since <iso|2h>] [--json|--md]'
       const chronicle = buildSwarmChronicle(db, workspaceId, { since: flag(rest, '--since') ?? undefined })

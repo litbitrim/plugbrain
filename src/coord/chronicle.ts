@@ -179,15 +179,19 @@ export function buildSwarmChronicle(
     { name: 'resource_quotas', available: hasTable(db, 'resource_quotas') },
     { name: 'turn history', available: historyAvailable },
   ]
+  const missingSources = sources.filter(source => !source.available).map(source => source.name === 'turn history'
+    ? 'Turn-Verlauf erst ab Version mit Turn-Historie gespeichert.'
+    : `Quelle fehlt: ${source.name}.`)
+  if (historyAvailable) {
+    missingSources.push('Turn-Verlauf erst ab Version mit Turn-Historie gespeichert; älterer Verlauf fehlt.')
+  }
   return {
     workspaceId,
     since: new Date(cutoff).toISOString(),
     generatedAt: new Date(now).toISOString(),
     events,
     sources,
-    missingSources: sources.filter(source => !source.available).map(source => source.name === 'turn history'
-      ? 'Turn-Verlauf erst ab Version mit Turn-Historie gespeichert.'
-      : `Quelle fehlt: ${source.name}.`),
+    missingSources,
   }
 }
 
