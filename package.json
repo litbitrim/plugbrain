@@ -1,9 +1,30 @@
 {
   "name": "plugbrain",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "PlugBrain — standalone workspace indexer: real AST code intelligence with three renderings of one graph.",
+  "description": "Local project and code memory for AI agents: real AST code intelligence plus Obsidian-style notes, exposed to Claude Code through MCP.",
+  "license": "MIT",
+  "author": "litbitrim",
+  "homepage": "https://github.com/litbitrim/plugbrain#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/litbitrim/plugbrain.git"
+  },
+  "bugs": "https://github.com/litbitrim/plugbrain/issues",
+  "keywords": [
+    "code-intelligence",
+    "ast",
+    "knowledge-base",
+    "obsidian",
+    "mcp",
+    "ai-agents",
+    "local-first",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
   "bin": {
     "plugbrain": "./src/cli.ts"
   },
@@ -20,7 +41,8 @@
     "package:nsis": "node scripts/package-nsis.mjs",
     "proof:prevention": "node --experimental-strip-types scripts/proof-prevention.ts",
     "proof:mcp-parity": "node --experimental-strip-types scripts/compare-gitnexus-parity.ts",
-    "verify:gold-corpus-v2": "node --experimental-strip-types scripts/verify-gold-corpus-v2.ts"
+    "verify:gold-corpus-v2": "node --experimental-strip-types scripts/verify-gold-corpus-v2.ts",
+    "secret:scan": "node scripts/secret-scan.mjs"
   },
   "dependencies": {
     "typescript": "^5.9.3"
