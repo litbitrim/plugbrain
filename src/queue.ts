@@ -12,6 +12,11 @@
  * cases where capability genuinely differs (a job only Freebuff can do) — not
  * as a second mechanism with its own table and its own bugs.
  *
+ * A task may additionally wait for another task (`afterTaskId`). Ordering is
+ * the one thing pull alone cannot express, and on 26.09.2026 the integrator
+ * was the ordering mechanism by hand. The waiting itself lives in
+ * `coord/dependencies.ts`; this module only keeps its offers honest.
+ *
  * Leases: PlugBrain deliberately does not own them (see projections/conflicts.ts
  * — "PlugBrain does not own leases, the Operator and @plug/work do"). This
  * module therefore *reports* that a claim has gone quiet and never reaps one.
@@ -21,6 +26,7 @@
 import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from './access.ts'
+import { addTaskDependency, ensureDependencySchema, syncDependencies, UNBLOCKED_TASK_SQL } from './coord/dependencies.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
 import { coordEvents } from './coord/events.ts'
 
@@ -66,7 +72,10 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
 `
 
-export function ensureQueueSchema(db: DatabaseSync): void { db.exec(SCHEMA) }
+// The candidates every offer reads are filtered by the dependency table, so it
+// belongs to the queue schema: a store that only ever touched the queue must
+// still be able to answer "who is next" without a missing-table error.
+export function ensureQueueSchema(db: DatabaseSync): void { db.exec(SCHEMA); ensureDependencySchema(db) }
 
 const load = (db: DatabaseSync, id: string): QueueTask => {
   const row = rowAs<QueueTask>(db.prepare('SELECT * FROM queue_tasks WHERE id = ?').get(id))
@@ -85,7 +94,7 @@ const load = (db: DatabaseSync, id: string): QueueTask => {
 export function enqueueTask(
   db: DatabaseSync,
   workspaceId: string,
-  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string },
+  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
@@ -106,6 +115,7 @@ export function enqueueTask(
     id, workspaceId, title, input.body ?? '',
     input.addressedTo ?? null, input.requestedBy ?? null, now, now,
   )
+  if (input.afterTaskId !== undefined) addTaskDependency(db, id, input.afterTaskId)
   const task = load(db, id)
   coordEvents.emitLive('task.enqueued', {
     taskId: task.id,
@@ -142,6 +152,7 @@ export function claimNextTask(
       `SELECT id FROM queue_tasks
         WHERE workspace_id = ? AND state = 'pending'
           AND (addressed_to IS NULL OR addressed_to = ?)
+          AND ${UNBLOCKED_TASK_SQL}
         ORDER BY created_at ASC, rowid ASC
         LIMIT 1`,
     ).get(workspaceId, agentId) as { id: string } | undefined
@@ -188,6 +199,8 @@ export function deliverTask(
   db.prepare(
     `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, updated_at = ? WHERE id = ?`,
   ).run(deliveredPath, now, taskId)
+  // The delivery may be exactly the event another task was waiting for.
+  syncDependencies(db, task.workspace_id)
   return load(db, taskId)
 }
 

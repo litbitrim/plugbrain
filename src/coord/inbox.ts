@@ -4,7 +4,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
-import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
+import { AccessDenied, registerAgent, requireAgent, requireWorkspace } from '../access.ts'
 import { rowsAs } from '../store/rows.ts'
 import { coordEvents } from './events.ts'
 import type { InboxMessage } from './types.ts'
@@ -58,6 +58,18 @@ function parseMessage(row: InboxDbRow): InboxMessage {
     deliveredAt: row.delivered_at,
     readAt: row.read_at,
   }
+}
+
+/**
+ * Make sure a coordinating identity exists, so a message the Brain sends on
+ * its own (a release notice, a silence alert) has a real sender. `sendMessage`
+ * refuses an unknown `fromAgent`, and minting one silently at send time would
+ * hide a typo in the caller's own `--from`.
+ */
+export function ensureSystemAgent(db: DatabaseSync, workspaceId: string, agentId = 'integrator'): void {
+  ensureInboxSchema(db)
+  registerAgent(db, agentId, agentId === 'integrator' ? 'Integrator' : agentId)
+  db.prepare('UPDATE agents SET workspace_id = COALESCE(workspace_id, ?) WHERE id = ?').run(workspaceId, agentId)
 }
 
 export interface SendMessageInput {
