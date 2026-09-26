@@ -673,9 +673,41 @@ function ensureSearchTrigram(db: DatabaseSync): void {
         INSERT INTO search_trigram(rowid, name, path) VALUES (new.id, new.name, new.path);
       END;
     `)
+  }
+
+  // Backfill: rebuild the trigram index whenever the INDEX is empty but
+  // search_rows has content. This catches two cases:
+  //   (a) fresh table just created above (no triggers have fired yet)
+  //   (b) migrated DB where db.exec(SCHEMA) already created the table via
+  //       IF NOT EXISTS — the hasTri guard above was TRUE so the CREATE block
+  //       was skipped, and the old-schema DB never populated the index.
+  //
+  // The emptiness probe is the %_docsize shadow table, NOT COUNT(*) on the
+  // fts5 table: on an external-content table COUNT(*) mirrors the CONTENT
+  // table (search_rows), so it stays > 0 even when the index itself has never
+  // been filled — measured on a migrated brain: COUNT 1, docsize 0, MATCH
+  // 'login' 0 rows, until a rebuild filled docsize and the MATCH hit.
+  let docRows: number | null = null
+  try {
+    docRows = (db.prepare('SELECT COUNT(*) c FROM search_trigram_docsize').get() as { c: number }).c
+  } catch (e) {
+    // A failed backfill must be visible, never swallowed: the empty substring
+    // index this guard prevents is exactly the bug, and a silent catch would
+    // hide its cause from every log. Without docsize the index state cannot
+    // be judged, so the rebuild is skipped rather than guessed.
+    process.stderr.write(
+      `PlugBrain: trigram backfill skipped, cannot read search_trigram_docsize: ${e instanceof Error ? e.message : String(e)}\n`)
+  }
+  if (docRows === 0) {
     try {
-      db.exec("INSERT INTO search_trigram(search_trigram) VALUES ('rebuild')")
-    } catch {}
+      const rowCount = (db.prepare('SELECT COUNT(*) c FROM search_rows').get() as { c: number }).c
+      if (rowCount > 0) {
+        db.exec("INSERT INTO search_trigram(search_trigram) VALUES ('rebuild')")
+      }
+    } catch (e) {
+      process.stderr.write(
+        `PlugBrain: trigram index backfill failed: ${e instanceof Error ? e.message : String(e)}\n`)
+    }
   }
 }
 

@@ -261,7 +261,14 @@ export function conceptSearch(
         fastCandidates.push(fh)
       }
     }
-  } catch {}
+  } catch (error) {
+    // A failed fast path must degrade loudly, not silently: log the concrete
+    // error so a broken index shows up instead of hiding behind the full-scan
+    // fallback that keeps answers correct but slow.
+    process.stderr.write(
+      `PlugBrain: concept search fast path failed, falling back to the full scan: ` +
+      `${error instanceof Error ? error.message : String(error)}\n`)
+  }
 
   if (fastCandidates.length > 0) {
     rawSymbols = fastCandidates
@@ -320,8 +327,13 @@ export function conceptSearch(
         })
       }
     }
-  } catch {
-    // Graceful fallback if note_search table is absent or query unparseable
+  } catch (error) {
+    // Graceful fallback if note_search table is absent or query unparseable —
+    // but the reason must be visible, never swallowed: a silent catch here
+    // would hide a broken note index behind an empty notes list.
+    process.stderr.write(
+      `PlugBrain: note search failed, returning no notes: ` +
+      `${error instanceof Error ? error.message : String(error)}\n`)
   }
 
   // 3. Execution flows around top symbols
@@ -337,8 +349,13 @@ export function conceptSearch(
           flows.push(flow)
         }
       }
-    } catch {
-      // Ignore flow retrieval failure for individual symbol
+    } catch (error) {
+      // A flow retrieval failure for one symbol must not abort the search,
+      // but it must be visible: log the concrete error with the symbol so a
+      // broken graph shows up in the log instead of vanishing.
+      process.stderr.write(
+        `PlugBrain: flow retrieval failed for ${sym.name}: ` +
+        `${error instanceof Error ? error.message : String(error)}\n`)
     }
   }
 
