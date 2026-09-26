@@ -303,7 +303,7 @@ plugbrain register <path> [name]
 
 **Example:**
 ```bash
-plugbrain register C:/PLUG/plugpt/Code/PlugBrain-Core PlugBrain-Core
+plugbrain register C:/code/my-project my-project
 ```
 
 ---

@@ -588,7 +588,7 @@ Inspect git repository health and uncommitted changes across all checkouts in th
   "status": "clean",
   "checkouts": [
     {
-      "path": "C:/PLUG/plugpt/Code/PlugBrain-Core",
+      "path": "C:/code/my-project",
       "branch": "main",
       "head": "a1b2c3d",
       "dirtyFiles": 0,
@@ -664,7 +664,7 @@ Machine-wide git repository census: discover registered and unregistered reposit
 {
   "ok": true,
   "scannedAt": "2026-09-26T08:00:00.000Z",
-  "roots": ["C:/PLUG"],
+  "roots": ["C:/code"],
   "complete": true,
   "dirty": true,
   "repos": [],
@@ -1016,8 +1016,8 @@ Fleet overview showing every worker's status, unread messages, active leases, wo
         "activeTask": "TASK-DOCS",
         "worktrees": [
           {
-            "path": "C:/PLUG/plugpt/Code/PlugBrain-Core--docs",
-            "branch": "docs/reference-20260926",
+            "path": "C:/code/my-project--feature",
+            "branch": "feat/my-feature",
             "dirtyFiles": 1
           }
         ]

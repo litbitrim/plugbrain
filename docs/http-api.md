@@ -141,7 +141,7 @@ Retrieve a structured summary of the workspace: project name, key files, entry p
   "workspaceId": "ws-plugbrain",
   "project": {
     "name": "plugbrain",
-    "root": "C:/PLUG/plugpt/Code/PlugBrain-Core",
+    "root": "C:/code/my-project",
     "indexedAt": "2026-09-26T08:00:00.000Z"
   },
   "summary": "Local project and code memory for AI agents...",
@@ -178,8 +178,8 @@ Check git health across all checkouts registered in the workspace: unsaved files
   },
   "checkouts": [
     {
-      "path": "C:/PLUG/plugpt/Code/PlugBrain-Core",
-      "repo": "PlugBrain-Core",
+      "path": "C:/code/my-project",
+      "repo": "my-project",
       "branch": "main",
       "dirtyFiles": 0,
       "untrackedFiles": 0,
@@ -252,12 +252,12 @@ Discover all git repositories on the local host machine, whether registered in P
 {
   "ok": true,
   "scannedAt": "2026-09-26T10:00:00.000Z",
-  "roots": ["C:/PLUG"],
+  "roots": ["C:/code"],
   "complete": true,
   "dirty": false,
   "repos": [
     {
-      "path": "C:/PLUG/plugpt/Code/PlugBrain-Core",
+      "path": "C:/code/my-project",
       "registered": true,
       "dirtyFiles": 0,
       "untrackedFiles": 0,
