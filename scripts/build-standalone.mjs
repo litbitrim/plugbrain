@@ -15,6 +15,7 @@
  * resolveUiRoot() in src/cli.ts looks beside the bundle first for exactly this.
  */
 import { build } from 'esbuild'
+import { execFileSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -121,3 +122,26 @@ writeFileSync(join(dist, 'release.json'), `${JSON.stringify({
   signature: { type: 'none', status: 'UNSIGNED_NOT_FOR_PUBLIC_RELEASE' },
 }, null, 2)}\n`)
 console.log(`plugbrain bundle + index worker + ${uiFiles.length} ui files`)
+
+// ── POSIX portable package (macOS / Linux) ──────────────────────────────
+// Windows ships as an NSIS installer; macOS and Linux ship as a tar.gz that
+// carries the exact Node runtime of the build runner plus a bin/plugbrain
+// start script, so a downloaded brain runs without any system Node.
+if (process.platform !== 'win32') {
+  mkdirSync(join(dist, 'bin'), { recursive: true })
+  const startScript = join(dist, 'bin', 'plugbrain')
+  writeFileSync(startScript, [
+    '#!/usr/bin/env sh',
+    '# PlugBrain portable launcher: runs the bundled brain with its own Node.',
+    'DIR="$(cd "$(dirname "$0")" && pwd)"',
+    'exec "$DIR/../node" "$DIR/../plugbrain.mjs" "$@"',
+    '',
+  ].join('\n'), { mode: 0o755 })
+
+  mkdirSync(join(packageRoot, 'release'), { recursive: true })
+  const artifact = join(packageRoot, 'release', `plugbrain-${manifest.version}-${process.platform}-${process.arch}.tar.gz`)
+  execFileSync('tar', ['-czf', artifact, '-C', dist, '.'], { stdio: 'inherit' })
+  const artifactSha = createHash('sha256').update(readFileSync(artifact)).digest('hex')
+  writeFileSync(`${artifact}.sha256`, `${artifactSha}  ${artifact.split('/').pop()}\n`)
+  console.log(`portable package: ${artifact}`)
+}
