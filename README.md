@@ -34,9 +34,17 @@ PlugBrain combines both halves in one local brain:
 | MCP server for Claude Code & friends | – | – | ✓ |
 | Fully local, single binary, no account | – | – | ✓ |
 
-<!-- BENCH -->
-<!-- The integrator fills this section with the measured numbers from BENCH-02
-     (indexing speed, query latency, memory) once that benchmark lane reports. -->
+### How it measures up
+
+We compared PlugBrain with CodeGraph and GitNexus on 120 questions (definitions, callers, impact, config keys, docs) across four of the author's own projects. PlugBrain itself is not one of them. We wrote the questions ourselves. 40 of them were frozen before any tuning and serve as the honest holdout. Every tool was driven through its documented command-line interface, and every raw answer is stored next to the results.
+
+| Tool | Holdout (40) | All questions (120) | Latency p50 | Latency p95 |
+| :--- | :---: | :---: | :---: | :---: |
+| PlugBrain | 38 / 40 | 106 / 120 | 265 ms (33 ms with the daemon running) | 478 ms |
+| CodeGraph | 38 / 40 | 103 / 120 | 280 ms | 311 ms |
+| GitNexus | 36 / 40 | 90 / 120 | 1,134 ms | 3,465 ms |
+
+In short, PlugBrain answers three more of the 120 questions than CodeGraph and ties it on the holdout. Its real edge is speed once the daemon is warm, and that it also searches your notes. CodeGraph's call edges are still more complete on deeply polymorphic class hierarchies. Full method, raw answers, hand-checked misses and how to reproduce the run: [bench/v2/RESULTS.md](bench/v2/RESULTS.md).
 
 ## Quickstart
 
