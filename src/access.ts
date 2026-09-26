@@ -122,7 +122,12 @@ function resolveInside(workspace: Workspace, relPath: string): string {
   // Symlink, Junction and Dangling Symlink containment check (B06 / FO-3 / REV2-D03 / R3-CHAINED-DANGLING-SYMLINK)
   if (existsSync(workspace.root)) {
     const realRoot = realpathSync(workspace.root)
-    const relFromRoot = relative(realRoot, abs)
+    // `abs` is lexically inside workspace.root (checked above), and the root
+    // itself may be a link: a junction, a symlink, or macOS's /var ->
+    // /private/var. Taking the relative path against the lexical root and
+    // walking it from the real root compares like with like; relative(realRoot,
+    // abs) would call every file of such a workspace an escape.
+    const relFromRoot = relative(workspace.root, abs)
     if (relFromRoot.startsWith('..') || isAbsolute(relFromRoot)) {
       throw new AccessDenied(`path escapes the workspace: ${relPath}`)
     }
