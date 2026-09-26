@@ -379,7 +379,7 @@ test('M4: awareness pack reports dependency overlap when another task claims an 
   }
 })
 
-test('M4: MCP server lists all 23 tools and executes tool calls over JSON-RPC', async () => {
+test('M4: MCP server lists all 24 tools and executes tool calls over JSON-RPC', async () => {
   const f = await createCoordFixture()
   try {
     const inStream = new PassThrough()
@@ -425,10 +425,10 @@ test('M4: MCP server lists all 23 tools and executes tool calls over JSON-RPC', 
     // 2. tools/list: coordination tools plus the Brain parity read tools.
     const listRes = await sendRpc({ id: 2, method: 'tools/list' })
     const tools = listRes.result.tools as Array<{ name: string }>
-    assert.equal(tools.length, 23, `Expected 23 tools, found ${tools.length}`)
+    assert.equal(tools.length, 24, `Expected 24 tools, found ${tools.length}`)
     const toolNames = tools.map((t) => t.name)
     const expected = [
-      'search', 'read', 'context_pack', 'query', 'context', 'impact',
+      'ask', 'search', 'read', 'context_pack', 'query', 'context', 'impact',
       'detect_changes', 'claim', 'release', 'awareness', 'inbox_read',
       'message_send', 'heartbeat', 'cypher', 'rename_preview',
       'swarm_turn', 'swarm_board', 'swarm_resources',

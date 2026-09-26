@@ -12,6 +12,7 @@ import { createAwarenessPort } from '../projections/awareness.ts'
 import { mcpProvenance } from './provenance.ts'
 import { backlinksOf, queryNotes, readNote, searchNotesWithLines } from '../notes/vault.ts'
 import { planTask, planView } from '../plan.ts'
+import { askQuestion } from '../ask/index.ts'
 
 export interface McpServerOptions {
   db: DatabaseSync
@@ -61,6 +62,19 @@ export const MCP_TOOLS = [
         missionId: { type: 'string', description: 'Optional mission ID' },
       },
       required: ['goal'],
+    },
+  },
+  {
+    name: 'ask',
+    description: 'Ask the project a question in plain language (German or English) and get one readable sentence with sources. Try this FIRST: it routes the question to the right tool (definition, usage, impact, changes, overview, notes, search) without you having to pick one.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        question: { type: 'string', description: 'The question as a human would ask it, e.g. "where is the brain home resolved?" or "was bricht, wenn ich X ändere"' },
+        workspaceId: { type: 'string', description: 'Workspace ID (optional if server bound to workspace)' },
+        limit: { type: 'number', description: 'Max sources (default 5, max 25)' },
+      },
+      required: ['question'],
     },
   },
   {
@@ -537,6 +551,14 @@ export class McpServer {
           if (agentId) access.ensureAgent(this.db, agentId)
           const pack = buildContextPack(this.db, ws, goal, { agentId, missionId })
           return { ok: true, ...pack }
+        }
+
+        case 'ask': {
+          const workspaceId = this.getWorkspaceId(args)
+          const question = String(args.question ?? args.q ?? '').trim()
+          if (!question) return { ok: false, error: 'question parameter required' }
+          const limit = args.limit ? Number(args.limit) : 5
+          return { ok: true, ...askQuestion(this.db, { workspaceId, question, limit }) }
         }
 
         case 'query': {
