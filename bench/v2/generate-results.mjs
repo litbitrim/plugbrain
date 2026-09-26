@@ -3,9 +3,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const RAW_DIR = join(WORKTREE, 'bench/v2/raw');
+import { RAW_DIR, WORKTREE } from './paths.mjs';
 const MATRIX_FILE = join(RAW_DIR, 'matrix.json');
 const TARGET_FILE = join(WORKTREE, 'bench/v2/RESULTS.md');
 
@@ -118,10 +116,10 @@ md += `---
 
 ## Methodology & Limitations
 
-1. **Snapshots**: Repositories were cloned or snapshotted into isolated local paths in \`C:/PLUG/bench/<repo>\`.
+1. **Snapshots**: Repositories were cloned or snapshotted into isolated local directories under \`BENCH_REPOS_ROOT\` — one subdirectory per repository, matching \`bench/v2/repos.json\`.
 2. **Pre-Tool Questions**: All 80 questions were frozen in JSON files (\`bench/v2/questions/\`) prior to running any tool indexer or query commands.
 3. **Execution Isolation**:
-   - PlugBrain ran against a private temporary home (\`PLUGBRAIN_HOME=C:/PLUG/bench/_plugbrain-home\`), never accessing live configurations or ports.
+   - PlugBrain ran against a private temporary home under \`BENCH_REPOS_ROOT\` (\`PLUGBRAIN_HOME=<BENCH_REPOS_ROOT>/_plugbrain-home\`), never accessing live configurations or ports.
    - GitNexus ran with its native CLI (\`gitnexus analyze\`, \`query\`, \`context\`, \`impact\`).
    - CodeGraph ran with its native CLI (\`codegraph init/index\`, \`query\`, \`callers\`, \`impact\`).
 4. **Hit Criteria**:
@@ -130,6 +128,12 @@ md += `---
 5. **Limitations**:
    - Tools have different natural strengths: GitNexus focuses on community flows and processes, CodeGraph on fast symbol graph navigation, and PlugBrain on architectural attribution and deterministic graph projection.
    - In MCPZ, Java AST parsing was unavailable in PlugBrain, naturally penalizing its score on that repository.
+
+---
+
+## Reproduce
+
+The benchmark corpora are not part of this repository. Point the \`BENCH_REPOS_ROOT\` environment variable at a directory that holds one subdirectory per corpus repository, named as in \`bench/v2/repos.json\` (for example \`<BENCH_REPOS_ROOT>/mcpz\`). The bench scripts derive every corpus location from that variable and fail with a clear error when it is missing. Temporary PlugBrain homes are also created under it (\`PLUGBRAIN_HOME=<BENCH_REPOS_ROOT>/_plugbrain-home\`), never touching live configurations or ports.
 `;
 
 writeFileSync(TARGET_FILE, md, 'utf8');

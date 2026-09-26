@@ -14,16 +14,12 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { QUESTIONS_DIR, RAW_DIR, WORKTREE, loadRepos, requireReposRoot } from './paths.mjs';
 
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const BENCH_DIR = 'C:/PLUG/bench';
-const TEMP_HOME = join(BENCH_DIR, '_plugbrain-home');
-const REPOS_FILE = join(WORKTREE, 'bench/v2/repos.json');
-const QUESTIONS_DIR = join(WORKTREE, 'bench/v2/questions');
-const RAW_DIR = join(WORKTREE, 'bench/v2/raw');
+const TEMP_HOME = join(requireReposRoot(), '_plugbrain-home');
 const DIST_CLI = join(WORKTREE, 'dist/plugbrain.mjs');
-const GITNEXUS_BIN = 'C:/Users/mil/AppData/Roaming/npm/gitnexus.cmd';
-const CODEGRAPH_BIN = 'C:/Users/mil/AppData/Roaming/npm/codegraph.cmd';
+const GITNEXUS_BIN = 'gitnexus';
+const CODEGRAPH_BIN = 'codegraph';
 
 const PLUGBRAIN_PORT = 4392;
 
@@ -308,7 +304,7 @@ async function runBenchmark(name, runnerFn) {
   console.log(`RUNNING BENCHMARK: ${name}`);
   console.log(`======================================================`);
 
-  const repos = JSON.parse(readFileSync(REPOS_FILE, 'utf8')).repos;
+  const repos = loadRepos();
   const repoResults = [];
 
   for (const repo of repos) {

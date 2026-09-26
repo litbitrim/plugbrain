@@ -1,11 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, statSync, existsSync, readdirSync } from 'node:fs';
+import { statSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { WORKTREE, loadRepos, requireReposRoot } from '../bench/v2/paths.mjs';
 
-const BENCH_DIR = 'C:/PLUG/bench';
-const TEMP_HOME = join(BENCH_DIR, '_plugbrain-home');
-const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
-const REPOS_FILE = join(WORKTREE, 'bench/v2/repos.json');
+const TEMP_HOME = join(requireReposRoot(), '_plugbrain-home');
 const DIST_CLI = join(WORKTREE, 'dist/plugbrain.mjs');
 
 function getDirSize(dir) {
@@ -25,7 +23,7 @@ function getDirSize(dir) {
   return size;
 }
 
-const repos = JSON.parse(readFileSync(REPOS_FILE, 'utf8')).repos;
+const repos = loadRepos();
 const indexStats = {};
 
 for (const repo of repos) {

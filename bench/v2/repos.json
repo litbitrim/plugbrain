@@ -2,29 +2,21 @@
   "repos": [
     {
       "name": "mcpz",
-      "path": "C:/PLUG/bench/mcpz",
-      "origin": "C:/PLUG/MCPZ",
       "commit": "1b35b03d536d8fdd6e63e6c7f17b8e6cfbfdc4eb",
       "description": "MCPZ - Model Context Protocol servers/tools bundle"
     },
     {
       "name": "plugmedia",
-      "path": "C:/PLUG/bench/plugmedia",
-      "origin": "C:/PLUG/_quarantaene/20260925/Code/PlugMedia",
       "commit": "6748e6f4486ebf3214d8eac3236c60f557aa466a",
       "description": "PlugMedia - media engine and video processing suite"
     },
     {
       "name": "cowork",
-      "path": "C:/PLUG/bench/cowork",
-      "origin": "C:/Users/mil/Desktop/PlugOS_Cowork_Setup",
       "commit": "5c2b2addb16d960a270bad15f80f0581e16a7cf9",
       "description": "PlugOS Cowork Setup - multi-agent coworker workspace, scripts, and specifications"
     },
     {
       "name": "plugengine",
-      "path": "C:/PLUG/bench/plugengine",
-      "origin": "C:/PLUG/_quarantaene/20260925/Code/PlugEngine",
       "commit": "c6c5d98b57cbe2b2560ebc0acfbc3a9f7c80253f",
       "description": "PlugEngine - large-scale core engine and runtime services"
     }
