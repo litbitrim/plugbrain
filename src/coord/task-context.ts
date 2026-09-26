@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { requireWorkspace } from '../access.ts'
 import { buildAwarenessPack, type AwarenessLimits, type TaskAwarenessPack } from '../projections/awareness.ts'
+import { rowAs, rowsAs } from '../store/rows.ts'
 
 export interface RevisionVector {
   workspaceId: string
@@ -126,7 +127,7 @@ function logicalScopeKeys(db: DatabaseSync, workspaceId: string, paths: string[]
     FROM files f LEFT JOIN checkouts c ON c.id = f.checkout_id
     WHERE f.workspace_id = ? AND f.path = ?`)
   return new Set(paths.map(path => {
-    const row = lookup.get(workspaceId, path) as LogicalPathRow | undefined
+    const row = rowAs<LogicalPathRow>(lookup.get(workspaceId, path))
     return row === undefined ? `path:${path}` : logicalPathKey(row)
   }))
 }
@@ -182,11 +183,12 @@ export function changesSinceTaskContextPack(db: DatabaseSync, packId: string): M
   const checkoutParams = pack.checkout_id === null ? [] : [pack.checkout_id]
   const state = stateVector(db, pack.workspace_id, pack.checkout_id)
   const scopeKeys = logicalScopeKeys(db, pack.workspace_id, scopePaths)
-  const changedRows = db.prepare(`SELECT f.path, f.hash, f.generation, f.checkout_id AS sourceCheckoutId,
+  const changedRows = rowsAs<MissionChanges['changed'][number] & LogicalPathRow>(
+    db.prepare(`SELECT f.path, f.hash, f.generation, f.checkout_id AS sourceCheckoutId,
       f.repo_id AS repoId, c.rel_prefix AS relPrefix FROM files f
       LEFT JOIN checkouts c ON c.id = f.checkout_id
       WHERE f.workspace_id = ? AND f.generation > ? ORDER BY f.path LIMIT 5000`)
-    .all(pack.workspace_id, pack.generation) as Array<MissionChanges['changed'][number] & LogicalPathRow>
+      .all(pack.workspace_id, pack.generation))
   const changed = changedRows.filter(row => scopeKeys.has(logicalPathKey(row)))
   const tombstoneScope = scopePredicate(scopePaths)
   const deleted = db.prepare(`SELECT path, generation, reason FROM file_tombstones
