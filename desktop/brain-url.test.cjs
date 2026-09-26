@@ -11,8 +11,8 @@ test('desktop uses the local Core root without a credential in the URL', () => {
 });
 
 test('desktop passes an explicit workspace root as a root, not a Core id', () => {
-  const target = new URL(brainDesktopUrl({ workspaceRoot: 'C:\\PLUG\\plugpt' }));
-  assert.equal(target.searchParams.get('workspaceRoot'), 'C:\\PLUG\\plugpt');
+  const target = new URL(brainDesktopUrl({ workspaceRoot: 'C:\\code\\workspace' }));
+  assert.equal(target.searchParams.get('workspaceRoot'), 'C:\\code\\workspace');
   assert.equal(target.searchParams.has('workspace'), false);
 });
 

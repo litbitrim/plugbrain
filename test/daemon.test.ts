@@ -92,8 +92,8 @@ test('the watcher ignores exactly what the indexer never reads', () => {
   // regular expression therefore let the brain re-index itself in a loop.
   const cases: Array<[string, boolean]> = [
     ['.plugbrain-test\\fb-brain-03\\runs', true],
-    ['C:\\PLUG\\plugpt\\.plugbrain-test\\fb-brain-03\\runs\\x.json', true],
-    ['C:\\PLUG\\plugpt\\.plugbrain\\plugbrain.db', true],
+    ['D:\\vault\\demo\\.plugbrain-test\\fb-brain-03\\runs\\x.json', true],
+    ['D:\\vault\\demo\\.plugbrain\\plugbrain.db', true],
     ['.git\\HEAD', true],
     ['Code\\PlugHarness\\node_modules\\x\\y.js', true],
     ['Roadmap\\Gates\\R12-ECON-001.md', false],
@@ -101,10 +101,10 @@ test('the watcher ignores exactly what the indexer never reads', () => {
     ['00 Übersicht.md', false],
   ]
   for (const [path, noise] of cases) {
-    assert.equal(isNoisePath(path, 'C:\\PLUG\\plugpt\\.plugbrain-test\\fb-brain-03'), noise, path)
+    assert.equal(isNoisePath(path, 'D:\\vault\\demo\\.plugbrain-test\\fb-brain-03'), noise, path)
   }
-  assert.equal(isNoisePath('\\plugpt\\.plugbrain-test\\fb-brain-03\\a.json',
-    'C:\\PLUG\\plugpt\\.plugbrain-test\\fb-brain-03'), true,
+  assert.equal(isNoisePath('\\demo\\.plugbrain-test\\fb-brain-03\\a.json',
+    'D:\\vault\\demo\\.plugbrain-test\\fb-brain-03'), true,
   'a path inside the store home is noise even when its segments look ordinary')
 })
 

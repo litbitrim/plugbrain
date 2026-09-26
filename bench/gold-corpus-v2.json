@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "name": "PLUG Brain Goldkorpus v2",
+  "name": "PlugBrain Goldkorpus v2",
   "sourceOfTruth": "NATIVE-ORCH-01 section 38.6",
   "measurement": {
     "tool": "E1",

@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The UI is a separate package with its own lockfile.
+      - name: Install UI dependencies
+        run: npm ci --prefix ui
+
+      # Advisory: pre-existing strict-tsc findings in src/ are tracked debt,
+      # not a release blocker (see ci.yml for the same step).
+      - name: Typecheck core (advisory)
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Build the UI
+        run: npm run build:ui
+
+      # The per-OS verification launches Chromium; CI is the one place where
+      # downloading the browser is allowed (it is never committed).
+      - name: Install Chromium for verification
+        run: node node_modules/playwright-core/cli.js install chromium
+
+      - name: Build, verify and package the NSIS installer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress
+          npm run package:nsis
+
+      - name: Build and verify the portable package (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: |
+          npm run build:standalone
+          npm run verify:standalone
+
+      # Smoke: the shipped bundle must answer as a CLI against a temp home —
+      # this catches a broken bundle before any artifact is attached.
+      - name: Smoke the bundled CLI
+        shell: bash
+        run: PLUGBRAIN_HOME="${{ runner.temp }}/pb-smoke-home" PLUGBRAIN_NO_DAEMON=1 node dist/plugbrain.mjs status
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp release/*.exe release/*.sha256 release/*.provenance.json artifacts/ 2>/dev/null || true
+          else
+            cp release/*.tar.gz release/*.sha256 artifacts/ 2>/dev/null || true
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugbrain-${{ matrix.os }}
+          path: artifacts/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts
+
+      - name: Generate checksums file
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*
+            SHA256SUMS.txt

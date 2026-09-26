@@ -19,6 +19,14 @@ import {
 } from '../src/trace.ts'
 import { projectChronicleFromTrace } from '../src/chronicle.ts'
 
+// Synthetic credential-shaped canaries, generated at run time so that no
+// key-like string is ever stored in this repository.
+const FAKE_OPENAI_KEY = 'sk-' + 'x'.repeat(36)
+const FAKE_GITHUB_TOKEN = 'ghp_' + 'x'.repeat(36)
+const FAKE_GOOGLE_KEY = 'AIza' + 'x'.repeat(36)
+const FAKE_NVIDIA_KEY = 'nvapi-' + 'x'.repeat(36)
+const FAKE_JWT = ['eyJ' + 'x'.repeat(30), 'canary' + 'p'.repeat(14), 'sig' + 'n'.repeat(16)].join('.')
+
 const RUNTIME = 'fcae1c74-99c3-4c7b-ba07-8aabf42b4ffe'
 const WORKSPACE = 'ws-d177a599'
 
@@ -175,13 +183,14 @@ test('historical imports are stored and readable as distinctly non-live', () => 
 // ---------------------------------------------------------------------------
 
 test('canary credentials never reach the trace table, in values or in named keys', () => {
-  // Synthetic canaries. None of these is a real credential.
+  // Synthetic canaries built from the run-time fakes above. None of these is
+  // a real credential and none of them is stored in the repository.
   const canaries = [
-    'sk-canary000111222333444555666777888',
-    'ghp_canary0001112223334445556667778',
-    'AIzaCanary0001112223334445556667778',
-    'nvapi-canary00011122233344455566677',
-    'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjYW5hcnkifQ.c2lnbmF0dXJlY2FuYXJ5MDAx',
+    FAKE_OPENAI_KEY,
+    FAKE_GITHUB_TOKEN,
+    FAKE_GOOGLE_KEY,
+    FAKE_NVIDIA_KEY,
+    FAKE_JWT,
   ]
   withDb(db => {
     ingestTraceEvents(db, [
@@ -218,7 +227,7 @@ test('redaction preserves shape and redacts credential-named keys whatever their
   const out = redactPayload({
     password: 'short',                       // key name alone is enough
     harmless: 'a normal sentence',
-    list: ['plain', 'sk-canary000111222333444555666777888'],
+    list: ['plain', FAKE_OPENAI_KEY],
   }) as Record<string, unknown>
   assert.equal(out.password, REDACTED)
   assert.equal(out.harmless, 'a normal sentence')
@@ -231,11 +240,11 @@ test('quarantined raw payloads are redacted too', () => {
     ingestTraceEvents(db, [
       event({
         eventId: 'bad', type: 'nope' as never,
-        payload: { token: 'sk-canary000111222333444555666777888' },
+        payload: { token: FAKE_OPENAI_KEY },
       }),
     ], { knownWorkspaceIds: known })
     const held = db.prepare('SELECT raw FROM trace_quarantine').get() as { raw: string }
-    assert.ok(!held.raw.includes('sk-canary000111222333444555666777888'),
+    assert.ok(!held.raw.includes(FAKE_OPENAI_KEY),
       'a credential reached the quarantine table unredacted')
   })
 })

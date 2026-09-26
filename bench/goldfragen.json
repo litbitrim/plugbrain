@@ -38,7 +38,7 @@
     "pflicht": true,
     "frage": "Welche Komponente besitzt laut Master-Architekturvertrag PTYs und Terminal-Prozesslebenszyklen?",
     "repo": "PlugBrain-Core",
-    "erwartete_quelle": "Master/PLUGPT_MASTER_R3_GATEWAY_STREAMING_2026-09-17.md",
+    "erwartete_quelle": "Gold-Corpus-Notiz: Gateway-Owner (historische Master-Referenz)",
     "erwartetes_symbol": "PlugTerminalHost",
     "abfrage_typ": "query",
     "abfrage_param": "PlugTerminalHost"

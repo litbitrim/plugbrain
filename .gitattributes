@@ -1,0 +1,4 @@
+# The public export must not carry the internal development history.
+# `git archive` (and anything built on it) honours export-ignore; a plain clone
+# still has the files, so the team keeps the paper trail.
+docs/history export-ignore

@@ -2,8 +2,8 @@
 
 **Datum:** 2026-09-17  
 **Basis:** 30 eingefrorene Goldfragen (`bench/goldfragen.json`)  
-**Workspace:** `C:\PLUG\plugpt` (16 Repositories, 57 Checkouts, 222.400 Dateien, 3.948.640 Symbole, 13.820.010 Kanten)  
-**GitNexus-Aufruf:** `C:\Users\mil\AppData\Roaming\npm\gitnexus.cmd query|context|impact|cypher -r <RepoName>` (nur lesend)  
+**Workspace:** ein größerer Beispiel-Vault (16 Repositories, 57 Checkouts, 222.400 Dateien, 3.948.640 Symbole, 13.820.010 Kanten)  
+**GitNexus-Aufruf:** `gitnexus query|context|impact|cypher -r <RepoName>` (nur lesend)  
 
 ## 1. Zusammenfassung & Abnahmekriterien (FB-BRAIN-01 §77-§81)
 
