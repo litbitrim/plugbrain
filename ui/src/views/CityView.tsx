@@ -114,16 +114,16 @@ export default function CityView({
     <div id="app" className={sel ? undefined : 'closed'}>
       <aside>
         <div className="hd">
-          <h1>PlugBrain City</h1>
-          <div className="repo" id="repo">runtime addon · workspaces grow here</div>
+          <h1>Code-Stadt</h1>
+          <div className="repo" id="repo">3D-Topologie · Repositories als Distrikte, Module als Gebäude</div>
           <div className="kpis">
-            <div><b id="k-ws">{workspaces.length}</b><i>workspaces</i></div>
-            <div><b id="k-bld">{files.length}</b><i>buildings</i></div>
-            <div><b id="k-ev">{TOTAL_EV}</b><i>events</i></div>
+            <div><b id="k-ws">{workspaces.length}</b><i>Workspaces</i></div>
+            <div><b id="k-bld">{files.length}</b><i>Dateien</i></div>
+            <div><b id="k-ev">{TOTAL_EV}</b><i>Ereignisse</i></div>
           </div>
         </div>
         <div className="q">
-          <input id="q" type="search" placeholder="Search module…" spellCheck={false}
+          <input id="q" type="search" placeholder="Modul oder Datei suchen …" spellCheck={false}
                  onChange={e => setQuery(e.target.value.trim().toLowerCase())} />
         </div>
         <div className="tree" id="tree">
@@ -138,13 +138,13 @@ export default function CityView({
                   <span className="sw" style={{ background: wsColor(ws) }} />
                   <span className="nm">{ws.name}</span>
                   {ws.sim ? <span className="tag">sim</span> : null}
-                  <span className="lc">{own.length} bld · {loc}</span>
+                  <span className="lc">{own.length} Dat. · {loc} Z.</span>
                 </div>
                 <div className="loadbar"><i style={{ width: Math.round(ws.load * 100) + '%', background: wsColor(ws) }} /></div>
               </div>
             )
-          }) : <div className="empty">No workspaces registered.<br /><br />
-            <code>PlugBrainCity.register({'{'} id, name {'}'})</code></div>}
+          }) : <div className="empty">Keine Workspaces für die 3D-Stadtansicht indiziert.<br /><br />
+            Sobald Repositories indiziert sind, wachsen sie hier als Stadt.</div>}
         </div>
       </aside>
 
@@ -152,13 +152,13 @@ export default function CityView({
         <canvas id="cv" ref={cv} />
         <div id="tip" ref={tip} />
         <div id="crumb">PLUGBRAIN / <b id="crumb-t">
-          {sel ? sel.path.toUpperCase() : focusWs ? focusWs.toUpperCase() : 'CITY OVERVIEW'}</b></div>
+          {sel ? sel.path.toUpperCase() : focusWs ? focusWs.toUpperCase() : 'STADT-ÜBERSICHT'}</b></div>
 
         {feedOn && (
           <div id="feed">
             {feed.slice(0, 9).map((e: any) => (
               <div className="fe" key={e.id}>
-                <span className="ft">{e.t.toLocaleTimeString('en-GB', { hour12: false })}</span>
+                <span className="ft">{e.t.toLocaleTimeString('de-DE', { hour12: false })}</span>
                 <span className="fw" style={{ color: 'var(--accent)' }}>{e.ws}</span>
                 <span className="fm">{e.msg}</span>
               </div>
@@ -168,37 +168,37 @@ export default function CityView({
 
         <div id="legend">
           <div style={{ color: 'var(--faint)' }}>
-            {`district = workspace · building = module · height = ${hMode === 'loc' ? 'size' : 'references'} · flashes = activity`}
+            {`Distrikt = Workspace · Gebäude = Datei · Höhe = ${hMode === 'loc' ? 'Zeilenanzahl' : 'Abhängigkeiten'} · Licht = Trace-Aktivität`}
           </div>
         </div>
 
         <div id="bar">
-          {[['loc', 'Height = size'], ['dep', 'Height = references']].map(([v, label]) => (
+          {[['loc', 'Höhe = Zeilen'], ['dep', 'Höhe = Abhängigkeiten']].map(([v, label]) => (
             <button key={v} className={'tb' + (hMode === v ? ' on' : '')} data-h={v} type="button"
                     onClick={() => { setHeightMode(v as string); setHMode(v as string) }}>{label}</button>
           ))}
           <div className="vsep" />
           <button className={'tb' + (flow ? ' on' : '')} id="t-flow" type="button"
-                  onClick={() => { setFlow(v => { city.current?.setFlow(!v); return !v }) }}>Flow</button>
+                  onClick={() => { setFlow(v => { city.current?.setFlow(!v); return !v }) }}>Fluss</button>
           <button className={'tb' + (hatch ? ' on' : '')} id="t-hatch" type="button"
-                  onClick={() => { setHatch(v => { city.current?.setHatch(!v); return !v }) }}>Hatching</button>
+                  onClick={() => { setHatch(v => { city.current?.setHatch(!v); return !v }) }}>Schraffur</button>
           <button className={'tb' + (spin ? ' on' : '')} id="t-spin" type="button"
                   onClick={() => { setSpin(v => { city.current?.setSpin(!v); return !v }) }}>Orbit</button>
-          <button className={'tb' + (feedOn ? ' on' : '')} id="t-feed" type="button" title="Toggle feed (E)"
+          <button className={'tb' + (feedOn ? ' on' : '')} id="t-feed" type="button" title="Feed ein-/ausblenden (E)"
                   onClick={() => setFeedOn(v => !v)}>Feed</button>
           <div className="vsep" />
-          <button className="tb" id="zout" type="button" title="Zoom out"
+          <button className="tb" id="zout" type="button" title="Herauszoomen"
                   onClick={() => city.current?.dolly(1.18)}>−</button>
-          <button className="tb" id="zlvl" type="button" title="Reset zoom"
+          <button className="tb" id="zlvl" type="button" title="Zoom zurücksetzen"
                   onClick={() => city.current?.reset()}>{zoom + '%'}</button>
-          <button className="tb" id="zin" type="button" title="Zoom in"
+          <button className="tb" id="zin" type="button" title="Hineinzoomen"
                   onClick={() => city.current?.dolly(1 / 1.18)}>＋</button>
           <div className="vsep" />
           <button className="tb" id="t-reset" type="button"
-                  onClick={() => { city.current?.reset(); setSelS(null); setFocusWs(null) }}>Reset</button>
+                  onClick={() => { city.current?.reset(); setSelS(null); setFocusWs(null) }}>Zurücksetzen</button>
         </div>
         <div id="gate" style={ok ? undefined : { display: 'grid' }}>
-          WebGL is unavailable on this device.<br />The workspace registry remains available.</div>
+          WebGL ist auf diesem Gerät nicht verfügbar.<br />Die Workspace-Verwaltung bleibt vollständig nutzbar.</div>
       </div>
 
       <div id="side"><div id="dt">

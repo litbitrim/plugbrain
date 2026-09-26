@@ -5,6 +5,7 @@ import {
   type ContextPackResult,
   type PackStalenessResult,
 } from '../lib/brain-client'
+import { Icon, ICON } from '../ui/Icon'
 
 interface ContextPackViewProps {
   workspaceId: string
@@ -94,10 +95,13 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
     <div className="pack-view">
       <div className="pack-view__header">
         <div className="pack-view__title">
-          <span className="pack-view__icon">📦</span>
+          <Icon path={ICON.open} />
           <strong>Context-Pack-Inspector</strong>
           <span className="pack-view__endpoint mono">/api/context/pack</span>
         </div>
+        <p className="pack-view__lead" style={{ fontSize: '12px', color: 'var(--muted)', margin: '4px 0 0' }}>
+          Stellt einen deterministischen Kontext-Ausschnitt aus Code und Notizen für eine Agenten-Aufgabe zusammen.
+        </p>
       </div>
 
       <form className="pack-form" onSubmit={handleCreate}>
@@ -112,7 +116,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
               onChange={e => setGoal(e.target.value)}
               placeholder="z. B. authKey security tests"
             />
-            <button type="submit" className="pack-create-btn" disabled={loading || !goal.trim()}>
+            <button type="submit" className="pack-create-btn pb-button pb-button--primary" disabled={loading || !goal.trim()}>
               {loading ? 'Erzeuge …' : 'Pack erzeugen'}
             </button>
           </div>
@@ -121,7 +125,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
 
       {error && (
         <div className="pack-error-alert" role="alert">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
@@ -139,9 +143,12 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
                   <span className="pack-staleness-badge pack-staleness-badge--loading">Prüfe …</span>
                 ) : staleness ? (
                   <span
-                    className={`pack-staleness-badge ${staleness.stale ? 'pack-staleness-badge--stale' : 'pack-staleness-badge--fresh'}`}
+                    className="pb-status"
+                    data-tone={staleness.stale ? 'bad' : 'ok'}
+                    style={{ marginRight: '8px' }}
                   >
-                    {staleness.stale ? '🔴 Veraltet' : '🟢 Frisch'}
+                    <i aria-hidden="true" />
+                    <span>{staleness.stale ? 'VERALTET' : 'AKTUELL'}</span>
                   </span>
                 ) : null}
                 <button
@@ -183,7 +190,7 @@ export default function ContextPackView({ workspaceId, onSelectSource }: Context
                       onClick={() => onSelectSource(s.path)}
                       title={`Klicken, um ${s.path} in Quellansicht zu öffnen`}
                     >
-                      <div className="pack-source-path mono">📄 {s.path}</div>
+                      <div className="pack-source-path mono">{s.path}</div>
                       <div className="pack-source-why">{s.reasons}</div>
                     </div>
                   ))}

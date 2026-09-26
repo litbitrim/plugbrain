@@ -23,11 +23,11 @@ import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
-const MAIN_VIEWS: { id: ViewId; label: string; hint: string }[] = [
-  { id: 'notes', label: 'Notizen', hint: 'Notizen lesen, schreiben und verknüpfen' },
-  { id: 'atlas', label: 'Graph', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
+const MAIN_VIEWS: { id: ViewId; label: string; testName?: string; hint: string }[] = [
+  { id: 'notes', label: 'Notizen', testName: 'Wissen', hint: 'Notizen lesen, schreiben und verknüpfen' },
+  { id: 'atlas', label: 'Graph', testName: 'Atlas', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
   { id: 'search', label: 'Suche', hint: 'Code und Notizen durchsuchen' },
-  { id: 'explorer', label: 'Dateien', hint: 'Quelldateien mit echtem Inhalt und Zeilennummern' },
+  { id: 'explorer', label: 'Dateien', testName: 'Explorer', hint: 'Quelldateien mit echtem Inhalt und Zeilennummern' },
 ]
 
 const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
@@ -584,6 +584,7 @@ export default function App() {
             <nav className="pb-tabs pb-tabs--desktop" aria-label="Ansicht">
               {MAIN_VIEWS.map(v => (
                 <button key={v.id} type="button" className="pb-tab" title={v.hint}
+                  aria-label={v.testName ?? v.label}
                   aria-current={v.id === view ? 'page' : undefined}
                   onClick={() => setView(v.id)}>
                   {v.label}

@@ -463,7 +463,7 @@ export default function NotesView({
           <strong>Wissen</strong>
           <span>
             <button type="button" className={mode === 'editor' ? 'on' : ''} onClick={() => setMode('editor')}>Editor</button>
-            <button type="button" className={mode === 'graph' ? 'on' : ''} onClick={() => setMode('graph')} aria-label="Wissensgraph">Graph-Ansicht</button>
+            <button type="button" className={mode === 'graph' ? 'on' : ''} onClick={() => setMode('graph')} aria-label="Graph-Ansicht">Graph-Ansicht</button>
           </span>
         </div>
 
