@@ -24,6 +24,8 @@ import * as attachments from '../notes/attachments.ts'
 import { hygieneReport } from '../hygiene/index.ts'
 import { machineReport } from '../machine/index.ts'
 import { gitCensusCached } from '../machine/git-census.ts'
+import { diskRecommendations, diskWipeCheck } from '../disk/analysis.ts'
+import { currentDiskScan, diskTree, scanDisk } from '../disk/scan.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 import { resolveBrainHome } from '../home.ts'
@@ -1157,6 +1159,38 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         totals: census.totals,
         unavailable: census.unavailable,
       })
+    }
+
+    // ── Disk atlas: metadata-only inventory; no file bodies are read ──────
+    if (p === '/api/disk/scan' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const previous = currentDiskScan(db)
+      if (previous?.running) return json(res, { ok: false, error: 'disk scan already running', scan: previous }, 409)
+      const body = await readBody(req)
+      const roots = Array.isArray(body.roots) && body.roots.every(root => typeof root === 'string')
+        ? body.roots as string[] : undefined
+      // scanDisk allocates its own id. Starting it in the background keeps the
+      // request responsive; callers poll the authenticated status route.
+      void scanDisk(db, { roots }).catch(error => {
+        console.error(`disk scan failed: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      return json(res, { ok: true, started: true, scan: currentDiskScan(db) }, 202)
+    }
+    if (p === '/api/disk/scan' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, scan: currentDiskScan(db) })
+    }
+    if (p === '/api/disk/tree' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, directories: diskTree(db, q.get('path')) })
+    }
+    if (p === '/api/disk/recommendations' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskRecommendations(db, gitCensusCached(db)) })
+    }
+    if (p === '/api/disk/wipe-check' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskWipeCheck(db, gitCensusCached(db)) })
     }
 
     if (p === '/api/agents') {

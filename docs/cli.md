@@ -311,6 +311,34 @@ plugbrain repos --dirty
 
 ---
 
+### `disk`
+Scan directory metadata, inspect the saved directory tree, rank safe-to-review storage recommendations, or create a reinstallation checklist. Scanning never reads file contents except package lockfiles, which are opened only to compute duplicate fingerprints. Links and other reparse points are reported and skipped.
+
+```bash
+plugbrain disk scan [<path>...]
+plugbrain disk tree [<path>]
+plugbrain disk recommend [--json]
+plugbrain disk wipe-check [--json]
+plugbrain disk largest [n]
+```
+
+- `scan` defaults to all fixed drives and replaces the previous scan. Explicit paths are useful for a bounded, read-only inventory.
+- `tree` returns immediate children from the last completed scan.
+- `recommend` groups recoverable dependency trees, caches and build output; review candidates and work that should be kept are marked separately.
+- `wipe-check` lists uncommitted or unpushed Git work, recent user-profile folders and configuration or vault paths to back up before reinstalling.
+- `largest` reports the largest files retained in the last scan (maximum 1,000).
+- `--json` prints the structured report.
+
+```bash
+plugbrain disk scan C:\\Users\\me\\Projects
+plugbrain disk recommend --json
+plugbrain disk wipe-check
+```
+
+The scan and recommendations only report. They do not delete or move files.
+
+---
+
 ## Workspace and Index Lifecycle
 
 ### `register`

@@ -68,6 +68,8 @@ import {
 } from './hygiene/index.ts'
 import { machineReport, type MachineReport } from './machine/index.ts'
 import { gitCensus, type CensusReport } from './machine/git-census.ts'
+import { diskRecommendations, diskWipeCheck } from './disk/analysis.ts'
+import { currentDiskScan, diskTree, largestDiskFiles, scanDisk } from './disk/scan.ts'
 import { runSwarmCli } from './swarm-cli.ts'
 import { runSwarmWatchCli } from './swarm-watch.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
@@ -669,6 +671,48 @@ function reposCommand(args: string[]): void {
   if (args.includes('--json')) return jsonOut(view)
   renderRepos(view, dirtyOnly)
 }
+
+async function diskCommand(args: string[]): Promise<void> {
+  const [step, ...rest] = args
+  if (step === 'scan') {
+    const paths = rest.filter(value => !value.startsWith('--'))
+    const controller = new AbortController()
+    const interrupt = (): void => { controller.abort(); process.exitCode = 130 }
+    process.once('SIGINT', interrupt)
+    let state: Awaited<ReturnType<typeof scanDisk>>
+    try {
+      state = await scanDisk(db, { roots: paths.length ? paths : undefined, signal: controller.signal, onProgress: progress => {
+        if (progress.directories > 0 && progress.directories % 1024 === 0) {
+          console.error(`disk scan: ${progress.directories} directories, ${progress.files} files`)
+        }
+      } })
+    } finally { process.off('SIGINT', interrupt) }
+    return jsonOut(state)
+  }
+  if (step === 'tree') {
+    const path = rest.find(value => !value.startsWith('--')) ?? null
+    return jsonOut({ scan: currentDiskScan(db), directories: diskTree(db, path) })
+  }
+  if (step === 'recommend') {
+    const report = diskRecommendations(db, gitCensus(db))
+    if (rest.includes('--json')) return jsonOut(report)
+    console.log(`Disk recommendations for scan ${report.scanId ?? 'none'} (GB by risk): recoverable ${report.totalsGb.recoverable}, review ${report.totalsGb.review}, keep ${report.totalsGb.keep}`)
+    for (const item of report.recommendations) console.log(`  ${item.risk.padEnd(11)} ${String(item.gb).padStart(7)} GB  ${item.paths.join(', ')}\n      ${item.reason} Recovery: ${item.recovery}`)
+    return
+  }
+  if (step === 'wipe-check') {
+    const report = diskWipeCheck(db, gitCensus(db))
+    if (rest.includes('--json')) return jsonOut(report)
+    console.log(`Reinstallation checklist: ${report.items.length} item(s), ${report.totalGb} GB`)
+    for (const item of report.items) console.log(`  ${gbText(item.bytes)}  ${item.path}\n      ${item.reason}`)
+    return
+  }
+  if (step === 'largest') return jsonOut({ scan: currentDiskScan(db), files: largestDiskFiles(db, Number(rest[0]) || 20) })
+  console.error('usage: plugbrain disk <scan [path...]|tree [path]|recommend [--json]|wipe-check [--json]|largest [n]>')
+  process.exit(1)
+}
+
+function gbText(bytes: number): string { return `${Math.round(bytes / 1024 ** 3 * 10) / 10} GB` }
 
 function notesSearch(args: string[]): void {
   const asJson = args.includes('--json')
@@ -1291,6 +1335,7 @@ switch (command) {
   case 'hygiene': hygieneCommand(args); break
   case 'machine': machineCommand(args); break
   case 'repos': reposCommand(args); break
+  case 'disk': await diskCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)
@@ -1430,7 +1475,7 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <init|setup|agents-file|doctor|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      'usage: plugbrain <init|setup|agents-file|doctor|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|disk|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
       '       plugbrain init [path] [--no-clients] [--no-agents-file] [--dry-run]  register + index + enroll clients\n' +
       '       plugbrain setup [--all|claude|codex|cursor|windsurf|hermes|agy|opencode] [--dry-run] [--undo]\n' +
       '       plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]\n' +
@@ -1443,6 +1488,7 @@ switch (command) {
       '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot] [--repo <path>]\n' +
       '       plugbrain machine [--json]\n' +
       '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
+      '       plugbrain disk <scan [path...]|tree [path]|recommend [--json]|wipe-check [--json]|largest [n]>\n' +
       '       plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …\n' +
       '       plugbrain swarm runner set|show <agent> …  ·  plugbrain swarm run <agent> [--status|--stop]   start and watch a CLI worker\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
