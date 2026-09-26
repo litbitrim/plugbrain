@@ -7,6 +7,9 @@ code intelligence over your repositories plus an Obsidian-style note vault,
 exposed to Claude Code (and any MCP client) as one set of tools. Everything
 runs on your machine. No cloud, no telemetry.
 
+> The web interface is currently in German. An English interface is planned.
+> The CLI, the MCP tools, their answers and all documentation are in English.
+
 <!-- TODO(integrator): drop the UI screenshots into docs/images/ before publishing. -->
 ![Atlas — the graph view](docs/images/atlas.png)
 ![City — the code map](docs/images/city.png)
