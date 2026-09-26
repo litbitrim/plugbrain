@@ -1,11 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+/// <reference types="node" />
+import { describe, test, afterEach, mock } from 'node:test'
+import assert from 'node:assert/strict'
 import {
   fetchBriefing,
   askQuestion,
   fetchHygiene,
   fetchMachine,
   fetchRepos,
-} from './brain-client'
+} from './brain-client.ts'
 
 describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
   const originalFetch = globalThis.fetch
@@ -14,7 +16,7 @@ describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('successful response with unavailable: [] returns data, NOT routeMissing', async () => {
+  test('successful response with unavailable: [] returns data, NOT routeMissing', async () => {
     const mockBriefing = {
       ok: true,
       workspace: 'ws-test',
@@ -27,21 +29,21 @@ describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
       unavailable: [],
     }
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = mock.fn(async () => ({
       ok: true,
       status: 200,
       json: async () => mockBriefing,
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const res = await fetchBriefing('ws-test')
 
     // Must not be flagged as routeMissing
-    expect('routeMissing' in res).toBe(false)
-    expect((res as typeof mockBriefing).summary).toBe('A test project.')
-    expect((res as typeof mockBriefing).unavailable).toEqual([])
+    assert.equal('routeMissing' in res, false)
+    assert.equal((res as typeof mockBriefing).summary, 'A test project.')
+    assert.deepEqual((res as typeof mockBriefing).unavailable, [])
   })
 
-  it('successful response with unavailable containing missing parts returns data', async () => {
+  test('successful response with unavailable containing missing parts returns data', async () => {
     const mockHygiene = {
       ok: true,
       workspace: 'ws-test',
@@ -53,58 +55,58 @@ describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
       unavailable: ['machine_forecast'],
     }
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = mock.fn(async () => ({
       ok: true,
       status: 200,
       json: async () => mockHygiene,
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const res = await fetchHygiene('ws-test')
 
-    expect('routeMissing' in res).toBe(false)
-    expect((res as typeof mockHygiene).unavailable).toEqual(['machine_forecast'])
+    assert.equal('routeMissing' in res, false)
+    assert.deepEqual((res as typeof mockHygiene).unavailable, ['machine_forecast'])
   })
 
-  it('HTTP 404 returns { routeMissing: true } for unmounted routes', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+  test('HTTP 404 returns { routeMissing: true } for unmounted routes', async () => {
+    globalThis.fetch = mock.fn(async () => ({
       ok: false,
       status: 404,
       json: async () => ({ error: 'Not Found' }),
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const briefingRes = await fetchBriefing('ws-test')
-    expect('routeMissing' in briefingRes).toBe(true)
+    assert.equal('routeMissing' in briefingRes, true)
     if ('routeMissing' in briefingRes) {
-      expect(briefingRes.routeMissing).toBe(true)
+      assert.equal(briefingRes.routeMissing, true)
     }
 
     const askRes = await askQuestion('ws-test', 'Where is main?')
-    expect('routeMissing' in askRes).toBe(true)
+    assert.equal('routeMissing' in askRes, true)
     if ('routeMissing' in askRes) {
-      expect(askRes.routeMissing).toBe(true)
+      assert.equal(askRes.routeMissing, true)
     }
 
     const hygieneRes = await fetchHygiene('ws-test')
-    expect('routeMissing' in hygieneRes).toBe(true)
+    assert.equal('routeMissing' in hygieneRes, true)
 
     const machineRes = await fetchMachine()
-    expect('routeMissing' in machineRes).toBe(true)
+    assert.equal('routeMissing' in machineRes, true)
 
     const reposRes = await fetchRepos()
-    expect('routeMissing' in reposRes).toBe(true)
+    assert.equal('routeMissing' in reposRes, true)
   })
 
-  it('HTTP 501 returns { routeMissing: true } for unimplemented routes', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+  test('HTTP 501 returns { routeMissing: true } for unimplemented routes', async () => {
+    globalThis.fetch = mock.fn(async () => ({
       ok: false,
       status: 501,
       json: async () => ({ error: 'Not Implemented' }),
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const briefingRes = await fetchBriefing('ws-test')
-    expect('routeMissing' in briefingRes).toBe(true)
+    assert.equal('routeMissing' in briefingRes, true)
     if ('routeMissing' in briefingRes) {
-      expect(briefingRes.routeMissing).toBe(true)
+      assert.equal(briefingRes.routeMissing, true)
     }
   })
 })
@@ -116,20 +118,20 @@ describe('API error classes: unreachable vs server errors (UX-04)', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('HTTP 500 returns { serverError: true, status, error } and NOT routeMissing', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+  test('HTTP 500 returns { serverError: true, status, error } and NOT routeMissing', async () => {
+    globalThis.fetch = mock.fn(async () => ({
       ok: false,
       status: 500,
       json: async () => ({ error: 'Internal Server Error' }),
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const briefingRes = await fetchBriefing('ws-test')
-    expect('routeMissing' in briefingRes).toBe(false)
-    expect('unreachable' in briefingRes).toBe(false)
-    expect('serverError' in briefingRes).toBe(true)
+    assert.equal('routeMissing' in briefingRes, false)
+    assert.equal('unreachable' in briefingRes, false)
+    assert.equal('serverError' in briefingRes, true)
     if ('serverError' in briefingRes) {
-      expect(briefingRes.status).toBe(500)
-      expect(briefingRes.error).toBe('Internal Server Error')
+      assert.equal(briefingRes.status, 500)
+      assert.equal(briefingRes.error, 'Internal Server Error')
     }
 
     for (const res of [
@@ -138,22 +140,24 @@ describe('API error classes: unreachable vs server errors (UX-04)', () => {
       await fetchMachine(),
       await fetchRepos(),
     ]) {
-      expect('routeMissing' in res).toBe(false)
-      expect('unreachable' in res).toBe(false)
-      expect('serverError' in res).toBe(true)
+      assert.equal('routeMissing' in res, false)
+      assert.equal('unreachable' in res, false)
+      assert.equal('serverError' in res, true)
     }
   })
 
-  it('network failure (fetch throws) returns { unreachable: true, error } and NOT routeMissing', async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('fetch failed: ECONNREFUSED'))
+  test('network failure (fetch throws) returns { unreachable: true, error } and NOT routeMissing', async () => {
+    globalThis.fetch = mock.fn(async () => {
+      throw new TypeError('fetch failed: ECONNREFUSED')
+    }) as unknown as typeof fetch
 
     const briefingRes = await fetchBriefing('ws-test')
-    expect('routeMissing' in briefingRes).toBe(false)
-    expect('serverError' in briefingRes).toBe(false)
-    expect('unreachable' in briefingRes).toBe(true)
+    assert.equal('routeMissing' in briefingRes, false)
+    assert.equal('serverError' in briefingRes, false)
+    assert.equal('unreachable' in briefingRes, true)
     if ('unreachable' in briefingRes) {
-      expect(briefingRes.unreachable).toBe(true)
-      expect(briefingRes.error).toBe('fetch failed: ECONNREFUSED')
+      assert.equal(briefingRes.unreachable, true)
+      assert.equal(briefingRes.error, 'fetch failed: ECONNREFUSED')
     }
 
     for (const res of [
@@ -162,33 +166,33 @@ describe('API error classes: unreachable vs server errors (UX-04)', () => {
       await fetchMachine(),
       await fetchRepos(),
     ]) {
-      expect('routeMissing' in res).toBe(false)
-      expect('serverError' in res).toBe(false)
-      expect('unreachable' in res).toBe(true)
+      assert.equal('routeMissing' in res, false)
+      assert.equal('serverError' in res, false)
+      assert.equal('unreachable' in res, true)
     }
   })
 
-  it('404 and 501 results never carry unreachable or serverError', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
+  test('404 and 501 results never carry unreachable or serverError', async () => {
+    globalThis.fetch = mock.fn(async () => ({
       ok: false,
       status: 404,
       json: async () => ({ error: 'Not Found' }),
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const res404 = await fetchBriefing('ws-test')
-    expect('routeMissing' in res404).toBe(true)
-    expect('unreachable' in res404).toBe(false)
-    expect('serverError' in res404).toBe(false)
+    assert.equal('routeMissing' in res404, true)
+    assert.equal('unreachable' in res404, false)
+    assert.equal('serverError' in res404, false)
 
-    globalThis.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = mock.fn(async () => ({
       ok: false,
       status: 501,
       json: async () => ({ error: 'Not Implemented' }),
-    } as unknown as Response)
+    } as unknown as Response)) as unknown as typeof fetch
 
     const res501 = await fetchBriefing('ws-test')
-    expect('routeMissing' in res501).toBe(true)
-    expect('unreachable' in res501).toBe(false)
-    expect('serverError' in res501).toBe(false)
+    assert.equal('routeMissing' in res501, true)
+    assert.equal('unreachable' in res501, false)
+    assert.equal('serverError' in res501, false)
   })
 })

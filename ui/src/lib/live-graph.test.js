@@ -1,8 +1,9 @@
-import { test, expect } from 'vitest';
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
 import { toAtlasData } from './live-graph.js';
 
 test('empty snapshots remain empty without example data', () => {
-  expect(toAtlasData({ nodes: [], edges: [] }).NODES).toEqual([]);
+  assert.deepEqual(toAtlasData({ nodes: [], edges: [] }).NODES, []);
 });
 
 test('stable IDs retain distinct files with the same display name', () => {
@@ -14,9 +15,9 @@ test('stable IDs retain distinct files with the same display name', () => {
     edges: [{ sourceId: 'a/index.ts', targetId: 'b/index.ts', type: 'imports' }],
   };
   const data = toAtlasData(graph);
-  expect(data.NODES.length).toBe(2);
-  expect(data.EDGES).toEqual([['a/index.ts', 'b/index.ts', 'pre']]);
-  expect(data.META['a/index.ts'].label).toBe('index.ts');
+  assert.equal(data.NODES.length, 2);
+  assert.deepEqual(data.EDGES, [['a/index.ts', 'b/index.ts', 'pre']]);
+  assert.equal(data.META['a/index.ts'].label, 'index.ts');
 });
 
 test('render limit reports full totals and excludes dangling visual edges', () => {
@@ -25,7 +26,7 @@ test('render limit reports full totals and excludes dangling visual edges', () =
     edges: [{ sourceId: 'a', targetId: 'b' }],
   };
   const data = toAtlasData(graph, 1);
-  expect(data.totalNodes).toBe(2);
-  expect(data.NODES.length).toBe(1);
-  expect(data.EDGES.length).toBe(0);
+  assert.equal(data.totalNodes, 2);
+  assert.equal(data.NODES.length, 1);
+  assert.equal(data.EDGES.length, 0);
 });
