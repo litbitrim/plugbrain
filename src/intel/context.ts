@@ -4,7 +4,7 @@
  * Requirement M3 §68:
  * "context: Aufrufer, Aufgerufene und Abläufe eines Symbols"
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { basename } from 'node:path'
 import type {
   ExecutionFlow,
@@ -47,7 +47,7 @@ export function getSymbolContext(
       JOIN files f ON s.file_id = f.id
      WHERE s.name = ?
   `
-  const params: unknown[] = [name]
+  const params: SQLInputValue[] = [name]
   if (options?.workspaceId) {
     sql += ' AND f.workspace_id = ?'
     params.push(options.workspaceId)

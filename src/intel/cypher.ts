@@ -4,7 +4,7 @@
  * Requirement M3 §71:
  * "strukturierte Graph-Abfrage (Cypher-artig oder ein dokumentiertes JSON-DSL)"
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import type { CypherQueryResult } from './types.ts'
 
 export interface JsonGraphQuery {
@@ -309,7 +309,7 @@ function executeJsonDsl(
 }
 
 /** Every generated query anchors its rows in one of these workspace-aware aliases. */
-function scopeSql(sql: string, workspaceId?: string): { sql: string; params: unknown[] } {
+function scopeSql(sql: string, workspaceId?: string): { sql: string; params: SQLInputValue[] } {
   if (!workspaceId) return { sql, params: [] }
   if (/\bFROM repos r\b/i.test(sql)) {
     return { sql: `${sql} AND r.planet_id IN (SELECT id FROM planets WHERE workspace_id = ?)`, params: [workspaceId] }

@@ -3,8 +3,9 @@
  * Supports personal inboxes, mission channels, delivery confirmation and long-polling.
  */
 import { randomUUID } from 'node:crypto'
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
+import { rowsAs } from '../store/rows.ts'
 import { coordEvents } from './events.ts'
 import type { InboxMessage } from './types.ts'
 
@@ -139,7 +140,7 @@ export async function readInbox(db: DatabaseSync, input: ReadInboxInput): Promis
        WHERE workspace_id = ?
          AND (to_agent = ? OR to_agent IS NULL)
     `
-    const params: unknown[] = [input.workspaceId, input.agentId]
+    const params: SQLInputValue[] = [input.workspaceId, input.agentId]
 
     if (input.channel) {
       sql += ' AND channel = ?'
@@ -154,7 +155,7 @@ export async function readInbox(db: DatabaseSync, input: ReadInboxInput): Promis
     }
 
     sql += ' ORDER BY created_at ASC'
-    return db.prepare(sql).all(...params) as unknown as InboxDbRow[]
+    return rowsAs<InboxDbRow>(db.prepare(sql).all(...params))
   }
 
   let rows = queryMessages()

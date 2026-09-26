@@ -13,7 +13,7 @@ export function prioritiseTimingProcess(): string {
   } catch (error) {
     // Some managed Windows sessions refuse priority changes. The measurement
     // remains valid and names that fact instead of silently claiming control.
-    return `process priority unavailable: ${error instanceof Error ? error.code ?? error.message : String(error)}`
+    return `process priority unavailable: ${error instanceof Error ? (error as NodeJS.ErrnoException).code ?? error.message : String(error)}`
   }
 }
 

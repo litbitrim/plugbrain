@@ -3,8 +3,9 @@
  * Enforces mutual exclusion on workspace paths and symbols with TTL and liveness checks.
  */
 import { randomUUID } from 'node:crypto'
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { requireAgent, requireWorkspace } from '../access.ts'
+import { rowAs, rowsAs } from '../store/rows.ts'
 import { ingestTraceEvents } from '../trace.ts'
 import { coordEvents } from './events.ts'
 import { isAgentDead, getAgentPresence } from './registry.ts'
@@ -146,12 +147,12 @@ export function acquireLease(
   db.exec('BEGIN IMMEDIATE')
   try {
     // Find all active unexpired leases in this workspace
-    const activeRows = db.prepare(`
+    const activeRows = rowsAs<LeaseDbRow>(db.prepare(`
       SELECT * FROM leases
        WHERE workspace_id = ?
          AND released_at IS NULL
          AND expires_at > ?
-    `).all(workspaceId, nowIso) as unknown as LeaseDbRow[]
+    `).all(workspaceId, nowIso))
 
     for (const row of activeRows) {
       // If held by the same agent and same task, it is re-entrant
@@ -307,7 +308,7 @@ export function releaseLease(db: DatabaseSync, input: ReleaseLeaseInput): { rele
   let count = 0
 
   if (input.leaseId) {
-    const row = db.prepare('SELECT * FROM leases WHERE id = ?').get(input.leaseId) as LeaseDbRow | undefined
+    const row = rowAs<LeaseDbRow>(db.prepare('SELECT * FROM leases WHERE id = ?').get(input.leaseId))
     if (!row) return { released: false, count: 0 }
     if (row.agent_id !== input.agentId) {
       throw new Error(`lease ${input.leaseId} belongs to ${row.agent_id}, not ${input.agentId}`)
@@ -339,7 +340,7 @@ export function releaseLease(db: DatabaseSync, input: ReleaseLeaseInput): { rele
 
   // Release by agentId and optionally workspaceId or taskId
   let querySql = 'SELECT * FROM leases WHERE agent_id = ? AND released_at IS NULL'
-  const queryParams: unknown[] = [input.agentId]
+  const queryParams: SQLInputValue[] = [input.agentId]
   if (input.workspaceId) {
     querySql += ' AND workspace_id = ?'
     queryParams.push(input.workspaceId)
@@ -348,10 +349,10 @@ export function releaseLease(db: DatabaseSync, input: ReleaseLeaseInput): { rele
     querySql += ' AND task_id = ?'
     queryParams.push(input.taskId)
   }
-  const matching = db.prepare(querySql).all(...queryParams) as unknown as LeaseDbRow[]
+  const matching = rowsAs<LeaseDbRow>(db.prepare(querySql).all(...queryParams))
 
   let sql = 'UPDATE leases SET released_at = ? WHERE agent_id = ? AND released_at IS NULL'
-  const params: unknown[] = [nowIso, input.agentId]
+  const params: SQLInputValue[] = [nowIso, input.agentId]
   if (input.workspaceId) {
     sql += ' AND workspace_id = ?'
     params.push(input.workspaceId)
@@ -402,7 +403,7 @@ export function checkWriteFencing(
 
   // 1. If explicit leaseId is provided, check fencing validity
   if (options?.leaseId) {
-    const row = db.prepare('SELECT * FROM leases WHERE id = ?').get(options.leaseId) as LeaseDbRow | undefined
+    const row = rowAs<LeaseDbRow>(db.prepare('SELECT * FROM leases WHERE id = ?').get(options.leaseId))
     if (!row) {
       throw new FencingError(`fencing violation: unknown lease '${options.leaseId}'`, options.leaseId)
     }
@@ -433,13 +434,13 @@ export function checkWriteFencing(
   }
 
   // 2. Check if another agent holds an unexpired write lease on this file
-  const activeRows = db.prepare(`
+  const activeRows = rowsAs<LeaseDbRow>(db.prepare(`
     SELECT * FROM leases
      WHERE workspace_id = ?
        AND agent_id != ?
        AND released_at IS NULL
        AND expires_at > ?
-  `).all(workspaceId, agentId, nowIso) as unknown as LeaseDbRow[]
+  `).all(workspaceId, agentId, nowIso))
 
   for (const row of activeRows) {
     if (isAgentDead(db, row.agent_id)) {
@@ -467,12 +468,12 @@ export function checkWriteFencing(
   }
 
   // 3. Check if the current agent holds an EXPIRED lease for this path without having any active lease
-  const myLeases = db.prepare(`
+  const myLeases = rowsAs<LeaseDbRow>(db.prepare(`
     SELECT * FROM leases
      WHERE workspace_id = ?
        AND agent_id = ?
      ORDER BY epoch DESC
-  `).all(workspaceId, agentId) as unknown as LeaseDbRow[]
+  `).all(workspaceId, agentId))
 
   let hadMatchingLease = false
   let hadActiveMatchingLease = false
@@ -500,13 +501,13 @@ export function checkWriteFencing(
 export function listActiveLeases(db: DatabaseSync, workspaceId: string): Lease[] {
   ensureLeaseSchema(db)
   const nowIso = new Date().toISOString()
-  const rows = db.prepare(`
+  const rows = rowsAs<LeaseDbRow>(db.prepare(`
     SELECT * FROM leases
      WHERE workspace_id = ?
        AND released_at IS NULL
        AND expires_at > ?
      ORDER BY epoch DESC
-  `).all(workspaceId, nowIso) as unknown as LeaseDbRow[]
+  `).all(workspaceId, nowIso))
 
   return rows.map(parseLease)
 }

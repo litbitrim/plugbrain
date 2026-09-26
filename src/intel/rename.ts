@@ -1,5 +1,5 @@
 /** Read-only, graph-backed symbol rename preview for agents. */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 
 export interface RenamePreviewOptions {
   symbolId?: number
@@ -43,7 +43,7 @@ export function previewRename(
 
   let sql = `SELECT s.id, s.name, s.kind, s.line, f.path, f.repo_id AS repoId, f.checkout_id AS checkoutId
       FROM symbols s JOIN files f ON f.id = s.file_id WHERE 1 = 1`
-  const params: unknown[] = []
+  const params: SQLInputValue[] = []
   if (options.workspaceId) {
     sql += ' AND f.workspace_id = ?'
     params.push(options.workspaceId)

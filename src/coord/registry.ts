@@ -2,8 +2,9 @@
  * Agent Registry and Presence Management (M4).
  * Tracks agent capabilities, hosts, work assignments, and liveness heartbeats.
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { registerAgent, requireAgent, requireWorkspace } from '../access.ts'
+import { rowsAs } from '../store/rows.ts'
 import { coordEvents } from './events.ts'
 import type { AgentRegistration, PresenceState } from './types.ts'
 
@@ -12,7 +13,7 @@ interface ColumnInfo {
 }
 
 export function ensureCoordSchema(db: DatabaseSync): void {
-  const columns = db.prepare(`PRAGMA table_info(agents)`).all() as unknown as ColumnInfo[]
+  const columns = rowsAs<ColumnInfo>(db.prepare(`PRAGMA table_info(agents)`).all())
   const has = (name: string) => columns.some(c => c.name === name)
 
   if (!has('model')) db.exec('ALTER TABLE agents ADD COLUMN model TEXT')
@@ -139,7 +140,7 @@ export function getAgentPresence(db: DatabaseSync, options?: { workspaceId?: str
   ensureCoordSchema(db)
 
   let sql = 'SELECT * FROM agents WHERE 1=1'
-  const params: unknown[] = []
+  const params: SQLInputValue[] = []
 
   if (options?.workspaceId) {
     // An unbound legacy identity does not belong to every workspace. Letting
@@ -155,7 +156,7 @@ export function getAgentPresence(db: DatabaseSync, options?: { workspaceId?: str
 
   sql += ' ORDER BY first_seen ASC'
 
-  const rows = db.prepare(sql).all(...params) as unknown as AgentDbRow[]
+  const rows = rowsAs<AgentDbRow>(db.prepare(sql).all(...params))
   const now = Date.now()
 
   return rows.map((row) => {

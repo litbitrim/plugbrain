@@ -22,8 +22,9 @@
  *   A trace log is exactly the kind of place a token leaks into and then gets
  *   copied into a screenshot, an export and a bug report.
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { invalidateTraceProjection } from './store/projection-cache.ts'
+import { rowsAs } from './store/rows.ts'
 
 /** Where a fact came from. `import` is historical and always marked as such. */
 export type TraceSource = 'operator' | 'work' | 'brain' | 'git' | 'receipt' | 'import'
@@ -364,7 +365,7 @@ export function readTrace(
 ): StoredTraceEvent[] {
   ensureTraceSchema(db)
   const where: string[] = ['workspace_id = ?']
-  const params: unknown[] = [workspaceId]
+  const params: SQLInputValue[] = [workspaceId]
   if (filter.taskId !== undefined) { where.push('task_id = ?'); params.push(filter.taskId) }
   if (filter.agentId !== undefined) { where.push('agent_id = ?'); params.push(filter.agentId) }
   if (filter.workerId !== undefined) { where.push('worker_id = ?'); params.push(filter.workerId) }
@@ -373,10 +374,10 @@ export function readTrace(
     params.push(...filter.types)
   }
   const limit = Math.min(5000, Math.max(1, filter.limit ?? 1000))
-  const rows = db.prepare(
+  const rows = rowsAs<Record<string, unknown>>(db.prepare(
     `SELECT * FROM trace_events WHERE ${where.join(' AND ')}
       ORDER BY occurred_at ASC, COALESCE(source_sequence, 0) ASC, event_id ASC
-      LIMIT ?`).all(...params, limit) as unknown as Array<Record<string, unknown>>
+      LIMIT ?`).all(...params, limit))
 
   return rows.map(row => ({
     schema: 1 as const,

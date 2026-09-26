@@ -1,5 +1,5 @@
 /** Explicit package entry points, test coverage, and a reviewable impact slice. */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { PackageResolver } from '../indexer/packages.ts'
 import { getBlastRadius, type BlastRadiusOptions } from './impact.ts'
 
@@ -50,10 +50,10 @@ export function getTestCoverage(
       Array<{ id: number; name: string; file: string; fileId: number }>
   } else {
     let sql = 'SELECT s.id, s.name, f.path AS file, f.id AS fileId FROM symbols s JOIN files f ON f.id = s.file_id WHERE s.name = ?'
-    const params: unknown[] = [requested.name]
+    const params: SQLInputValue[] = [requested.name]
     if (options.workspaceId !== undefined) { sql += ' AND f.workspace_id = ?'; params.push(options.workspaceId) }
     if (requested.file !== undefined) { sql += ' AND f.path LIKE ?'; params.push(`%${requested.file.replace(/\\/g, '/')}%`) }
-    candidates = db.prepare(sql).all(...params) as Array<{ id: number; name: string; file: string }>
+    candidates = db.prepare(sql).all(...params) as Array<{ id: number; name: string; file: string; fileId: number }>
   }
   if (candidates.length === 0) return { status: 'not_found', symbol: null, tests: [] }
   if (candidates.length !== 1) return { status: 'ambiguous', symbol: null, tests: [] }
