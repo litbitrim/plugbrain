@@ -27,9 +27,9 @@
  *      incremental cost — a planet is not a federation of separate indexes.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync, type Dirent } from 'node:fs'
 import { basename, isAbsolute, join, resolve } from 'node:path'
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue, SQLOutputValue } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
 import { indexWorkspace, type IndexProgress, type IndexResult } from './indexer/index.ts'
 import type { IndexRoot } from './indexer/scan.ts'
@@ -471,7 +471,7 @@ export function setPlanetIndexSelection(
  * silently — a planet's `Code/` folder legitimately holds work in progress.
  */
 export function discoverCheckouts(codeDir: string, planetId: string): DiscoveredCheckout[] {
-  let entries: ReturnType<typeof readdirSync>
+  let entries: Dirent<string>[]
   try { entries = readdirSync(codeDir, { withFileTypes: true }) } catch { return [] }
   const found: DiscoveredCheckout[] = []
   const seenPhysicalCheckouts = new Set<string>()
@@ -756,11 +756,35 @@ interface WorkspaceRow {
 }
 
 function readWorkspaceRow(db: DatabaseSync, workspaceId: string): WorkspaceRow {
-  const ws = db.prepare(
+  const row = db.prepare(
     'SELECT id, name, root, created_at AS createdAt, indexed_at AS indexedAt FROM workspaces WHERE id = ?')
-    .get(workspaceId) as WorkspaceRow | undefined
-  if (!ws) throw new Error(`unknown workspace: ${workspaceId}`)
-  return ws
+    .get(workspaceId)
+  if (!row) throw new Error(`unknown workspace: ${workspaceId}`)
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    root: String(row.root),
+    createdAt: String(row.createdAt),
+    indexedAt: row.indexedAt === null || row.indexedAt === undefined ? null : String(row.indexedAt),
+  }
+}
+
+export interface NoteRootRow {
+  relPath: string
+  kind: string
+}
+
+function parseNoteRootRow(row: Record<string, SQLOutputValue>): NoteRootRow {
+  return {
+    relPath: typeof row.relPath === 'string' ? row.relPath : String(row.relPath ?? ''),
+    kind: typeof row.kind === 'string' ? row.kind : String(row.kind ?? ''),
+  }
+}
+
+function readNoteRootRows(db: DatabaseSync, planetId: string): NoteRootRow[] {
+  return db.prepare(
+    'SELECT rel_path AS relPath, kind FROM note_roots WHERE planet_id = ? ORDER BY rel_path'
+  ).all(planetId).map(parseNoteRootRow)
 }
 
 /**
@@ -860,10 +884,8 @@ function buildPlanetView(
   const notePaths = db.prepare(
     'SELECT path FROM files WHERE workspace_id = ? AND checkout_id IS NULL').all(workspaceId) as
     unknown as Array<{ path: string }>
-  const noteRootRowsHere = planet === null ? [] : db.prepare(
-    'SELECT rel_path AS relPath, kind FROM note_roots WHERE planet_id = ? ORDER BY rel_path')
-    .all(planet.id) as unknown as Array<{ relPath: string; kind: string }>
-  const countSql = (sql: string, ...params: unknown[]): number =>
+  const noteRootRowsHere = planet === null ? [] : readNoteRootRows(db, planet.id)
+  const countSql = (sql: string, ...params: SQLInputValue[]): number =>
     Number((db.prepare(sql).get(...params) as { n: number }).n)
   const linksByStatus = (status: string): number => countSql(
     'SELECT COUNT(*) AS n FROM note_links WHERE workspace_id = ? AND status = ?', workspaceId, status)
@@ -951,9 +973,7 @@ export function scopeRoots(db: DatabaseSync, workspaceId: string): IndexRoot[] |
     repoId: row.repoId,
     checkoutId: row.id,
   }))
-  const notes: IndexRoot[] = (db.prepare(
-    'SELECT rel_path AS relPath, kind FROM note_roots WHERE planet_id = ? ORDER BY rel_path')
-    .all(planet.id) as unknown as Array<{ relPath: string; kind: string }>).map(row => ({
+  const notes: IndexRoot[] = readNoteRootRows(db, planet.id).map((row): IndexRoot => ({
     abs: join(planet.root, ...row.relPath.split('/')),
     prefix: row.relPath,
     kind: row.kind === 'file' ? 'file' as const : 'notes' as const,
@@ -964,13 +984,11 @@ export function scopeRoots(db: DatabaseSync, workspaceId: string): IndexRoot[] |
 }
 
 /** The note roots of a planet, or `[]` when it has none. */
-export function noteRootRows(db: DatabaseSync, workspaceId: string):
-Array<{ relPath: string; kind: string }> {
+export function noteRootRows(db: DatabaseSync, workspaceId: string): NoteRootRow[] {
   const planet = db.prepare('SELECT id FROM planets WHERE workspace_id = ?').get(workspaceId) as
     { id: string } | undefined
   if (!planet) return []
-  return db.prepare('SELECT rel_path AS relPath, kind FROM note_roots WHERE planet_id = ? ORDER BY rel_path')
-    .all(planet.id) as unknown as Array<{ relPath: string; kind: string }>
+  return readNoteRootRows(db, planet.id)
 }
 
 /**

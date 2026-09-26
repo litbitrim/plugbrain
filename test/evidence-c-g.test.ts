@@ -188,7 +188,7 @@ test('B5-G: backup and restore round-trip preserves notes, properties, links and
     // ── Restore ──────────────────────────────────────────────────────────
     db.close()
     const restored = restoreStore(backupPath, dbFile)
-    assert.strictEqual(restored.ok, true, `restoreStore: ${restored.error ?? ''}`)
+    assert.strictEqual(restored.ok, true, 'restoreStore failed')
     db = openStore(dbFile)
 
     // ── Hin und zurück ───────────────────────────────────────────────────
@@ -196,7 +196,7 @@ test('B5-G: backup and restore round-trip preserves notes, properties, links and
       'ws-ev-g', 'the workspace identity must survive the round-trip')
 
     const restoredIdea = vault.readNote(db, 'ws-ev-g', 'nv01', 'notes/idea.md')
-    assert.strictEqual(restoredIdea.body, liveIdea.body, 'the note body must survive')
+    assert.strictEqual(restoredIdea.content, liveIdea.content, 'the note body must survive')
 
     const restoredProps = db.prepare(`
       SELECT key, value, raw, ordinal, is_link, line FROM note_properties

@@ -29,6 +29,7 @@ import {
 } from '../src/machine/git-census.ts'
 import { withMachineFindings } from '../src/machine/findings.ts'
 import { snapshotRepo } from '../src/hygiene/snapshot.ts'
+import { workspaceIdFor } from '../src/planet.ts'
 
 const GB = 1024 ** 3
 
@@ -256,7 +257,7 @@ const censusOf = (repos: Partial<CensusRepo>[]): CensusReport => ({
   scannedAt: '2026-09-26T12:00:00Z',
   roots: ['C:\\'],
   complete: true,
-  repos: repos.map(repo => ({
+  repos: repos.map((repo): CensusRepo => ({
     path: 'C:\\x', registered: false, branch: 'main', dirtyFiles: 0, untrackedFiles: 0,
     unpushed: [], worktrees: 1, orphanWorktrees: 0, stashes: 0, lastCommitDays: 1,
     gitSizeMb: 1, workTreeSizeMb: 1, ...repo,
@@ -462,6 +463,30 @@ test('--wip-snapshot --repo rescues an unregistered repo without moving tree, in
     void fx
   } finally {
     fx.cleanup()
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('--wip-snapshot --repo produces WipSnapshotResult with workspace ID', { skip: skipGit }, () => {
+  const CLI = join(import.meta.dirname, '..', 'src', 'cli.ts')
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-repo-snap-cli-'))
+  const home = mkdtempSync(join(tmpdir(), 'plugbrain-home-snap-cli-'))
+  try {
+    const repo = join(root, 'outside')
+    makeRepo(repo)
+    writeFileSync(join(repo, 'a.txt'), 'tracked, unsaved\n')
+    const out = execFileSync(
+      process.execPath,
+      ['--experimental-strip-types', CLI, 'hygiene', '--wip-snapshot', '--repo', repo, '--json'],
+      { env: { ...process.env, PLUGBRAIN_HOME: home }, encoding: 'utf8' }
+    )
+    const res = JSON.parse(out)
+    assert.equal(res.workspace, workspaceIdFor(repo))
+    assert.equal(res.created, 1)
+    assert.equal(res.entries.length, 1)
+    assert.equal(res.entries[0].treeUnchanged, true)
+  } finally {
+    rmSync(home, { recursive: true, force: true })
     rmSync(root, { recursive: true, force: true })
   }
 })

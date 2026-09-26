@@ -13,7 +13,7 @@ test('docs-consistency: all registered MCP tools are documented in docs/mcp-tool
   const docToolSet = new Set(docToolMatches)
 
   const serverToolNames = MCP_TOOLS.map(t => t.name)
-  const serverToolSet = new Set(serverToolNames)
+  const serverToolSet = new Set<string>(serverToolNames)
 
   assert.equal(
     docToolMatches.length,

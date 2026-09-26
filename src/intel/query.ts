@@ -4,7 +4,7 @@
  * Requirement M3 §67:
  * "query: Konzeptsuche liefert Symbole und Abläufe"
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import type { ConceptSearchResult, ExecutionFlow, IntelSymbol } from './types.ts'
 import { annotateSymbolVendor } from './vendor.ts'
 import { getSymbolContext } from './context.ts'
@@ -136,7 +136,7 @@ export function conceptSearch(
       JOIN files f ON s.file_id = f.id
      WHERE (s.name LIKE ? OR s.container LIKE ? OR f.path LIKE ? OR ${termMatch})
   `
-  const params: unknown[] = [
+  const params: SQLInputValue[] = [
     cleanQuery,
     cleanQuery,
     pattern,
@@ -194,7 +194,7 @@ export function conceptSearch(
         JOIN files f ON s.file_id = f.id
        WHERE (s.name = ? OR s.name LIKE ? || '%')
     `
-    const exactParams: unknown[] = [cleanQuery, cleanQuery]
+    const exactParams: SQLInputValue[] = [cleanQuery, cleanQuery]
     if (options?.repoId) { exactSql += ' AND f.repo_id = ?'; exactParams.push(options.repoId) }
     if (options?.workspaceId) { exactSql += ' AND f.workspace_id = ?'; exactParams.push(options.workspaceId) }
     if (options?.checkoutId) { exactSql += ' AND f.checkout_id = ?'; exactParams.push(options.checkoutId) }
@@ -226,7 +226,7 @@ export function conceptSearch(
             JOIN files f ON s.file_id = f.id
            WHERE r.symbol_id IS NOT NULL
         `
-        const triParams: unknown[] = [safe]
+        const triParams: SQLInputValue[] = [safe]
         if (options?.repoId) { triSql += ' AND f.repo_id = ?'; triParams.push(options.repoId) }
         if (options?.workspaceId) { triSql += ' AND f.workspace_id = ?'; triParams.push(options.workspaceId) }
         if (options?.checkoutId) { triSql += ' AND f.checkout_id = ?'; triParams.push(options.checkoutId) }
@@ -249,7 +249,7 @@ export function conceptSearch(
         FROM files f
        WHERE (f.path = ? OR f.path LIKE '%' || ? OR f.path LIKE ? || '%')
     `
-    const fileParams: unknown[] = [cleanQuery, cleanQuery, cleanQuery]
+    const fileParams: SQLInputValue[] = [cleanQuery, cleanQuery, cleanQuery]
     if (options?.repoId) { fileSql += ' AND f.repo_id = ?'; fileParams.push(options.repoId) }
     if (options?.workspaceId) { fileSql += ' AND f.workspace_id = ?'; fileParams.push(options.workspaceId) }
     if (options?.checkoutId) { fileSql += ' AND f.checkout_id = ?'; fileParams.push(options.checkoutId) }

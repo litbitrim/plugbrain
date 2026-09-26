@@ -12,8 +12,8 @@ import { parseFile } from '../src/indexer/scan.ts'
 import { indexWorkspace } from '../src/indexer/index.ts'
 import { openStore } from '../src/store/schema.ts'
 
-const has = (items: Array<{ name?: string; target?: string; local?: string | null; kind?: string }>, key: string, value: string): boolean =>
-  items.some(item => item[key as keyof typeof item] === value)
+const has = (items: readonly unknown[], key: string, value: string): boolean =>
+  items.some(item => typeof item === 'object' && item !== null && (item as Record<string, unknown>)[key] === value)
 
 const python = parseFile('apps/backend/workers.py', '.py', `
 from .engine import boot as start, record
@@ -135,7 +135,7 @@ const gold = goldRows.map(([label, extract, collection, key, value]) => ({ label
 
 for (const item of gold) {
   test(`M16 gold ${item.label}`, () => {
-    assert.equal(has(item.extract[item.collection] as Array<Record<string, string | null>>, item.key, item.value), true)
+    assert.equal(has(item.extract[item.collection], item.key, item.value), true)
   })
 }
 
@@ -171,7 +171,7 @@ const actualRows: Array<[string, number, 'symbols' | 'imports' | 'refs', string,
 ]
 for (const [label, input, collection, key, value] of actualRows) {
   test(`M16 corpus ${label}`, { skip: actual === null ? 'set PLUGPT_CODE_ROOT to run against the PLUG corpus' : false }, () => {
-    assert.equal(has(actual![input][collection] as Array<Record<string, string | null>>, key, value), true)
+    assert.equal(has(actual![input][collection], key, value), true)
   })
 }
 

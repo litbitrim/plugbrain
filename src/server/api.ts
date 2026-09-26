@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, resolve as resolvePath } from 'node:path'
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue, SQLOutputValue } from 'node:sqlite'
 import * as access from '../access.ts'
 import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
@@ -198,7 +198,7 @@ function liveProjectionCounts(db: DatabaseSync, workspaceId: string): {
   const files = liveFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
   const source = liveFileScope(db, workspaceId, 'src.checkout_id', 'src.path')
   const destination = liveFileScope(db, workspaceId, 'dst.checkout_id', 'dst.path')
-  const count = (sql: string, ...params: unknown[]): number => Number(
+  const count = (sql: string, ...params: SQLInputValue[]): number => Number(
     (db.prepare(sql).get(...params) as { c: number } | undefined)?.c ?? 0)
   // Files and stale are written by direct writes too, so they stay live.
   // Symbols and edges only the indexer writes — they come from the memo,
@@ -675,7 +675,7 @@ function filesOf(
   // literally instead of turning into a wildcard.
   const escaped = options.prefix.replace(/[\\%_]/g, character => `\\${character}`)
   const filter = options.prefix === '' ? '' : " AND f.path LIKE ? ESCAPE '\\'"
-  const params: unknown[] = [workspaceId, ...scope.params]
+  const params: SQLInputValue[] = [workspaceId, ...scope.params]
   if (options.prefix !== '') params.push(`${escaped}%`)
 
   const total = Number((db.prepare(
@@ -733,7 +733,7 @@ function edgesOf(
     const row = db.prepare(
       `SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND path = ?`)
       .get(workspaceId, ...scope.params, path) as { id: number; path: string } | undefined
-    if (row === undefined) return { fileId: null, path, known: false, edges: [], total: 0 }
+    if (row === undefined) return { fileId: null as number | null, path, known: false, edges: [] as Record<string, SQLOutputValue>[], total: 0 }
     fileId = row.id
     path = row.path
   } else {
@@ -741,7 +741,7 @@ function edgesOf(
     const row = db.prepare(
       `SELECT id, path FROM files WHERE workspace_id = ? AND ${scope.sql} AND id = ?`)
       .get(workspaceId, ...scope.params, fileId) as { id: number; path: string } | undefined
-    if (row === undefined) return { fileId, path: null, known: false, edges: [], total: 0 }
+    if (row === undefined) return { fileId, path: null, known: false, edges: [] as Record<string, SQLOutputValue>[], total: 0 }
     path = row.path
   }
 
@@ -753,7 +753,7 @@ function edgesOf(
   const directionParams = options.direction === 'both' ? [fileId, fileId] : [fileId]
   const kindFilter = options.kind === null ? '' : ' AND e.kind = ?'
   const resolvedFilter = options.resolved === null ? '' : ' AND e.resolved = ?'
-  const params: unknown[] = [workspaceId, ...sourceScope.params, ...destinationScope.params]
+  const params: SQLInputValue[] = [workspaceId, ...sourceScope.params, ...destinationScope.params]
   params.push(...directionParams)
   if (options.kind !== null) params.push(options.kind)
   if (options.resolved !== null) params.push(options.resolved ? 1 : 0)
@@ -871,7 +871,7 @@ function changesOf(db: DatabaseSync, workspaceId: string, fromGeneration: number
     deleted,
     renamed,
     tombstones,
-    unavailable: null,
+    unavailable: null as string[] | null,
   }
 }
 
@@ -2236,7 +2236,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const presence = coord.getAgentPresence(db, { workspaceId, agentId })[0]
       const state = presence?.presence ?? 'unproven'
 
-      const leases = coord.listActiveLeases(db, workspaceId, agentId)
+      const targetWs = (workspaceId ?? agentRow.workspace_id ?? ws) as string | undefined
+      const leases = targetWs ? coord.listActiveLeases(db, targetWs).filter(l => l.agentId === agentId) : []
 
       const dateiereignisse = db.prepare(`
         SELECT ac.id, ac.path, ac.action, ac.at, ac.detail

@@ -4,7 +4,7 @@
  * Requirement M3 §69:
  * "impact: Blast-Radius nach oben und unten mit Tiefe"
  */
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import type { BlastRadiusResult, ImpactNode } from './types.ts'
 
 export interface BlastRadiusOptions {
@@ -48,7 +48,7 @@ export function getBlastRadius(
     let sql = `SELECT s.id, s.name, f.path as file
                  FROM symbols s JOIN files f ON s.file_id = f.id
                 WHERE s.name = ?`
-    const params: unknown[] = [targetName]
+    const params: SQLInputValue[] = [targetName]
     if (options?.workspaceId) { sql += ' AND f.workspace_id = ?'; params.push(options.workspaceId) }
     if (targetFile) {
       sql += ' AND f.path LIKE ?'

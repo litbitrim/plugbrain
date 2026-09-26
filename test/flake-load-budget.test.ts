@@ -40,7 +40,7 @@ test('FLAKE: Awareness Runtime and FO-3/FO-4 keep their contracts under concurre
     handle = await serve({ db, uiRoot: null, authKey: AUTH, requireAuth: true }, 0)
     const base = `http://127.0.0.1:${handle.port}`
     const authHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${AUTH}` }
-    const post = (path: string, body: unknown, headers = authHeaders) => fetch(`${base}${path}`, {
+    const post = (path: string, body: unknown, headers: Record<string, string> = authHeaders) => fetch(`${base}${path}`, {
       method: 'POST', headers, body: JSON.stringify(body),
     })
     assert.equal((await post('/api/agent/attach', { workspace: workspaceId, agentId: 'lead' })).status, 200)

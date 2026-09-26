@@ -566,15 +566,19 @@ function renderSnapshots(result: WipSnapshotResult): void {
 }
 
 function hygieneCommand(args: string[]): void {
-  const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
-  if (args.includes('--wip-snapshot')) {
+  const repo = flagValue(args, '--repo')
+  if (args.includes('--wip-snapshot') && repo !== null) {
     // `--repo <path>` rescues one repository the brain never registered — the
     // fix the machine-wide census names for work outside the brain. Only ever
     // reached because a human typed the command.
-    const repo = flagValue(args, '--repo')
-    const result = repo === null
-      ? createWipSnapshots(db, workspaceId)
-      : singleRepoSnapshot(resolve(repo))
+    const result = singleRepoSnapshot(resolve(repo))
+    if (args.includes('--json')) return jsonOut(result)
+    renderSnapshots(result)
+    return
+  }
+  const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
+  if (args.includes('--wip-snapshot')) {
+    const result = createWipSnapshots(db, workspaceId)
     if (args.includes('--json')) return jsonOut(result)
     renderSnapshots(result)
     return
@@ -588,6 +592,7 @@ function hygieneCommand(args: string[]): void {
 function singleRepoSnapshot(path: string): WipSnapshotResult {
   const entries: WipSnapshotEntry[] = [snapshotRepo(path)]
   return {
+    workspace: workspaceIdFor(path),
     date: new Date().toISOString().slice(0, 10),
     created: entries.filter(entry => entry.ref !== null).length,
     skipped: entries.filter(entry => entry.ref === null && entry.error === null).length,
@@ -1317,7 +1322,7 @@ switch (command) {
     const override = flagValue(args, '--workspace')
     const authKey = flagValue(args, '--auth-key') ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
     const resolution = resolveMcpWorkspace({ db, cwd: process.cwd(), override })
-    if (resolution.workspaceId === null) {
+    if (resolution.source === 'none') {
       // Start anyway: a refusal must reach the client as a tool error, not as a
       // server that died before it could answer `initialize`.
       console.error(`plugbrain mcp: ${resolution.reason}`)

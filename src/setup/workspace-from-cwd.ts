@@ -62,7 +62,10 @@ export function pathContains(root: string, child: string): boolean {
  * spelling of the same directory is still one workspace.
  */
 export function findRegisteredWorkspace(db: DatabaseSync, cwd: string): WorkspaceCandidate | null {
-  const rows = db.prepare('SELECT id, root FROM workspaces').all() as WorkspaceCandidate[]
+  const rows: WorkspaceCandidate[] = db.prepare('SELECT id, root FROM workspaces').all().map(row => ({
+    id: String(row.id),
+    root: String(row.root),
+  }))
   let best: WorkspaceCandidate | null = null
   let bestLength = -1
   for (const row of rows) {
