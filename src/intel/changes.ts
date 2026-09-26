@@ -8,6 +8,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { resolve } from 'node:path'
 import type { DetectChangesResult, DiffSymbolChange } from './types.ts'
+import { canonicalPath } from '../planet.ts'
 import { gitText } from '../indexer/git.ts'
 
 export interface DetectChangesOptions {
@@ -151,7 +152,7 @@ export function detectChanges(
     const selected = checkoutId
       ? candidates.find(checkout => checkout.id === checkoutId)
       : checkoutPath
-        ? candidates.find(checkout => resolve(checkout.path).toLowerCase() === resolve(checkoutPath!).toLowerCase())
+        ? candidates.find(checkout => canonicalPath(checkout.path) === canonicalPath(checkoutPath!))
         : undefined
     if ((checkoutId || checkoutPath) && selected === undefined) return noChanges()
     if (selected !== undefined) {

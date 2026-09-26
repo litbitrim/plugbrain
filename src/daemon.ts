@@ -24,6 +24,7 @@ import { watch, type FSWatcher } from 'node:fs'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { canonicalPath, indexPlanetWorkspace } from './planet.ts'
+import { cachedOnce, generationCache } from './store/count-cache.ts'
 import { IndexRunBusy, IndexRunStartFailed, startIndexRun } from './index/runner.ts'
 import { isNeverIndexedDir } from './indexer/scan.ts'
 import {
@@ -44,6 +45,8 @@ const BUSY_RETRY_MS = 10_000
 const BUSY_MONITOR_MS = 30_000
 /** Do not turn a persistent worker failure into an autonomous start loop. */
 const MAX_PENDING_FAILURES = 2
+/** Bounded memo for the store-containment verdict; event bursts repeat paths. */
+const noiseCache = generationCache('daemon-noise')
 
 /**
  * Is this watcher event about something the indexer would never read?
@@ -65,9 +68,15 @@ export function isNoisePath(filename: string | null, home = storeHome()): boolea
   if (filename === null) return false
   const segments = filename.split(/[\\/]+/).filter(segment => segment !== '')
   if (segments.some(segment => isNeverIndexedDir(segment))) return true
-  const abs = canonicalPath(filename)
-  const store = canonicalPath(home)
-  return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
+  // The store test is a pure function of (filename, home) but costs a realpath
+  // per call, and an indexing burst re-reports the same paths again and again.
+  // Memoize the verdict, keyed by both so another store home cannot read this
+  // one's answer; `cachedOnce` keeps the map bounded.
+  return cachedOnce(noiseCache, `${home}\u0000${filename}`, () => {
+    const abs = canonicalPath(filename)
+    const store = canonicalPath(home)
+    return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
+  })
 }
 
 export interface DaemonHandle {
