@@ -4,7 +4,45 @@ All notable changes to PlugBrain are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.3.0] — 2026-09-26
+## [0.3.1] — 2026-09-26
+
+The `v0.3.0` tag exists, but no 0.3.0 release was published: its cross-platform
+verification failed on macOS and Windows. 0.3.1 is the first published build.
+
+### Fixed
+
+- **A vault opened through a linked path could not read its own notes.** When
+  the vault root was reached through a junction, a symlink or the macOS
+  `/var` → `/private/var` link, path containment compared each file's real path
+  with the unresolved root and refused the vault's own files. The root is now
+  resolved once. Traversal and links that point outside the vault are still
+  refused.
+- **Opening a note during an index run failed silently in the web UI.** While an
+  index run holds the store's writer lock, the daemon answers store-writing
+  requests with `503` and `retryAfterMs`. The page gave up on the first `503`
+  when it attached its agent, so the following read went out without a
+  registered agent and the note stayed closed. The attach now waits and asks
+  again for up to 60 seconds.
+- **The test suite could hang on a machine without Chromium.** The UI end-to-end
+  test launched the browser before its cleanup guard. A missing browser left the
+  test server and the store open, and the run never ended. The test now always
+  closes what it opened, and CI installs Chromium for it.
+
+### Changed
+
+- The release workflow can be dry-run on any branch (`workflow_dispatch`).
+  Publishing still happens only for `v*` tags. When the first UI check of
+  `verify:standalone` times out, it prints what the daemon and the page saw.
+- The README now describes what PlugBrain is for: coordinating many agents on
+  one project, on top of a shared code and notes index. The screenshots are gone
+  from it, and it states what is not there yet.
+- `docs/cli.md` documents every `swarm` subcommand with its real arguments. The
+  previous section had wrong signatures (for example `send`, `register`,
+  `release`) and left out `enqueue`, `ack`, `approve`, `deliver` and `quota`.
+- New `docs/agent-protocol.md`: the per-turn rules as a block to paste into a
+  project's `AGENTS.md` or `CLAUDE.md`.
+
+## [0.3.0] — 2026-09-26 (tagged, not released)
 
 First public release (MIT), first release prepared for Windows, macOS and
 Linux.
