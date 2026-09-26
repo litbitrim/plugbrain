@@ -18,6 +18,7 @@ import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
 import BriefingView from './views/BriefingView'
+import AskModal from './components/AskModal'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
@@ -136,17 +137,26 @@ export default function App() {
   const [selectionBusy, setSelectionBusy] = useState(false)
   const [selectionError, setSelectionError] = useState('')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [askModalOpen, setAskModalOpen] = useState(false)
+  const [askInitialQuery, setAskInitialQuery] = useState('')
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       const target = event.target as HTMLElement | null
       if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
-      if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setAskModalOpen(true)
+      } else if (event.key === '/' && !event.shiftKey) {
+        event.preventDefault()
+        setAskModalOpen(true)
+      } else if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
         event.preventDefault(); setShortcutsOpen(true)
       } else if (event.key === 'Escape') {
         setShortcutsOpen(false)
         setSettingsOpen(false)
         setSelectionModalOpen(false)
+        setAskModalOpen(false)
       } else if (event.key.toLowerCase() === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault(); setVaultOpen(true)
       }
@@ -656,6 +666,9 @@ export default function App() {
                       {v.label}
                     </button>
                   ))}
+                  <button type="button" className="pb-tab-menu-item" onClick={() => { setAskModalOpen(true); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
+                    💬 Frag das Projekt (Strg+K)
+                  </button>
                </div>
             </div>
           )}
@@ -664,6 +677,14 @@ export default function App() {
             <span className="pb-status" data-tone={status.tone} role="status" title={status.title}>
               <i aria-hidden="true" /><span>{status.text}</span>
             </span>
+          )}
+          {workspaceId && (
+            <button type="button" className="pb-tool"
+              onClick={() => setAskModalOpen(true)}
+              title="Frag das Projekt … (Strg+K / /)"
+              aria-label="Frag das Projekt">
+              <Icon path={ICON.search} /><span>Frag das Projekt</span>
+            </button>
           )}
           {workspaceId && (
             <button type="button" className="pb-tool"
@@ -1149,10 +1170,21 @@ export default function App() {
       {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
         <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
           <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
-          <dl><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Im Graph suchen</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
+          <dl><div><dt><kbd>Strg+K</kbd></dt><dd>Frag das Projekt</dd></div><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Frag das Projekt / Suche</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
           <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
         </section>
       </div>}
+
+      <AskModal
+        workspaceId={workspaceId}
+        isOpen={askModalOpen}
+        onClose={() => setAskModalOpen(false)}
+        onOpenSource={(path, line) => handleOpenSource(path, line)}
+        onNavigateToSearch={q => {
+          setView('search')
+        }}
+        initialQuestion={askInitialQuery}
+      />
     </div>
   )
 }
