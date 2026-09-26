@@ -7,10 +7,11 @@ code intelligence over your repositories plus an Obsidian-style note vault,
 exposed to Claude Code (and any MCP client) as one set of tools. Everything
 runs on your machine. No cloud, no telemetry.
 
-<!-- TODO(integrator): drop the UI screenshots into docs/images/ before publishing. -->
-![Atlas — the graph view](docs/images/atlas.png)
-![City — the code map](docs/images/city.png)
-![Agent Mesh — live fleet board](docs/images/mesh.png)
+![Briefing — project summary, entry points and hotspots](docs/images/briefing.png)
+![Ask — query the knowledge graph and code symbols](docs/images/ask.png)
+![Graph — interactive knowledge graph and dependencies](docs/images/graph.png)
+![Notes — Obsidian-style markdown vault with backlinks](docs/images/notes.png)
+![Cleanup — git hygiene and uncommitted work protection](docs/images/cleanup.png)
 
 ## Why PlugBrain?
 
