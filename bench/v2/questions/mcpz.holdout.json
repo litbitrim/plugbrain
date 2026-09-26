@@ -1,0 +1,129 @@
+[
+  {
+    "id": "mcpz-holdout-01",
+    "type": "definition",
+    "question": "Where is the PzTrait record defined for selectable character traits?",
+    "query_param": "PzTrait",
+    "expected": {
+      "path": "src/main/java/net/mcpz/character/PzTrait.java",
+      "symbol": "PzTrait",
+      "kind": "symbol",
+      "details": "PzTrait record defining character trait properties: id, displayName, cost, kind, description, exclusiveWith."
+    }
+  },
+  {
+    "id": "mcpz-holdout-02",
+    "type": "definition",
+    "question": "Where is the costLabel method defined for formatting trait cost strings?",
+    "query_param": "costLabel",
+    "expected": {
+      "path": "src/main/java/net/mcpz/character/PzTrait.java",
+      "symbol": "costLabel",
+      "kind": "symbol",
+      "details": "costLabel returns +cost for negatives and -cost for positives."
+    }
+  },
+  {
+    "id": "mcpz-holdout-03",
+    "type": "definition",
+    "question": "Where is the PzProfession record defined for character occupations?",
+    "query_param": "PzProfession",
+    "expected": {
+      "path": "src/main/java/net/mcpz/character/PzProfession.java",
+      "symbol": "PzProfession",
+      "kind": "symbol",
+      "details": "PzProfession record defining id, displayName, startingPoints, freeTraitIds, description."
+    }
+  },
+  {
+    "id": "mcpz-holdout-04",
+    "type": "definition",
+    "question": "Where is the ModuleRegistry class defined for MCPZ initialization backbone?",
+    "query_param": "ModuleRegistry",
+    "expected": {
+      "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+      "symbol": "ModuleRegistry",
+      "kind": "symbol",
+      "details": "ModuleRegistry registers and initializes MCPZ modules in deterministic order."
+    }
+  },
+  {
+    "id": "mcpz-holdout-05",
+    "type": "callers",
+    "question": "Where is ModuleRegistry.initializeAll called during server/mod initialization?",
+    "query_param": "initializeAll",
+    "expected": {
+      "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+      "symbol": "initializeAll",
+      "kind": "callers",
+      "expected_targets": [
+        "src/main/java/net/mcpz/McpzMod.java"
+      ],
+      "details": "McpzMod calls ModuleRegistry.initializeAll() during mod setup."
+    }
+  },
+  {
+    "id": "mcpz-holdout-06",
+    "type": "definition",
+    "question": "Where is SaveSchema defined for save version validation constants and helpers?",
+    "query_param": "SaveSchema",
+    "expected": {
+      "path": "src/main/java/net/mcpz/save/SaveSchema.java",
+      "symbol": "SaveSchema",
+      "kind": "symbol",
+      "details": "SaveSchema defines CURRENT version and DATA_ID helper."
+    }
+  },
+  {
+    "id": "mcpz-holdout-07",
+    "type": "definition",
+    "question": "Where is AimTargetSnapshot defined for raycast hit results?",
+    "query_param": "AimTargetSnapshot",
+    "expected": {
+      "path": "src/main/java/net/mcpz/target/AimTargetSnapshot.java",
+      "symbol": "AimTargetSnapshot",
+      "kind": "symbol",
+      "details": "AimTargetSnapshot record stores immutable cursor raycast hit data in world space."
+    }
+  },
+  {
+    "id": "mcpz-holdout-08",
+    "type": "definition",
+    "question": "Where is clampBrightness implemented in McpzAtmosphereController?",
+    "query_param": "clampBrightness",
+    "expected": {
+      "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+      "symbol": "clampBrightness",
+      "kind": "symbol",
+      "details": "clampBrightness clamps exposure multiplier between 0.1 and 3.0."
+    }
+  },
+  {
+    "id": "mcpz-holdout-09",
+    "type": "definition",
+    "question": "Where is HALF_HEIGHT_FACTOR defined for isometric camera orthographic visible scale?",
+    "query_param": "HALF_HEIGHT_FACTOR",
+    "expected": {
+      "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+      "symbol": "HALF_HEIGHT_FACTOR",
+      "kind": "symbol",
+      "details": "CameraProjection defines static final double HALF_HEIGHT_FACTOR = 0.55."
+    }
+  },
+  {
+    "id": "mcpz-holdout-10",
+    "type": "impact",
+    "question": "What is impacted if CameraProjection.orthographic projection logic is changed?",
+    "query_param": "orthographic",
+    "expected": {
+      "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+      "symbol": "orthographic",
+      "kind": "impact",
+      "expected_targets": [
+        "src/test/java/net/mcpz/CameraMathTest.java",
+        "src/test/java/net/mcpz/RaycastTest.java"
+      ],
+      "details": "CameraMathTest and RaycastTest rely on CameraProjection.orthographic for projection math."
+    }
+  }
+]

@@ -68,6 +68,37 @@ SOURCE seed.sql;
 \\i helpers.sql
 `)
 
+const java = parseFile('src/main/java/net/mcpz/module/ModuleRegistry.java', '.java', `
+package net.mcpz.module;
+
+import net.mcpz.log.McpzLog;
+import org.slf4j.Logger;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+public final class ModuleRegistry extends BaseRegistry implements IRegistry {
+    private static final Logger LOG = McpzLog.get("modules");
+    public static final int MAX_MODULES = 64;
+
+    private ModuleRegistry() {}
+
+    public static void register(Module module) {
+        if (MODULES.containsKey(module.id())) {
+            throw new IllegalArgumentException("Duplicate module id: " + module.id());
+        }
+        MODULES.put(module.id(), module);
+        LOG.info("Registered module [{}]", module.id());
+    }
+
+    public static void initializeAll() {
+        for (Module m : MODULES.values()) {
+            m.onInitialize();
+            LOG.info("Initialized module [{}]", m.id());
+        }
+    }
+}
+`)
+
 const goldRows: Array<[string, typeof python, 'symbols' | 'imports' | 'refs', string, string]> = [
   // Python: 5 definitions, 3 imports, 1 inheritance reference, 6 calls.
   ['py definition class', python, 'symbols', 'name', 'Worker'], ['py definition method', python, 'symbols', 'name', 'run'],
@@ -87,6 +118,18 @@ const goldRows: Array<[string, typeof python, 'symbols' | 'imports' | 'refs', st
   ['sql reference insert', sql, 'refs', 'target', 'jobs'], ['sql reference update', sql, 'refs', 'target', 'jobs'], ['sql reference from', sql, 'refs', 'target', 'jobs'],
   ['sql reference join', sql, 'refs', 'target', 'logs'], ['sql reference delete', sql, 'refs', 'target', 'logs'], ['sql reference foreign key', sql, 'refs', 'target', 'jobs'],
   ['sql call procedure', sql, 'refs', 'target', 'refresh'], ['sql import source', sql, 'imports', 'specifier', 'seed.sql'], ['sql import psql', sql, 'imports', 'specifier', 'helpers.sql'],
+  // Java: 1 class, 2 methods, 1 constant, 4 imports, extends, implements, calls.
+  ['java definition class', java, 'symbols', 'name', 'ModuleRegistry'],
+  ['java definition method register', java, 'symbols', 'name', 'register'],
+  ['java definition method initializeAll', java, 'symbols', 'name', 'initializeAll'],
+  ['java constant MAX_MODULES', java, 'symbols', 'name', 'MAX_MODULES'],
+  ['java import McpzLog', java, 'imports', 'local', 'McpzLog'],
+  ['java import Logger', java, 'imports', 'local', 'Logger'],
+  ['java import ArrayList', java, 'imports', 'local', 'ArrayList'],
+  ['java reference extends', java, 'refs', 'target', 'BaseRegistry'],
+  ['java reference implements', java, 'refs', 'target', 'IRegistry'],
+  ['java call receiver get', java, 'refs', 'target', 'get'],
+  ['java call receiver onInitialize', java, 'refs', 'target', 'onInitialize'],
 ]
 const gold = goldRows.map(([label, extract, collection, key, value]) => ({ label, extract, collection, key, value }))
 

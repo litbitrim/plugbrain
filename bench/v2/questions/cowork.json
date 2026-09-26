@@ -1,0 +1,274 @@
+[
+  {
+    "id": "cowork-01",
+    "type": "definition",
+    "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+    "query_param": "DEFAULT_LANES",
+    "expected": {
+      "path": "ruflo-workers/tools/fleet.py",
+      "symbol": "DEFAULT_LANES",
+      "kind": "symbol",
+      "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+    }
+  },
+  {
+    "id": "cowork-02",
+    "type": "definition",
+    "question": "Where is the scrub function defined to remove API keys from output?",
+    "query_param": "scrub",
+    "expected": {
+      "path": "ruflo-workers/tools/fleet.py",
+      "symbol": "scrub",
+      "kind": "symbol",
+      "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+    }
+  },
+  {
+    "id": "cowork-03",
+    "type": "callers",
+    "question": "Where is post_event called to update the live station feed?",
+    "query_param": "post_event",
+    "expected": {
+      "path": "ruflo-workers/tools/worker.py",
+      "symbol": "post_event",
+      "kind": "callers",
+      "expected_targets": [
+        "ruflo-workers/tools/worker.py"
+      ],
+      "details": "worker.py calls post_event during worker lifecycle transitions."
+    }
+  },
+  {
+    "id": "cowork-04",
+    "type": "callers",
+    "question": "Where is codegraph_context called to enrich worker prompts?",
+    "query_param": "codegraph_context",
+    "expected": {
+      "path": "ruflo-workers/tools/worker.py",
+      "symbol": "codegraph_context",
+      "kind": "callers",
+      "expected_targets": [
+        "ruflo-workers/tools/worker.py"
+      ],
+      "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+    }
+  },
+  {
+    "id": "cowork-05",
+    "type": "impact",
+    "question": "What is impacted if CONFIG path in fleet.py is moved?",
+    "query_param": "CONFIG",
+    "expected": {
+      "path": "ruflo-workers/tools/fleet.py",
+      "symbol": "CONFIG",
+      "kind": "impact",
+      "expected_targets": [
+        "ruflo-workers/tools/fleet.py",
+        "cockpit/server.cjs"
+      ],
+      "expected_count": 2,
+      "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+    }
+  },
+  {
+    "id": "cowork-06",
+    "type": "impact",
+    "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+    "query_param": "RATE",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "RATE",
+      "kind": "impact",
+      "expected_targets": [
+        "cockpit/server.cjs"
+      ],
+      "expected_count": 1,
+      "details": "RATE determines cost calculation for different AI model providers."
+    }
+  },
+  {
+    "id": "cowork-07",
+    "type": "dataflow",
+    "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+    "query_param": "writeConfig",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "writeConfig",
+      "kind": "dataflow",
+      "expected_targets": [
+        "cockpit/server.cjs",
+        "ruflo-workers/tools/fleet.py"
+      ],
+      "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+    }
+  },
+  {
+    "id": "cowork-08",
+    "type": "config",
+    "question": "Which environment variable configures the Cockpit server port?",
+    "query_param": "PLUGOS_COCKPIT_PORT",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "PLUGOS_COCKPIT_PORT",
+      "kind": "config",
+      "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+    }
+  },
+  {
+    "id": "cowork-09",
+    "type": "config",
+    "question": "Where are the active swarm chain configuration rules defined?",
+    "query_param": "swarm-chain.config.json",
+    "expected": {
+      "path": "ruflo-workers/swarm-chain.config.json",
+      "symbol": "swarm-chain.config.json",
+      "kind": "config",
+      "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+    }
+  },
+  {
+    "id": "cowork-10",
+    "type": "entrypoint",
+    "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+    "query_param": "fleet",
+    "expected": {
+      "path": "ruflo-workers/tools/fleet.py",
+      "symbol": "main",
+      "kind": "entrypoint",
+      "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+    }
+  },
+  {
+    "id": "cowork-11",
+    "type": "entrypoint",
+    "question": "Where is the HTTP server listening loop for Cockpit?",
+    "query_param": "server.cjs",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "server.cjs",
+      "kind": "entrypoint",
+      "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+    }
+  },
+  {
+    "id": "cowork-12",
+    "type": "entrypoint",
+    "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+    "query_param": "produce_one",
+    "expected": {
+      "path": "shortsfactory/pipeline/run.py",
+      "symbol": "main",
+      "kind": "entrypoint",
+      "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+    }
+  },
+  {
+    "id": "cowork-13",
+    "type": "docs_notes",
+    "question": "Which document outlines the core CANON principles of the workspace?",
+    "query_param": "CANON.md",
+    "expected": {
+      "path": "CANON.md",
+      "symbol": "CANON.md",
+      "kind": "docs_notes",
+      "details": "CANON.md defines foundational operating rules and non-negotiables."
+    }
+  },
+  {
+    "id": "cowork-14",
+    "type": "docs_notes",
+    "question": "Which document specifies guidelines for social and video content style?",
+    "query_param": "CONTENT_STYLE_GUIDE.md",
+    "expected": {
+      "path": "CONTENT_STYLE_GUIDE.md",
+      "symbol": "CONTENT_STYLE_GUIDE.md",
+      "kind": "docs_notes",
+      "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+    }
+  },
+  {
+    "id": "cowork-15",
+    "type": "rename_impact",
+    "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+    "query_param": "produce_one",
+    "expected": {
+      "path": "shortsfactory/pipeline/run.py",
+      "symbol": "produce_one",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "shortsfactory/pipeline/run.py"
+      ],
+      "details": "produce_one is called in main loop of run.py."
+    }
+  },
+  {
+    "id": "cowork-16",
+    "type": "rename_impact",
+    "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+    "query_param": "writeConfig",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "writeConfig",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "cockpit/server.cjs"
+      ],
+      "details": "writeConfig is called by lane and runner mutation handlers."
+    }
+  },
+  {
+    "id": "cowork-17",
+    "type": "definition",
+    "question": "Where is the produce_one pipeline function implemented?",
+    "query_param": "produce_one",
+    "expected": {
+      "path": "shortsfactory/pipeline/run.py",
+      "symbol": "produce_one",
+      "kind": "symbol",
+      "details": "produces voiceover, captions, video composition, and social uploads."
+    }
+  },
+  {
+    "id": "cowork-18",
+    "type": "callers",
+    "question": "Where is synth_voiceover called in the shorts pipeline?",
+    "query_param": "synth_voiceover",
+    "expected": {
+      "path": "shortsfactory/pipeline/run.py",
+      "symbol": "synth_voiceover",
+      "kind": "callers",
+      "expected_targets": [
+        "shortsfactory/pipeline/run.py"
+      ],
+      "details": "tts.synth_voiceover is called inside produce_one in run.py."
+    }
+  },
+  {
+    "id": "cowork-19",
+    "type": "definition",
+    "question": "Where is the ROLES array defined for valid fleet lane roles?",
+    "query_param": "ROLES",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "ROLES",
+      "kind": "symbol",
+      "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+    }
+  },
+  {
+    "id": "cowork-20",
+    "type": "impact",
+    "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+    "query_param": "KEY_ALIAS",
+    "expected": {
+      "path": "cockpit/server.cjs",
+      "symbol": "KEY_ALIAS",
+      "kind": "impact",
+      "expected_targets": [
+        "cockpit/server.cjs"
+      ],
+      "expected_count": 1,
+      "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+    }
+  }
+]

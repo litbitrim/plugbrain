@@ -63,7 +63,9 @@ export const NEVER_INDEX_DIRS: ReadonlySet<string> = new Set([
   'dist', 'ui-dist', '.output', 'coverage',
   '.cache', '.next', '.turbo', '.nuxt', '.svelte-kit',
   '.venv', 'venv', 'target', '__pycache__',
-  '.codegraph',
+  '.codegraph', '.gitnexus', '.claude', '.claude-flow',
+  '.obsidian', '.swarm', '_ARCHIVE', 'old_aiserver',
+  '00_INPUT_PROJECTS', '04_WORKSPACE_SANDBOX', 'ECOSPACE',
 ])
 
 /**
@@ -78,7 +80,11 @@ export const ROOT_OUTPUT_DIRS: ReadonlySet<string> = new Set(['build', 'out', 'r
 
 /** True for a directory that is never indexed, whatever its depth. */
 export const isNeverIndexedDir = (name: string): boolean =>
-  NEVER_INDEX_DIRS.has(name) || name.startsWith('.plugbrain')
+  NEVER_INDEX_DIRS.has(name) ||
+  name.startsWith('.plugbrain') ||
+  name.startsWith('plugos-') ||
+  name.startsWith('swarm_backup') ||
+  name.startsWith('backup_')
 
 /** True for a directory the indexer refuses to descend into. */
 export const isSkippedDir = (name: string, depth: number): boolean =>
@@ -87,7 +93,7 @@ export const isSkippedDir = (name: string, depth: number): boolean =>
 /** Extensions we record as files even when we cannot parse them. */
 export const TEXTUAL: ReadonlySet<string> = new Set([
   '.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs',
-  '.json', '.md', '.yml', '.yaml', '.css', '.html', '.py', '.rs', '.go', '.sql', '.sh',
+  '.json', '.md', '.yml', '.yaml', '.css', '.html', '.py', '.rs', '.go', '.sql', '.sh', '.java',
 ])
 
 export const MAX_BYTES = 2_000_000   // a 2 MB source file is generated; parsing it helps nobody
@@ -196,14 +202,24 @@ const groupKey = (item: { repoId: string | null; checkoutId: string | null }): s
  * `.github` — they are written content, not noise.
  */
 /** Shared by the directory walk and the single-file root: is this file in? */
+const SKIP_FILE_EXTENSIONS: ReadonlySet<string> = new Set([
+  '.base', '.bak', '.tmp', '.map', '.orig',
+])
+
+const SKIP_FILE_NAMES: ReadonlySet<string> = new Set([
+  'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock',
+])
+
 function acceptFile(root: IndexRoot, abs: string, rel: string, found: WalkedFile[]): void {
   const name = rel.split('/').pop() ?? rel
   const ext = extname(name)
   if (!TEXTUAL.has(ext.toLowerCase())) return
+  if (SKIP_FILE_EXTENSIONS.has(ext.toLowerCase())) return
+  if (SKIP_FILE_NAMES.has(name.toLowerCase())) return
   if (isSecretPath(rel)) return
   let st: ReturnType<typeof statSync>
   try { st = statSync(abs) } catch { return }
-  if (!st.isFile() || st.size > MAX_BYTES) return
+  if (!st.isFile() || st.size === 0 || st.size > MAX_BYTES) return
   found.push({
     abs, rel, ext, size: st.size, mtime: st.mtime.toISOString(),
     repoId: root.repoId, checkoutId: root.checkoutId,
@@ -266,6 +282,7 @@ function walkInto(
       if (entry.isSymbolicLink()) continue          // junction or symlink out
       if (entry.isDirectory()) {
         if (entry.name.startsWith('.') && root.kind === 'notes') continue
+        if ((dir.endsWith('/.agents') || dir.endsWith('\\.agents')) && entry.name !== 'notes') continue
         if (isSkippedDir(entry.name, depth + 1)) continue
         if (ignored !== null && ignored.dirs.has(inRoot(abs))) continue
         stack.push({ dir: abs, depth: depth + 1 })
@@ -585,6 +602,24 @@ export function parseFile(rel: string, ext: string, content: string): Omit<Parse
         tag, source: declared.has(tag) ? 'property' as const : 'body' as const,
       })),
       generated: md.generated,
+    }
+  }
+  if (ext.toLowerCase() === '.json') {
+    const syms: Array<{ name: string; kind: import('./ast.ts').ExtractedSymbol['kind']; line: number; endLine: number; exported: boolean; container: string | null }> = []
+    try {
+      const obj = JSON.parse(content)
+      if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+        const lines = content.split('\n')
+        for (const k of Object.keys(obj)) {
+          const lIdx = lines.findIndex(l => l.includes(`"${k}"`))
+          const line = lIdx === -1 ? 1 : lIdx + 1
+          syms.push({ name: k, kind: 'property', line, endLine: line, exported: true, container: null })
+        }
+      }
+    } catch {}
+    return {
+      rel, ext, lang: null, processingStatus: 'inventoried', processingReason: 'no semantic extractor for extension', loc: content.split('\n').length,
+      symbols: syms, refs: [], imports: [], properties: [], links: [], tags: [], generated: false,
     }
   }
   return {

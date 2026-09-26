@@ -81,6 +81,8 @@ export function languageOf(ext: string): string | null {
     case '.py': return 'python'
     case '.rs': return 'rust'
     case '.sql': return 'sql'
+    case '.java': return 'java'
+    case '.go': return 'go'
     default: return null
   }
 }
@@ -95,6 +97,8 @@ function foreignExtract(path: string, content: string, ext: string): FileExtract
   if (lang === 'python') return extractPython(content)
   if (lang === 'rust') return extractRust(content)
   if (lang === 'sql') return extractSql(content)
+  if (lang === 'java') return extractJava(content)
+  if (lang === 'go') return extractGo(content)
   return null
 }
 
@@ -157,6 +161,17 @@ function extractPython(content: string): FileExtract {
       }
       stack.push({ indent, name })
       continue
+    }
+
+    const constMatch = container === null && line.match(/^([A-Z][A-Z0-9_]{2,})\s*(?::[^=]+)?=/)
+    if (constMatch) {
+      out.symbols.push({ name: constMatch[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: null })
+    }
+
+    const envMatch = raw.match(/\b(?:os\.environ(?:\[\s*['"]([A-Z0-9_]+)['"]\s*\]|\.get\(\s*['"]([A-Z0-9_]+)['"])|os\.getenv\(\s*['"]([A-Z0-9_]+)['"])/)
+    if (envMatch) {
+      const envName = envMatch[1] || envMatch[2] || envMatch[3]
+      if (envName) out.symbols.push({ name: envName, kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: null })
     }
 
     const calls = codeOnly(line, /\s+#.*$/).matchAll(/\b([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\s*\(/g)
@@ -228,6 +243,198 @@ function extractSql(content: string): FileExtract {
     for (const hit of line.matchAll(/\bCALL\s+([A-Za-z_]\w*)\s*\(/ig)) out.refs.push({ kind: 'calls', target: hit[1], receiver: null, from: null, line: lineNo })
     const include = line.match(/^\s*(?:\\i|SOURCE)\s+([^\s;]+)\s*;?\s*$/i)
     if (include) out.imports.push({ specifier: include[1], bindings: [], line: lineNo })
+  }
+  return out
+}
+
+/**
+ * Java extractor: classes, records, interfaces, enums, methods, fields, imports, extends/implements.
+ * Regex-based (no tree-sitter required). Handles single-line class/method/field bodies; multi-line
+ * javadoc and annotations are skipped. Same approach as Python/Rust: no type resolution, but
+ * real symbol names and real call edges for the graph.
+ */
+function extractJava(content: string): FileExtract {
+  const out = foreignBase(content)
+  // Strip block comments (javadocs) while strictly preserving line numbers
+  const clean = content.replace(/\/\*[\s\S]*?\*\//g, m => '\n'.repeat((m.match(/\n/g) ?? []).length))
+  const lines = clean.split('\n')
+  const containerStack: Array<{ name: string; depth: number }> = []
+  let braceDepth = 0
+  let pendingContainer: string | null = null
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineNo = index + 1
+    const raw = lines[index]
+    const withoutComment = raw.replace(/\/\/.*$/, '')
+    if (withoutComment.trim() === '') continue
+
+    // import statement: `import [static] a.b.c.Name;`
+    const importMatch = withoutComment.match(/^\s*import\s+(?:static\s+)?([a-zA-Z_][\w.]+)\.([A-Za-z_\d*]+)\s*;/)
+    if (importMatch) {
+      out.imports.push({ specifier: importMatch[1], bindings: [{ local: importMatch[2], imported: importMatch[2] }], line: lineNo })
+      continue
+    }
+
+    if (/^\s*@[A-Za-z]/.test(withoutComment)) continue
+
+    // Type declarations: class, record, interface, enum
+    const typeDecl = withoutComment.match(
+      /^\s*(?:(?:public|private|protected|static|final|abstract|sealed|non-sealed)\s+)*(class|interface|enum|record|@interface)\s+([A-Za-z_]\w*)(?:<[^>]*>)?(?:\s+extends\s+([\w.<>, ]+?))?(?:\s+implements\s+([\w.<>, ]+?))?\s*(?:\{|$|\()/
+    )
+    if (typeDecl) {
+      const keyword = typeDecl[1]
+      const name = typeDecl[2]
+      const kind: SymbolKind = keyword === 'interface' || keyword === '@interface' ? 'interface'
+        : keyword === 'enum' ? 'enum'
+        : 'class'
+      const isPublic = /\bpublic\b/.test(withoutComment)
+      out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: isPublic, container: containerStack.at(-1)?.name ?? null })
+      if (typeDecl[3]) {
+        for (const base of typeDecl[3].split(',')) {
+          const target = base.trim().replace(/<.*>/, '').trim()
+          if (target) out.refs.push({ kind: 'extends', target, receiver: null, from: name, line: lineNo })
+        }
+      }
+      if (typeDecl[4]) {
+        for (const iface of typeDecl[4].split(',')) {
+          const target = iface.trim().replace(/<.*>/, '').trim()
+          if (target) out.refs.push({ kind: 'implements', target, receiver: null, from: name, line: lineNo })
+        }
+      }
+      pendingContainer = name
+    }
+
+    // Strip strings so braces/calls inside strings don't pollute AST
+    const code = withoutComment
+      .replace(/'(?:\\.|[^'\\])*'/g, "''")
+      .replace(/"(?:\\.|[^"\\])*"/g, '""')
+
+    // Track braces on this line
+    for (let c = 0; c < code.length; c += 1) {
+      if (code[c] === '{') {
+        braceDepth += 1
+        if (pendingContainer !== null) {
+          containerStack.push({ name: pendingContainer, depth: braceDepth })
+          pendingContainer = null
+        }
+      } else if (code[c] === '}') {
+        if (containerStack.length > 0 && containerStack[containerStack.length - 1].depth === braceDepth) {
+          containerStack.pop()
+        }
+        braceDepth -= 1
+      }
+    }
+
+    const currentContainer = containerStack.at(-1)?.name ?? null
+
+    // Methods
+    const methodDecl = code.match(
+      /^\s*(?:(?:public|private|protected|static|final|abstract|synchronized|default|native|strictfp)\s+)*(?:<[^>]*>\s+)?(?:[\w.<>\[\]]+\s+)+([A-Za-z_]\w*)\s*\([^)]*\)\s*(?:throws\s+[\w., ]+\s*)?\s*(?:\{|;)/
+    )
+    let declaredMethod: string | null = null
+    if (methodDecl && currentContainer !== null) {
+      const name = methodDecl[1]
+      if (!['if', 'while', 'for', 'switch', 'catch', 'return', 'new'].includes(name) && name !== currentContainer) {
+        const isPublic = /\bpublic\b/.test(withoutComment)
+        out.symbols.push({ name, kind: 'method', line: lineNo, endLine: lineNo, exported: isPublic, container: currentContainer })
+        declaredMethod = name
+      }
+    }
+
+    // Constants
+    const fieldDecl = code.match(
+      /^\s*(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:[\w.<>\[\]]+\s+)([A-Z][A-Z_0-9]*)\s*=/
+    )
+    if (fieldDecl && currentContainer !== null) {
+      out.symbols.push({ name: fieldDecl[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: /\bpublic\b/.test(withoutComment), container: currentContainer })
+    }
+
+    const envJava = code.match(/System\.getenv\(\s*"([A-Z0-9_]+)"\s*\)/)
+    if (envJava && envJava[1]) {
+      out.symbols.push({ name: envJava[1], kind: 'constant', line: lineNo, endLine: lineNo, exported: true, container: currentContainer })
+    }
+
+    // Calls
+    for (const hit of code.matchAll(/\b([A-Za-z_]\w*)(?:\.([A-Za-z_]\w*))?\s*\(/g)) {
+      const receiver = hit[2] ? hit[1] : null
+      const target = hit[2] ?? hit[1]
+      if (['if', 'while', 'for', 'switch', 'catch', 'new', 'return', 'class', 'record', 'interface', 'enum'].includes(target)) continue
+      if (target === declaredMethod) continue
+      out.refs.push({ kind: 'calls', target, receiver, from: currentContainer, line: lineNo })
+    }
+  }
+  return out
+}
+
+/**
+ * Go extractor: packages, imports, func, type (struct/interface), var/const.
+ * Regex-based, same approach as Python/Rust.
+ */
+function extractGo(content: string): FileExtract {
+  const out = foreignBase(content)
+  const lines = content.split('\n')
+  let container: string | null = null
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const lineNo = index + 1
+    const line = lines[index].replace(/\/\/.*$/, '')
+
+    // import block: import "pkg/path" or import ( "a" \n "b" )
+    const singleImport = line.match(/^\s*import\s+"([^"]+)"/)
+    if (singleImport) {
+      const parts = singleImport[1].split('/')
+      const local = parts[parts.length - 1]
+      out.imports.push({ specifier: singleImport[1], bindings: [{ local, imported: '*' }], line: lineNo })
+      continue
+    }
+    const aliasImport = line.match(/^\s*([A-Za-z_]\w*)\s+"([^"]+)"/)
+    if (aliasImport) {
+      out.imports.push({ specifier: aliasImport[2], bindings: [{ local: aliasImport[1], imported: '*' }], line: lineNo })
+      continue
+    }
+    const bareImport = line.match(/^\s*"([^"]+)"/)
+    if (bareImport) {
+      const parts = bareImport[1].split('/')
+      const local = parts[parts.length - 1]
+      out.imports.push({ specifier: bareImport[1], bindings: [{ local, imported: '*' }], line: lineNo })
+      continue
+    }
+
+    // func declaration
+    const funcDecl = line.match(/^\s*func\s+(?:\([^)]+\)\s+)?([A-Za-z_]\w*)\s*\(/)
+    if (funcDecl) {
+      const name = funcDecl[1]
+      const isExported = /^[A-Z]/.test(name)
+      const kind: SymbolKind = container !== null ? 'method' : 'function'
+      out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: isExported, container })
+      continue
+    }
+
+    // type declaration
+    const typeDecl = line.match(/^\s*type\s+([A-Za-z_]\w*)\s+(struct|interface)/)
+    if (typeDecl) {
+      const name = typeDecl[1]
+      const kind: SymbolKind = typeDecl[2] === 'interface' ? 'interface' : 'class'
+      out.symbols.push({ name, kind, line: lineNo, endLine: lineNo, exported: /^[A-Z]/.test(name), container: null })
+      container = name
+      continue
+    }
+
+    // const / var at package level
+    const constDecl = line.match(/^\s*(?:const|var)\s+([A-Za-z_]\w*)\s*=/)
+    if (constDecl) {
+      const name = constDecl[1]
+      out.symbols.push({ name, kind: 'constant', line: lineNo, endLine: lineNo, exported: /^[A-Z]/.test(name), container: null })
+      continue
+    }
+
+    // Calls: Receiver.Method(...) or Method(...)
+    for (const hit of line.matchAll(/\b([A-Za-z_]\w*)(?:\.([A-Za-z_]\w*))?\s*\(/g)) {
+      const receiver = hit[2] ? hit[1] : null
+      const target = hit[2] ?? hit[1]
+      if (['if', 'for', 'switch', 'select', 'go', 'defer', 'func', 'return', 'type'].includes(target)) continue
+      out.refs.push({ kind: 'calls', target, receiver, from: container, line: lineNo })
+    }
   }
   return out
 }
@@ -438,6 +645,27 @@ export function extractFromSource(path: string, content: string, ext: string): F
         const isFn = init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))
         push(name, isFn ? 'function' : isConst ? 'constant' : 'variable', decl, exported)
         if (isFn) { containerStack.push(name); pushedContainer = true }
+      }
+    } else if (ts.isPropertyAccessExpression(node)) {
+      const expr = node.expression
+      if (ts.isPropertyAccessExpression(expr) &&
+          ts.isIdentifier(expr.expression) && expr.expression.text === 'process' &&
+          expr.name.text === 'env') {
+        const envName = node.name.text
+        if (envName && /^[A-Z0-9_]+$/.test(envName)) {
+          push(envName, 'constant', node, true)
+        }
+      }
+    } else if (ts.isElementAccessExpression(node)) {
+      const expr = node.expression
+      if (ts.isPropertyAccessExpression(expr) &&
+          ts.isIdentifier(expr.expression) && expr.expression.text === 'process' &&
+          expr.name.text === 'env' &&
+          node.argumentExpression && ts.isStringLiteral(node.argumentExpression)) {
+        const envName = node.argumentExpression.text
+        if (envName && /^[A-Z0-9_]+$/.test(envName)) {
+          push(envName, 'constant', node, true)
+        }
       }
     }
 

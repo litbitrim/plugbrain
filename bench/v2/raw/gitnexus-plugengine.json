@@ -1,0 +1,3033 @@
+{
+  "tool": "gitnexus",
+  "repo": "plugengine",
+  "commit": "c6c5d98b57cbe2b2560ebc0acfbc3a9f7c80253f",
+  "indexTimeMs": 39623,
+  "indexSizeBytes": 218217757,
+  "questionCount": 20,
+  "hitCount": 5,
+  "accuracy": 25,
+  "latencyP50Ms": 1413.6,
+  "latencyP95Ms": 1638.7,
+  "questions": [
+    {
+      "id": "plugengine-01",
+      "type": "definition",
+      "question": "Where is the CommandBus class implemented for undo/redo state management?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBus",
+        "kind": "symbol",
+        "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2043.7,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_96_startsandbox",
+            "summary": "StartSandbox → Mesh",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_97_startsandbox",
+            "summary": "StartSandbox → Dispose",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_270_startsandbox",
+            "summary": "StartSandbox → ForEach",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_271_startsandbox",
+            "summary": "StartSandbox → Draw",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:apps/engine-lab/src/sandbox.ts:startSandbox",
+            "name": "startSandbox",
+            "filePath": "apps/engine-lab/src/sandbox.ts",
+            "startLine": 61,
+            "endLine": 465,
+            "module": "Cluster_143",
+            "process_id": "proc_96_startsandbox",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:ray",
+            "name": "ray",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 49,
+            "endLine": 51
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:getTransform",
+            "name": "getTransform",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 55,
+            "endLine": 55,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:changi",
+            "name": "changi",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 118,
+            "endLine": 118
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/voxelObjectInsert.test.ts:add#0",
+            "name": "add",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "startLine": 63,
+            "endLine": 63
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/voxelObjectInsert.test.ts:remove#0",
+            "name": "remove",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "startLine": 63,
+            "endLine": 63
+          },
+          {
+            "id": "File:apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "name": "voxelObjectInsert.test.ts",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts"
+          },
+          {
+            "id": "Method:packages/plugengine-extension/src/commandGateway.ts:CommandGateway.constructor#1",
+            "name": "constructor",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 43,
+            "endLine": 47
+          },
+          {
+            "id": "File:packages/plugengine-extension/src/commandGateway.ts",
+            "name": "commandGateway.ts",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-extension/src/commandGateway.ts:CommandGatewayOptions",
+            "name": "CommandGatewayOptions",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 23,
+            "endLine": 27
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:clone",
+            "name": "clone",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 6,
+            "endLine": 8,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:storeHost",
+            "name": "storeHost",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 11,
+            "endLine": 27
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:getTransform",
+            "name": "getTransform",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 13,
+            "endLine": 13,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/composerMode.ts:get",
+            "name": "get",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 89,
+            "endLine": 89
+          },
+          {
+            "id": "Function:apps/engine-lab/src/composerMode.ts:set",
+            "name": "set",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 89,
+            "endLine": 89
+          },
+          {
+            "id": "File:apps/engine-lab/src/composerMode.ts",
+            "name": "composerMode.ts",
+            "filePath": "apps/engine-lab/src/composerMode.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:makeHost",
+            "name": "makeHost",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 81,
+            "endLine": 101,
+            "module": "Agent"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:setup",
+            "name": "setup",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 275,
+            "endLine": 283,
+            "module": "Studio"
+          },
+          {
+            "id": "File:packages/plugengine-extension/src/extension.test.ts",
+            "name": "extension.test.ts",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/packs/placePackShelf.ts:placePackAssetInput",
+            "name": "placePackAssetInput",
+            "filePath": "packages/plugengine-editor/src/packs/placePackShelf.ts",
+            "startLine": 45,
+            "endLine": 56,
+            "module": "Packs"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/packs/placePackShelf.ts:placePackCommand",
+            "name": "placePackCommand",
+            "filePath": "packages/plugengine-editor/src/packs/placePackShelf.ts",
+            "startLine": 59,
+            "endLine": 61,
+            "module": "Packs"
+          }
+        ],
+        "timing": {
+          "vector": 5.5,
+          "bm25": 265.5,
+          "merge": 0.1,
+          "symbol_lookup": 30.7,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 298.2
+        }
+      }
+    },
+    {
+      "id": "plugengine-02",
+      "type": "definition",
+      "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "symbol",
+        "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1485,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_156_stepplay",
+            "summary": "StepPlay → WrapAngle",
+            "priority": 0.092,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_157_stepplay",
+            "summary": "StepPlay → Clamp",
+            "priority": 0.092,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_236_runframe",
+            "summary": "RunFrame → WrapAngle",
+            "priority": 0.092,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_237_runframe",
+            "summary": "RunFrame → Clamp",
+            "priority": 0.092,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:reference/build-battle/src/player/controller.ts:PlayerController.applyLook#1",
+            "name": "applyLook",
+            "filePath": "reference/build-battle/src/player/controller.ts",
+            "startLine": 228,
+            "endLine": 235,
+            "module": "Editor",
+            "process_id": "proc_156_stepplay",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Class:apps/engine-lab/src/agent/agentTrace.ts:AgentTrace",
+            "name": "AgentTrace",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "startLine": 109,
+            "endLine": 149,
+            "module": "Agent"
+          },
+          {
+            "id": "Method:apps/engine-lab/src/agent/agentTrace.ts:AgentTrace.constructor#1",
+            "name": "constructor",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "startLine": 115,
+            "endLine": 118
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/agent/agentTrace.ts:AgentTraceOptions",
+            "name": "AgentTraceOptions",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "startLine": 42,
+            "endLine": 47
+          },
+          {
+            "id": "Class:packages/plugengine-core/src/command/bus.ts:CommandBus",
+            "name": "CommandBus",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 39,
+            "endLine": 121,
+            "module": "Agent"
+          },
+          {
+            "id": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.constructor#1",
+            "name": "constructor",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 47,
+            "endLine": 49
+          },
+          {
+            "id": "Interface:packages/plugengine-core/src/command/bus.ts:CommandBusOptions",
+            "name": "CommandBusOptions",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 2,
+            "endLine": 5
+          },
+          {
+            "id": "Function:reference/build-battle/server/src/db.ts:listCreations",
+            "name": "listCreations",
+            "filePath": "reference/build-battle/server/src/db.ts",
+            "startLine": 376,
+            "endLine": 379,
+            "module": "Cluster_937"
+          },
+          {
+            "id": "Function:reference/build-battle/server/src/db.ts:listCreationsByStatus",
+            "name": "listCreationsByStatus",
+            "filePath": "reference/build-battle/server/src/db.ts",
+            "startLine": 385,
+            "endLine": 388,
+            "module": "Cluster_937"
+          },
+          {
+            "id": "Function:reference/build-battle/server/src/db.ts:leaderboard",
+            "name": "leaderboard",
+            "filePath": "reference/build-battle/server/src/db.ts",
+            "startLine": 436,
+            "endLine": 439,
+            "module": "Cluster_937"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/voxelFpsMode.ts:onMouseMove",
+            "name": "onMouseMove",
+            "filePath": "apps/engine-lab/src/voxelFpsMode.ts",
+            "startLine": 199,
+            "endLine": 203,
+            "module": "Cluster_378"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/voxelFpsMode.ts:onCanvasDown",
+            "name": "onCanvasDown",
+            "filePath": "apps/engine-lab/src/voxelFpsMode.ts",
+            "startLine": 204,
+            "endLine": 211
+          },
+          {
+            "id": "Function:apps/engine-lab/src/voxelFpsMode.ts:aimAtCell",
+            "name": "aimAtCell",
+            "filePath": "apps/engine-lab/src/voxelFpsMode.ts",
+            "startLine": 391,
+            "endLine": 400,
+            "module": "Cluster_378"
+          },
+          {
+            "id": "Function:packages/plugengine-controller/src/look.ts:createLookState",
+            "name": "createLookState",
+            "filePath": "packages/plugengine-controller/src/look.ts",
+            "startLine": 52,
+            "endLine": 57,
+            "module": "Cluster_681"
+          },
+          {
+            "id": "Function:packages/plugengine-controller/src/look.ts:stepLook",
+            "name": "stepLook",
+            "filePath": "packages/plugengine-controller/src/look.ts",
+            "startLine": 67,
+            "endLine": 77,
+            "module": "Cluster_681"
+          },
+          {
+            "id": "File:packages/plugengine-controller/src/look.ts",
+            "name": "look.ts",
+            "filePath": "packages/plugengine-controller/src/look.ts"
+          },
+          {
+            "id": "Class:reference/build-battle/server/src/aibuilder/budget.ts:BudgetGuard",
+            "name": "BudgetGuard",
+            "filePath": "reference/build-battle/server/src/aibuilder/budget.ts",
+            "startLine": 181,
+            "endLine": 304,
+            "module": "Aibuilder"
+          },
+          {
+            "id": "Interface:reference/build-battle/server/src/aibuilder/budget.ts:BudgetGuardOptions",
+            "name": "BudgetGuardOptions",
+            "filePath": "reference/build-battle/server/src/aibuilder/budget.ts",
+            "startLine": 148,
+            "endLine": 155
+          },
+          {
+            "id": "File:reference/build-battle/server/src/aibuilder/budget.ts",
+            "name": "budget.ts",
+            "filePath": "reference/build-battle/server/src/aibuilder/budget.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-ai/src/buildRecipeFactory.ts:buildRecipeFromPlan",
+            "name": "buildRecipeFromPlan",
+            "filePath": "packages/plugengine-ai/src/buildRecipeFactory.ts",
+            "startLine": 80,
+            "endLine": 109,
+            "module": "Cluster_611"
+          },
+          {
+            "id": "File:packages/plugengine-ai/src/buildRecipeFactory.ts",
+            "name": "buildRecipeFactory.ts",
+            "filePath": "packages/plugengine-ai/src/buildRecipeFactory.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 252.4,
+          "merge": 0.3,
+          "symbol_lookup": 15.9,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 270.2
+        }
+      }
+    },
+    {
+      "id": "plugengine-03",
+      "type": "callers",
+      "question": "Where is CommandBus.dispatch called in tests or consumers?",
+      "query_param": "dispatch",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "bus.test.ts executes dispatches against CommandBus instances."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1345.7,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.dispatch#1",
+          "name": "dispatch",
+          "kind": "Method",
+          "filePath": "packages/plugengine-core/src/command/bus.ts",
+          "startLine": 59,
+          "endLine": 67
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onPlanetPatch",
+              "name": "onPlanetPatch",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onPortalPatch",
+              "name": "onPortalPatch",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onSystemPatch",
+              "name": "onSystemPatch",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onDelete",
+              "name": "onDelete",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onRemovePlacedPack",
+              "name": "onRemovePlacedPack",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:packs",
+              "name": "packs",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:placeEntry",
+              "name": "placeEntry",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:placeEntry",
+              "name": "placeEntry",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:placeEntry",
+              "name": "placeEntry",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:onKey",
+              "name": "onKey",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:commitMove",
+              "name": "commitMove",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:commitMove",
+              "name": "commitMove",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:commitMove",
+              "name": "commitMove",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:loadFromText",
+              "name": "loadFromText",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:addPlanet",
+              "name": "addPlanet",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:placePackById",
+              "name": "placePackById",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:editSelectedName",
+              "name": "editSelectedName",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:editSelectedName",
+              "name": "editSelectedName",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/composerMode.ts:editSelectedName",
+              "name": "editSelectedName",
+              "filePath": "apps/engine-lab/src/composerMode.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/sandbox.ts:onUp",
+              "name": "onUp",
+              "filePath": "apps/engine-lab/src/sandbox.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/sandbox.ts:onUp",
+              "name": "onUp",
+              "filePath": "apps/engine-lab/src/sandbox.ts"
+            },
+            {
+              "uid": "Function:apps/engine-lab/src/sandbox.ts:onUp",
+              "name": "onUp",
+              "filePath": "apps/engine-lab/src/sandbox.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/universeCommands.test.ts",
+              "name": "universeCommands.test.ts",
+              "filePath": "packages/plugengine-editor/src/universeCommands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/universeCommands.test.ts",
+              "name": "universeCommands.test.ts",
+              "filePath": "packages/plugengine-editor/src/universeCommands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/universeCommands.test.ts",
+              "name": "universeCommands.test.ts",
+              "filePath": "packages/plugengine-editor/src/universeCommands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/universeCommands.test.ts",
+              "name": "universeCommands.test.ts",
+              "filePath": "packages/plugengine-editor/src/universeCommands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/commands.test.ts",
+              "name": "commands.test.ts",
+              "filePath": "packages/plugengine-editor/src/commands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/commands.test.ts",
+              "name": "commands.test.ts",
+              "filePath": "packages/plugengine-editor/src/commands.test.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-editor/src/commands.test.ts",
+              "name": "commands.test.ts",
+              "filePath": "packages/plugengine-editor/src/commands.test.ts"
+            }
+          ],
+          "has_method": [
+            {
+              "uid": "Class:packages/plugengine-core/src/command/bus.ts:CommandBus",
+              "name": "CommandBus",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            }
+          ]
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "uid": "Method:packages/plugengine-core/src/command/bus.ts:CompositeCommand.do#0",
+              "name": "do",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            },
+            {
+              "uid": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.record#1",
+              "name": "record",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            },
+            {
+              "uid": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.notify#0",
+              "name": "notify",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            },
+            {
+              "uid": "Method:packages/plugengine-core/src/command/command.ts:Command.do#0",
+              "name": "do",
+              "filePath": "packages/plugengine-core/src/command/command.ts"
+            }
+          ],
+          "accesses": [
+            {
+              "uid": "Property:packages/plugengine-core/src/command/bus.ts:CommandBus.collecting",
+              "name": "collecting",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            },
+            {
+              "uid": "Property:packages/plugengine-core/src/command/bus.ts:CommandBus.collecting",
+              "name": "collecting",
+              "filePath": "packages/plugengine-core/src/command/bus.ts"
+            }
+          ]
+        },
+        "processes": [
+          {
+            "id": "proc_183_onfitcollider",
+            "name": "OnFitCollider → Do",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_120_onup",
+            "name": "OnUp → Do",
+            "step_index": 2,
+            "step_count": 4
+          },
+          {
+            "id": "proc_107_onup",
+            "name": "OnUp → Do",
+            "step_index": 2,
+            "step_count": 4
+          },
+          {
+            "id": "proc_145_onkey",
+            "name": "OnKey → Do",
+            "step_index": 2,
+            "step_count": 4
+          },
+          {
+            "id": "proc_72_preview",
+            "name": "Preview → Do",
+            "step_index": 3,
+            "step_count": 5
+          },
+          {
+            "id": "proc_213_preview",
+            "name": "Preview → Record",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_214_preview",
+            "name": "Preview → Notify",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_215_updateselectedlaneru",
+            "name": "UpdateSelectedLaneRunnerConfig → Do",
+            "step_index": 2,
+            "step_count": 4
+          },
+          {
+            "id": "proc_218_updateselectedlaneru",
+            "name": "UpdateSelectedLaneRunnerConfig → Record",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_219_updateselectedlaneru",
+            "name": "UpdateSelectedLaneRunnerConfig → Notify",
+            "step_index": 3,
+            "step_count": 4
+          },
+          {
+            "id": "proc_258_startskincreator",
+            "name": "StartSkinCreator → Record",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_259_startskincreator",
+            "name": "StartSkinCreator → Notify",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_277_onup",
+            "name": "OnUp → Record",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_278_onup",
+            "name": "OnUp → Notify",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_292_onup",
+            "name": "OnUp → Record",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_293_onup",
+            "name": "OnUp → Notify",
+            "step_index": 2,
+            "step_count": 3
+          },
+          {
+            "id": "proc_89_startskincreator",
+            "name": "StartSkinCreator → Do",
+            "step_index": 2,
+            "step_count": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-04",
+      "type": "definition",
+      "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "symbol",
+        "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1602.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_5_main",
+            "summary": "Main → RunLifecycleError",
+            "priority": 0.076,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 6
+          },
+          {
+            "id": "proc_114_main",
+            "summary": "Main → StepIdFor",
+            "priority": 0.076,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:packages/plugengine-runtime-agent/src/longRun.ts:LongRunOrchestrator.planPrompt#1",
+            "name": "planPrompt",
+            "filePath": "packages/plugengine-runtime-agent/src/longRun.ts",
+            "startLine": 189,
+            "endLine": 196,
+            "module": "Cluster_844",
+            "process_id": "proc_5_main",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:packages/contracts/src/addon.ts:isPlugPackageKind",
+            "name": "isPlugPackageKind",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 44,
+            "endLine": 46
+          },
+          {
+            "id": "File:packages/contracts/src/addon.ts",
+            "name": "addon.ts",
+            "filePath": "packages/contracts/src/addon.ts"
+          },
+          {
+            "id": "Interface:packages/contracts/src/addon.ts:AddonLockEntry",
+            "name": "AddonLockEntry",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 458,
+            "endLine": 470
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeCommands.test.ts:get",
+            "name": "get",
+            "filePath": "packages/plugengine-editor/src/universeCommands.test.ts",
+            "startLine": 15,
+            "endLine": 15
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeCommands.test.ts:set",
+            "name": "set",
+            "filePath": "packages/plugengine-editor/src/universeCommands.test.ts",
+            "startLine": 15,
+            "endLine": 15
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeCommands.test.ts:read",
+            "name": "read",
+            "filePath": "packages/plugengine-editor/src/universeCommands.test.ts",
+            "startLine": 16,
+            "endLine": 16
+          },
+          {
+            "id": "Function:apps/engine-lab/src/proofHooks.ts:installProofHooks",
+            "name": "installProofHooks",
+            "filePath": "apps/engine-lab/src/proofHooks.ts",
+            "startLine": 14,
+            "endLine": 85
+          },
+          {
+            "id": "Function:apps/engine-lab/src/proofHooks.ts:universe",
+            "name": "universe",
+            "filePath": "apps/engine-lab/src/proofHooks.ts",
+            "startLine": 16,
+            "endLine": 16,
+            "module": "Cluster_140"
+          },
+          {
+            "id": "File:apps/engine-lab/src/proofHooks.ts",
+            "name": "proofHooks.ts",
+            "filePath": "apps/engine-lab/src/proofHooks.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-planet/src/assetCatalog.ts:createZeroPlanetAssetCatalog",
+            "name": "createZeroPlanetAssetCatalog",
+            "filePath": "packages/plugengine-planet/src/assetCatalog.ts",
+            "startLine": 38,
+            "endLine": 109
+          },
+          {
+            "id": "File:packages/plugengine-planet/src/assetCatalog.ts",
+            "name": "assetCatalog.ts",
+            "filePath": "packages/plugengine-planet/src/assetCatalog.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-planet/src/assetCatalog.ts:ZeroPlanetAssetRef",
+            "name": "ZeroPlanetAssetRef",
+            "filePath": "packages/plugengine-planet/src/assetCatalog.ts",
+            "startLine": 16,
+            "endLine": 23
+          },
+          {
+            "id": "Function:packages/plugengine-export/src/zeroPlanetPack.test.ts:project",
+            "name": "project",
+            "filePath": "packages/plugengine-export/src/zeroPlanetPack.test.ts",
+            "startLine": 10,
+            "endLine": 44
+          },
+          {
+            "id": "File:packages/plugengine-export/src/zeroPlanetPack.test.ts",
+            "name": "zeroPlanetPack.test.ts",
+            "filePath": "packages/plugengine-export/src/zeroPlanetPack.test.ts"
+          },
+          {
+            "id": "Method:packages/plugengine-editor/src/shelf.ts:AssetShelf.constructor#2",
+            "name": "constructor",
+            "filePath": "packages/plugengine-editor/src/shelf.ts",
+            "startLine": 40,
+            "endLine": 43
+          },
+          {
+            "id": "Method:packages/plugengine-editor/src/shelf.ts:AssetShelf.items#1",
+            "name": "items",
+            "filePath": "packages/plugengine-editor/src/shelf.ts",
+            "startLine": 46,
+            "endLine": 55,
+            "module": "Cluster_111"
+          },
+          {
+            "id": "Method:packages/plugengine-editor/src/shelf.ts:AssetShelf.allows#1",
+            "name": "allows",
+            "filePath": "packages/plugengine-editor/src/shelf.ts",
+            "startLine": 83,
+            "endLine": 85,
+            "module": "Cluster_111"
+          },
+          {
+            "id": "Class:packages/plugengine-editor/src/gallery.ts:TemplateGallery",
+            "name": "TemplateGallery",
+            "filePath": "packages/plugengine-editor/src/gallery.ts",
+            "startLine": 46,
+            "endLine": 91,
+            "module": "Cluster_54"
+          },
+          {
+            "id": "Method:packages/plugengine-editor/src/gallery.ts:TemplateGallery.constructor#2",
+            "name": "constructor",
+            "filePath": "packages/plugengine-editor/src/gallery.ts",
+            "startLine": 50,
+            "endLine": 53
+          },
+          {
+            "id": "Method:packages/plugengine-editor/src/gallery.ts:TemplateGallery.items#1",
+            "name": "items",
+            "filePath": "packages/plugengine-editor/src/gallery.ts",
+            "startLine": 56,
+            "endLine": 64,
+            "module": "Cluster_54"
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 259.6,
+          "merge": 0.2,
+          "symbol_lookup": 16.7,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 278.4
+        }
+      }
+    },
+    {
+      "id": "plugengine-05",
+      "type": "definition",
+      "question": "Where is the isPlugPackageKind type guard defined?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "symbol",
+        "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1317.9,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:packages/contracts/src/addon.ts:isPlugPackageKind",
+            "name": "isPlugPackageKind",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 44,
+            "endLine": 46
+          },
+          {
+            "id": "File:packages/contracts/src/addon.ts",
+            "name": "addon.ts",
+            "filePath": "packages/contracts/src/addon.ts"
+          },
+          {
+            "id": "File:packages/contracts/src/addon.test.ts",
+            "name": "addon.test.ts",
+            "filePath": "packages/contracts/src/addon.test.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5.3,
+          "bm25": 46,
+          "merge": 0,
+          "symbol_lookup": 13.8,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 61.4
+        }
+      }
+    },
+    {
+      "id": "plugengine-06",
+      "type": "callers",
+      "question": "Where is isPlugPackageKind tested or called?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1413.6,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:packages/contracts/src/addon.ts:isPlugPackageKind",
+          "name": "isPlugPackageKind",
+          "kind": "Function",
+          "filePath": "packages/contracts/src/addon.ts",
+          "startLine": 44,
+          "endLine": 46
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "File:packages/contracts/src/addon.test.ts",
+              "name": "addon.test.ts",
+              "filePath": "packages/contracts/src/addon.test.ts"
+            }
+          ]
+        },
+        "outgoing": {},
+        "processes": []
+      }
+    },
+    {
+      "id": "plugengine-07",
+      "type": "impact",
+      "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts",
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "Limits default undo history buffer size in CommandBus constructor."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1293.9,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 2 symbols matching 'DEFAULT_LIMIT'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "DEFAULT_LIMIT"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Const:apps/engine-lab/src/agent/agentTrace.ts:DEFAULT_LIMIT",
+            "name": "DEFAULT_LIMIT",
+            "kind": "",
+            "filePath": "apps/engine-lab/src/agent/agentTrace.ts",
+            "line": 49,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:packages/plugengine-core/src/command/bus.ts:DEFAULT_LIMIT",
+            "name": "DEFAULT_LIMIT",
+            "kind": "",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "line": 9,
+            "score": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-08",
+      "type": "impact",
+      "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/contracts/src/addon.ts",
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "PlugPackageKind union and package kind validation in addon contracts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1313.8,
+      "rawOutput": {
+        "target": {
+          "id": "Const:packages/contracts/src/addon.ts:PLUG_PACKAGE_KINDS",
+          "name": "PLUG_PACKAGE_KINDS",
+          "type": "",
+          "filePath": "packages/contracts/src/addon.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "plugengine-09",
+      "type": "dataflow",
+      "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "dataflow",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts"
+        ],
+        "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1638.7,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_96_startsandbox",
+            "summary": "StartSandbox → Mesh",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_97_startsandbox",
+            "summary": "StartSandbox → Dispose",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_270_startsandbox",
+            "summary": "StartSandbox → ForEach",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_271_startsandbox",
+            "summary": "StartSandbox → Draw",
+            "priority": 0.045,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:apps/engine-lab/src/sandbox.ts:startSandbox",
+            "name": "startSandbox",
+            "filePath": "apps/engine-lab/src/sandbox.ts",
+            "startLine": 61,
+            "endLine": 465,
+            "module": "Cluster_143",
+            "process_id": "proc_96_startsandbox",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:ray",
+            "name": "ray",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 49,
+            "endLine": 51
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:getTransform",
+            "name": "getTransform",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 55,
+            "endLine": 55,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMarketplace.test.ts:changi",
+            "name": "changi",
+            "filePath": "apps/engine-lab/src/studio/studioMarketplace.test.ts",
+            "startLine": 118,
+            "endLine": 118
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/voxelObjectInsert.test.ts:add#0",
+            "name": "add",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "startLine": 63,
+            "endLine": 63
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/voxelObjectInsert.test.ts:remove#0",
+            "name": "remove",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "startLine": 63,
+            "endLine": 63
+          },
+          {
+            "id": "File:apps/engine-lab/src/studio/voxelObjectInsert.test.ts",
+            "name": "voxelObjectInsert.test.ts",
+            "filePath": "apps/engine-lab/src/studio/voxelObjectInsert.test.ts"
+          },
+          {
+            "id": "Method:packages/plugengine-extension/src/commandGateway.ts:CommandGateway.constructor#1",
+            "name": "constructor",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 43,
+            "endLine": 47
+          },
+          {
+            "id": "File:packages/plugengine-extension/src/commandGateway.ts",
+            "name": "commandGateway.ts",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-extension/src/commandGateway.ts:CommandGatewayOptions",
+            "name": "CommandGatewayOptions",
+            "filePath": "packages/plugengine-extension/src/commandGateway.ts",
+            "startLine": 23,
+            "endLine": 27
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:clone",
+            "name": "clone",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 6,
+            "endLine": 8,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:storeHost",
+            "name": "storeHost",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 11,
+            "endLine": 27
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/gizmo/gizmoController.test.ts:getTransform",
+            "name": "getTransform",
+            "filePath": "apps/engine-lab/src/studio/gizmo/gizmoController.test.ts",
+            "startLine": 13,
+            "endLine": 13,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/composerMode.ts:get",
+            "name": "get",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 89,
+            "endLine": 89
+          },
+          {
+            "id": "Function:apps/engine-lab/src/composerMode.ts:set",
+            "name": "set",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "startLine": 89,
+            "endLine": 89
+          },
+          {
+            "id": "File:apps/engine-lab/src/composerMode.ts",
+            "name": "composerMode.ts",
+            "filePath": "apps/engine-lab/src/composerMode.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:makeHost",
+            "name": "makeHost",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 81,
+            "endLine": 101,
+            "module": "Agent"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:setup",
+            "name": "setup",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 275,
+            "endLine": 283,
+            "module": "Studio"
+          },
+          {
+            "id": "File:packages/plugengine-extension/src/extension.test.ts",
+            "name": "extension.test.ts",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/packs/placePackShelf.ts:placePackAssetInput",
+            "name": "placePackAssetInput",
+            "filePath": "packages/plugengine-editor/src/packs/placePackShelf.ts",
+            "startLine": 45,
+            "endLine": 56,
+            "module": "Packs"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/packs/placePackShelf.ts:placePackCommand",
+            "name": "placePackCommand",
+            "filePath": "packages/plugengine-editor/src/packs/placePackShelf.ts",
+            "startLine": 59,
+            "endLine": 61,
+            "module": "Packs"
+          }
+        ],
+        "timing": {
+          "vector": 6,
+          "bm25": 250,
+          "merge": 0.3,
+          "symbol_lookup": 17.2,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 269.4
+        }
+      }
+    },
+    {
+      "id": "plugengine-10",
+      "type": "config",
+      "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+      "query_param": "CommandBusOptions",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBusOptions",
+        "kind": "config",
+        "details": "export interface CommandBusOptions { limit?: number; }."
+      },
+      "hit": true,
+      "rank": 2,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1410.9,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.constructor#1",
+            "name": "constructor",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 47,
+            "endLine": 49
+          },
+          {
+            "id": "Interface:packages/plugengine-core/src/command/bus.ts:CommandBusOptions",
+            "name": "CommandBusOptions",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "startLine": 2,
+            "endLine": 5
+          },
+          {
+            "id": "File:packages/plugengine-core/src/command/bus.ts",
+            "name": "bus.ts",
+            "filePath": "packages/plugengine-core/src/command/bus.ts"
+          },
+          {
+            "id": "File:packages/plugengine-core/src/index.ts",
+            "name": "index.ts",
+            "filePath": "packages/plugengine-core/src/index.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5.3,
+          "bm25": 58.1,
+          "merge": 0,
+          "symbol_lookup": 12.7,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 72.3
+        }
+      }
+    },
+    {
+      "id": "plugengine-11",
+      "type": "config",
+      "question": "Where are npm workspaces declared for the engine monorepo?",
+      "query_param": "workspaces",
+      "expected": {
+        "path": "package.json",
+        "symbol": "workspaces",
+        "kind": "config",
+        "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1590.8,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_34_main",
+            "summary": "Main → Sink",
+            "priority": 0.094,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_35_main",
+            "summary": "Main → ApplyLifecycle",
+            "priority": 0.094,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_61_runstepwithretry",
+            "summary": "RunStepWithRetry → Sink",
+            "priority": 0.094,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_62_runstepwithretry",
+            "summary": "RunStepWithRetry → ApplyLifecycle",
+            "priority": 0.094,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_137_main",
+            "summary": "Main → RemoveSubscriber",
+            "priority": 0.088,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:packages/plugengine-runtime-agent/src/runSession.ts:RunSession.publish#3",
+            "name": "publish",
+            "filePath": "packages/plugengine-runtime-agent/src/runSession.ts",
+            "startLine": 548,
+            "endLine": 567,
+            "module": "Proof",
+            "process_id": "proc_34_main",
+            "step_index": 3
+          },
+          {
+            "id": "Function:scripts/proof/provider-access-scenario.ts:main",
+            "name": "main",
+            "filePath": "scripts/proof/provider-access-scenario.ts",
+            "startLine": 48,
+            "endLine": 214,
+            "module": "Proof",
+            "process_id": "proc_137_main",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:packages/plugengine-runtime-agent/src/runSession.ts",
+            "name": "runSession.ts",
+            "filePath": "packages/plugengine-runtime-agent/src/runSession.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-runtime-agent/src/runSession.ts:RunAddress",
+            "name": "RunAddress",
+            "filePath": "packages/plugengine-runtime-agent/src/runSession.ts",
+            "startLine": 39,
+            "endLine": 46
+          },
+          {
+            "id": "Class:packages/plugengine-runtime-agent/src/longRun.ts:LongRunOrchestrator",
+            "name": "LongRunOrchestrator",
+            "filePath": "packages/plugengine-runtime-agent/src/longRun.ts",
+            "startLine": 97,
+            "endLine": 326,
+            "module": "Proof"
+          },
+          {
+            "id": "Method:packages/plugengine-runtime-agent/src/longRun.ts:LongRunOrchestrator.constructor#2",
+            "name": "constructor",
+            "filePath": "packages/plugengine-runtime-agent/src/longRun.ts",
+            "startLine": 114,
+            "endLine": 142,
+            "module": "Cluster_847"
+          },
+          {
+            "id": "File:packages/plugengine-runtime-agent/src/longRun.ts",
+            "name": "longRun.ts",
+            "filePath": "packages/plugengine-runtime-agent/src/longRun.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-runtime-agent/src/runtimeAdapter.ts:RunIdentity",
+            "name": "RunIdentity",
+            "filePath": "packages/plugengine-runtime-agent/src/runtimeAdapter.ts",
+            "startLine": 43,
+            "endLine": 50
+          },
+          {
+            "id": "File:packages/plugengine-runtime-agent/src/runtimeAdapter.ts",
+            "name": "runtimeAdapter.ts",
+            "filePath": "packages/plugengine-runtime-agent/src/runtimeAdapter.ts"
+          },
+          {
+            "id": "File:package.json",
+            "name": "package.json",
+            "filePath": "package.json"
+          },
+          {
+            "id": "File:scripts/proof/provider-access-scenario.ts",
+            "name": "provider-access-scenario.ts",
+            "filePath": "scripts/proof/provider-access-scenario.ts"
+          },
+          {
+            "id": "File:tsconfig.base.json",
+            "name": "tsconfig.base.json",
+            "filePath": "tsconfig.base.json"
+          },
+          {
+            "id": "File:scripts/proof/runtime-stream-scenario.ts",
+            "name": "runtime-stream-scenario.ts",
+            "filePath": "scripts/proof/runtime-stream-scenario.ts"
+          },
+          {
+            "id": "File:reference/build-battle/src/forge/main.ts",
+            "name": "main.ts",
+            "filePath": "reference/build-battle/src/forge/main.ts"
+          },
+          {
+            "id": "File:apps/worker/src/http.ts",
+            "name": "http.ts",
+            "filePath": "apps/worker/src/http.ts"
+          },
+          {
+            "id": "File:SNAPSHOT_README.md",
+            "name": "SNAPSHOT_README.md",
+            "filePath": "SNAPSHOT_README.md"
+          },
+          {
+            "id": "File:docs/architecture/PLUGENGINE_KERNEL.md",
+            "name": "PLUGENGINE_KERNEL.md",
+            "filePath": "docs/architecture/PLUGENGINE_KERNEL.md"
+          },
+          {
+            "id": "Function:scripts/milkyway-home-render-proof.mjs:main",
+            "name": "main",
+            "filePath": "scripts/milkyway-home-render-proof.mjs",
+            "startLine": 136,
+            "endLine": 372,
+            "module": "Scripts"
+          },
+          {
+            "id": "File:scripts/milkyway-home-render-proof.mjs",
+            "name": "milkyway-home-render-proof.mjs",
+            "filePath": "scripts/milkyway-home-render-proof.mjs"
+          },
+          {
+            "id": "File:vitest.engine.config.ts",
+            "name": "vitest.engine.config.ts",
+            "filePath": "vitest.engine.config.ts"
+          },
+          {
+            "id": "Function:scripts/publish-flow-proof.mjs:main",
+            "name": "main",
+            "filePath": "scripts/publish-flow-proof.mjs",
+            "startLine": 114,
+            "endLine": 365,
+            "module": "Scripts"
+          },
+          {
+            "id": "File:scripts/publish-flow-proof.mjs",
+            "name": "publish-flow-proof.mjs",
+            "filePath": "scripts/publish-flow-proof.mjs"
+          }
+        ],
+        "timing": {
+          "vector": 5.2,
+          "bm25": 250.2,
+          "merge": 0.1,
+          "symbol_lookup": 15.2,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 267.3
+        }
+      }
+    },
+    {
+      "id": "plugengine-12",
+      "type": "entrypoint",
+      "question": "Where is the entrypoint barrel for plugengine-core?",
+      "query_param": "plugengine-core",
+      "expected": {
+        "path": "packages/plugengine-core/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1547.3,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_138_main",
+            "summary": "Main → ProviderAccessError",
+            "priority": 0.095,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_189_constructor",
+            "summary": "Constructor → _allocateRenderbuffer",
+            "priority": 0.092,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_249_render",
+            "summary": "Render → Program",
+            "priority": 0.081,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_19_constructor",
+            "summary": "Constructor → SubVectors",
+            "priority": 0.066,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_20_constructor",
+            "summary": "Constructor → LengthSq",
+            "priority": 0.066,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:packages/plugengine-runtime-agent/src/providerAccess.ts:ProviderAccessSession.current#0",
+            "name": "current",
+            "filePath": "packages/plugengine-runtime-agent/src/providerAccess.ts",
+            "startLine": 362,
+            "endLine": 368,
+            "module": "Proof",
+            "process_id": "proc_138_main",
+            "step_index": 3
+          },
+          {
+            "id": "Method:packages/plugengine-runtime-agent/src/providerAccess.ts:ProviderAccessSession.rateLimit#0",
+            "name": "rateLimit",
+            "filePath": "packages/plugengine-runtime-agent/src/providerAccess.ts",
+            "startLine": 371,
+            "endLine": 373,
+            "module": "Proof",
+            "process_id": "proc_138_main",
+            "step_index": 2
+          },
+          {
+            "id": "Method:kernel/packages/gl/src/renderTarget.ts:RenderTarget._createRenderbuffer#1",
+            "name": "_createRenderbuffer",
+            "filePath": "kernel/packages/gl/src/renderTarget.ts",
+            "startLine": 185,
+            "endLine": 190,
+            "module": "Post",
+            "process_id": "proc_189_constructor",
+            "step_index": 3
+          },
+          {
+            "id": "Method:kernel/packages/gl/src/renderTarget.ts:RenderTarget._createMainFramebuffer#0",
+            "name": "_createMainFramebuffer",
+            "filePath": "kernel/packages/gl/src/renderTarget.ts",
+            "startLine": 193,
+            "endLine": 223,
+            "module": "Post",
+            "process_id": "proc_189_constructor",
+            "step_index": 2
+          },
+          {
+            "id": "Class:kernel/packages/gl/src/program.ts:Program",
+            "name": "Program",
+            "filePath": "kernel/packages/gl/src/program.ts",
+            "startLine": 132,
+            "endLine": 267,
+            "module": "Post",
+            "process_id": "proc_249_render",
+            "step_index": 3
+          },
+          {
+            "id": "Method:kernel/demos/game/src/game.ts:Game.buildLights#0",
+            "name": "buildLights",
+            "filePath": "kernel/demos/game/src/game.ts",
+            "startLine": 133,
+            "endLine": 146,
+            "module": "Math",
+            "process_id": "proc_19_constructor",
+            "step_index": 2
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:apps/engine-lab/src/studio/engineHost.ts:ready",
+            "name": "ready",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "startLine": 179,
+            "endLine": 179
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/engineHost.ts:activate#1",
+            "name": "activate",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "startLine": 170,
+            "endLine": 175,
+            "module": "Studio"
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/studio/engineHost.ts:EngineHostOptions",
+            "name": "EngineHostOptions",
+            "filePath": "apps/engine-lab/src/studio/engineHost.ts",
+            "startLine": 37,
+            "endLine": 43
+          },
+          {
+            "id": "Function:scripts/market-install-proof.mjs:assert",
+            "name": "assert",
+            "filePath": "scripts/market-install-proof.mjs",
+            "startLine": 43,
+            "endLine": 45
+          },
+          {
+            "id": "Function:scripts/market-install-proof.mjs:loadRealModule",
+            "name": "loadRealModule",
+            "filePath": "scripts/market-install-proof.mjs",
+            "startLine": 48,
+            "endLine": 78
+          },
+          {
+            "id": "File:scripts/market-install-proof.mjs",
+            "name": "market-install-proof.mjs",
+            "filePath": "scripts/market-install-proof.mjs"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts:write",
+            "name": "write",
+            "filePath": "apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts",
+            "startLine": 152,
+            "endLine": 165,
+            "module": "Inspector"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts:add",
+            "name": "add",
+            "filePath": "apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts",
+            "startLine": 277,
+            "endLine": 279
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts:bindingFor",
+            "name": "bindingFor",
+            "filePath": "apps/engine-lab/src/studio/inspector/sceneObjectBinding.ts",
+            "startLine": 473,
+            "endLine": 475
+          },
+          {
+            "id": "Function:apps/engine-lab/src/agent/coreEditorAddon.ts:createCoreEditorAddon",
+            "name": "createCoreEditorAddon",
+            "filePath": "apps/engine-lab/src/agent/coreEditorAddon.ts",
+            "startLine": 108,
+            "endLine": 269,
+            "module": "Agent"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/agent/coreEditorAddon.ts:toNumber",
+            "name": "toNumber",
+            "filePath": "apps/engine-lab/src/agent/coreEditorAddon.ts",
+            "startLine": 261,
+            "endLine": 261,
+            "module": "Agent"
+          },
+          {
+            "id": "Method:apps/engine-lab/src/agent/coreEditorAddon.ts:activate#1",
+            "name": "activate",
+            "filePath": "apps/engine-lab/src/agent/coreEditorAddon.ts",
+            "startLine": 110,
+            "endLine": 267
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:duplicateSelected",
+            "name": "duplicateSelected",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 902,
+            "endLine": 907,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:exportProject",
+            "name": "exportProject",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2621,
+            "endLine": 2623,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:saveProject",
+            "name": "saveProject",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 2624,
+            "endLine": 2626,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/buildProject.ts:buildSceneToManifest",
+            "name": "buildSceneToManifest",
+            "filePath": "apps/engine-lab/src/buildProject.ts",
+            "startLine": 32,
+            "endLine": 36,
+            "module": "Project"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/buildProject.ts:manifestToBuildScene",
+            "name": "manifestToBuildScene",
+            "filePath": "apps/engine-lab/src/buildProject.ts",
+            "startLine": 39,
+            "endLine": 51,
+            "module": "Cluster_25"
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/buildProject.ts:PlacedCharacterJSON",
+            "name": "PlacedCharacterJSON",
+            "filePath": "apps/engine-lab/src/buildProject.ts",
+            "startLine": 12,
+            "endLine": 17
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/inspector/inspectorCommandPath.test.ts:entityOf",
+            "name": "entityOf",
+            "filePath": "apps/engine-lab/src/studio/inspector/inspectorCommandPath.test.ts",
+            "startLine": 109,
+            "endLine": 116,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/inspector/inspectorCommandPath.test.ts:applyPatch",
+            "name": "applyPatch",
+            "filePath": "apps/engine-lab/src/studio/inspector/inspectorCommandPath.test.ts",
+            "startLine": 119,
+            "endLine": 123,
+            "module": "Studio"
+          }
+        ],
+        "timing": {
+          "vector": 6.1,
+          "bm25": 271.3,
+          "merge": 0.2,
+          "symbol_lookup": 17.3,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 291
+        }
+      }
+    },
+    {
+      "id": "plugengine-13",
+      "type": "entrypoint",
+      "question": "Where is the root contracts entrypoint barrel for plugengine?",
+      "query_param": "contracts",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1550.5,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_184_fetch",
+            "summary": "Fetch → JsonResponse",
+            "priority": 0.112,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_205_handleprojectrequest",
+            "summary": "HandleProjectRequest → JsonResponse",
+            "priority": 0.112,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_65_handleprojectrequest",
+            "summary": "HandleProjectRequest → SceneKey",
+            "priority": 0.109,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_209_update",
+            "summary": "Update → RecordKey",
+            "priority": 0.079,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_210_update",
+            "summary": "Update → CloneRecord",
+            "priority": 0.079,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:apps/worker/src/http.ts:jsonResponse",
+            "name": "jsonResponse",
+            "filePath": "apps/worker/src/http.ts",
+            "startLine": 15,
+            "endLine": 20,
+            "module": "Auth",
+            "process_id": "proc_184_fetch",
+            "step_index": 4
+          },
+          {
+            "id": "Function:apps/worker/src/storage/r2Scenes.ts:sceneKey",
+            "name": "sceneKey",
+            "filePath": "apps/worker/src/storage/r2Scenes.ts",
+            "startLine": 9,
+            "endLine": 11,
+            "module": "Auth",
+            "process_id": "proc_65_handleprojectrequest",
+            "step_index": 5
+          },
+          {
+            "id": "Method:apps/engine-lab/src/projectStore/localProjectStore.ts:LocalProjectStore.get#1",
+            "name": "get",
+            "filePath": "apps/engine-lab/src/projectStore/localProjectStore.ts",
+            "startLine": 96,
+            "endLine": 99,
+            "module": "ProjectStore",
+            "process_id": "proc_209_update",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Function:apps/engine-lab/src/projectStore/localProjectStore.ts:toProjectSummary",
+            "name": "toProjectSummary",
+            "filePath": "apps/engine-lab/src/projectStore/localProjectStore.ts",
+            "startLine": 60,
+            "endLine": 63
+          },
+          {
+            "id": "Method:apps/engine-lab/src/projectStore/localProjectStore.ts:ProjectValidationError.constructor#1",
+            "name": "constructor",
+            "filePath": "apps/engine-lab/src/projectStore/localProjectStore.ts",
+            "startLine": 39,
+            "endLine": 42
+          },
+          {
+            "id": "Method:apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts:MarketplaceListingRepository.findAll#0",
+            "name": "findAll",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts",
+            "startLine": 30,
+            "endLine": 30
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts:ListingKeyValueStorage",
+            "name": "ListingKeyValueStorage",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts",
+            "startLine": 22,
+            "endLine": 26
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts:MarketplaceListingRepository",
+            "name": "MarketplaceListingRepository",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListingStore.ts",
+            "startLine": 29,
+            "endLine": 38,
+            "module": "Marketplace"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/marketplace/marketplaceListing.ts:validateListingMetadata",
+            "name": "validateListingMetadata",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListing.ts",
+            "startLine": 91,
+            "endLine": 99,
+            "module": "Marketplace"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/marketplace/marketplaceListing.ts:validateMarketplaceListing",
+            "name": "validateMarketplaceListing",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListing.ts",
+            "startLine": 102,
+            "endLine": 104,
+            "module": "Marketplace"
+          },
+          {
+            "id": "File:apps/engine-lab/src/studio/marketplace/marketplaceListing.ts",
+            "name": "marketplaceListing.ts",
+            "filePath": "apps/engine-lab/src/studio/marketplace/marketplaceListing.ts"
+          },
+          {
+            "id": "Function:reference/build-battle/src/plugmil/cityGen.ts:hash",
+            "name": "hash",
+            "filePath": "reference/build-battle/src/plugmil/cityGen.ts",
+            "startLine": 50,
+            "endLine": 53,
+            "module": "Plugmil"
+          },
+          {
+            "id": "Function:reference/build-battle/src/plugmil/cityGen.ts:bottomUp",
+            "name": "bottomUp",
+            "filePath": "reference/build-battle/src/plugmil/cityGen.ts",
+            "startLine": 56,
+            "endLine": 58,
+            "module": "Plugmil"
+          },
+          {
+            "id": "Class:apps/engine-lab/src/projectStore/localPublishStore.ts:PublishValidationError",
+            "name": "PublishValidationError",
+            "filePath": "apps/engine-lab/src/projectStore/localPublishStore.ts",
+            "startLine": 23,
+            "endLine": 28,
+            "module": "ProjectStore"
+          },
+          {
+            "id": "Method:apps/engine-lab/src/projectStore/localPublishStore.ts:PublishValidationError.constructor#1",
+            "name": "constructor",
+            "filePath": "apps/engine-lab/src/projectStore/localPublishStore.ts",
+            "startLine": 24,
+            "endLine": 27
+          },
+          {
+            "id": "Function:reference/build-battle/src/editor/main.ts:instantiatePanel",
+            "name": "instantiatePanel",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 130,
+            "endLine": 151,
+            "module": "Editor"
+          },
+          {
+            "id": "Function:reference/build-battle/src/editor/main.ts:isEditorPanel",
+            "name": "isEditorPanel",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 154,
+            "endLine": 163,
+            "module": "Editor"
+          },
+          {
+            "id": "Interface:reference/build-battle/src/editor/main.ts:EditorTestApi",
+            "name": "EditorTestApi",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 298,
+            "endLine": 354
+          },
+          {
+            "id": "Class:reference/build-battle/src/editor/libraryPanel.ts:LibraryPanel",
+            "name": "LibraryPanel",
+            "filePath": "reference/build-battle/src/editor/libraryPanel.ts",
+            "startLine": 60,
+            "endLine": 495,
+            "module": "Editor"
+          },
+          {
+            "id": "Method:reference/build-battle/src/editor/libraryPanel.ts:LibraryPanel.deactivate#0",
+            "name": "deactivate",
+            "filePath": "reference/build-battle/src/editor/libraryPanel.ts",
+            "startLine": 112,
+            "endLine": 115
+          },
+          {
+            "id": "File:scripts/ai-builder-mock-proof.mjs",
+            "name": "ai-builder-mock-proof.mjs",
+            "filePath": "scripts/ai-builder-mock-proof.mjs"
+          },
+          {
+            "id": "Function:scripts/ai-builder-mock-proof.mjs:clock",
+            "name": "clock",
+            "filePath": "scripts/ai-builder-mock-proof.mjs",
+            "startLine": 98,
+            "endLine": 98
+          },
+          {
+            "id": "File:apps/worker/src/http.ts",
+            "name": "http.ts",
+            "filePath": "apps/worker/src/http.ts"
+          }
+        ],
+        "timing": {
+          "vector": 6.1,
+          "bm25": 239.3,
+          "merge": 0.1,
+          "symbol_lookup": 15.9,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 257
+        }
+      }
+    },
+    {
+      "id": "plugengine-14",
+      "type": "docs_notes",
+      "question": "Which document maintains the technical debt register for the engine?",
+      "query_param": "TECH_DEBT_REGISTER.md",
+      "expected": {
+        "path": "docs/TECH_DEBT_REGISTER.md",
+        "symbol": "TECH_DEBT_REGISTER.md",
+        "kind": "docs_notes",
+        "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1572.9,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:packages/plugengine-extension/src/addonContext.ts:createAddonContext",
+            "name": "createAddonContext",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 116,
+            "endLine": 141,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/addonContext.ts:register",
+            "name": "register",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 123,
+            "endLine": 123,
+            "module": "Cluster_764"
+          },
+          {
+            "id": "Interface:packages/plugengine-extension/src/addonContext.ts:ComponentContributionRegistry",
+            "name": "ComponentContributionRegistry",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 61,
+            "endLine": 63
+          },
+          {
+            "id": "File:docs/TECH_DEBT_REGISTER.md",
+            "name": "TECH_DEBT_REGISTER.md",
+            "filePath": "docs/TECH_DEBT_REGISTER.md"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/types.ts:ISceneManager.register#1",
+            "name": "register",
+            "filePath": "reference/build-battle/src/platform/types.ts",
+            "startLine": 151,
+            "endLine": 151
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/types.ts:IUILayer.clear#0",
+            "name": "clear",
+            "filePath": "reference/build-battle/src/platform/types.ts",
+            "startLine": 350,
+            "endLine": 350
+          },
+          {
+            "id": "Interface:reference/build-battle/src/platform/types.ts:IGameModeRegistry",
+            "name": "IGameModeRegistry",
+            "filePath": "reference/build-battle/src/platform/types.ts",
+            "startLine": 99,
+            "endLine": 106,
+            "module": "Platform"
+          },
+          {
+            "id": "File:docs/proof/patch1-m0-baseline/00-baseline.md",
+            "name": "00-baseline.md",
+            "filePath": "docs/proof/patch1-m0-baseline/00-baseline.md"
+          },
+          {
+            "id": "Function:reference/build-battle/src/aibuilder/provider.ts:getProvider",
+            "name": "getProvider",
+            "filePath": "reference/build-battle/src/aibuilder/provider.ts",
+            "startLine": 109,
+            "endLine": 119,
+            "module": "Aibuilder"
+          },
+          {
+            "id": "Function:reference/build-battle/src/aibuilder/provider.ts:getActiveProviderId",
+            "name": "getActiveProviderId",
+            "filePath": "reference/build-battle/src/aibuilder/provider.ts",
+            "startLine": 122,
+            "endLine": 124
+          },
+          {
+            "id": "File:reference/build-battle/src/aibuilder/provider.ts",
+            "name": "provider.ts",
+            "filePath": "reference/build-battle/src/aibuilder/provider.ts"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/gameMode.ts:GameModeRegistry.constructor#1",
+            "name": "constructor",
+            "filePath": "reference/build-battle/src/platform/gameMode.ts",
+            "startLine": 45,
+            "endLine": 47,
+            "module": "Platform"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/gameMode.ts:GameModeRegistry.register#1",
+            "name": "register",
+            "filePath": "reference/build-battle/src/platform/gameMode.ts",
+            "startLine": 50,
+            "endLine": 59,
+            "module": "Platform"
+          },
+          {
+            "id": "Class:reference/build-battle/src/platform/gameMode.ts:GameModeRegistry",
+            "name": "GameModeRegistry",
+            "filePath": "reference/build-battle/src/platform/gameMode.ts",
+            "startLine": 34,
+            "endLine": 75,
+            "module": "Platform"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:makeWorld",
+            "name": "makeWorld",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 41,
+            "endLine": 55,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:demoAddon",
+            "name": "demoAddon",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 58,
+            "endLine": 70,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:loaderFor",
+            "name": "loaderFor",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 73,
+            "endLine": 79,
+            "module": "Agent"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/sceneManager.ts:SceneManager.constructor#3",
+            "name": "constructor",
+            "filePath": "reference/build-battle/src/platform/sceneManager.ts",
+            "startLine": 73,
+            "endLine": 81,
+            "module": "Platform"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/sceneManager.ts:SceneManager.register#1",
+            "name": "register",
+            "filePath": "reference/build-battle/src/platform/sceneManager.ts",
+            "startLine": 84,
+            "endLine": 90,
+            "module": "Platform"
+          },
+          {
+            "id": "Method:reference/build-battle/src/platform/sceneManager.ts:SceneManager.list#0",
+            "name": "list",
+            "filePath": "reference/build-battle/src/platform/sceneManager.ts",
+            "startLine": 93,
+            "endLine": 95,
+            "module": "Platform"
+          }
+        ],
+        "timing": {
+          "vector": 5.1,
+          "bm25": 265.8,
+          "merge": 0.2,
+          "symbol_lookup": 16.2,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 284.2
+        }
+      }
+    },
+    {
+      "id": "plugengine-15",
+      "type": "docs_notes",
+      "question": "Which document contains the specification for the creator editor?",
+      "query_param": "CREATOR_EDITOR_SPEC.md",
+      "expected": {
+        "path": "docs/CREATOR_EDITOR_SPEC.md",
+        "symbol": "CREATOR_EDITOR_SPEC.md",
+        "kind": "docs_notes",
+        "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1546,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:reference/build-battle/src/editor/worldedit/placementStore.ts:normalizeAngle",
+            "name": "normalizeAngle",
+            "filePath": "reference/build-battle/src/editor/worldedit/placementStore.ts",
+            "startLine": 231,
+            "endLine": 237,
+            "module": "Worldedit"
+          },
+          {
+            "id": "Function:reference/build-battle/src/editor/worldedit/placementStore.ts:cloneSpec",
+            "name": "cloneSpec",
+            "filePath": "reference/build-battle/src/editor/worldedit/placementStore.ts",
+            "startLine": 240,
+            "endLine": 245,
+            "module": "Worldedit"
+          },
+          {
+            "id": "Method:reference/build-battle/src/editor/worldedit/placementStore.ts:PlacementStore.adoptSpec#1",
+            "name": "adoptSpec",
+            "filePath": "reference/build-battle/src/editor/worldedit/placementStore.ts",
+            "startLine": 129,
+            "endLine": 140,
+            "module": "Worldedit"
+          },
+          {
+            "id": "Function:packages/plugengine-assets/src/universe/presets.ts:defaultSurfaceZones",
+            "name": "defaultSurfaceZones",
+            "filePath": "packages/plugengine-assets/src/universe/presets.ts",
+            "startLine": 225,
+            "endLine": 227,
+            "module": "Universe"
+          },
+          {
+            "id": "Function:packages/plugengine-assets/src/universe/presets.ts:planetFromSpec",
+            "name": "planetFromSpec",
+            "filePath": "packages/plugengine-assets/src/universe/presets.ts",
+            "startLine": 422,
+            "endLine": 456,
+            "module": "Universe"
+          },
+          {
+            "id": "File:packages/plugengine-assets/src/universe/presets.ts",
+            "name": "presets.ts",
+            "filePath": "packages/plugengine-assets/src/universe/presets.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/addonContext.ts:createAddonContext",
+            "name": "createAddonContext",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 116,
+            "endLine": 141,
+            "module": "Studio"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/addonContext.ts:register",
+            "name": "register",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 123,
+            "endLine": 123,
+            "module": "Cluster_764"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/addonContext.ts:registerPanel",
+            "name": "registerPanel",
+            "filePath": "packages/plugengine-extension/src/addonContext.ts",
+            "startLine": 132,
+            "endLine": 132,
+            "module": "Cluster_764"
+          },
+          {
+            "id": "Function:reference/build-battle/src/editor/main.ts:loadPanel",
+            "name": "loadPanel",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 105,
+            "endLine": 127,
+            "module": "Editor"
+          },
+          {
+            "id": "Method:reference/build-battle/src/editor/main.ts:EditorTestApi.replaceLastPlaced#1",
+            "name": "replaceLastPlaced",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 323,
+            "endLine": 323
+          },
+          {
+            "id": "Method:reference/build-battle/src/editor/main.ts:EditorTestApi.listEntities#0",
+            "name": "listEntities",
+            "filePath": "reference/build-battle/src/editor/main.ts",
+            "startLine": 325,
+            "endLine": 325
+          },
+          {
+            "id": "Function:reference/build-battle/src/api.ts:instantiateEntity",
+            "name": "instantiateEntity",
+            "filePath": "reference/build-battle/src/api.ts",
+            "startLine": 458,
+            "endLine": 477,
+            "module": "Cluster_961"
+          },
+          {
+            "id": "Function:reference/build-battle/src/api.ts:cloneEntitySpec",
+            "name": "cloneEntitySpec",
+            "filePath": "reference/build-battle/src/api.ts",
+            "startLine": 617,
+            "endLine": 622,
+            "module": "Cluster_958"
+          },
+          {
+            "id": "Function:reference/build-battle/src/api.ts:cloneEnemySpec",
+            "name": "cloneEnemySpec",
+            "filePath": "reference/build-battle/src/api.ts",
+            "startLine": 624,
+            "endLine": 628
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeEdit.ts:makePlanetDef",
+            "name": "makePlanetDef",
+            "filePath": "packages/plugengine-editor/src/universeEdit.ts",
+            "startLine": 45,
+            "endLine": 73,
+            "module": "Cluster_758"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeEdit.ts:makePortalDef",
+            "name": "makePortalDef",
+            "filePath": "packages/plugengine-editor/src/universeEdit.ts",
+            "startLine": 86,
+            "endLine": 95,
+            "module": "Cluster_758"
+          },
+          {
+            "id": "Function:packages/plugengine-editor/src/universeEdit.ts:makeSystemDef",
+            "name": "makeSystemDef",
+            "filePath": "packages/plugengine-editor/src/universeEdit.ts",
+            "startLine": 107,
+            "endLine": 116,
+            "module": "Cluster_758"
+          },
+          {
+            "id": "Function:reference/build-battle/src/ecs/systems/spawn.ts:spawnEnemy",
+            "name": "spawnEnemy",
+            "filePath": "reference/build-battle/src/ecs/systems/spawn.ts",
+            "startLine": 107,
+            "endLine": 136,
+            "module": "Ecs"
+          },
+          {
+            "id": "Class:reference/build-battle/src/ecs/systems/spawn.ts:EnemySpawner",
+            "name": "EnemySpawner",
+            "filePath": "reference/build-battle/src/ecs/systems/spawn.ts",
+            "startLine": 143,
+            "endLine": 204,
+            "module": "Player"
+          }
+        ],
+        "timing": {
+          "vector": 5.7,
+          "bm25": 257.1,
+          "merge": 0.2,
+          "symbol_lookup": 16.5,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 275.4
+        }
+      }
+    },
+    {
+      "id": "plugengine-16",
+      "type": "rename_impact",
+      "question": "What breaks if canUndo getter is renamed on CommandBus?",
+      "query_param": "canUndo",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "canUndo",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1325.8,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 4 symbols matching 'canUndo'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "canUndo"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Function:apps/engine-lab/src/composerMode.ts:canUndo",
+            "name": "canUndo",
+            "kind": "Function",
+            "filePath": "apps/engine-lab/src/composerMode.ts",
+            "line": 565,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts:canUndo",
+            "name": "canUndo",
+            "kind": "Function",
+            "filePath": "apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts",
+            "line": 125,
+            "score": 0.56
+          },
+          {
+            "uid": "Method:packages/plugengine-core/src/command/bus.ts:CommandBus.canUndo#0",
+            "name": "canUndo",
+            "kind": "Method",
+            "filePath": "packages/plugengine-core/src/command/bus.ts",
+            "line": 51,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:apps/engine-lab/src/studio/character/characterPanelModel.ts:CharacterPanelModel.canUndo#0",
+            "name": "canUndo",
+            "kind": "Method",
+            "filePath": "apps/engine-lab/src/studio/character/characterPanelModel.ts",
+            "line": 158,
+            "score": 0.54
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-17",
+      "type": "rename_impact",
+      "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+      "query_param": "impactToEdit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "impactToEdit",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-combat/src/blockDestruction.ts"
+        ],
+        "details": "impactToEdit converts projectile block hits into voxel edits."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1355.2,
+      "rawOutput": {
+        "target": {
+          "id": "Function:packages/plugengine-combat/src/blockDestruction.ts:impactToEdit",
+          "name": "impactToEdit",
+          "type": "Function",
+          "filePath": "packages/plugengine-combat/src/blockDestruction.ts"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "plugengine-18",
+      "type": "definition",
+      "question": "Where is COMBAT_PACKAGE package name constant defined?",
+      "query_param": "COMBAT_PACKAGE",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "COMBAT_PACKAGE",
+        "kind": "symbol",
+        "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1587,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:scripts/beginner-proof.mjs:tree",
+            "name": "tree",
+            "filePath": "scripts/beginner-proof.mjs",
+            "startLine": 77,
+            "endLine": 77,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:scripts/beginner-proof.mjs:byName",
+            "name": "byName",
+            "filePath": "scripts/beginner-proof.mjs",
+            "startLine": 78,
+            "endLine": 78,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:scripts/beginner-proof.mjs:combat",
+            "name": "combat",
+            "filePath": "scripts/beginner-proof.mjs",
+            "startLine": 79,
+            "endLine": 79,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:scripts/projectile-proof.mjs:byName",
+            "name": "byName",
+            "filePath": "scripts/projectile-proof.mjs",
+            "startLine": 66,
+            "endLine": 66,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:scripts/projectile-proof.mjs:combat",
+            "name": "combat",
+            "filePath": "scripts/projectile-proof.mjs",
+            "startLine": 67,
+            "endLine": 67,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:scripts/projectile-proof.mjs:field",
+            "name": "field",
+            "filePath": "scripts/projectile-proof.mjs",
+            "startLine": 69,
+            "endLine": 69,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:reference/build-battle/src/main.ts:PlugTestApi.enemyStates#0",
+            "name": "enemyStates",
+            "filePath": "reference/build-battle/src/main.ts",
+            "startLine": 292,
+            "endLine": 292
+          },
+          {
+            "id": "Method:reference/build-battle/src/main.ts:PlugTestApi.enemyHps#0",
+            "name": "enemyHps",
+            "filePath": "reference/build-battle/src/main.ts",
+            "startLine": 294,
+            "endLine": 294
+          },
+          {
+            "id": "Method:reference/build-battle/src/main.ts:PlugTestApi.stepPlay#2",
+            "name": "stepPlay",
+            "filePath": "reference/build-battle/src/main.ts",
+            "startLine": 311,
+            "endLine": 311
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:collisionSnapshot",
+            "name": "collisionSnapshot",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 3036,
+            "endLine": 3036,
+            "module": "Play"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:runtimeScene",
+            "name": "runtimeScene",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 3037,
+            "endLine": 3037
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/studioMode.ts:combat",
+            "name": "combat",
+            "filePath": "apps/engine-lab/src/studio/studioMode.ts",
+            "startLine": 3038,
+            "endLine": 3038,
+            "module": "Play"
+          },
+          {
+            "id": "Function:packages/contracts/src/addon.ts:isPlugPackageKind",
+            "name": "isPlugPackageKind",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 44,
+            "endLine": 46
+          },
+          {
+            "id": "Interface:packages/contracts/src/addon.ts:AddonLockEntry",
+            "name": "AddonLockEntry",
+            "filePath": "packages/contracts/src/addon.ts",
+            "startLine": 458,
+            "endLine": 470
+          },
+          {
+            "id": "File:packages/contracts/src/addon.ts",
+            "name": "addon.ts",
+            "filePath": "packages/contracts/src/addon.ts"
+          },
+          {
+            "id": "Class:reference/build-battle/src/player/controller.ts:PlayerController",
+            "name": "PlayerController",
+            "filePath": "reference/build-battle/src/player/controller.ts",
+            "startLine": 131,
+            "endLine": 756,
+            "module": "Player"
+          },
+          {
+            "id": "Method:reference/build-battle/src/player/controller.ts:PlayerController.setCameraMode#1",
+            "name": "setCameraMode",
+            "filePath": "reference/build-battle/src/player/controller.ts",
+            "startLine": 554,
+            "endLine": 556,
+            "module": "Player"
+          },
+          {
+            "id": "Method:reference/build-battle/src/player/controller.ts:PlayerController.setInteractionEnabled#1",
+            "name": "setInteractionEnabled",
+            "filePath": "reference/build-battle/src/player/controller.ts",
+            "startLine": 559,
+            "endLine": 561,
+            "module": "Player"
+          },
+          {
+            "id": "Function:packages/plugengine-extension/src/extension.test.ts:track",
+            "name": "track",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 587,
+            "endLine": 591
+          },
+          {
+            "id": "Method:packages/plugengine-extension/src/extension.test.ts:activate#0",
+            "name": "activate",
+            "filePath": "packages/plugengine-extension/src/extension.test.ts",
+            "startLine": 588,
+            "endLine": 590
+          }
+        ],
+        "timing": {
+          "vector": 5.8,
+          "bm25": 248.2,
+          "merge": 0.1,
+          "symbol_lookup": 16.1,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 266
+        }
+      }
+    },
+    {
+      "id": "plugengine-19",
+      "type": "callers",
+      "question": "Where is canHit defined and exported for faction combat checks?",
+      "query_param": "canHit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/teams.ts",
+        "symbol": "canHit",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1342.1,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:packages/plugengine-combat/src/teams.ts:canHit",
+          "name": "canHit",
+          "kind": "Function",
+          "filePath": "packages/plugengine-combat/src/teams.ts",
+          "startLine": 50,
+          "endLine": 65
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Method:packages/plugengine-combat/src/projectiles.ts:ProjectilePool.resolveEnemyHit#3",
+              "name": "resolveEnemyHit",
+              "filePath": "packages/plugengine-combat/src/projectiles.ts"
+            },
+            {
+              "uid": "Method:packages/plugengine-combat/src/projectiles.ts:ProjectilePool.retarget#3",
+              "name": "retarget",
+              "filePath": "packages/plugengine-combat/src/projectiles.ts"
+            },
+            {
+              "uid": "File:packages/plugengine-combat/src/teams.test.ts",
+              "name": "teams.test.ts",
+              "filePath": "packages/plugengine-combat/src/teams.test.ts"
+            }
+          ]
+        },
+        "outgoing": {},
+        "processes": []
+      }
+    },
+    {
+      "id": "plugengine-20",
+      "type": "definition",
+      "question": "Where is ProjectilePool implemented for ballistics physics?",
+      "query_param": "ProjectilePool",
+      "expected": {
+        "path": "packages/plugengine-combat/src/projectiles.ts",
+        "symbol": "ProjectilePool",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1389.7,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:packages/plugengine-combat/src/projectiles.test.ts:enemy",
+            "name": "enemy",
+            "filePath": "packages/plugengine-combat/src/projectiles.test.ts",
+            "startLine": 18,
+            "endLine": 20
+          },
+          {
+            "id": "File:packages/plugengine-combat/src/projectiles.test.ts",
+            "name": "projectiles.test.ts",
+            "filePath": "packages/plugengine-combat/src/projectiles.test.ts"
+          },
+          {
+            "id": "Method:reference/build-battle/src/plugmil/playCombat.ts:PlayCombat.ensureFx#1",
+            "name": "ensureFx",
+            "filePath": "reference/build-battle/src/plugmil/playCombat.ts",
+            "startLine": 418,
+            "endLine": 421,
+            "module": "Plugmil"
+          },
+          {
+            "id": "File:reference/build-battle/src/plugmil/playCombat.ts",
+            "name": "playCombat.ts",
+            "filePath": "reference/build-battle/src/plugmil/playCombat.ts"
+          },
+          {
+            "id": "Class:reference/build-battle/src/plugmil/playCombat.ts:PlayCombat",
+            "name": "PlayCombat",
+            "filePath": "reference/build-battle/src/plugmil/playCombat.ts",
+            "startLine": 84,
+            "endLine": 455,
+            "module": "Plugmil"
+          },
+          {
+            "id": "Function:apps/engine-lab/src/studio/play/projectileRuntime.ts:createProjectileWorld",
+            "name": "createProjectileWorld",
+            "filePath": "apps/engine-lab/src/studio/play/projectileRuntime.ts",
+            "startLine": 98,
+            "endLine": 156,
+            "module": "Play"
+          },
+          {
+            "id": "Interface:apps/engine-lab/src/studio/play/projectileRuntime.ts:ProjectileWorld",
+            "name": "ProjectileWorld",
+            "filePath": "apps/engine-lab/src/studio/play/projectileRuntime.ts",
+            "startLine": 70,
+            "endLine": 78
+          },
+          {
+            "id": "File:apps/engine-lab/src/studio/play/projectileRuntime.ts",
+            "name": "projectileRuntime.ts",
+            "filePath": "apps/engine-lab/src/studio/play/projectileRuntime.ts"
+          },
+          {
+            "id": "Function:packages/plugengine-runtime/src/roguelikeMode.ts:begin",
+            "name": "begin",
+            "filePath": "packages/plugengine-runtime/src/roguelikeMode.ts",
+            "startLine": 318,
+            "endLine": 340,
+            "module": "Cluster_881"
+          },
+          {
+            "id": "File:packages/plugengine-runtime/src/roguelikeMode.ts",
+            "name": "roguelikeMode.ts",
+            "filePath": "packages/plugengine-runtime/src/roguelikeMode.ts"
+          },
+          {
+            "id": "Interface:packages/plugengine-runtime/src/roguelikeMode.ts:RoguelikeState",
+            "name": "RoguelikeState",
+            "filePath": "packages/plugengine-runtime/src/roguelikeMode.ts",
+            "startLine": 141,
+            "endLine": 165
+          },
+          {
+            "id": "Class:packages/plugengine-combat/src/projectiles.ts:ProjectilePool",
+            "name": "ProjectilePool",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 119,
+            "endLine": 300,
+            "module": "Cluster_675"
+          },
+          {
+            "id": "Interface:packages/plugengine-combat/src/projectiles.ts:CombatEnemy",
+            "name": "CombatEnemy",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts",
+            "startLine": 36,
+            "endLine": 45
+          },
+          {
+            "id": "File:packages/plugengine-combat/src/projectiles.ts",
+            "name": "projectiles.ts",
+            "filePath": "packages/plugengine-combat/src/projectiles.ts"
+          },
+          {
+            "id": "Method:packages/plugengine-runtime/src/voxelFpsMode.ts:start#1",
+            "name": "start",
+            "filePath": "packages/plugengine-runtime/src/voxelFpsMode.ts",
+            "startLine": 347,
+            "endLine": 387,
+            "module": "Cluster_895"
+          },
+          {
+            "id": "Interface:packages/plugengine-runtime/src/voxelFpsMode.ts:VoxelFpsState",
+            "name": "VoxelFpsState",
+            "filePath": "packages/plugengine-runtime/src/voxelFpsMode.ts",
+            "startLine": 139,
+            "endLine": 161
+          },
+          {
+            "id": "File:packages/plugengine-runtime/src/voxelFpsMode.ts",
+            "name": "voxelFpsMode.ts",
+            "filePath": "packages/plugengine-runtime/src/voxelFpsMode.ts"
+          },
+          {
+            "id": "Class:reference/build-battle/src/plugmil/projectiles.ts:ProjectilePool",
+            "name": "ProjectilePool",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts",
+            "startLine": 44,
+            "endLine": 150,
+            "module": "Plugmil"
+          },
+          {
+            "id": "File:reference/build-battle/src/plugmil/projectiles.ts",
+            "name": "projectiles.ts",
+            "filePath": "reference/build-battle/src/plugmil/projectiles.ts"
+          },
+          {
+            "id": "File:packages/contracts/src/aliasResolution.test.ts",
+            "name": "aliasResolution.test.ts",
+            "filePath": "packages/contracts/src/aliasResolution.test.ts"
+          }
+        ],
+        "timing": {
+          "vector": 5.3,
+          "bm25": 83.7,
+          "merge": 0.1,
+          "symbol_lookup": 12.5,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 97.7
+        }
+      }
+    }
+  ]
+}

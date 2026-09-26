@@ -1,0 +1,2646 @@
+{
+  "tool": "gitnexus",
+  "repo": "cowork",
+  "commit": "5c2b2addb16d960a270bad15f80f0581e16a7cf9",
+  "indexTimeMs": 401000,
+  "indexSizeBytes": 3375638269,
+  "questionCount": 20,
+  "hitCount": 2,
+  "accuracy": 10,
+  "latencyP50Ms": 3888.4,
+  "latencyP95Ms": 4339.7,
+  "questions": [
+    {
+      "id": "cowork-01",
+      "type": "definition",
+      "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+      "query_param": "DEFAULT_LANES",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "DEFAULT_LANES",
+        "kind": "symbol",
+        "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4339.7,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:ruflo-workers/tools/fleet.py:load_lanes",
+            "name": "load_lanes",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "startLine": 106,
+            "endLine": 120,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/fleet.py:main",
+            "name": "main",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "startLine": 462,
+            "endLine": 491,
+            "module": "Tools"
+          },
+          {
+            "id": "Method:ruflo-workers/tools/fleet.py:Fleet.complete#5",
+            "name": "complete",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "startLine": 274,
+            "endLine": 301,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:plugos-showcase/apps/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "plugos-showcase/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 149,
+            "endLine": 342,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:plugos-showcase/apps/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "plugos-showcase/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 184,
+            "endLine": 204
+          },
+          {
+            "id": "Function:plugos-showcase/apps/plugmcp/plugmcp/routing.py:_attempt",
+            "name": "_attempt",
+            "filePath": "plugos-showcase/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 222,
+            "endLine": 269
+          },
+          {
+            "id": "Function:plugos-x3/apps/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "plugos-x3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 149,
+            "endLine": 342,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:plugos-x3/apps/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "plugos-x3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 184,
+            "endLine": 204
+          },
+          {
+            "id": "Function:plugos-x3/apps/plugmcp/plugmcp/routing.py:_attempt",
+            "name": "_attempt",
+            "filePath": "plugos-x3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 222,
+            "endLine": 269
+          },
+          {
+            "id": "Function:plugos-s3/apps/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "plugos-s3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 149,
+            "endLine": 342,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:plugos-s3/apps/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "plugos-s3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 184,
+            "endLine": 204
+          },
+          {
+            "id": "Function:plugos-s3/apps/plugmcp/plugmcp/routing.py:_attempt",
+            "name": "_attempt",
+            "filePath": "plugos-s3/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 222,
+            "endLine": 269
+          },
+          {
+            "id": "Function:plugos-fix/apps/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "plugos-fix/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 149,
+            "endLine": 342,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:plugos-fix/apps/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "plugos-fix/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 184,
+            "endLine": 204
+          },
+          {
+            "id": "Function:plugos-fix/apps/plugmcp/plugmcp/routing.py:_attempt",
+            "name": "_attempt",
+            "filePath": "plugos-fix/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 222,
+            "endLine": 269
+          },
+          {
+            "id": "Function:plugos-ecospace/apps/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "plugos-ecospace/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 165,
+            "endLine": 376,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:plugos-ecospace/apps/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "plugos-ecospace/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 201,
+            "endLine": 221
+          },
+          {
+            "id": "Function:plugos-ecospace/apps/plugmcp/plugmcp/routing.py:_attempt",
+            "name": "_attempt",
+            "filePath": "plugos-ecospace/apps/plugmcp/plugmcp/routing.py",
+            "startLine": 239,
+            "endLine": 303
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/routing.py:route",
+            "name": "route",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/routing.py",
+            "startLine": 165,
+            "endLine": 376,
+            "module": "Plugmcp"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/routing.py:_default_complete",
+            "name": "_default_complete",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/routing.py",
+            "startLine": 201,
+            "endLine": 221
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 2918.4,
+          "merge": 0.2,
+          "symbol_lookup": 116.8,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 3036.9
+        }
+      }
+    },
+    {
+      "id": "cowork-02",
+      "type": "definition",
+      "question": "Where is the scrub function defined to remove API keys from output?",
+      "query_param": "scrub",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "scrub",
+        "kind": "symbol",
+        "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4084.9,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:plugos-showcase/tools/security/tests/test_audit_hardening.py:TestLeakHardening.test_scrub_masks_embedded_shape#0",
+            "name": "test_scrub_masks_embedded_shape",
+            "filePath": "plugos-showcase/tools/security/tests/test_audit_hardening.py",
+            "startLine": 18,
+            "endLine": 23
+          },
+          {
+            "id": "File:plugos-showcase/tools/security/tests/test_audit_hardening.py",
+            "name": "test_audit_hardening.py",
+            "filePath": "plugos-showcase/tools/security/tests/test_audit_hardening.py"
+          },
+          {
+            "id": "Class:plugos-showcase/tools/security/tests/test_audit_hardening.py:TestLeakHardening",
+            "name": "TestLeakHardening",
+            "filePath": "plugos-showcase/tools/security/tests/test_audit_hardening.py",
+            "startLine": 17,
+            "endLine": 52
+          },
+          {
+            "id": "Method:plugos-ecospace/tools/security/tests/test_audit_hardening.py:TestLeakHardening.test_scrub_masks_embedded_shape#0",
+            "name": "test_scrub_masks_embedded_shape",
+            "filePath": "plugos-ecospace/tools/security/tests/test_audit_hardening.py",
+            "startLine": 18,
+            "endLine": 23
+          },
+          {
+            "id": "File:plugos-ecospace/tools/security/tests/test_audit_hardening.py",
+            "name": "test_audit_hardening.py",
+            "filePath": "plugos-ecospace/tools/security/tests/test_audit_hardening.py"
+          },
+          {
+            "id": "Class:plugos-ecospace/tools/security/tests/test_audit_hardening.py:TestLeakHardening",
+            "name": "TestLeakHardening",
+            "filePath": "plugos-ecospace/tools/security/tests/test_audit_hardening.py",
+            "startLine": 17,
+            "endLine": 52
+          },
+          {
+            "id": "File:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "name": "providers.py",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py"
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py:OpenAICompatProvider._complete_urllib#5",
+            "name": "_complete_urllib",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "startLine": 144,
+            "endLine": 169,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py:OpenAICompatProvider._scrub#1",
+            "name": "_scrub",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "startLine": 171,
+            "endLine": 176,
+            "module": "Plugbot"
+          },
+          {
+            "id": "File:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "name": "providers.py",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py"
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py:OpenAICompatProvider._complete_urllib#5",
+            "name": "_complete_urllib",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "startLine": 144,
+            "endLine": 169,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py:OpenAICompatProvider._scrub#1",
+            "name": "_scrub",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/providers.py",
+            "startLine": 171,
+            "endLine": 176,
+            "module": "Plugbot"
+          },
+          {
+            "id": "File:plugos-showcase/packages/plugbot/plugbot/providers.py",
+            "name": "providers.py",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/providers.py"
+          },
+          {
+            "id": "Method:plugos-showcase/packages/plugbot/plugbot/providers.py:OpenAICompatProvider._complete_urllib#5",
+            "name": "_complete_urllib",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/providers.py",
+            "startLine": 144,
+            "endLine": 169,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Method:plugos-showcase/packages/plugbot/plugbot/providers.py:OpenAICompatProvider._scrub#1",
+            "name": "_scrub",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/providers.py",
+            "startLine": 171,
+            "endLine": 176,
+            "module": "Plugbot"
+          },
+          {
+            "id": "File:plugos-x3/packages/plugbot/plugbot/providers.py",
+            "name": "providers.py",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/providers.py"
+          },
+          {
+            "id": "Method:plugos-x3/packages/plugbot/plugbot/providers.py:OpenAICompatProvider._complete_urllib#5",
+            "name": "_complete_urllib",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/providers.py",
+            "startLine": 144,
+            "endLine": 169,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Method:plugos-x3/packages/plugbot/plugbot/providers.py:OpenAICompatProvider._scrub#1",
+            "name": "_scrub",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/providers.py",
+            "startLine": 171,
+            "endLine": 176,
+            "module": "Plugbot"
+          },
+          {
+            "id": "File:plugos-s3/packages/plugbot/plugbot/providers.py",
+            "name": "providers.py",
+            "filePath": "plugos-s3/packages/plugbot/plugbot/providers.py"
+          },
+          {
+            "id": "Method:plugos-s3/packages/plugbot/plugbot/providers.py:OpenAICompatProvider._complete_urllib#5",
+            "name": "_complete_urllib",
+            "filePath": "plugos-s3/packages/plugbot/plugbot/providers.py",
+            "startLine": 144,
+            "endLine": 169,
+            "module": "Plugbot"
+          }
+        ],
+        "timing": {
+          "vector": 5.6,
+          "bm25": 2672.2,
+          "merge": 0.2,
+          "symbol_lookup": 112.2,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2786
+        }
+      }
+    },
+    {
+      "id": "cowork-03",
+      "type": "callers",
+      "question": "Where is post_event called to update the live station feed?",
+      "query_param": "post_event",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "post_event",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls post_event during worker lifecycle transitions."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1569.9,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:ruflo-workers/tools/worker.py:post_event",
+          "name": "post_event",
+          "kind": "Function",
+          "filePath": "ruflo-workers/tools/worker.py",
+          "startLine": 41,
+          "endLine": 50
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/station_runner.py:run_loop",
+              "name": "run_loop",
+              "filePath": "ruflo-workers/station_runner.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:liveness",
+              "name": "liveness",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:audit",
+              "name": "audit",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:audit",
+              "name": "audit",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:escalate",
+              "name": "escalate",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:escalate",
+              "name": "escalate",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/supervisor.py:escalate",
+              "name": "escalate",
+              "filePath": "ruflo-workers/tools/supervisor.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:fleet_patch",
+              "name": "fleet_patch",
+              "filePath": "ruflo-workers/tools/worker.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:run_codex",
+              "name": "run_codex",
+              "filePath": "ruflo-workers/tools/worker.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:_pump",
+              "name": "_pump",
+              "filePath": "ruflo-workers/tools/worker.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:run_fleet",
+              "name": "run_fleet",
+              "filePath": "ruflo-workers/tools/worker.py"
+            },
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:run_part_as_worker",
+              "name": "run_part_as_worker",
+              "filePath": "ruflo-workers/tools/worker.py"
+            }
+          ]
+        },
+        "outgoing": {},
+        "processes": []
+      }
+    },
+    {
+      "id": "cowork-04",
+      "type": "callers",
+      "question": "Where is codegraph_context called to enrich worker prompts?",
+      "query_param": "codegraph_context",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "codegraph_context",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1645.1,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:ruflo-workers/tools/worker.py:codegraph_context",
+          "name": "codegraph_context",
+          "kind": "Function",
+          "filePath": "ruflo-workers/tools/worker.py",
+          "startLine": 53,
+          "endLine": 66
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Function:ruflo-workers/tools/worker.py:run_part_as_worker",
+              "name": "run_part_as_worker",
+              "filePath": "ruflo-workers/tools/worker.py"
+            }
+          ]
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "uid": "Function:ruflo-workers/tools/loop_driver.py:sh",
+              "name": "sh",
+              "filePath": "ruflo-workers/tools/loop_driver.py"
+            }
+          ]
+        },
+        "processes": []
+      }
+    },
+    {
+      "id": "cowork-05",
+      "type": "impact",
+      "question": "What is impacted if CONFIG path in fleet.py is moved?",
+      "query_param": "CONFIG",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "CONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "ruflo-workers/tools/fleet.py",
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 2,
+        "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1459.3,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 4 symbols matching 'CONFIG'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "CONFIG"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Const:cockpit/server.cjs:CONFIG",
+            "name": "CONFIG",
+            "kind": "",
+            "filePath": "cockpit/server.cjs",
+            "line": 22,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:ECOSPACE/cockpit/server.cjs:CONFIG",
+            "name": "CONFIG",
+            "kind": "",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "line": 22,
+            "score": 0.5
+          },
+          {
+            "uid": "Variable:ruflo-workers/tools/fleet.py:CONFIG",
+            "name": "CONFIG",
+            "kind": "",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "line": 37,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/gui-agent/operator-aio/examples/test-runner.ts:CONFIG",
+            "name": "CONFIG",
+            "kind": "",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/gui-agent/operator-aio/examples/test-runner.ts",
+            "line": 17,
+            "score": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-06",
+      "type": "impact",
+      "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+      "query_param": "RATE",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "RATE",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "RATE determines cost calculation for different AI model providers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1475.5,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 2 symbols matching 'RATE'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "RATE"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Const:cockpit/server.cjs:RATE",
+            "name": "RATE",
+            "kind": "",
+            "filePath": "cockpit/server.cjs",
+            "line": 32,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:ECOSPACE/cockpit/server.cjs:RATE",
+            "name": "RATE",
+            "kind": "",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "line": 32,
+            "score": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-07",
+      "type": "dataflow",
+      "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "dataflow",
+        "expected_targets": [
+          "cockpit/server.cjs",
+          "ruflo-workers/tools/fleet.py"
+        ],
+        "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1905.5,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js:cleanupTempDir",
+            "name": "cleanupTempDir",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "startLine": 44,
+            "endLine": 46
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js:writeConfig",
+            "name": "writeConfig",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "startLine": 48,
+            "endLine": 50
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "name": "mcp-health-check.test.js",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:startRun",
+            "name": "startRun",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 27,
+            "endLine": 36
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 38,
+            "endLine": 45
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "name": "PlugCodeProxyPage.tsx",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx"
+          },
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:startRun",
+            "name": "startRun",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 27,
+            "endLine": 36
+          },
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 38,
+            "endLine": 45
+          },
+          {
+            "id": "File:ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "name": "PlugCodeProxyPage.tsx",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:startRun",
+            "name": "startRun",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 27,
+            "endLine": 36
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 38,
+            "endLine": 45
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "name": "PlugCodeProxyPage.tsx",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx"
+          },
+          {
+            "id": "Function:ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx:startRun",
+            "name": "startRun",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 27,
+            "endLine": 36
+          },
+          {
+            "id": "Function:ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "startLine": 38,
+            "endLine": 45
+          },
+          {
+            "id": "File:ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "name": "PlugCodeProxyPage.tsx",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:readConfig",
+            "name": "readConfig",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 39,
+            "endLine": 42,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:writeConfig",
+            "name": "writeConfig",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 43,
+            "endLine": 48,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:setRunner",
+            "name": "setRunner",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 152,
+            "endLine": 158,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ECOSPACE/cockpit/server.cjs:readConfig",
+            "name": "readConfig",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 39,
+            "endLine": 42,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ECOSPACE/cockpit/server.cjs:writeConfig",
+            "name": "writeConfig",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 43,
+            "endLine": 48,
+            "module": "Cockpit"
+          }
+        ],
+        "timing": {
+          "vector": 4.8,
+          "bm25": 545.6,
+          "merge": 0.1,
+          "symbol_lookup": 71.2,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 618.4
+        }
+      }
+    },
+    {
+      "id": "cowork-08",
+      "type": "config",
+      "question": "Which environment variable configures the Cockpit server port?",
+      "query_param": "PLUGOS_COCKPIT_PORT",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "PLUGOS_COCKPIT_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4440.1,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs:controlInfo",
+            "name": "controlInfo",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs",
+            "startLine": 12,
+            "endLine": 12
+          },
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs:onCommand",
+            "name": "onCommand",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs",
+            "startLine": 13,
+            "endLine": 13
+          },
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs:openWorkspace",
+            "name": "openWorkspace",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs",
+            "startLine": 14,
+            "endLine": 14
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py:ExposureScorer.__init__#0",
+            "name": "__init__",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py",
+            "startLine": 375,
+            "endLine": 382
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py:ExposureScorer.score_open_ports#1",
+            "name": "score_open_ports",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py",
+            "startLine": 384,
+            "endLine": 401
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py:ExposureScorer.score_data_sensitivity#2",
+            "name": "score_data_sensitivity",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-attack-surface-management/scripts/agent.py",
+            "startLine": 484,
+            "endLine": 509
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py:TestParseCliArgs.test_custom_port#0",
+            "name": "test_custom_port",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py",
+            "startLine": 97,
+            "endLine": 99
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py:TestParseCliArgs.test_port_not_in_passthrough#0",
+            "name": "test_port_not_in_passthrough",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py",
+            "startLine": 119,
+            "endLine": 122
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py:_Request.__init__#4",
+            "name": "__init__",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_cloakserve.py",
+            "startLine": 152,
+            "endLine": 156
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py:PacketInjectionAgent.test_tcp_syn#1",
+            "name": "test_tcp_syn",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py",
+            "startLine": 38,
+            "endLine": 46,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py:PacketInjectionAgent.test_xmas_scan#1",
+            "name": "test_xmas_scan",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py",
+            "startLine": 48,
+            "endLine": 53,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py:PacketInjectionAgent.test_land_attack#1",
+            "name": "test_land_attack",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-packet-injection-attack/scripts/agent.py",
+            "startLine": 82,
+            "endLine": 87,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py:CredentialValidator.check_port#2",
+            "name": "check_port",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py:CredentialValidator.validate_smb#5",
+            "name": "validate_smb",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py",
+            "startLine": 168,
+            "endLine": 199
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py:CredentialValidator",
+            "name": "CredentialValidator",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/performing-authenticated-vulnerability-scan/scripts/process.py",
+            "startLine": 36,
+            "endLine": 351
+          },
+          {
+            "id": "Function:04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/main.cjs:getState",
+            "name": "getState",
+            "filePath": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/main.cjs",
+            "startLine": 39,
+            "endLine": 56,
+            "module": "Cluster_4549"
+          },
+          {
+            "id": "File:04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/main.cjs",
+            "name": "main.cjs",
+            "filePath": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/main.cjs"
+          },
+          {
+            "id": "Function:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/main.cjs:getState",
+            "name": "getState",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/main.cjs",
+            "startLine": 39,
+            "endLine": 56,
+            "module": "Cluster_5288"
+          },
+          {
+            "id": "File:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/main.cjs",
+            "name": "main.cjs",
+            "filePath": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/main.cjs"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/boot_core.py:_Api.__init__#1",
+            "name": "__init__",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/boot_core.py",
+            "startLine": 408,
+            "endLine": 410
+          }
+        ],
+        "timing": {
+          "vector": 8.5,
+          "bm25": 3004.6,
+          "merge": 0.2,
+          "symbol_lookup": 118.2,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 3125
+        }
+      }
+    },
+    {
+      "id": "cowork-09",
+      "type": "config",
+      "question": "Where are the active swarm chain configuration rules defined?",
+      "query_param": "swarm-chain.config.json",
+      "expected": {
+        "path": "ruflo-workers/swarm-chain.config.json",
+        "symbol": "swarm-chain.config.json",
+        "kind": "config",
+        "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4246.7,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-showcase/packages/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-showcase/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-showcase/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "plugos-showcase/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-x3/packages/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-x3/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-x3/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "plugos-x3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-s3/packages/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "plugos-s3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-s3/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "plugos-s3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-s3/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "plugos-s3/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-fix/packages/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "plugos-fix/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-fix/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "plugos-fix/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-fix/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_create",
+            "name": "cmd_chain_create",
+            "filePath": "plugos-fix/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 514,
+            "endLine": 531,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-ecospace/packages/plugbot/plugbot/swarm_manager.py:cmd_swarm_status",
+            "name": "cmd_swarm_status",
+            "filePath": "plugos-ecospace/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 182,
+            "endLine": 197,
+            "module": "Plugbot"
+          },
+          {
+            "id": "Function:plugos-ecospace/packages/plugbot/plugbot/swarm_manager.py:cmd_chain_list",
+            "name": "cmd_chain_list",
+            "filePath": "plugos-ecospace/packages/plugbot/plugbot/swarm_manager.py",
+            "startLine": 505,
+            "endLine": 511,
+            "module": "Plugbot"
+          }
+        ],
+        "timing": {
+          "vector": 5.7,
+          "bm25": 2804.4,
+          "merge": 0.2,
+          "symbol_lookup": 130.3,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2936.5
+        }
+      }
+    },
+    {
+      "id": "cowork-10",
+      "type": "entrypoint",
+      "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+      "query_param": "fleet",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 3888.4,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py:check_fleet_status",
+            "name": "check_fleet_status",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "startLine": 37,
+            "endLine": 53
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py:run_audit",
+            "name": "run_audit",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "startLine": 56,
+            "endLine": 83,
+            "module": "Scripts"
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "name": "agent.py",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/worker.py:fleet_patch",
+            "name": "fleet_patch",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 69,
+            "endLine": 82,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/worker.py:run_fleet",
+            "name": "run_fleet",
+            "filePath": "ruflo-workers/tools/worker.py",
+            "startLine": 164,
+            "endLine": 200,
+            "module": "Tools"
+          },
+          {
+            "id": "File:ruflo-workers/tools/worker.py",
+            "name": "worker.py",
+            "filePath": "ruflo-workers/tools/worker.py"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:upsertLane",
+            "name": "upsertLane",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 130,
+            "endLine": 150,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:laneById",
+            "name": "laneById",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 498,
+            "endLine": 498,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:cockpit/server.cjs:fleetAsk",
+            "name": "fleetAsk",
+            "filePath": "cockpit/server.cjs",
+            "startLine": 514,
+            "endLine": 519,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ECOSPACE/cockpit/server.cjs:upsertLane",
+            "name": "upsertLane",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 130,
+            "endLine": 150,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ECOSPACE/cockpit/server.cjs:laneById",
+            "name": "laneById",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 498,
+            "endLine": 498,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ECOSPACE/cockpit/server.cjs:fleetAsk",
+            "name": "fleetAsk",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "startLine": 514,
+            "endLine": 519,
+            "module": "Cockpit"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/scope_plan.py:_strongest_role",
+            "name": "_strongest_role",
+            "filePath": "ruflo-workers/tools/scope_plan.py",
+            "startLine": 78,
+            "endLine": 82,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/scope_plan.py:expand",
+            "name": "expand",
+            "filePath": "ruflo-workers/tools/scope_plan.py",
+            "startLine": 93,
+            "endLine": 114,
+            "module": "Tools"
+          },
+          {
+            "id": "File:ruflo-workers/tools/scope_plan.py",
+            "name": "scope_plan.py",
+            "filePath": "ruflo-workers/tools/scope_plan.py"
+          },
+          {
+            "id": "Function:ruflo-workers/tests/test_workspace.py:_stub_fleet_writing",
+            "name": "_stub_fleet_writing",
+            "filePath": "ruflo-workers/tests/test_workspace.py",
+            "startLine": 56,
+            "endLine": 73
+          },
+          {
+            "id": "Function:ruflo-workers/tests/test_workspace.py:run_once",
+            "name": "run_once",
+            "filePath": "ruflo-workers/tests/test_workspace.py",
+            "startLine": 76,
+            "endLine": 92,
+            "module": "Tests"
+          },
+          {
+            "id": "File:ruflo-workers/tests/test_workspace.py",
+            "name": "test_workspace.py",
+            "filePath": "ruflo-workers/tests/test_workspace.py"
+          },
+          {
+            "id": "Function:ruflo-workers/tools/fleet.py:load_lanes",
+            "name": "load_lanes",
+            "filePath": "ruflo-workers/tools/fleet.py",
+            "startLine": 106,
+            "endLine": 120,
+            "module": "Tools"
+          },
+          {
+            "id": "File:ruflo-workers/tools/fleet.py",
+            "name": "fleet.py",
+            "filePath": "ruflo-workers/tools/fleet.py"
+          }
+        ],
+        "timing": {
+          "vector": 5.4,
+          "bm25": 2521,
+          "merge": 0.1,
+          "symbol_lookup": 110.5,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2633
+        }
+      }
+    },
+    {
+      "id": "cowork-11",
+      "type": "entrypoint",
+      "question": "Where is the HTTP server listening loop for Cockpit?",
+      "query_param": "server.cjs",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "server.cjs",
+        "kind": "entrypoint",
+        "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4203.6,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts:MCPClient.load#1",
+            "name": "load",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts",
+            "startLine": 314,
+            "endLine": 345,
+            "module": "Publish"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts:MCPClient.addServer#1",
+            "name": "addServer",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts",
+            "startLine": 352,
+            "endLine": 383,
+            "module": "Publish"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts:MCPClient.updateServer#1",
+            "name": "updateServer",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts",
+            "startLine": 422,
+            "endLine": 445,
+            "module": "Publish"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/AiToEarn/project/aitoearn-backend/apps/aitoearn-server/vitest.config.mts:vitest.config",
+            "name": "vitest.config",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/AiToEarn/project/aitoearn-backend/apps/aitoearn-server/vitest.config.mts",
+            "startLine": 4,
+            "endLine": 20
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/AiToEarn/project/aitoearn-backend/apps/aitoearn-server/vitest.config.mts",
+            "name": "vitest.config.mts",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/AiToEarn/project/aitoearn-backend/apps/aitoearn-server/vitest.config.mts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py:TestMCPServer.server#0",
+            "name": "server",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py",
+            "startLine": 29,
+            "endLine": 30
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py:TestSessionManagement.server#0",
+            "name": "server",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py",
+            "startLine": 84,
+            "endLine": 85
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py:TestScreenshot.server#0",
+            "name": "server",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/ai/test_ai_mcp.py",
+            "startLine": 245,
+            "endLine": 246
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts:AgentServer.constructor#1",
+            "name": "constructor",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts",
+            "startLine": 65,
+            "endLine": 102,
+            "module": "Routes"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts:AgentServer.getHttpServer#0",
+            "name": "getHttpServer",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts",
+            "startLine": 196,
+            "endLine": 198
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts:AgentServer",
+            "name": "AgentServer",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server/src/server.ts",
+            "startLine": 36,
+            "endLine": 303
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py:TestBareProxyFormat.test_bare_credentials_not_in_server#0",
+            "name": "test_bare_credentials_not_in_server",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py",
+            "startLine": 168,
+            "endLine": 171
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py:TestIsSocksProxy.test_dict_http#0",
+            "name": "test_dict_http",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py",
+            "startLine": 214,
+            "endLine": 215
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py:TestBareProxyFormat",
+            "name": "TestBareProxyFormat",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/CloakBrowser/tests/test_proxy.py",
+            "startLine": 159,
+            "endLine": 195
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py:TestProxyRotatorCreation.test_dict_without_server_raises_error#0",
+            "name": "test_dict_without_server_raises_error",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py",
+            "startLine": 74,
+            "endLine": 77
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py:TestProxyRotatorRotation.test_get_proxy_with_dict_proxies#0",
+            "name": "test_get_proxy_with_dict_proxies",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py",
+            "startLine": 121,
+            "endLine": 131,
+            "module": "Fetchers"
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py:TestProxyRotatorRotation",
+            "name": "TestProxyRotatorRotation",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/fetchers/test_proxy_rotation.py",
+            "startLine": 96,
+            "endLine": 131
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts:AgentServerContext.get#1",
+            "name": "get",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts",
+            "startLine": 45,
+            "endLine": 45
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts:AgentServerContext.set#2",
+            "name": "set",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts",
+            "startLine": 47,
+            "endLine": 47
+          },
+          {
+            "id": "Interface:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts:AgentServerContext",
+            "name": "AgentServerContext",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/multimodal/tarko/agent-server-next/src/types.ts",
+            "startLine": 44,
+            "endLine": 49
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 2824.9,
+          "merge": 0.1,
+          "symbol_lookup": 113.3,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2939.8
+        }
+      }
+    },
+    {
+      "id": "cowork-12",
+      "type": "entrypoint",
+      "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4171.3,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.initialize_storyboard#1",
+            "name": "initialize_storyboard",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 142,
+            "endLine": 144
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.produce_assets#1",
+            "name": "produce_assets",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 146,
+            "endLine": 148
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline",
+            "name": "LinearVideoPipeline",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 65,
+            "endLine": 160,
+            "module": "Pipelines"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties.test_fingerprint_is_deterministic#0",
+            "name": "test_fingerprint_is_deterministic",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 89,
+            "endLine": 93,
+            "module": "Spiders"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties.test_fingerprint_different_urls#0",
+            "name": "test_fingerprint_different_urls",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 95,
+            "endLine": 99,
+            "module": "Spiders"
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties",
+            "name": "TestRequestProperties",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 64,
+            "endLine": 131
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:runTests",
+            "name": "runTests",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 133,
+            "endLine": 1419,
+            "module": "Hooks"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:expectDestructiveDeny",
+            "name": "expectDestructiveDeny",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 1162,
+            "endLine": 1172,
+            "module": "Hooks"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:expectAllow",
+            "name": "expectAllow",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 1174,
+            "endLine": 1187,
+            "module": "Hooks"
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/video-sdk/references/licensing-and-entitlements.md",
+            "name": "licensing-and-entitlements.md",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/video-sdk/references/licensing-and-entitlements.md"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py:V416.test_run_unavailable_lane_is_warn_not_fake#0",
+            "name": "test_run_unavailable_lane_is_warn_not_fake",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py",
+            "startLine": 49,
+            "endLine": 52
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py:V416.test_goal_compiler_produces_structure#0",
+            "name": "test_goal_compiler_produces_structure",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py",
+            "startLine": 54,
+            "endLine": 59
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:StaticMotionProvider",
+            "name": "StaticMotionProvider",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 88,
+            "endLine": 123
+          },
+          {
+            "id": "Method:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:StaticMotionProvider",
+            "name": "StaticMotionProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 88,
+            "endLine": 123
+          },
+          {
+            "id": "Method:ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          }
+        ],
+        "timing": {
+          "vector": 5.6,
+          "bm25": 2771,
+          "merge": 0.2,
+          "symbol_lookup": 106.8,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2880.1
+        }
+      }
+    },
+    {
+      "id": "cowork-13",
+      "type": "docs_notes",
+      "question": "Which document outlines the core CANON principles of the workspace?",
+      "query_param": "CANON.md",
+      "expected": {
+        "path": "CANON.md",
+        "symbol": "CANON.md",
+        "kind": "docs_notes",
+        "details": "CANON.md defines foundational operating rules and non-negotiables."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4226.6,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T1_canonical_value#0",
+            "name": "test_T1_canonical_value",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 80,
+            "endLine": 83
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T5_idempotent#0",
+            "name": "test_T5_idempotent",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 100,
+            "endLine": 103
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef",
+            "name": "TestCanonicalizeRef",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 75,
+            "endLine": 117
+          },
+          {
+            "id": "Method:plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T1_canonical_value#0",
+            "name": "test_T1_canonical_value",
+            "filePath": "plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 80,
+            "endLine": 83
+          },
+          {
+            "id": "Method:plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T5_idempotent#0",
+            "name": "test_T5_idempotent",
+            "filePath": "plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 100,
+            "endLine": 103
+          },
+          {
+            "id": "Class:plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef",
+            "name": "TestCanonicalizeRef",
+            "filePath": "plugos-ecospace/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 75,
+            "endLine": 117
+          },
+          {
+            "id": "Method:plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T1_canonical_value#0",
+            "name": "test_T1_canonical_value",
+            "filePath": "plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 80,
+            "endLine": 83
+          },
+          {
+            "id": "Method:plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T5_idempotent#0",
+            "name": "test_T5_idempotent",
+            "filePath": "plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 100,
+            "endLine": 103
+          },
+          {
+            "id": "Class:plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef",
+            "name": "TestCanonicalizeRef",
+            "filePath": "plugos-showcase/packages/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py",
+            "startLine": 75,
+            "endLine": 117
+          },
+          {
+            "id": "Function:plugos-showcase/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_vault_prefix_so_lanes_align",
+            "name": "test_canonical_strips_vault_prefix_so_lanes_align",
+            "filePath": "plugos-showcase/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 13,
+            "endLine": 16
+          },
+          {
+            "id": "Function:plugos-showcase/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_report_prefix_and_chunk_anchor",
+            "name": "test_canonical_strips_report_prefix_and_chunk_anchor",
+            "filePath": "plugos-showcase/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 19,
+            "endLine": 22
+          },
+          {
+            "id": "File:plugos-showcase/tools/brain-eval/tests/test_scoring.py",
+            "name": "test_scoring.py",
+            "filePath": "plugos-showcase/tools/brain-eval/tests/test_scoring.py"
+          },
+          {
+            "id": "Function:plugos-fix/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_vault_prefix_so_lanes_align",
+            "name": "test_canonical_strips_vault_prefix_so_lanes_align",
+            "filePath": "plugos-fix/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 13,
+            "endLine": 16
+          },
+          {
+            "id": "Function:plugos-fix/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_report_prefix_and_chunk_anchor",
+            "name": "test_canonical_strips_report_prefix_and_chunk_anchor",
+            "filePath": "plugos-fix/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 19,
+            "endLine": 22
+          },
+          {
+            "id": "File:plugos-fix/tools/brain-eval/tests/test_scoring.py",
+            "name": "test_scoring.py",
+            "filePath": "plugos-fix/tools/brain-eval/tests/test_scoring.py"
+          },
+          {
+            "id": "Function:plugos-ecospace/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_vault_prefix_so_lanes_align",
+            "name": "test_canonical_strips_vault_prefix_so_lanes_align",
+            "filePath": "plugos-ecospace/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 13,
+            "endLine": 16
+          },
+          {
+            "id": "Function:plugos-ecospace/tools/brain-eval/tests/test_scoring.py:test_canonical_strips_report_prefix_and_chunk_anchor",
+            "name": "test_canonical_strips_report_prefix_and_chunk_anchor",
+            "filePath": "plugos-ecospace/tools/brain-eval/tests/test_scoring.py",
+            "startLine": 19,
+            "endLine": 22
+          },
+          {
+            "id": "File:plugos-ecospace/tools/brain-eval/tests/test_scoring.py",
+            "name": "test_scoring.py",
+            "filePath": "plugos-ecospace/tools/brain-eval/tests/test_scoring.py"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/factory/keys.py:KeyStore.skip#1",
+            "name": "skip",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/factory/keys.py",
+            "startLine": 101,
+            "endLine": 107,
+            "module": "Factory"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/factory/keys.py:KeyStore.state#1",
+            "name": "state",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/factory/keys.py",
+            "startLine": 117,
+            "endLine": 124,
+            "module": "Factory"
+          }
+        ],
+        "timing": {
+          "vector": 6.5,
+          "bm25": 2791.3,
+          "merge": 0.3,
+          "symbol_lookup": 119.8,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2914
+        }
+      }
+    },
+    {
+      "id": "cowork-14",
+      "type": "docs_notes",
+      "question": "Which document specifies guidelines for social and video content style?",
+      "query_param": "CONTENT_STYLE_GUIDE.md",
+      "expected": {
+        "path": "CONTENT_STYLE_GUIDE.md",
+        "symbol": "CONTENT_STYLE_GUIDE.md",
+        "kind": "docs_notes",
+        "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4195,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts:IUILayer.button#2",
+            "name": "button",
+            "filePath": "ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts",
+            "startLine": 346,
+            "endLine": 346
+          },
+          {
+            "id": "Method:ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts:IUILayer.label#2",
+            "name": "label",
+            "filePath": "ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts",
+            "startLine": 348,
+            "endLine": 348
+          },
+          {
+            "id": "Interface:ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts:IUILayer",
+            "name": "IUILayer",
+            "filePath": "ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts",
+            "startLine": 340,
+            "endLine": 351
+          },
+          {
+            "id": "Method:04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:04_WORKSPACE_SANDBOX/plugbrain_v4_extract/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "04_WORKSPACE_SANDBOX/plugbrain_v4_extract/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:04_WORKSPACE_SANDBOX/plugbrain_v4_extract/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "04_WORKSPACE_SANDBOX/plugbrain_v4_extract/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          },
+          {
+            "id": "Class:plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests",
+            "name": "AgentBridgeApiTests",
+            "filePath": "plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 15,
+            "endLine": 216
+          },
+          {
+            "id": "Method:plugos-ecospace/apps/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py:AgentBridgeApiTests.test_get_agent_bridge_guide_codex_standard#0",
+            "name": "test_get_agent_bridge_guide_codex_standard",
+            "filePath": "plugos-ecospace/apps/plugmcp/deploy/_v4_ref/plugbrain/tests/test_agent_bridge_api.py",
+            "startLine": 43,
+            "endLine": 52
+          }
+        ],
+        "timing": {
+          "vector": 5.2,
+          "bm25": 2817.4,
+          "merge": 0.2,
+          "symbol_lookup": 114.2,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2933.7
+        }
+      }
+    },
+    {
+      "id": "cowork-15",
+      "type": "rename_impact",
+      "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "produce_one is called in main loop of run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1438.6,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 2 symbols matching 'produce_one'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "produce_one"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Function:shortsfactory/pipeline/run.py:produce_one",
+            "name": "produce_one",
+            "kind": "Function",
+            "filePath": "shortsfactory/pipeline/run.py",
+            "line": 12,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py:produce_one",
+            "name": "produce_one",
+            "kind": "Function",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py",
+            "line": 12,
+            "score": 0.56
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-16",
+      "type": "rename_impact",
+      "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "details": "writeConfig is called by lane and runner mutation handlers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1467.8,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 7 symbols matching 'writeConfig'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "writeConfig"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Function:cockpit/server.cjs:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "cockpit/server.cjs",
+            "line": 43,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:ECOSPACE/cockpit/server.cjs:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "line": 43,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 38,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 38,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 38,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 38,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js:writeConfig",
+            "name": "writeConfig",
+            "kind": "Function",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "line": 48,
+            "score": 0.56
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-17",
+      "type": "definition",
+      "question": "Where is the produce_one pipeline function implemented?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "symbol",
+        "details": "produces voiceover, captions, video composition, and social uploads."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4059.2,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.initialize_storyboard#1",
+            "name": "initialize_storyboard",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 142,
+            "endLine": 144
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.produce_assets#1",
+            "name": "produce_assets",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 146,
+            "endLine": 148
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline",
+            "name": "LinearVideoPipeline",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py",
+            "startLine": 65,
+            "endLine": 160,
+            "module": "Pipelines"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties.test_fingerprint_is_deterministic#0",
+            "name": "test_fingerprint_is_deterministic",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 89,
+            "endLine": 93,
+            "module": "Spiders"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties.test_fingerprint_different_urls#0",
+            "name": "test_fingerprint_different_urls",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 95,
+            "endLine": 99,
+            "module": "Spiders"
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py:TestRequestProperties",
+            "name": "TestRequestProperties",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Scrapling/tests/spiders/test_request.py",
+            "startLine": 64,
+            "endLine": 131
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:runTests",
+            "name": "runTests",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 133,
+            "endLine": 1419,
+            "module": "Hooks"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:expectDestructiveDeny",
+            "name": "expectDestructiveDeny",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 1162,
+            "endLine": 1172,
+            "module": "Hooks"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js:expectAllow",
+            "name": "expectAllow",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/gateguard-fact-force.test.js",
+            "startLine": 1174,
+            "endLine": 1187,
+            "module": "Hooks"
+          },
+          {
+            "id": "File:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/video-sdk/references/licensing-and-entitlements.md",
+            "name": "licensing-and-entitlements.md",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/video-sdk/references/licensing-and-entitlements.md"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py:V416.test_run_unavailable_lane_is_warn_not_fake#0",
+            "name": "test_run_unavailable_lane_is_warn_not_fake",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py",
+            "startLine": 49,
+            "endLine": 52
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py:V416.test_goal_compiler_produces_structure#0",
+            "name": "test_goal_compiler_produces_structure",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/swarm/tests/test_v4_16_experts.py",
+            "startLine": 54,
+            "endLine": 59
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          },
+          {
+            "id": "Class:00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:StaticMotionProvider",
+            "name": "StaticMotionProvider",
+            "filePath": "00_INPUT_PROJECTS/03_SHORTS_FACTORY/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 88,
+            "endLine": 123
+          },
+          {
+            "id": "Method:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py:StaticMotionProvider",
+            "name": "StaticMotionProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/v3/providers/base.py",
+            "startLine": 88,
+            "endLine": 123
+          },
+          {
+            "id": "Method:ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py:VideoProvider.generate#2",
+            "name": "generate",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py",
+            "startLine": 55,
+            "endLine": 64
+          },
+          {
+            "id": "Class:ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py:VideoProvider",
+            "name": "VideoProvider",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/v3/providers/base.py",
+            "startLine": 26,
+            "endLine": 64
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 2677.2,
+          "merge": 0.2,
+          "symbol_lookup": 121.3,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2800.2
+        }
+      }
+    },
+    {
+      "id": "cowork-18",
+      "type": "callers",
+      "question": "Where is synth_voiceover called in the shorts pipeline?",
+      "query_param": "synth_voiceover",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "synth_voiceover",
+        "kind": "callers",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "tts.synth_voiceover is called inside produce_one in run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1436.8,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 2 symbols matching 'synth_voiceover'. Use uid, file_path, or kind to disambiguate.",
+        "candidates": [
+          {
+            "uid": "Function:shortsfactory/pipeline/tts.py:synth_voiceover",
+            "name": "synth_voiceover",
+            "kind": "Function",
+            "filePath": "shortsfactory/pipeline/tts.py",
+            "line": 52,
+            "score": 0.56
+          },
+          {
+            "uid": "Function:ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/tts.py:synth_voiceover",
+            "name": "synth_voiceover",
+            "kind": "Function",
+            "filePath": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/tts.py",
+            "line": 52,
+            "score": 0.56
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-19",
+      "type": "definition",
+      "question": "Where is the ROLES array defined for valid fleet lane roles?",
+      "query_param": "ROLES",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "ROLES",
+        "kind": "symbol",
+        "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4108.1,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py:PermissionBoundaryAuditor.list_roles_without_boundary#0",
+            "name": "list_roles_without_boundary",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "startLine": 32,
+            "endLine": 55
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py:PermissionBoundaryAuditor.list_roles_with_boundary#0",
+            "name": "list_roles_with_boundary",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "startLine": 57,
+            "endLine": 73
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py:PermissionBoundaryAuditor.attach_boundary_to_role#2",
+            "name": "attach_boundary_to_role",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "startLine": 113,
+            "endLine": 122
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py:audit_privileged_sp_roles",
+            "name": "audit_privileged_sp_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py",
+            "startLine": 114,
+            "endLine": 136
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py:AzureGraphClient.get_directory_roles#0",
+            "name": "get_directory_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py",
+            "startLine": 64,
+            "endLine": 65
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py:AzureGraphClient.get_role_members#1",
+            "name": "get_role_members",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/detecting-azure-service-principal-abuse/scripts/agent.py",
+            "startLine": 67,
+            "endLine": 68
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py:RoleMiningEngine.evaluate_roles#1",
+            "name": "evaluate_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "startLine": 160,
+            "endLine": 199
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py:RoleMiningEngine.export_roles#1",
+            "name": "export_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "startLine": 201,
+            "endLine": 219
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py:RoleMiningEngine.generate_migration_plan#1",
+            "name": "generate_migration_plan",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "startLine": 221,
+            "endLine": 235
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py:attach_boundary_to_role",
+            "name": "attach_boundary_to_role",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py",
+            "startLine": 60,
+            "endLine": 68
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py:audit_roles_without_boundary",
+            "name": "audit_roles_without_boundary",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py",
+            "startLine": 71,
+            "endLine": 84
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py:audit_boundary_effectiveness",
+            "name": "audit_boundary_effectiveness",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/agent.py",
+            "startLine": 87,
+            "endLine": 101
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py:list_lambda_roles",
+            "name": "list_lambda_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "startLine": 8,
+            "endLine": 26,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py:check_permission_boundary",
+            "name": "check_permission_boundary",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "startLine": 68,
+            "endLine": 78,
+            "module": "Scripts"
+          },
+          {
+            "id": "Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py:full_audit",
+            "name": "full_audit",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "startLine": 114,
+            "endLine": 141,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py:BoundaryTerraformGenerator.add_role#5",
+            "name": "add_role",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py",
+            "startLine": 73,
+            "endLine": 80,
+            "module": "Scripts"
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py:BoundaryTerraformGenerator.generate_roles#0",
+            "name": "generate_roles",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py",
+            "startLine": 168,
+            "endLine": 190
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py:BoundaryAccessAuditor.check_role_grants#1",
+            "name": "check_role_grants",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-zero-trust-with-hashicorp-boundary/scripts/process.py",
+            "startLine": 251,
+            "endLine": 268
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/test_builder.py:TestPromptBuilder.test_build_without_system#0",
+            "name": "test_build_without_system",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/test_builder.py",
+            "startLine": 7,
+            "endLine": 13
+          },
+          {
+            "id": "Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/test_builder.py:TestPromptBuilder.test_build_with_system#0",
+            "name": "test_build_with_system",
+            "filePath": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/test_builder.py",
+            "startLine": 15,
+            "endLine": 24
+          }
+        ],
+        "timing": {
+          "vector": 6,
+          "bm25": 2735.7,
+          "merge": 0.2,
+          "symbol_lookup": 116,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 2853.3
+        }
+      }
+    },
+    {
+      "id": "cowork-20",
+      "type": "impact",
+      "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+      "query_param": "KEY_ALIAS",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "KEY_ALIAS",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1468.4,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 4 symbols matching 'KEY_ALIAS'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "KEY_ALIAS"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Const:cockpit/server.cjs:KEY_ALIAS",
+            "name": "KEY_ALIAS",
+            "kind": "",
+            "filePath": "cockpit/server.cjs",
+            "line": 57,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:cockpit/fleet-direct.cjs:KEY_ALIAS",
+            "name": "KEY_ALIAS",
+            "kind": "",
+            "filePath": "cockpit/fleet-direct.cjs",
+            "line": 24,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:ECOSPACE/cockpit/server.cjs:KEY_ALIAS",
+            "name": "KEY_ALIAS",
+            "kind": "",
+            "filePath": "ECOSPACE/cockpit/server.cjs",
+            "line": 57,
+            "score": 0.5
+          },
+          {
+            "uid": "Const:ECOSPACE/cockpit/fleet-direct.cjs:KEY_ALIAS",
+            "name": "KEY_ALIAS",
+            "kind": "",
+            "filePath": "ECOSPACE/cockpit/fleet-direct.cjs",
+            "line": 24,
+            "score": 0.5
+          }
+        ]
+      }
+    }
+  ]
+}

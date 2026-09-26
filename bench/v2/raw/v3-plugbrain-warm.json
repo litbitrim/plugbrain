@@ -1,0 +1,2425 @@
+{
+  "benchmark": "plugbrain-warm",
+  "timestamp": "2026-09-26T04:42:22.704Z",
+  "grandOldHits": 68,
+  "grandOldTotal": 80,
+  "grandOldAccuracy": 85,
+  "grandHoldoutHits": 38,
+  "grandHoldoutTotal": 40,
+  "grandHoldoutAccuracy": 95,
+  "grandTotalHits": 106,
+  "grandTotal": 120,
+  "grandTotalAccuracy": 88.3,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 33,
+  "latencyP95": 274.8,
+  "repos": [
+    {
+      "repo": "mcpz",
+      "oldHits": 15,
+      "oldTotal": 20,
+      "oldAccuracy": 75,
+      "holdoutHits": 8,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 80,
+      "totalHits": 23,
+      "totalCount": 30,
+      "totalAccuracy": 76.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 51.4,
+      "latencyOldP95": 327,
+      "latencyHoldoutP50": 50.5,
+      "latencyHoldoutP95": 165.3,
+      "latencyAllP50": 50.6,
+      "latencyAllP95": 327,
+      "questions": [
+        {
+          "id": "mcpz-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the MOD_ID constant defined for MCPZ?",
+          "query_param": "MOD_ID",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzConstants.java",
+            "symbol": "MOD_ID",
+            "kind": "symbol",
+            "details": "McpzConstants defines public static final String MOD_ID = \"mcpz\"."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 728.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MOD_ID\",\"symbols\":[{\"id\":1114,\"name\":\"MOD_ID\",\"kind\":\"constant\",\"file\":\"src/main/java/net/mcpz/McpzConstants.java\",\"line\":5,\"endLine\":5,\"exported\":tru"
+        },
+        {
+          "id": "mcpz-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where are the default camera settings defined in CameraConfig?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "CameraConfig",
+            "kind": "symbol",
+            "details": "CameraConfig record defining defaults() and from(McpzConfig cfg)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 56.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CameraConfig\",\"symbols\":[{\"id\":1821,\"name\":\"CameraConfig\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"line\":9,\"endLine\":9"
+        },
+        {
+          "id": "mcpz-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Which method initializes the client runtime McpzRuntime.init?",
+          "query_param": "init",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "onInitializeClient",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java"
+            ],
+            "details": "McpzClient.onInitializeClient calls McpzRuntime.init(cfg)."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 1.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"ambiguous\",\"candidates\":[{\"id\":1623,\"name\":\"init\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/save/McpzSaveData.java\",\"line\":48,\"endLine\":48,\"exported\":true,\"container\":\"McpzSaveData\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},{\"id\":1912,\"name\":\"init\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/McpzRuntime.java\",\"line\":68,\"endLine\":68,\"exported\""
+        },
+        {
+          "id": "mcpz-04",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is camera.keyRotateLeft bound in the client?",
+          "query_param": "registerKeybindings",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "registerKeybindings",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java"
+            ],
+            "details": "McpzClient.registerKeybindings sets cam.keyRotateLeft = bind(...)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1900,\"name\":\"registerKeybindings\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"line\":87,\"endLine\":87,\"exported\":false,\"container\":\"McpzClient\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\""
+        },
+        {
+          "id": "mcpz-05",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if McpzConstants.FLOOR_HEIGHT_BLOCKS is changed?",
+          "query_param": "FLOOR_HEIGHT_BLOCKS",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzConstants.java",
+            "symbol": "FLOOR_HEIGHT_BLOCKS",
+            "kind": "impact",
+            "expected_targets": [
+              "src/main/java/net/mcpz/McpzMod.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "expected_count": 2,
+            "details": "McpzMod logs it at startup and camera floor tracking calculates floor transitions."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 8.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"FLOOR_HEIGHT_BLOCKS\",\"file\":\"src/main/java/net/mcpz/McpzConstants.java\",\"id\":1121},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
+        },
+        {
+          "id": "mcpz-06",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if CameraConfig is modified?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "CameraConfig",
+            "kind": "impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/McpzRuntime.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "expected_count": 3,
+            "details": "CameraConfig is passed from McpzClient into McpzRuntime and McpzCameraController."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 33.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"CameraConfig\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"id\":1821},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":258,\"nodes\":{\"1\":[{\"depth\":1,\"id\":-136,\"name\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"kind\":\"file\",\"file\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.72"
+        },
+        {
+          "id": "mcpz-07",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How do camera configuration values flow from config files into runtime camera behavior?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "onInitializeClient",
+            "kind": "dataflow",
+            "expected_targets": [
+              "src/main/java/net/mcpz/config/McpzConfig.java",
+              "src/main/java/net/mcpz/camera/CameraConfig.java",
+              "src/client/java/net/mcpz/client/McpzRuntime.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "details": "McpzConfig.load -> CameraConfig.from -> McpzRuntime.init -> new McpzCameraController(cfg)."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 51.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CameraConfig\",\"symbols\":[{\"id\":1821,\"name\":\"CameraConfig\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"line\":9,\"endLine\":9"
+        },
+        {
+          "id": "mcpz-08",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which config key controls the default isometric camera yaw?",
+          "query_param": "cameraYawDefaultDegrees",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "cameraYawDefaultDegrees",
+            "kind": "config",
+            "details": "CameraConfig reads cfg.getDouble(\"cameraYawDefaultDegrees\")."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 52.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"cameraYawDefaultDegrees\",\"symbols\":[],\"notes\":[{\"path\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"title\":\"CameraConfig.java\",\"snippet\":\"… cfg)"
+        },
+        {
+          "id": "mcpz-09",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the common Fabric ModInitializer entrypoint located?",
+          "query_param": "McpzMod",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzMod.java",
+            "symbol": "McpzMod",
+            "kind": "entrypoint",
+            "details": "McpzMod implements ModInitializer with onInitialize()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 56.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzMod\",\"symbols\":[{\"id\":1124,\"name\":\"McpzMod\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/McpzMod.java\",\"line\":19,\"endLine\":19,\"exported\":true,\"co"
+        },
+        {
+          "id": "mcpz-10",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the client-only Fabric ClientModInitializer entrypoint located?",
+          "query_param": "McpzClient",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "McpzClient",
+            "kind": "entrypoint",
+            "details": "McpzClient implements ClientModInitializer with onInitializeClient()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 62.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzClient\",\"symbols\":[{\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"line\":45,\"endLine\":45,\""
+        },
+        {
+          "id": "mcpz-11",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document describes the overarching Northstar architecture and requirements?",
+          "query_param": "MASTER_NORTHSTAR.md",
+          "expected": {
+            "path": "MASTER_NORTHSTAR.md",
+            "symbol": "MASTER_NORTHSTAR.md",
+            "kind": "docs_notes",
+            "details": "MASTER_NORTHSTAR.md contains full architectural plan and acceptance criteria."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 211.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MASTER_NORTHSTAR.md\",\"symbols\":[{\"id\":-11,\"name\":\"MASTER_NORTHSTAR.md\",\"kind\":\"file\",\"file\":\"MASTER_NORTHSTAR.md\",\"line\":1,\"endLine\":1,\"exported\":true"
+        },
+        {
+          "id": "mcpz-12",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document details the detached isometric camera design and specification?",
+          "query_param": "MASTER_CAMERA_PLAN.md",
+          "expected": {
+            "path": "MASTER_CAMERA_PLAN.md",
+            "symbol": "MASTER_CAMERA_PLAN.md",
+            "kind": "docs_notes",
+            "details": "MASTER_CAMERA_PLAN.md specifies camera controls, math, zoom, and floor clipping."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 274.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MASTER_CAMERA_PLAN.md\",\"symbols\":[{\"id\":-6,\"name\":\"MASTER_CAMERA_PLAN.md\",\"kind\":\"file\",\"file\":\"MASTER_CAMERA_PLAN.md\",\"line\":1,\"endLine\":1,\"exported\""
+        },
+        {
+          "id": "mcpz-13",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if McpzRuntime.camera() accessor is renamed?",
+          "query_param": "camera",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "symbol": "camera",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/mixin/CameraMixin.java"
+            ],
+            "details": "McpzClient and CameraMixin call rt.camera()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 35.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"camera\",\"file\":\"src/client/java/net/mcpz/client/McpzRuntime.java\",\"id\":1914},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":235,\"nodes\":{\"1\":[{\"depth\":1,\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":2141,\"name\":\"Mc"
+        },
+        {
+          "id": "mcpz-14",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if derive_evidence_class is renamed in python tooling?",
+          "query_param": "derive_evidence_class",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "derive_evidence_class",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "tools/vlm-qa/mcpz_vlm/evidence.py"
+            ],
+            "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 30.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"derive_evidence_class\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"id\":280},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":10,\"nodes\":{\"1\":[{\"depth\":1,\"id\":282,\"name\":\"write_manifest\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":442,\"name\":\"test_os_input_"
+        },
+        {
+          "id": "mcpz-15",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is derive_evidence_class implemented in the python test harness?",
+          "query_param": "derive_evidence_class",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "derive_evidence_class",
+            "kind": "symbol",
+            "details": "evidence.py defines derive_evidence_class(input_source, vision_assessed)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 327,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"derive_evidence_class\",\"symbols\":[{\"id\":280,\"name\":\"derive_evidence_class\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"line\":43,\"end"
+        },
+        {
+          "id": "mcpz-16",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is validate_manifest called in the VLM test harness?",
+          "query_param": "validate_manifest",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "validate_manifest",
+            "kind": "callers",
+            "expected_targets": [
+              "tools/vlm-qa/mcpz_vlm/cli.py"
+            ],
+            "details": "cli.py calls validate_manifest when checking run manifests."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":281,\"name\":\"validate_manifest\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"line\":50,\"endLine\":50,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":274,\"name\":\"_cmd_check\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/cli.py\",\"line\":94,\"rawTarget\":\"validate_manifest\"}"
+        },
+        {
+          "id": "mcpz-17",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is McpzAtmosphereController defined?",
+          "query_param": "McpzAtmosphereController",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "symbol": "McpzAtmosphereController",
+            "kind": "symbol",
+            "details": "Atmosphere controller managing weather, fog, and lighting overrides."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 51.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzAtmosphereController\",\"symbols\":[{\"id\":2846,\"name\":\"McpzAtmosphereController\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/atmosphere/Mc"
+        },
+        {
+          "id": "mcpz-18",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if McpzControlMap.ROTATE_LEFT key name is changed?",
+          "query_param": "ROTATE_LEFT",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/input/McpzControlMap.java",
+            "symbol": "ROTATE_LEFT",
+            "kind": "impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/input/McpzKeybindStore.java"
+            ],
+            "expected_count": 2,
+            "details": "ROTATE_LEFT is referenced in McpzClient for keybinding registration and McpzKeybindStore."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 7.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"ROTATE_LEFT\",\"file\":\"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\"id\":2648},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
+        },
+        {
+          "id": "mcpz-19",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the MinecraftItemRepresentationRegistry class defined?",
+          "query_param": "MinecraftItemRepresentationRegistry",
+          "expected": {
+            "path": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "symbol": "MinecraftItemRepresentationRegistry",
+            "kind": "symbol",
+            "details": "Class adapting Project Zomboid item concepts to vanilla Minecraft item registries."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 53.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MinecraftItemRepresentationRegistry\",\"symbols\":[{\"id\":1693,\"name\":\"MinecraftItemRepresentationRegistry\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/"
+        },
+        {
+          "id": "mcpz-20",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is McpzLog.get called to obtain subsystem loggers?",
+          "query_param": "McpzLog",
+          "expected": {
+            "path": "src/main/java/net/mcpz/log/McpzLog.java",
+            "symbol": "get",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "details": "McpzClient and McpzCameraController obtain scoped loggers via McpzLog.get()."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1690,\"name\":\"McpzLog\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/log/McpzLog.java\",\"line\":10,\"endLine\":10,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":1690,\"name\":\"McpzLog\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/log/McpzLog.java\",\"line\":11,\"rawTarget\":\"McpzLog\"}],\"referen"
+        },
+        {
+          "id": "mcpz-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the PzTrait record defined for selectable character traits?",
+          "query_param": "PzTrait",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzTrait.java",
+            "symbol": "PzTrait",
+            "kind": "symbol",
+            "details": "PzTrait record defining character trait properties: id, displayName, cost, kind, description, exclusiveWith."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 51.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PzTrait\",\"symbols\":[{\"id\":1804,\"name\":\"PzTrait\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/character/PzTrait.java\",\"line\":14,\"endLine\":14,\"exported"
+        },
+        {
+          "id": "mcpz-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the costLabel method defined for formatting trait cost strings?",
+          "query_param": "costLabel",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzTrait.java",
+            "symbol": "costLabel",
+            "kind": "symbol",
+            "details": "costLabel returns +cost for negatives and -cost for positives."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 48.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"costLabel\",\"symbols\":[{\"id\":1782,\"name\":\"costLabel\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/character/PzStep2Layout.java\",\"line\":170,\"endLine\":"
+        },
+        {
+          "id": "mcpz-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the PzProfession record defined for character occupations?",
+          "query_param": "PzProfession",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzProfession.java",
+            "symbol": "PzProfession",
+            "kind": "symbol",
+            "details": "PzProfession record defining id, displayName, startingPoints, freeTraitIds, description."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 49.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PzProfession\",\"symbols\":[{\"id\":1754,\"name\":\"PzProfession\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/character/PzProfession.java\",\"line\":11,\"endLin"
+        },
+        {
+          "id": "mcpz-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the ModuleRegistry class defined for MCPZ initialization backbone?",
+          "query_param": "ModuleRegistry",
+          "expected": {
+            "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+            "symbol": "ModuleRegistry",
+            "kind": "symbol",
+            "details": "ModuleRegistry registers and initializes MCPZ modules in deterministic order."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 50.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ModuleRegistry\",\"symbols\":[{\"id\":1682,\"name\":\"ModuleRegistry\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/module/ModuleRegistry.java\",\"line\":16,\"end"
+        },
+        {
+          "id": "mcpz-holdout-05",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is ModuleRegistry.initializeAll called during server/mod initialization?",
+          "query_param": "initializeAll",
+          "expected": {
+            "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+            "symbol": "initializeAll",
+            "kind": "callers",
+            "expected_targets": [
+              "src/main/java/net/mcpz/McpzMod.java"
+            ],
+            "details": "McpzMod calls ModuleRegistry.initializeAll() during mod setup."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1685,\"name\":\"initializeAll\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/module/ModuleRegistry.java\",\"line\":34,\"endLine\":34,\"exported\":true,\"container\":\"ModuleRegistry\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[],\"references\":[]},\"processes\":[]}}"
+        },
+        {
+          "id": "mcpz-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is SaveSchema defined for save version validation constants and helpers?",
+          "query_param": "SaveSchema",
+          "expected": {
+            "path": "src/main/java/net/mcpz/save/SaveSchema.java",
+            "symbol": "SaveSchema",
+            "kind": "symbol",
+            "details": "SaveSchema defines CURRENT version and DATA_ID helper."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 55.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"SaveSchema\",\"symbols\":[{\"id\":1630,\"name\":\"SaveSchema\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/save/SaveSchema.java\",\"line\":6,\"endLine\":6,\"export"
+        },
+        {
+          "id": "mcpz-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is AimTargetSnapshot defined for raycast hit results?",
+          "query_param": "AimTargetSnapshot",
+          "expected": {
+            "path": "src/main/java/net/mcpz/target/AimTargetSnapshot.java",
+            "symbol": "AimTargetSnapshot",
+            "kind": "symbol",
+            "details": "AimTargetSnapshot record stores immutable cursor raycast hit data in world space."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 56.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"AimTargetSnapshot\",\"symbols\":[],\"notes\":[{\"path\":\"src/test/java/net/mcpz/McpzPlacementAssistTest.java\",\"title\":\"McpzPlacementAssistTest.java\",\"snippet"
+        },
+        {
+          "id": "mcpz-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is clampBrightness implemented in McpzAtmosphereController?",
+          "query_param": "clampBrightness",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "symbol": "clampBrightness",
+            "kind": "symbol",
+            "details": "clampBrightness clamps exposure multiplier between 0.1 and 3.0."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 50.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"clampBrightness\",\"symbols\":[{\"id\":2858,\"name\":\"clampBrightness\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereContr"
+        },
+        {
+          "id": "mcpz-holdout-09",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is HALF_HEIGHT_FACTOR defined for isometric camera orthographic visible scale?",
+          "query_param": "HALF_HEIGHT_FACTOR",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+            "symbol": "HALF_HEIGHT_FACTOR",
+            "kind": "symbol",
+            "details": "CameraProjection defines static final double HALF_HEIGHT_FACTOR = 0.55."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 165.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"HALF_HEIGHT_FACTOR\",\"symbols\":[{\"id\":1838,\"name\":\"HALF_HEIGHT_FACTOR\",\"kind\":\"constant\",\"file\":\"src/main/java/net/mcpz/camera/CameraProjection.java\",\""
+        },
+        {
+          "id": "mcpz-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if CameraProjection.orthographic projection logic is changed?",
+          "query_param": "orthographic",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+            "symbol": "orthographic",
+            "kind": "impact",
+            "expected_targets": [
+              "src/test/java/net/mcpz/CameraMathTest.java",
+              "src/test/java/net/mcpz/RaycastTest.java"
+            ],
+            "details": "CameraMathTest and RaycastTest rely on CameraProjection.orthographic for projection math."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 31.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"orthographic\",\"file\":\"src/main/java/net/mcpz/camera/CameraProjection.java\",\"id\":1839},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":43,\"nodes\":{\"1\":[{\"depth\":1,\"id\":528,\"name\":\"CameraMathTest\",\"kind\":\"class\",\"file\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":927,\"name"
+        }
+      ]
+    },
+    {
+      "repo": "plugmedia",
+      "oldHits": 19,
+      "oldTotal": 20,
+      "oldAccuracy": 95,
+      "holdoutHits": 10,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 100,
+      "totalHits": 29,
+      "totalCount": 30,
+      "totalAccuracy": 96.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 13.1,
+      "latencyOldP95": 41.9,
+      "latencyHoldoutP50": 12.9,
+      "latencyHoldoutP95": 31.7,
+      "latencyAllP50": 13.1,
+      "latencyAllP95": 41.9,
+      "questions": [
+        {
+          "id": "plugmedia-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+          "query_param": "SCHEMA_VERSION",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "SCHEMA_VERSION",
+            "kind": "symbol",
+            "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 41.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"SCHEMA_VERSION\",\"symbols\":[{\"id\":9216,\"name\":\"SCHEMA_VERSION\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/index.ts\",\"line\":5,\"endLine\":5,\"exporte"
+        },
+        {
+          "id": "plugmedia-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where are the four QA review axes (QA_AXES) defined?",
+          "query_param": "QA_AXES",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "QA_AXES",
+            "kind": "symbol",
+            "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 19.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"QA_AXES\",\"symbols\":[{\"id\":9218,\"name\":\"QA_AXES\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/index.ts\",\"line\":16,\"endLine\":16,\"exported\":true,\"con"
+        },
+        {
+          "id": "plugmedia-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Which module calls topoSort for compute DAG sorting?",
+          "query_param": "topoSort",
+          "expected": {
+            "path": "packages/graph/src/compute/topo.ts",
+            "symbol": "topoSort",
+            "kind": "callers",
+            "expected_targets": [
+              "tests/graph.test.ts"
+            ],
+            "details": "topoSort performs topological sorting on graph execution DAGs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":9207,\"name\":\"topoSort\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/topo.ts\",\"line\":7,\"endLine\":25,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"graph.test.ts\",\"kind\":\"file\",\"file\":\"tests/graph.test.ts\",\"line\":27,\"rawTarget\":\"topoSort\"},{\"id\":null,\"name\":\"graph."
+        },
+        {
+          "id": "plugmedia-04",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the CycleError class defined for DAG cycles?",
+          "query_param": "CycleError",
+          "expected": {
+            "path": "packages/graph/src/compute/topo.ts",
+            "symbol": "CycleError",
+            "kind": "symbol",
+            "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 15.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CycleError\",\"symbols\":[{\"id\":9205,\"name\":\"CycleError\",\"kind\":\"class\",\"file\":\"packages/graph/src/compute/topo.ts\",\"line\":2,\"endLine\":5,\"exported\":true,"
+        },
+        {
+          "id": "plugmedia-05",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is casPath defined for locating content-addressed files?",
+          "query_param": "casPath",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "casPath",
+            "kind": "symbol",
+            "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 12.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"casPath\",\"symbols\":[{\"id\":7270,\"name\":\"casPath\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":30,\"endLine\":32,\"exported\":true,\"contain"
+        },
+        {
+          "id": "plugmedia-06",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is storeContent called in the runtime domains?",
+          "query_param": "storeContent",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "storeContent",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/domain/media.ts"
+            ],
+            "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":48,\"endLine\":83,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":8253,\"name\":\"commitArtifact\",\"kind\":\"function\",\"file\":\"services/runtime/src/domain/media.ts\",\"line\":69,\"rawTarget\":\"storeContent\"}],"
+        },
+        {
+          "id": "plugmedia-07",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if PGCONFIG default port is changed?",
+          "query_param": "PGCONFIG",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "PGCONFIG",
+            "kind": "impact",
+            "expected_targets": [
+              "services/runtime/src/db.ts",
+              "services/runtime/src/index.ts"
+            ],
+            "expected_count": 2,
+            "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 2.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"PGCONFIG\",\"file\":\"services/runtime/src/db.ts\",\"id\":7307},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
+        },
+        {
+          "id": "plugmedia-08",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+          "query_param": "SCHEMA_VERSION",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "SCHEMA_VERSION",
+            "kind": "impact",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "expected_count": 2,
+            "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 5.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"SCHEMA_VERSION\",\"file\":\"packages/contracts/src/index.ts\",\"id\":9216},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":79,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7297,\"name\":\"Handler\",\"kind\":\"type_alias\",\"file\":\"services/runtime/src/commands.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":7299,\"name\":\"register\""
+        },
+        {
+          "id": "plugmedia-09",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How does content storage flow from raw file stream to CAS destination?",
+          "query_param": "storeContent",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "storeContent",
+            "kind": "dataflow",
+            "expected_targets": [
+              "services/runtime/src/cas.ts"
+            ],
+            "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 14.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"storeContent\",\"symbols\":[{\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":48,\"endLine\":83,\"exported\":tru"
+        },
+        {
+          "id": "plugmedia-10",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which environment variable overrides the HTTP server port?",
+          "query_param": "PLUGMEDIA_PORT",
+          "expected": {
+            "path": "services/runtime/src/index.ts",
+            "symbol": "PLUGMEDIA_PORT",
+            "kind": "config",
+            "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 33,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUGMEDIA_PORT\",\"symbols\":[{\"id\":7362,\"name\":\"PLUGMEDIA_PORT\",\"kind\":\"constant\",\"file\":\"services/runtime/src/index.ts\",\"line\":36,\"endLine\":36,\"exporte"
+        },
+        {
+          "id": "plugmedia-11",
+          "isHoldout": false,
+          "type": "config",
+          "question": "What is the default PostgreSQL database port configured in db.ts?",
+          "query_param": "PGPORT",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "PGCONFIG",
+            "kind": "config",
+            "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 11.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PGPORT\",\"symbols\":[{\"id\":7309,\"name\":\"PGPORT\",\"kind\":\"constant\",\"file\":\"services/runtime/src/db.ts\",\"line\":15,\"endLine\":15,\"exported\":true,\"container\""
+        },
+        {
+          "id": "plugmedia-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+          "query_param": "Fastify",
+          "expected": {
+            "path": "services/runtime/src/index.ts",
+            "symbol": "app",
+            "kind": "entrypoint",
+            "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 14.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"Fastify\",\"symbols\":[],\"notes\":[{\"path\":\"package.json\",\"title\":\"package.json\",\"snippet\":\"… 3\\\", \\\"vite\\\": \\\"^8.3.0\\\" }, \\\"dependencies\\\": { \\\"@[fastify"
+        },
+        {
+          "id": "plugmedia-13",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the CLI command entrypoint for PlugMedia?",
+          "query_param": "main",
+          "expected": {
+            "path": "apps/cli/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 26.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"main\",\"symbols\":[{\"id\":6377,\"name\":\"main\",\"kind\":\"function\",\"file\":\"workers/media/d1_characters.py\",\"line\":430,\"endLine\":430,\"exported\":true,\"containe"
+        },
+        {
+          "id": "plugmedia-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document contains the final architecture and verification report for VS0?",
+          "query_param": "VS0_FINAL_REPORT.md",
+          "expected": {
+            "path": "VS0_FINAL_REPORT.md",
+            "symbol": "VS0_FINAL_REPORT.md",
+            "kind": "docs_notes",
+            "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 44.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"VS0_FINAL_REPORT.md\",\"symbols\":[{\"id\":-922,\"name\":\"VS0_FINAL_REPORT.md\",\"kind\":\"file\",\"file\":\"VS0_FINAL_REPORT.md\",\"line\":1,\"endLine\":1,\"exported\":tru"
+        },
+        {
+          "id": "plugmedia-15",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document lists the archive manifest and quarantine inventory?",
+          "query_param": "ARCHIVE_MANIFEST.md",
+          "expected": {
+            "path": "ARCHIVE_MANIFEST.md",
+            "symbol": "ARCHIVE_MANIFEST.md",
+            "kind": "docs_notes",
+            "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 38.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ARCHIVE_MANIFEST.md\",\"symbols\":[{\"id\":-918,\"name\":\"ARCHIVE_MANIFEST.md\",\"kind\":\"file\",\"file\":\"ARCHIVE_MANIFEST.md\",\"line\":1,\"endLine\":1,\"exported\":tru"
+        },
+        {
+          "id": "plugmedia-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if ensureCas is renamed in cas.ts?",
+          "query_param": "ensureCas",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "ensureCas",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "services/runtime/src/cas.ts"
+            ],
+            "details": "ensureCas is called inside storeContent and registerContent."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 4.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"ensureCas\",\"file\":\"services/runtime/src/cas.ts\",\"id\":7269},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":12,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9}],\"2\":[{\"depth\":2,\"id\":8253,\"name\":\"commitArtifact\",\"kind\":\"functio"
+        },
+        {
+          "id": "plugmedia-17",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if applyMigrations function is renamed?",
+          "query_param": "applyMigrations",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "applyMigrations",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "services/runtime/src/db.ts"
+            ],
+            "details": "applyMigrations executes database schema migrations."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 4.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"applyMigrations\",\"file\":\"services/runtime/src/db.ts\",\"id\":7322},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":27,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7151,\"name\":\"migrate\",\"kind\":\"function\",\"file\":\"tools/admin/plug-admin.mjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":8553,\"name\":\"restore\",\"kind\":\"function\",\"file\":\"ser"
+        },
+        {
+          "id": "plugmedia-18",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the durable schedulerTick function defined?",
+          "query_param": "schedulerTick",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "schedulerTick",
+            "kind": "symbol",
+            "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 13.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"schedulerTick\",\"symbols\":[{\"id\":7631,\"name\":\"schedulerTick\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/scheduler.ts\",\"line\":215,\"endLine\":2"
+        },
+        {
+          "id": "plugmedia-19",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is the command dispatcher register function called to wire media commands?",
+          "query_param": "register",
+          "expected": {
+            "path": "services/runtime/src/commands.ts",
+            "symbol": "register",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7299,\"name\":\"register\",\"kind\":\"function\",\"file\":\"services/runtime/src/commands.ts\",\"line\":12,\"endLine\":12,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"index.ts\",\"kind\":\"file\",\"file\":\"services/runtime/src/index.ts\",\"line\":52,\"rawTarget\":\"register\"},{\"id\":null,\"name\":\"in"
+        },
+        {
+          "id": "plugmedia-20",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+          "query_param": "ALLOWED_ORIGINS",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "ALLOWED_ORIGINS",
+            "kind": "symbol",
+            "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 18.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ALLOWED_ORIGINS\",\"symbols\":[{\"id\":7225,\"name\":\"ALLOWED_ORIGINS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/auth.ts\",\"line\":24,\"endLine\":28,\"export"
+        },
+        {
+          "id": "plugmedia-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is ALLOWED_ORIGINS defined for CORS and loopback security in PlugMedia runtime?",
+          "query_param": "ALLOWED_ORIGINS",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "ALLOWED_ORIGINS",
+            "kind": "symbol",
+            "details": "ALLOWED_ORIGINS defines whitelist of allowed HTTP origins."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 17.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ALLOWED_ORIGINS\",\"symbols\":[{\"id\":7225,\"name\":\"ALLOWED_ORIGINS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/auth.ts\",\"line\":24,\"endLine\":28,\"export"
+        },
+        {
+          "id": "plugmedia-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the issueCapability function defined for media read capabilities?",
+          "query_param": "issueCapability",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "issueCapability",
+            "kind": "symbol",
+            "details": "issueCapability generates signed HMAC capabilities for artifact reads."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 13.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"issueCapability\",\"symbols\":[{\"id\":7234,\"name\":\"issueCapability\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":48,\"endLine\":55,\"export"
+        },
+        {
+          "id": "plugmedia-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the verifyCapability function defined to check artifact access permissions?",
+          "query_param": "verifyCapability",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "verifyCapability",
+            "kind": "symbol",
+            "details": "verifyCapability validates signed HMAC capabilities against expiry and artifact ID."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 12.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"verifyCapability\",\"symbols\":[{\"id\":7240,\"name\":\"verifyCapability\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":57,\"endLine\":67,\"expo"
+        },
+        {
+          "id": "plugmedia-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is csrfGuard defined to enforce the x-plugmedia-client header on mutating requests?",
+          "query_param": "csrfGuard",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "csrfGuard",
+            "kind": "symbol",
+            "details": "csrfGuard checks for presence of 'plugmedia-client/1' on mutating requests."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 12.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"csrfGuard\",\"symbols\":[{\"id\":7263,\"name\":\"csrfGuard\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":124,\"endLine\":128,\"exported\":true,\""
+        },
+        {
+          "id": "plugmedia-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is DEFAULT_CATCHUP_WINDOW_HOURS defined for the durable scheduler?",
+          "query_param": "DEFAULT_CATCHUP_WINDOW_HOURS",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "DEFAULT_CATCHUP_WINDOW_HOURS",
+            "kind": "symbol",
+            "details": "DEFAULT_CATCHUP_WINDOW_HOURS = 24 sets maximum late-fire window for due slots."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 31.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_CATCHUP_WINDOW_HOURS\",\"symbols\":[{\"id\":7597,\"name\":\"DEFAULT_CATCHUP_WINDOW_HOURS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/engine/schedu"
+        },
+        {
+          "id": "plugmedia-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the computeNodeCacheKey function defined for compute DAG caching?",
+          "query_param": "computeNodeCacheKey",
+          "expected": {
+            "path": "packages/graph/src/compute/cacheKey.ts",
+            "symbol": "computeNodeCacheKey",
+            "kind": "symbol",
+            "details": "computeNodeCacheKey computes canonical sha256 hash of node execution inputs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 12.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"computeNodeCacheKey\",\"symbols\":[{\"id\":9201,\"name\":\"computeNodeCacheKey\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/cacheKey.ts\",\"line\":27,\"e"
+        },
+        {
+          "id": "plugmedia-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the NODE_VERSIONS map defined for tracking local compute node implementations?",
+          "query_param": "NODE_VERSIONS",
+          "expected": {
+            "path": "packages/graph/src/compute/nodeVersions.ts",
+            "symbol": "NODE_VERSIONS",
+            "kind": "symbol",
+            "details": "NODE_VERSIONS maps node identifiers to implementation versions."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 22.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"NODE_VERSIONS\",\"symbols\":[{\"id\":9203,\"name\":\"NODE_VERSIONS\",\"kind\":\"constant\",\"file\":\"packages/graph/src/compute/nodeVersions.ts\",\"line\":13,\"endLine\":"
+        },
+        {
+          "id": "plugmedia-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is implementationDigest defined to hash compute node version signatures?",
+          "query_param": "implementationDigest",
+          "expected": {
+            "path": "packages/graph/src/compute/nodeVersions.ts",
+            "symbol": "implementationDigest",
+            "kind": "symbol",
+            "details": "implementationDigest creates sha256 prefix from sorted node version tuples."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 14.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"implementationDigest\",\"symbols\":[{\"id\":9204,\"name\":\"implementationDigest\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/nodeVersions.ts\",\"line\""
+        },
+        {
+          "id": "plugmedia-holdout-09",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is schedulerTick called in the runtime service?",
+          "query_param": "schedulerTick",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "schedulerTick",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "details": "services/runtime/src/index.ts invokes schedulerTick to run periodic queue maintenance."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7631,\"name\":\"schedulerTick\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/scheduler.ts\",\"line\":215,\"endLine\":235,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":7421,\"name\":\"schedulerLoop\",\"kind\":\"function\",\"file\":\"services/runtime/src/index.ts\",\"line\":373,\"rawTarget\":\"schedul"
+        },
+        {
+          "id": "plugmedia-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if computeNodeCacheKey in cacheKey.ts is modified?",
+          "query_param": "computeNodeCacheKey",
+          "expected": {
+            "path": "packages/graph/src/compute/cacheKey.ts",
+            "symbol": "computeNodeCacheKey",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/graph/src/compute/cacheKey.ts"
+            ],
+            "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 5.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"computeNodeCacheKey\",\"file\":\"packages/graph/src/compute/cacheKey.ts\",\"id\":9201},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":44,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7760,\"name\":\"processJob\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/worker.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":-954,\"name\":\"tests/gr"
+        }
+      ]
+    },
+    {
+      "repo": "cowork",
+      "oldHits": 18,
+      "oldTotal": 20,
+      "oldAccuracy": 90,
+      "holdoutHits": 10,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 100,
+      "totalHits": 28,
+      "totalCount": 30,
+      "totalAccuracy": 93.3,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 26.3,
+      "latencyOldP95": 105.5,
+      "latencyHoldoutP50": 20.8,
+      "latencyHoldoutP95": 60.4,
+      "latencyAllP50": 20.9,
+      "latencyAllP95": 105.5,
+      "questions": [
+        {
+          "id": "cowork-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+          "query_param": "DEFAULT_LANES",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "DEFAULT_LANES",
+            "kind": "symbol",
+            "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 45.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_LANES\",\"symbols\":[{\"id\":10840,\"name\":\"DEFAULT_LANES\",\"kind\":\"constant\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":43,\"endLine\":43,\"exported\""
+        },
+        {
+          "id": "cowork-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the scrub function defined to remove API keys from output?",
+          "query_param": "scrub",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "scrub",
+            "kind": "symbol",
+            "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 26.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"scrub\",\"symbols\":[{\"id\":10842,\"name\":\"scrub\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":59,\"endLine\":59,\"exported\":true,\"container"
+        },
+        {
+          "id": "cowork-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is post_event called to update the live station feed?",
+          "query_param": "post_event",
+          "expected": {
+            "path": "ruflo-workers/tools/worker.py",
+            "symbol": "post_event",
+            "kind": "callers",
+            "expected_targets": [
+              "ruflo-workers/tools/worker.py"
+            ],
+            "details": "worker.py calls post_event during worker lifecycle transitions."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10970,\"name\":\"post_event\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":42,\"endLine\":42,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10972,\"name\":\"fleet_patch\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":71,\"rawTarget\":\"post_event\"},{\"id\":10972"
+        },
+        {
+          "id": "cowork-04",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is codegraph_context called to enrich worker prompts?",
+          "query_param": "codegraph_context",
+          "expected": {
+            "path": "ruflo-workers/tools/worker.py",
+            "symbol": "codegraph_context",
+            "kind": "callers",
+            "expected_targets": [
+              "ruflo-workers/tools/worker.py"
+            ],
+            "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10971,\"name\":\"codegraph_context\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":54,\"endLine\":54,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10980,\"name\":\"run_part_as_worker\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":235,\"rawTarget\":\"codegraph"
+        },
+        {
+          "id": "cowork-05",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if CONFIG path in fleet.py is moved?",
+          "query_param": "CONFIG",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "CONFIG",
+            "kind": "impact",
+            "expected_targets": [
+              "ruflo-workers/tools/fleet.py",
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 2,
+            "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 4.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"CONFIG\",\"file\":\"ruflo-workers/tools/fleet.py\",\"id\":10839},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":54,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10911,\"name\":\"HERE\",\"kind\":\"constant\",\"file\":\"ruflo-workers/tools/planner.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":10912,\"name\":\"ROOT\",\"kind\":\"constant\","
+        },
+        {
+          "id": "cowork-06",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+          "query_param": "RATE",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "RATE",
+            "kind": "impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 1,
+            "details": "RATE determines cost calculation for different AI model providers."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"RATE\",\"file\":\"cockpit/server.cjs\",\"id\":11346},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
+        },
+        {
+          "id": "cowork-07",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+          "query_param": "writeConfig",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "writeConfig",
+            "kind": "dataflow",
+            "expected_targets": [
+              "cockpit/server.cjs",
+              "ruflo-workers/tools/fleet.py"
+            ],
+            "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 20.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"writeConfig\",\"symbols\":[{\"id\":11355,\"name\":\"writeConfig\",\"kind\":\"function\",\"file\":\"cockpit/server.cjs\",\"line\":44,\"endLine\":49,\"exported\":false,\"contai"
+        },
+        {
+          "id": "cowork-08",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which environment variable configures the Cockpit server port?",
+          "query_param": "PLUGOS_COCKPIT_PORT",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "PLUGOS_COCKPIT_PORT",
+            "kind": "config",
+            "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 84,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUGOS_COCKPIT_PORT\",\"symbols\":[{\"id\":11349,\"name\":\"PLUGOS_COCKPIT_PORT\",\"kind\":\"constant\",\"file\":\"cockpit/server.cjs\",\"line\":35,\"endLine\":35,\"exporte"
+        },
+        {
+          "id": "cowork-09",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where are the active swarm chain configuration rules defined?",
+          "query_param": "swarm-chain.config.json",
+          "expected": {
+            "path": "ruflo-workers/swarm-chain.config.json",
+            "symbol": "swarm-chain.config.json",
+            "kind": "config",
+            "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 113,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"swarm-chain.config.json\",\"symbols\":[{\"id\":-1143,\"name\":\"ruflo-workers/swarm-chain.config.json\",\"kind\":\"file\",\"file\":\"ruflo-workers/swarm-chain.config."
+        },
+        {
+          "id": "cowork-10",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+          "query_param": "fleet",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "main",
+            "kind": "entrypoint",
+            "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 27.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"fleet\",\"symbols\":[{\"id\":10852,\"name\":\"Fleet\",\"kind\":\"class\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":208,\"endLine\":208,\"exported\":true,\"container\""
+        },
+        {
+          "id": "cowork-11",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the HTTP server listening loop for Cockpit?",
+          "query_param": "server.cjs",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "server.cjs",
+            "kind": "entrypoint",
+            "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 42.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"server.cjs\",\"symbols\":[{\"id\":-1095,\"name\":\"station/server.cjs\",\"kind\":\"file\",\"file\":\"station/server.cjs\",\"line\":1,\"endLine\":1,\"exported\":true,\"contain"
+        },
+        {
+          "id": "cowork-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "main",
+            "kind": "entrypoint",
+            "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 88.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"produce_one\",\"symbols\":[{\"id\":10587,\"name\":\"produce_one\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"line\":13,\"endLine\":13,\"exported\":tr"
+        },
+        {
+          "id": "cowork-13",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document outlines the core CANON principles of the workspace?",
+          "query_param": "CANON.md",
+          "expected": {
+            "path": "CANON.md",
+            "symbol": "CANON.md",
+            "kind": "docs_notes",
+            "details": "CANON.md defines foundational operating rules and non-negotiables."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 62.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CANON.md\",\"symbols\":[{\"id\":-1057,\"name\":\"CANON.md\",\"kind\":\"file\",\"file\":\"CANON.md\",\"line\":1,\"endLine\":1,\"exported\":true,\"container\":null,\"repoId\":null"
+        },
+        {
+          "id": "cowork-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document specifies guidelines for social and video content style?",
+          "query_param": "CONTENT_STYLE_GUIDE.md",
+          "expected": {
+            "path": "CONTENT_STYLE_GUIDE.md",
+            "symbol": "CONTENT_STYLE_GUIDE.md",
+            "kind": "docs_notes",
+            "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 105.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CONTENT_STYLE_GUIDE.md\",\"symbols\":[{\"id\":-1062,\"name\":\"CONTENT_STYLE_GUIDE.md\",\"kind\":\"file\",\"file\":\"CONTENT_STYLE_GUIDE.md\",\"line\":1,\"endLine\":1,\"exp"
+        },
+        {
+          "id": "cowork-15",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "produce_one",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "shortsfactory/pipeline/run.py"
+            ],
+            "details": "produce_one is called in main loop of run.py."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"produce_one\",\"file\":\"shortsfactory/pipeline/run.py\",\"id\":10587},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":2,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10588,\"name\":\"main\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":10586,\"name\":\"_has\",\"kind\":\"function\",\"file\":\"short"
+        },
+        {
+          "id": "cowork-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+          "query_param": "writeConfig",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "writeConfig",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "details": "writeConfig is called by lane and runner mutation handlers."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 3.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"writeConfig\",\"file\":\"cockpit/server.cjs\",\"id\":11355},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":22,\"nodes\":{\"1\":[{\"depth\":1,\"id\":11381,\"name\":\"upsertLane\",\"kind\":\"function\",\"file\":\"cockpit/server.cjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":11384,\"name\":\"setRunner\",\"kind\":\"function\",\"file\":\"cockpit/server."
+        },
+        {
+          "id": "cowork-17",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the produce_one pipeline function implemented?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "produce_one",
+            "kind": "symbol",
+            "details": "produces voiceover, captions, video composition, and social uploads."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 89.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"produce_one\",\"symbols\":[{\"id\":10587,\"name\":\"produce_one\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"line\":13,\"endLine\":13,\"exported\":tr"
+        },
+        {
+          "id": "cowork-18",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is synth_voiceover called in the shorts pipeline?",
+          "query_param": "synth_voiceover",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "synth_voiceover",
+            "kind": "callers",
+            "expected_targets": [
+              "shortsfactory/pipeline/run.py"
+            ],
+            "details": "tts.synth_voiceover is called inside produce_one in run.py."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10597,\"name\":\"synth_voiceover\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/tts.py\",\"line\":53,\"endLine\":53,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"makedirs\",\"kind\":\"call\",\"file\":\"\",\"line\":54,\"rawTarget\":\"makedirs\"},{\"id\""
+        },
+        {
+          "id": "cowork-19",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the ROLES array defined for valid fleet lane roles?",
+          "query_param": "ROLES",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "ROLES",
+            "kind": "symbol",
+            "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 26.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ROLES\",\"symbols\":[{\"id\":11352,\"name\":\"ROLES\",\"kind\":\"constant\",\"file\":\"cockpit/server.cjs\",\"line\":38,\"endLine\":38,\"exported\":false,\"container\":null,\"r"
+        },
+        {
+          "id": "cowork-20",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+          "query_param": "KEY_ALIAS",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "KEY_ALIAS",
+            "kind": "impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 1,
+            "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 1.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"KEY_ALIAS\",\"file\":\"cockpit/fleet-direct.cjs\",\"id\":11271},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
+        },
+        {
+          "id": "cowork-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is readLedger defined for reading roadmap.jsonl into memory?",
+          "query_param": "readLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "readLedger",
+            "kind": "symbol",
+            "details": "readLedger reads and parses line-delimited roadmap.jsonl into objects."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 21.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"readLedger\",\"symbols\":[{\"id\":10316,\"name\":\"readLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":44,\"endLine\":54,\"exported\":false,\"containe"
+        },
+        {
+          "id": "cowork-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is writeLedger defined to persist updated parts back to roadmap.jsonl?",
+          "query_param": "writeLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "writeLedger",
+            "kind": "symbol",
+            "details": "writeLedger serializes array of parts back to roadmap.jsonl."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 20.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"writeLedger\",\"symbols\":[{\"id\":10320,\"name\":\"writeLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":55,\"endLine\":58,\"exported\":false,\"contai"
+        },
+        {
+          "id": "cowork-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is missionOf defined to categorize roadmap items into mission groups?",
+          "query_param": "missionOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "missionOf",
+            "kind": "symbol",
+            "details": "missionOf maps part product identifiers to human-readable mission titles."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 20,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"missionOf\",\"symbols\":[{\"id\":10313,\"name\":\"missionOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":33,\"endLine\":39,\"exported\":false,\"container\""
+        },
+        {
+          "id": "cowork-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is FLEET_PARALLELISM defined for estimating overall loop completion time?",
+          "query_param": "FLEET_PARALLELISM",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "FLEET_PARALLELISM",
+            "kind": "symbol",
+            "details": "FLEET_PARALLELISM reads PLUGOS_FLEET_PARALLELISM env var or defaults to 3."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 34,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"FLEET_PARALLELISM\",\"symbols\":[{\"id\":10311,\"name\":\"FLEET_PARALLELISM\",\"kind\":\"constant\",\"file\":\"station/server.cjs\",\"line\":31,\"endLine\":31,\"exported\":f"
+        },
+        {
+          "id": "cowork-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the decompose_room asset generator entrypoint implemented?",
+          "query_param": "decompose_room",
+          "expected": {
+            "path": "tools/decompose_room.py",
+            "symbol": "main",
+            "kind": "symbol",
+            "details": "tools/decompose_room.py main function executes object cropping and inpainting pipeline."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 60.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"decompose_room\",\"symbols\":[{\"id\":10296,\"name\":\"main\",\"kind\":\"function\",\"file\":\"tools/decompose_room.py\",\"line\":27,\"endLine\":27,\"exported\":true,\"contai"
+        },
+        {
+          "id": "cowork-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the verdictOf function defined to read verify.json verdicts?",
+          "query_param": "verdictOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "verdictOf",
+            "kind": "symbol",
+            "details": "verdictOf inspects reports/<id>/verify.json to retrieve verification outcome."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 20.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"verdictOf\",\"symbols\":[{\"id\":10322,\"name\":\"verdictOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":59,\"endLine\":64,\"exported\":false,\"container\""
+        },
+        {
+          "id": "cowork-holdout-07",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is writeLedger called to save priority changes in the station server?",
+          "query_param": "writeLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "writeLedger",
+            "kind": "callers",
+            "expected_targets": [
+              "station/server.cjs"
+            ],
+            "details": "station/server.cjs invokes writeLedger when reordering parts in /api/prio."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10320,\"name\":\"writeLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":55,\"endLine\":58,\"exported\":false,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10336,\"name\":\"movePrio\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":112,\"rawTarget\":\"writeLedger\"}],\"references\":[]},\"outgoing\":{\"c"
+        },
+        {
+          "id": "cowork-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the DEFAULT_EFFORT constant set for roadmap items lacking explicit estimates?",
+          "query_param": "DEFAULT_EFFORT",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "DEFAULT_EFFORT",
+            "kind": "symbol",
+            "details": "const DEFAULT_EFFORT = 3 in station/server.cjs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 40.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_EFFORT\",\"symbols\":[{\"id\":10310,\"name\":\"DEFAULT_EFFORT\",\"kind\":\"constant\",\"file\":\"station/server.cjs\",\"line\":30,\"endLine\":30,\"exported\":false,\""
+        },
+        {
+          "id": "cowork-holdout-09",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if readLedger in station/server.cjs changes its return format?",
+          "query_param": "readLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "readLedger",
+            "kind": "impact",
+            "expected_targets": [
+              "station/server.cjs"
+            ],
+            "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 4.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"readLedger\",\"file\":\"station/server.cjs\",\"id\":10316},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":6,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10324,\"name\":\"buildProgress\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":10336,\"name\":\"movePrio\",\"kind\":\"function\",\"file\":\"station/server."
+        },
+        {
+          "id": "cowork-holdout-10",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the effortOf helper defined to compute swarm hours per part?",
+          "query_param": "effortOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "effortOf",
+            "kind": "symbol",
+            "details": "effortOf returns estimate_hours or maps severity through EFFORT table."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 20.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"effortOf\",\"symbols\":[{\"id\":10315,\"name\":\"effortOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":40,\"endLine\":42,\"exported\":false,\"container\":n"
+        }
+      ]
+    },
+    {
+      "repo": "plugengine",
+      "oldHits": 16,
+      "oldTotal": 20,
+      "oldAccuracy": 80,
+      "holdoutHits": 10,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 100,
+      "totalHits": 26,
+      "totalCount": 30,
+      "totalAccuracy": 86.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 75.5,
+      "latencyOldP95": 350.2,
+      "latencyHoldoutP50": 66.8,
+      "latencyHoldoutP95": 163.9,
+      "latencyAllP50": 70.5,
+      "latencyAllP95": 350.2,
+      "questions": [
+        {
+          "id": "plugengine-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the CommandBus class implemented for undo/redo state management?",
+          "query_param": "CommandBus",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "CommandBus",
+            "kind": "symbol",
+            "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 82.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBus\",\"symbols\":[{\"id\":31909,\"name\":\"CommandBus\",\"kind\":\"class\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":40,\"endLine\":122,\"ex"
+        },
+        {
+          "id": "plugengine-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+          "query_param": "DEFAULT_LIMIT",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "DEFAULT_LIMIT",
+            "kind": "symbol",
+            "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 175.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_LIMIT\",\"symbols\":[{\"id\":31902,\"name\":\"DEFAULT_LIMIT\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":10,\"endLine"
+        },
+        {
+          "id": "plugengine-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is CommandBus.dispatch called in tests or consumers?",
+          "query_param": "dispatch",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "dispatch",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "details": "bus.test.ts executes dispatches against CommandBus instances."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":31915,\"name\":\"dispatch\",\"kind\":\"method\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":60,\"endLine\":68,\"exported\":false,\"container\":\"CommandBus\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"do\",\"kind\":\"call\",\"file\":\"\",\"line\":61,\"rawTarget\":\"do\"},{\"i"
+        },
+        {
+          "id": "plugengine-04",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+          "query_param": "PLUG_PACKAGE_KINDS",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "PLUG_PACKAGE_KINDS",
+            "kind": "symbol",
+            "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 202.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUG_PACKAGE_KINDS\",\"symbols\":[{\"id\":33883,\"name\":\"PLUG_PACKAGE_KINDS\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":37,\"endLine\":"
+        },
+        {
+          "id": "plugengine-05",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the isPlugPackageKind type guard defined?",
+          "query_param": "isPlugPackageKind",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "isPlugPackageKind",
+            "kind": "symbol",
+            "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 65.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"isPlugPackageKind\",\"symbols\":[{\"id\":33884,\"name\":\"isPlugPackageKind\",\"kind\":\"function\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":45,\"endLine\":47"
+        },
+        {
+          "id": "plugengine-06",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is isPlugPackageKind tested or called?",
+          "query_param": "isPlugPackageKind",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "isPlugPackageKind",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/contracts/src/addon.test.ts"
+            ],
+            "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33884,\"name\":\"isPlugPackageKind\",\"kind\":\"function\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":45,\"endLine\":47,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"includes\",\"kind\":\"call\",\"file\":\"\",\"line\":46,\"rawTarget\":\"includes\"}],"
+        },
+        {
+          "id": "plugengine-07",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+          "query_param": "DEFAULT_LIMIT",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "DEFAULT_LIMIT",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.ts",
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "expected_count": 2,
+            "details": "Limits default undo history buffer size in CommandBus constructor."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 41.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"DEFAULT_LIMIT\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"id\":31902},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":2,\"nodes\":{\"1\":[{\"depth\":1,\"id\":31404,\"name\":\"ENGINE_VERSION\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/index.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":"
+        },
+        {
+          "id": "plugengine-08",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+          "query_param": "PLUG_PACKAGE_KINDS",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "PLUG_PACKAGE_KINDS",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/contracts/src/addon.ts",
+              "packages/contracts/src/addon.test.ts"
+            ],
+            "expected_count": 2,
+            "details": "PlugPackageKind union and package kind validation in addon contracts."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 72.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"PLUG_PACKAGE_KINDS\",\"file\":\"packages/contracts/src/addon.ts\",\"id\":33883},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":263,\"nodes\":{\"1\":[{\"depth\":1,\"id\":-1962,\"name\":\"packages/contracts/src/addon.test.ts\",\"kind\":\"file\",\"file\":\"packages/contracts/src/addon.test.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"de"
+        },
+        {
+          "id": "plugengine-09",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+          "query_param": "CommandBus",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "dispatch",
+            "kind": "dataflow",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.ts"
+            ],
+            "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 90.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBus\",\"symbols\":[{\"id\":31909,\"name\":\"CommandBus\",\"kind\":\"class\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":40,\"endLine\":122,\"ex"
+        },
+        {
+          "id": "plugengine-10",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+          "query_param": "CommandBusOptions",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "CommandBusOptions",
+            "kind": "config",
+            "details": "export interface CommandBusOptions { limit?: number; }."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 71.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBusOptions\",\"symbols\":[{\"id\":31899,\"name\":\"CommandBusOptions\",\"kind\":\"interface\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":3,"
+        },
+        {
+          "id": "plugengine-11",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where are npm workspaces declared for the engine monorepo?",
+          "query_param": "workspaces",
+          "expected": {
+            "path": "package.json",
+            "symbol": "workspaces",
+            "kind": "config",
+            "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 78.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"workspaces\",\"symbols\":[{\"id\":12843,\"name\":\"workspaces\",\"kind\":\"property\",\"file\":\"package.json\",\"line\":7,\"endLine\":7,\"exported\":true,\"container\":null,\""
+        },
+        {
+          "id": "plugengine-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the entrypoint barrel for plugengine-core?",
+          "query_param": "plugengine-core",
+          "expected": {
+            "path": "packages/plugengine-core/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 278.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"plugengine-core\",\"symbols\":[{\"id\":31404,\"name\":\"ENGINE_VERSION\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/index.ts\",\"line\":10,\"endLine\":1"
+        },
+        {
+          "id": "plugengine-13",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the root contracts entrypoint barrel for plugengine?",
+          "query_param": "contracts",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 115.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"contracts\",\"symbols\":[{\"id\":13154,\"name\":\"contracts\",\"kind\":\"constant\",\"file\":\"scripts/ai-builder-mock-proof.mjs\",\"line\":94,\"endLine\":94,\"exported\":fa"
+        },
+        {
+          "id": "plugengine-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document maintains the technical debt register for the engine?",
+          "query_param": "TECH_DEBT_REGISTER.md",
+          "expected": {
+            "path": "docs/TECH_DEBT_REGISTER.md",
+            "symbol": "TECH_DEBT_REGISTER.md",
+            "kind": "docs_notes",
+            "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 350.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"TECH_DEBT_REGISTER.md\",\"symbols\":[{\"id\":-2145,\"name\":\"docs/TECH_DEBT_REGISTER.md\",\"kind\":\"file\",\"file\":\"docs/TECH_DEBT_REGISTER.md\",\"line\":1,\"endLine\""
+        },
+        {
+          "id": "plugengine-15",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document contains the specification for the creator editor?",
+          "query_param": "CREATOR_EDITOR_SPEC.md",
+          "expected": {
+            "path": "docs/CREATOR_EDITOR_SPEC.md",
+            "symbol": "CREATOR_EDITOR_SPEC.md",
+            "kind": "docs_notes",
+            "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 363.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CREATOR_EDITOR_SPEC.md\",\"symbols\":[{\"id\":-2125,\"name\":\"docs/CREATOR_EDITOR_SPEC.md\",\"kind\":\"file\",\"file\":\"docs/CREATOR_EDITOR_SPEC.md\",\"line\":1,\"endLi"
+        },
+        {
+          "id": "plugengine-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if canUndo getter is renamed on CommandBus?",
+          "query_param": "canUndo",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "canUndo",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 70.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"canUndo\",\"file\":\"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts\",\"id\":45649},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":32,\"nodes\":{\"1\":[{\"depth\":1,\"id\":45585,\"name\":\"render\",\"kind\":\"function\",\"file\":\"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"dept"
+        },
+        {
+          "id": "plugengine-17",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+          "query_param": "impactToEdit",
+          "expected": {
+            "path": "packages/plugengine-combat/src/index.ts",
+            "symbol": "impactToEdit",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "packages/plugengine-combat/src/blockDestruction.ts"
+            ],
+            "details": "impactToEdit converts projectile block hits into voxel edits."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 68.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"impactToEdit\",\"file\":\"packages/plugengine-combat/src/blockDestruction.ts\",\"id\":32200},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":19,\"nodes\":{\"1\":[{\"depth\":1,\"id\":32460,\"name\":\"advance\",\"kind\":\"method\",\"file\":\"packages/plugengine-combat/src/projectiles.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":-1890,\"name"
+        },
+        {
+          "id": "plugengine-18",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is COMBAT_PACKAGE package name constant defined?",
+          "query_param": "COMBAT_PACKAGE",
+          "expected": {
+            "path": "packages/plugengine-combat/src/index.ts",
+            "symbol": "COMBAT_PACKAGE",
+            "kind": "symbol",
+            "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 276.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"COMBAT_PACKAGE\",\"symbols\":[{\"id\":32390,\"name\":\"COMBAT_PACKAGE\",\"kind\":\"constant\",\"file\":\"packages/plugengine-combat/src/index.ts\",\"line\":11,\"endLine\":"
+        },
+        {
+          "id": "plugengine-19",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is canHit defined and exported for faction combat checks?",
+          "query_param": "canHit",
+          "expected": {
+            "path": "packages/plugengine-combat/src/teams.ts",
+            "symbol": "canHit",
+            "kind": "symbol",
+            "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":32486,\"name\":\"canHit\",\"kind\":\"function\",\"file\":\"packages/plugengine-combat/src/teams.ts\",\"line\":51,\"endLine\":66,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":32466,\"name\":\"resolveEnemyHit\",\"kind\":\"method\",\"file\":\"packages/plugengine-combat/src/projectiles.ts\",\"line\":226,\"rawTarget\":"
+        },
+        {
+          "id": "plugengine-20",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is ProjectilePool implemented for ballistics physics?",
+          "query_param": "ProjectilePool",
+          "expected": {
+            "path": "packages/plugengine-combat/src/projectiles.ts",
+            "symbol": "ProjectilePool",
+            "kind": "symbol",
+            "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 75.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ProjectilePool\",\"symbols\":[{\"id\":19161,\"name\":\"ProjectilePool\",\"kind\":\"class\",\"file\":\"reference/build-battle/src/plugmil/projectiles.ts\",\"line\":45,\"en"
+        },
+        {
+          "id": "plugengine-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is createKeyVault defined to instantiate the session-only BYOK key store?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "symbol",
+            "details": "createKeyVault instantiates in-memory KeyVaultHandle with closure-isolated Map."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 67.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"createKeyVault\",\"symbols\":[{\"id\":33742,\"name\":\"createKeyVault\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":22,\"endLine\":4"
+        },
+        {
+          "id": "plugengine-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the KeyVaultHandle interface defined for managing API keys in memory?",
+          "query_param": "KeyVaultHandle",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "KeyVaultHandle",
+            "kind": "symbol",
+            "details": "KeyVaultHandle exposes set, get, has, delete, size, and dispose."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 66.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"KeyVaultHandle\",\"symbols\":[{\"id\":33735,\"name\":\"KeyVaultHandle\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":11,\"endLine\":"
+        },
+        {
+          "id": "plugengine-holdout-03",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is createKeyVault invoked to initialize an AI builder instance?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "callers",
+            "expected_targets": [
+              "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts"
+            ],
+            "details": "aiBuilderModel constructor and aiBuild.test.ts call createKeyVault."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 2.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33742,\"name\":\"createKeyVault\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":22,\"endLine\":44,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"ai-builder-mock-proof.mjs\",\"kind\":\"file\",\"file\":\"scripts/ai-builder-mock-proof.mjs\",\"line\":154,\"rawTarget"
+        },
+        {
+          "id": "plugengine-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the generate function defined to orchestrate AI scene generation?",
+          "query_param": "generate",
+          "expected": {
+            "path": "packages/plugengine-ai/src/aiBuilder.ts",
+            "symbol": "generate",
+            "kind": "symbol",
+            "details": "generate orchestrates buildJob + providerProfiles + stagingDiff + buildRecipeFactory."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 163.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"generate\",\"symbols\":[{\"id\":33642,\"name\":\"generate\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/aiBuilder.ts\",\"line\":26,\"endLine\":37,\"exported"
+        },
+        {
+          "id": "plugengine-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the ArtProfile interface defined for sprite and art style configuration?",
+          "query_param": "ArtProfile",
+          "expected": {
+            "path": "packages/contracts/src/artProfile.ts",
+            "symbol": "ArtProfile",
+            "kind": "symbol",
+            "details": "ArtProfile defines palette, resolution, tile dimensions, and shading properties."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 77.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ArtProfile\",\"symbols\":[{\"id\":34017,\"name\":\"ArtProfile\",\"kind\":\"interface\",\"file\":\"packages/contracts/src/artProfile.ts\",\"line\":58,\"endLine\":66,\"export"
+        },
+        {
+          "id": "plugengine-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the StagingDiff interface defined for previewing builder changes before apply?",
+          "query_param": "StagingDiff",
+          "expected": {
+            "path": "packages/plugengine-ai/src/stagingDiff.ts",
+            "symbol": "StagingDiff",
+            "kind": "symbol",
+            "details": "StagingDiff holds added, modified, removed template objects and change summaries."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 70.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"StagingDiff\",\"symbols\":[{\"id\":33802,\"name\":\"StagingDiff\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/stagingDiff.ts\",\"line\":10,\"endLine\":14,"
+        },
+        {
+          "id": "plugengine-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the BuildJob interface defined for engine generation jobs?",
+          "query_param": "BuildJob",
+          "expected": {
+            "path": "packages/plugengine-ai/src/buildJob.ts",
+            "symbol": "BuildJob",
+            "kind": "symbol",
+            "details": "BuildJob defines prompt, seed, provider, clock timestamp, and metadata."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 66.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"BuildJob\",\"symbols\":[{\"id\":33650,\"name\":\"BuildJob\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/buildJob.ts\",\"line\":14,\"endLine\":19,\"exported"
+        },
+        {
+          "id": "plugengine-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the generateMockPlan function defined for deterministic scene generation?",
+          "query_param": "generateMockPlan",
+          "expected": {
+            "path": "packages/plugengine-ai/src/mockProvider.ts",
+            "symbol": "generateMockPlan",
+            "kind": "symbol",
+            "details": "generateMockPlan uses mulberry32 PRNG and keyword detection to build mock templates."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 66.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"generateMockPlan\",\"symbols\":[{\"id\":33782,\"name\":\"generateMockPlan\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/mockProvider.ts\",\"line\":110,\"e"
+        },
+        {
+          "id": "plugengine-holdout-09",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is generateMockPlan called during mock provider execution?",
+          "query_param": "generateMockPlan",
+          "expected": {
+            "path": "packages/plugengine-ai/src/mockProvider.ts",
+            "symbol": "generateMockPlan",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/plugengine-ai/src/providerProfiles.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts"
+            ],
+            "details": "providerProfiles mock profile delegates to generateMockPlan."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33782,\"name\":\"generateMockPlan\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/mockProvider.ts\",\"line\":110,\"endLine\":130,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"aiBuild.test.ts\",\"kind\":\"file\",\"file\":\"packages/plugengine-ai/src/aiBuild.test.ts\",\"line\":56,\"raw"
+        },
+        {
+          "id": "plugengine-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if createKeyVault signature or interface is modified?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "impact",
+            "expected_targets": [
+              "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts",
+              "packages/plugengine-ai/src/index.ts"
+            ],
+            "details": "Consumers importing createKeyVault for BYOK secret management are impacted."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 70.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"createKeyVault\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"id\":33742},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":108,\"nodes\":{\"1\":[{\"depth\":1,\"id\":49521,\"name\":\"AiBuilderModel\",\"kind\":\"class\",\"file\":\"apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":-194"
+        }
+      ]
+    }
+  ]
+}

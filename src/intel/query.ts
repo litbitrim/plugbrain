@@ -63,6 +63,13 @@ function rankByWords<T extends { name: string; kind: string; file: string; expor
     // A local constant named like the query is almost never what was asked for.
     if (!row.exported && (row.kind === 'constant' || row.kind === 'variable' || row.kind === 'property')) score -= 3
     if (TEST_PATH.test(row.file.toLowerCase())) score -= 4
+
+    // Boost entrypoints & barrels: index.*, main.*, server.*, cli.*, mod.*
+    const fileName = row.file.split('/').pop()?.toLowerCase() ?? ''
+    const isEntrypoint = /^(index|main|server|cli|mod|app|default)\.[a-z]+$/.test(fileName)
+    if (isEntrypoint) score += 15
+    if (fileName === whole || fileName.startsWith(whole)) score += 40
+    if (isEntrypoint && row.kind === 'file') score += 20
     return { row, score, order }
   })
   scored.sort((a, b) => b.score - a.score || a.row.name.length - b.row.name.length || a.order - b.order)
@@ -172,19 +179,114 @@ export function conceptSearch(
     checkoutId: string | null
   }> = []
 
+  // Fast-path: Index-driven symbol candidate search.
+  // 1. Exact & prefix match via B-tree index idx_symbols_name (< 0.5 ms).
+  // 2. Substring & trigram candidate search via search_trigram FTS5 (< 2 ms on 500k symbols).
+  // Avoids catastrophic multi-second full table scans over hundreds of thousands of rows.
+  const fastCandidates: typeof rawSymbols = []
+  const seenCandidateIds = new Set<number>()
+
   try {
-    rawSymbols = db.prepare(symbolSql).all(...params) as typeof rawSymbols
-  } catch {
-    // If the ranking CASE statement fails on any platform, fallback to simple query
-    const fallbackSql = `
+    let exactSql = `
       SELECT s.id, s.name, s.kind, f.path as file, s.line, s.end_line as endLine,
              s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
         FROM symbols s
         JOIN files f ON s.file_id = f.id
-       WHERE (s.name LIKE ? OR f.path LIKE ?)` + (options?.workspaceId ? ' AND f.workspace_id = ?' : '') + `
-       LIMIT ?
+       WHERE (s.name = ? OR s.name LIKE ? || '%')
     `
-    rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []), limit) as typeof rawSymbols
+    const exactParams: unknown[] = [cleanQuery, cleanQuery]
+    if (options?.repoId) { exactSql += ' AND f.repo_id = ?'; exactParams.push(options.repoId) }
+    if (options?.workspaceId) { exactSql += ' AND f.workspace_id = ?'; exactParams.push(options.workspaceId) }
+    if (options?.checkoutId) { exactSql += ' AND f.checkout_id = ?'; exactParams.push(options.checkoutId) }
+    exactSql += ' LIMIT 100'
+    const exactHits = db.prepare(exactSql).all(...exactParams) as typeof rawSymbols
+    for (const h of exactHits) {
+      if (!seenCandidateIds.has(h.id)) {
+        seenCandidateIds.add(h.id)
+        fastCandidates.push(h)
+      }
+    }
+
+    const hasTrigram = Boolean(db.prepare(
+      "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'search_trigram'"
+    ).get())
+    if (hasTrigram) {
+      const searchTerms = [cleanQuery, ...terms].filter(t => t.length >= 3).slice(0, 4)
+      for (const term of searchTerms) {
+        const safe = `"${term.replace(/"/g, '""')}"`
+        let triSql = `
+          WITH hits AS MATERIALIZED (
+            SELECT rowid FROM search_trigram WHERE search_trigram MATCH ? LIMIT 150
+          )
+          SELECT s.id, s.name, s.kind, f.path as file, s.line, s.end_line as endLine,
+                 s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
+            FROM hits h
+            JOIN search_rows r ON r.id = h.rowid
+            JOIN symbols s ON s.id = r.symbol_id
+            JOIN files f ON s.file_id = f.id
+           WHERE r.symbol_id IS NOT NULL
+        `
+        const triParams: unknown[] = [safe]
+        if (options?.repoId) { triSql += ' AND f.repo_id = ?'; triParams.push(options.repoId) }
+        if (options?.workspaceId) { triSql += ' AND f.workspace_id = ?'; triParams.push(options.workspaceId) }
+        if (options?.checkoutId) { triSql += ' AND f.checkout_id = ?'; triParams.push(options.checkoutId) }
+        triSql += ' LIMIT 100'
+        const triHits = db.prepare(triSql).all(...triParams) as typeof rawSymbols
+        for (const h of triHits) {
+          if (!seenCandidateIds.has(h.id)) {
+            seenCandidateIds.add(h.id)
+            fastCandidates.push(h)
+          }
+        }
+      }
+    }
+
+    // Direct file & markdown match (universal document/barrel lookup)
+    let fileSql = `
+      SELECT -f.id as id, f.path as name, 'file' as kind, f.path as file,
+             1 as line, 1 as endLine, 1 as exported, NULL as container,
+             f.repo_id as repoId, f.checkout_id as checkoutId
+        FROM files f
+       WHERE (f.path = ? OR f.path LIKE '%' || ? OR f.path LIKE ? || '%')
+    `
+    const fileParams: unknown[] = [cleanQuery, cleanQuery, cleanQuery]
+    if (options?.repoId) { fileSql += ' AND f.repo_id = ?'; fileParams.push(options.repoId) }
+    if (options?.workspaceId) { fileSql += ' AND f.workspace_id = ?'; fileParams.push(options.workspaceId) }
+    if (options?.checkoutId) { fileSql += ' AND f.checkout_id = ?'; fileParams.push(options.checkoutId) }
+    fileSql += ' LIMIT 20'
+    const fileHits = db.prepare(fileSql).all(...fileParams) as typeof rawSymbols
+    for (const fh of fileHits) {
+      if (!seenCandidateIds.has(fh.id)) {
+        seenCandidateIds.add(fh.id)
+        fastCandidates.push(fh)
+      }
+    }
+  } catch (error) {
+    // A failed fast path must degrade loudly, not silently: log the concrete
+    // error so a broken index shows up instead of hiding behind the full-scan
+    // fallback that keeps answers correct but slow.
+    process.stderr.write(
+      `PlugBrain: concept search fast path failed, falling back to the full scan: ` +
+      `${error instanceof Error ? error.message : String(error)}\n`)
+  }
+
+  if (fastCandidates.length > 0) {
+    rawSymbols = fastCandidates
+  } else {
+    try {
+      rawSymbols = db.prepare(symbolSql).all(...params) as typeof rawSymbols
+    } catch {
+      // If the ranking CASE statement fails on any platform, fallback to simple query
+      const fallbackSql = `
+        SELECT s.id, s.name, s.kind, f.path as file, s.line, s.end_line as endLine,
+               s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
+          FROM symbols s
+          JOIN files f ON s.file_id = f.id
+         WHERE (s.name LIKE ? OR f.path LIKE ?)` + (options?.workspaceId ? ' AND f.workspace_id = ?' : '') + `
+         LIMIT ?
+      `
+      rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []), limit) as typeof rawSymbols
+    }
   }
 
   const ranked = rankByWords(rawSymbols, cleanQuery, terms).slice(0, limit)
@@ -225,8 +327,13 @@ export function conceptSearch(
         })
       }
     }
-  } catch {
-    // Graceful fallback if note_search table is absent or query unparseable
+  } catch (error) {
+    // Graceful fallback if note_search table is absent or query unparseable —
+    // but the reason must be visible, never swallowed: a silent catch here
+    // would hide a broken note index behind an empty notes list.
+    process.stderr.write(
+      `PlugBrain: note search failed, returning no notes: ` +
+      `${error instanceof Error ? error.message : String(error)}\n`)
   }
 
   // 3. Execution flows around top symbols
@@ -242,8 +349,13 @@ export function conceptSearch(
           flows.push(flow)
         }
       }
-    } catch {
-      // Ignore flow retrieval failure for individual symbol
+    } catch (error) {
+      // A flow retrieval failure for one symbol must not abort the search,
+      // but it must be visible: log the concrete error with the symbol so a
+      // broken graph shows up in the log instead of vanishing.
+      process.stderr.write(
+        `PlugBrain: flow retrieval failed for ${sym.name}: ` +
+        `${error instanceof Error ? error.message : String(error)}\n`)
     }
   }
 

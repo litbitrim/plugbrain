@@ -1,0 +1,269 @@
+[
+  {
+    "id": "plugmedia-01",
+    "type": "definition",
+    "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+    "query_param": "SCHEMA_VERSION",
+    "expected": {
+      "path": "packages/contracts/src/index.ts",
+      "symbol": "SCHEMA_VERSION",
+      "kind": "symbol",
+      "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+    }
+  },
+  {
+    "id": "plugmedia-02",
+    "type": "definition",
+    "question": "Where are the four QA review axes (QA_AXES) defined?",
+    "query_param": "QA_AXES",
+    "expected": {
+      "path": "packages/contracts/src/index.ts",
+      "symbol": "QA_AXES",
+      "kind": "symbol",
+      "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+    }
+  },
+  {
+    "id": "plugmedia-03",
+    "type": "callers",
+    "question": "Which module calls topoSort for compute DAG sorting?",
+    "query_param": "topoSort",
+    "expected": {
+      "path": "packages/graph/src/compute/topo.ts",
+      "symbol": "topoSort",
+      "kind": "callers",
+      "expected_targets": [
+        "tests/graph.test.ts"
+      ],
+      "details": "topoSort performs topological sorting on graph execution DAGs."
+    }
+  },
+  {
+    "id": "plugmedia-04",
+    "type": "definition",
+    "question": "Where is the CycleError class defined for DAG cycles?",
+    "query_param": "CycleError",
+    "expected": {
+      "path": "packages/graph/src/compute/topo.ts",
+      "symbol": "CycleError",
+      "kind": "symbol",
+      "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+    }
+  },
+  {
+    "id": "plugmedia-05",
+    "type": "definition",
+    "question": "Where is casPath defined for locating content-addressed files?",
+    "query_param": "casPath",
+    "expected": {
+      "path": "services/runtime/src/cas.ts",
+      "symbol": "casPath",
+      "kind": "symbol",
+      "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+    }
+  },
+  {
+    "id": "plugmedia-06",
+    "type": "callers",
+    "question": "Where is storeContent called in the runtime domains?",
+    "query_param": "storeContent",
+    "expected": {
+      "path": "services/runtime/src/cas.ts",
+      "symbol": "storeContent",
+      "kind": "callers",
+      "expected_targets": [
+        "services/runtime/src/domain/media.ts"
+      ],
+      "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+    }
+  },
+  {
+    "id": "plugmedia-07",
+    "type": "impact",
+    "question": "What is impacted if PGCONFIG default port is changed?",
+    "query_param": "PGCONFIG",
+    "expected": {
+      "path": "services/runtime/src/db.ts",
+      "symbol": "PGCONFIG",
+      "kind": "impact",
+      "expected_targets": [
+        "services/runtime/src/db.ts",
+        "services/runtime/src/index.ts"
+      ],
+      "expected_count": 2,
+      "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+    }
+  },
+  {
+    "id": "plugmedia-08",
+    "type": "impact",
+    "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+    "query_param": "SCHEMA_VERSION",
+    "expected": {
+      "path": "packages/contracts/src/index.ts",
+      "symbol": "SCHEMA_VERSION",
+      "kind": "impact",
+      "expected_targets": [
+        "services/runtime/src/index.ts"
+      ],
+      "expected_count": 2,
+      "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+    }
+  },
+  {
+    "id": "plugmedia-09",
+    "type": "dataflow",
+    "question": "How does content storage flow from raw file stream to CAS destination?",
+    "query_param": "storeContent",
+    "expected": {
+      "path": "services/runtime/src/cas.ts",
+      "symbol": "storeContent",
+      "kind": "dataflow",
+      "expected_targets": [
+        "services/runtime/src/cas.ts"
+      ],
+      "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+    }
+  },
+  {
+    "id": "plugmedia-10",
+    "type": "config",
+    "question": "Which environment variable overrides the HTTP server port?",
+    "query_param": "PLUGMEDIA_PORT",
+    "expected": {
+      "path": "services/runtime/src/index.ts",
+      "symbol": "PLUGMEDIA_PORT",
+      "kind": "config",
+      "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+    }
+  },
+  {
+    "id": "plugmedia-11",
+    "type": "config",
+    "question": "What is the default PostgreSQL database port configured in db.ts?",
+    "query_param": "PGPORT",
+    "expected": {
+      "path": "services/runtime/src/db.ts",
+      "symbol": "PGCONFIG",
+      "kind": "config",
+      "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+    }
+  },
+  {
+    "id": "plugmedia-12",
+    "type": "entrypoint",
+    "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+    "query_param": "Fastify",
+    "expected": {
+      "path": "services/runtime/src/index.ts",
+      "symbol": "app",
+      "kind": "entrypoint",
+      "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+    }
+  },
+  {
+    "id": "plugmedia-13",
+    "type": "entrypoint",
+    "question": "Where is the CLI command entrypoint for PlugMedia?",
+    "query_param": "main",
+    "expected": {
+      "path": "apps/cli/src/index.ts",
+      "symbol": "index.ts",
+      "kind": "entrypoint",
+      "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+    }
+  },
+  {
+    "id": "plugmedia-14",
+    "type": "docs_notes",
+    "question": "Which document contains the final architecture and verification report for VS0?",
+    "query_param": "VS0_FINAL_REPORT.md",
+    "expected": {
+      "path": "VS0_FINAL_REPORT.md",
+      "symbol": "VS0_FINAL_REPORT.md",
+      "kind": "docs_notes",
+      "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+    }
+  },
+  {
+    "id": "plugmedia-15",
+    "type": "docs_notes",
+    "question": "Which document lists the archive manifest and quarantine inventory?",
+    "query_param": "ARCHIVE_MANIFEST.md",
+    "expected": {
+      "path": "ARCHIVE_MANIFEST.md",
+      "symbol": "ARCHIVE_MANIFEST.md",
+      "kind": "docs_notes",
+      "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+    }
+  },
+  {
+    "id": "plugmedia-16",
+    "type": "rename_impact",
+    "question": "What breaks if ensureCas is renamed in cas.ts?",
+    "query_param": "ensureCas",
+    "expected": {
+      "path": "services/runtime/src/cas.ts",
+      "symbol": "ensureCas",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "services/runtime/src/cas.ts"
+      ],
+      "details": "ensureCas is called inside storeContent and registerContent."
+    }
+  },
+  {
+    "id": "plugmedia-17",
+    "type": "rename_impact",
+    "question": "What breaks if applyMigrations function is renamed?",
+    "query_param": "applyMigrations",
+    "expected": {
+      "path": "services/runtime/src/db.ts",
+      "symbol": "applyMigrations",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "services/runtime/src/db.ts"
+      ],
+      "details": "applyMigrations executes database schema migrations."
+    }
+  },
+  {
+    "id": "plugmedia-18",
+    "type": "definition",
+    "question": "Where is the durable schedulerTick function defined?",
+    "query_param": "schedulerTick",
+    "expected": {
+      "path": "services/runtime/src/engine/scheduler.ts",
+      "symbol": "schedulerTick",
+      "kind": "symbol",
+      "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+    }
+  },
+  {
+    "id": "plugmedia-19",
+    "type": "callers",
+    "question": "Where is the command dispatcher register function called to wire media commands?",
+    "query_param": "register",
+    "expected": {
+      "path": "services/runtime/src/commands.ts",
+      "symbol": "register",
+      "kind": "callers",
+      "expected_targets": [
+        "services/runtime/src/index.ts"
+      ],
+      "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+    }
+  },
+  {
+    "id": "plugmedia-20",
+    "type": "definition",
+    "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+    "query_param": "ALLOWED_ORIGINS",
+    "expected": {
+      "path": "services/runtime/src/auth.ts",
+      "symbol": "ALLOWED_ORIGINS",
+      "kind": "symbol",
+      "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+    }
+  }
+]

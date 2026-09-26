@@ -1,0 +1,267 @@
+[
+  {
+    "id": "plugengine-01",
+    "type": "definition",
+    "question": "Where is the CommandBus class implemented for undo/redo state management?",
+    "query_param": "CommandBus",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "CommandBus",
+      "kind": "symbol",
+      "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+    }
+  },
+  {
+    "id": "plugengine-02",
+    "type": "definition",
+    "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+    "query_param": "DEFAULT_LIMIT",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "DEFAULT_LIMIT",
+      "kind": "symbol",
+      "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+    }
+  },
+  {
+    "id": "plugengine-03",
+    "type": "callers",
+    "question": "Where is CommandBus.dispatch called in tests or consumers?",
+    "query_param": "dispatch",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "dispatch",
+      "kind": "callers",
+      "expected_targets": [
+        "packages/plugengine-core/src/command/bus.test.ts"
+      ],
+      "details": "bus.test.ts executes dispatches against CommandBus instances."
+    }
+  },
+  {
+    "id": "plugengine-04",
+    "type": "definition",
+    "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+    "query_param": "PLUG_PACKAGE_KINDS",
+    "expected": {
+      "path": "packages/contracts/src/addon.ts",
+      "symbol": "PLUG_PACKAGE_KINDS",
+      "kind": "symbol",
+      "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+    }
+  },
+  {
+    "id": "plugengine-05",
+    "type": "definition",
+    "question": "Where is the isPlugPackageKind type guard defined?",
+    "query_param": "isPlugPackageKind",
+    "expected": {
+      "path": "packages/contracts/src/addon.ts",
+      "symbol": "isPlugPackageKind",
+      "kind": "symbol",
+      "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+    }
+  },
+  {
+    "id": "plugengine-06",
+    "type": "callers",
+    "question": "Where is isPlugPackageKind tested or called?",
+    "query_param": "isPlugPackageKind",
+    "expected": {
+      "path": "packages/contracts/src/addon.ts",
+      "symbol": "isPlugPackageKind",
+      "kind": "callers",
+      "expected_targets": [
+        "packages/contracts/src/addon.test.ts"
+      ],
+      "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+    }
+  },
+  {
+    "id": "plugengine-07",
+    "type": "impact",
+    "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+    "query_param": "DEFAULT_LIMIT",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "DEFAULT_LIMIT",
+      "kind": "impact",
+      "expected_targets": [
+        "packages/plugengine-core/src/command/bus.ts",
+        "packages/plugengine-core/src/command/bus.test.ts"
+      ],
+      "expected_count": 2,
+      "details": "Limits default undo history buffer size in CommandBus constructor."
+    }
+  },
+  {
+    "id": "plugengine-08",
+    "type": "impact",
+    "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+    "query_param": "PLUG_PACKAGE_KINDS",
+    "expected": {
+      "path": "packages/contracts/src/addon.ts",
+      "symbol": "PLUG_PACKAGE_KINDS",
+      "kind": "impact",
+      "expected_targets": [
+        "packages/contracts/src/addon.ts",
+        "packages/contracts/src/addon.test.ts"
+      ],
+      "expected_count": 2,
+      "details": "PlugPackageKind union and package kind validation in addon contracts."
+    }
+  },
+  {
+    "id": "plugengine-09",
+    "type": "dataflow",
+    "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+    "query_param": "CommandBus",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "dispatch",
+      "kind": "dataflow",
+      "expected_targets": [
+        "packages/plugengine-core/src/command/bus.ts"
+      ],
+      "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+    }
+  },
+  {
+    "id": "plugengine-10",
+    "type": "config",
+    "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+    "query_param": "CommandBusOptions",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "CommandBusOptions",
+      "kind": "config",
+      "details": "export interface CommandBusOptions { limit?: number; }."
+    }
+  },
+  {
+    "id": "plugengine-11",
+    "type": "config",
+    "question": "Where are npm workspaces declared for the engine monorepo?",
+    "query_param": "workspaces",
+    "expected": {
+      "path": "package.json",
+      "symbol": "workspaces",
+      "kind": "config",
+      "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+    }
+  },
+  {
+    "id": "plugengine-12",
+    "type": "entrypoint",
+    "question": "Where is the entrypoint barrel for plugengine-core?",
+    "query_param": "plugengine-core",
+    "expected": {
+      "path": "packages/plugengine-core/src/index.ts",
+      "symbol": "index.ts",
+      "kind": "entrypoint",
+      "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+    }
+  },
+  {
+    "id": "plugengine-13",
+    "type": "entrypoint",
+    "question": "Where is the root contracts entrypoint barrel for plugengine?",
+    "query_param": "contracts",
+    "expected": {
+      "path": "packages/contracts/src/index.ts",
+      "symbol": "index.ts",
+      "kind": "entrypoint",
+      "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+    }
+  },
+  {
+    "id": "plugengine-14",
+    "type": "docs_notes",
+    "question": "Which document maintains the technical debt register for the engine?",
+    "query_param": "TECH_DEBT_REGISTER.md",
+    "expected": {
+      "path": "docs/TECH_DEBT_REGISTER.md",
+      "symbol": "TECH_DEBT_REGISTER.md",
+      "kind": "docs_notes",
+      "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+    }
+  },
+  {
+    "id": "plugengine-15",
+    "type": "docs_notes",
+    "question": "Which document contains the specification for the creator editor?",
+    "query_param": "CREATOR_EDITOR_SPEC.md",
+    "expected": {
+      "path": "docs/CREATOR_EDITOR_SPEC.md",
+      "symbol": "CREATOR_EDITOR_SPEC.md",
+      "kind": "docs_notes",
+      "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+    }
+  },
+  {
+    "id": "plugengine-16",
+    "type": "rename_impact",
+    "question": "What breaks if canUndo getter is renamed on CommandBus?",
+    "query_param": "canUndo",
+    "expected": {
+      "path": "packages/plugengine-core/src/command/bus.ts",
+      "symbol": "canUndo",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "packages/plugengine-core/src/command/bus.test.ts"
+      ],
+      "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+    }
+  },
+  {
+    "id": "plugengine-17",
+    "type": "rename_impact",
+    "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+    "query_param": "impactToEdit",
+    "expected": {
+      "path": "packages/plugengine-combat/src/index.ts",
+      "symbol": "impactToEdit",
+      "kind": "rename_impact",
+      "expected_targets": [
+        "packages/plugengine-combat/src/blockDestruction.ts"
+      ],
+      "details": "impactToEdit converts projectile block hits into voxel edits."
+    }
+  },
+  {
+    "id": "plugengine-18",
+    "type": "definition",
+    "question": "Where is COMBAT_PACKAGE package name constant defined?",
+    "query_param": "COMBAT_PACKAGE",
+    "expected": {
+      "path": "packages/plugengine-combat/src/index.ts",
+      "symbol": "COMBAT_PACKAGE",
+      "kind": "symbol",
+      "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+    }
+  },
+  {
+    "id": "plugengine-19",
+    "type": "callers",
+    "question": "Where is canHit defined and exported for faction combat checks?",
+    "query_param": "canHit",
+    "expected": {
+      "path": "packages/plugengine-combat/src/teams.ts",
+      "symbol": "canHit",
+      "kind": "symbol",
+      "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+    }
+  },
+  {
+    "id": "plugengine-20",
+    "type": "definition",
+    "question": "Where is ProjectilePool implemented for ballistics physics?",
+    "query_param": "ProjectilePool",
+    "expected": {
+      "path": "packages/plugengine-combat/src/projectiles.ts",
+      "symbol": "ProjectilePool",
+      "kind": "symbol",
+      "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+    }
+  }
+]

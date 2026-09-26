@@ -2665,7 +2665,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
       const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
-      return json(res, { ok: true, result: intel.getSymbolContext(db, name, { repoId, checkoutId, file }) })
+      const workspaceId = ((body.workspace as string | undefined) ?? q.get('workspace') ?? undefined)
+      return json(res, { ok: true, result: intel.getSymbolContext(db, name, { repoId, checkoutId, file, workspaceId }) })
     }
 
     if (p === '/api/intel/impact') {
@@ -2676,7 +2677,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const maxDepth = Number(body.maxDepth ?? q.get('maxDepth') ?? 3)
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
-      return json(res, { ok: true, result: intel.getBlastRadius(db, target, { direction, maxDepth, repoId, file }) })
+      const workspaceId = ((body.workspace as string | undefined) ?? q.get('workspace') ?? undefined)
+      return json(res, { ok: true, result: intel.getBlastRadius(db, target, { direction, maxDepth, repoId, file, workspaceId }) })
     }
 
     if (p === '/api/intel/entry-points') {

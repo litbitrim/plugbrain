@@ -14,6 +14,7 @@ import { test } from 'node:test'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { openStore } from '../src/store/schema.ts'
 import { ensureTraceSchema, ingestTraceEvents } from '../src/trace.ts'
+import { conceptSearch } from '../src/intel/query.ts'
 
 const FILES = 50_000
 const TRACE_EVENTS = 2_000
@@ -176,3 +177,55 @@ test('B-SPEED/B-SPEED-2: core read routes stay inside the 1s budget at 50k files
     rmSync(dir, { recursive: true, force: true, maxRetries: 5 })
   }
 })
+
+test('Q2: warm symbol concept search stays < 50ms on 50k symbols', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-sym-speed-'))
+  const db = openStore(join(dir, 'brain.db'))
+  try {
+    const ws = 'ws-sym-speed'
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)').run(ws, 'sym-speed', dir, new Date().toISOString())
+    db.exec('BEGIN')
+    const insertFile = db.prepare('INSERT INTO files (workspace_id, path, ext, lang, size, mtime, loc) VALUES (?, ?, \'.ts\', \'typescript\', 100, \'now\', 10)')
+    const insertSym = db.prepare('INSERT INTO symbols (file_id, name, kind, line, end_line, exported) VALUES (?, ?, \'function\', 1, 10, 1)')
+    const insertSr = db.prepare('INSERT INTO search_rows (workspace_id, name, path, kind, symbol_id, file_id) VALUES (?, ?, ?, \'function\', ?, ?)')
+    for (let f = 0; f < 500; f++) {
+      const p = `src/pkg_${f}/module.ts`
+      const fRow = insertFile.run(ws, p)
+      const fid = Number(fRow.lastInsertRowid)
+      for (let s = 0; s < 100; s++) {
+        const name = `serviceWorkerHandler_${f}_${s}`
+        const sRow = insertSym.run(fid, name)
+        const sid = Number(sRow.lastInsertRowid)
+        insertSr.run(ws, name, p, sid, fid)
+      }
+    }
+    // Target symbol
+    const targetFile = insertFile.run(ws, 'src/target/CameraProjection.ts')
+    const tfid = Number(targetFile.lastInsertRowid)
+    const targetSym = insertSym.run(tfid, 'CameraProjection')
+    const tsid = Number(targetSym.lastInsertRowid)
+    insertSr.run(ws, 'CameraProjection', 'src/target/CameraProjection.ts', tsid, tfid)
+    db.exec('COMMIT')
+
+    // Warm up
+    conceptSearch(db, 'CameraProjection', { workspaceId: ws })
+
+    // Benchmark 10 queries
+    const times: number[] = []
+    for (let q = 0; q < 10; q++) {
+      const t0 = performance.now()
+      const res = conceptSearch(db, 'CameraProjection', { workspaceId: ws })
+      const dt = performance.now() - t0
+      times.push(dt)
+      assert.ok(res.symbols.length > 0)
+      assert.equal(res.symbols[0].name, 'CameraProjection')
+    }
+    const medianMs = percentile(times, 0.5)
+    t.diagnostic(`Q2 warm symbol concept search median: ${medianMs.toFixed(2)} ms (samples: ${times.map(x => x.toFixed(2)).join(', ')})`)
+    assert.ok(medianMs < 50, `Warm search median must be < 50ms, was ${medianMs}ms`)
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5 })
+  }
+})
+

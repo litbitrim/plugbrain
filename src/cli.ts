@@ -784,8 +784,9 @@ function intelQuery(args: string[]): void {
     process.exit(1)
   }
   const repo = flagValue(args, '--repo') ?? undefined
+  const workspace = flagValue(args, '--workspace') ?? undefined
   const limit = Number(flagValue(args, '--limit') ?? 25)
-  const result = intel.conceptSearch(db, query, { limit, repoId: repo })
+  const result = intel.conceptSearch(db, query, { limit, repoId: repo, workspaceId: workspace })
   if (args.includes('--json')) {
     jsonOut(result)
   } else {
@@ -862,12 +863,13 @@ function askCommand(args: string[]): void {
 function intelContext(args: string[]): void {
   const name = args.find(a => !a.startsWith('--'))
   if (!name) {
-    console.error('usage: plugbrain context <symbol_name> [--file <path>] [--repo <id>] [--json]')
+    console.error('usage: plugbrain context <symbol_name> [--file <path>] [--repo <id>] [--workspace <id>] [--json]')
     process.exit(1)
   }
   const file = flagValue(args, '--file') ?? undefined
   const repo = flagValue(args, '--repo') ?? undefined
-  const result = intel.getSymbolContext(db, name, { file, repoId: repo })
+  const workspace = flagValue(args, '--workspace') ?? undefined
+  const result = intel.getSymbolContext(db, name, { file, repoId: repo, workspaceId: workspace })
   if (args.includes('--json')) {
     jsonOut(result)
   } else {
@@ -903,12 +905,17 @@ function intelContext(args: string[]): void {
 function intelImpact(args: string[]): void {
   const target = args.find(a => !a.startsWith('--'))
   if (!target) {
-    console.error('usage: plugbrain impact <symbol_name> [--direction upstream|downstream|both] [--depth <n>] [--json]')
+    console.error('usage: plugbrain impact <symbol_name> [--direction upstream|downstream|both] [--depth <n>] [--workspace <id>] [--json]')
     process.exit(1)
   }
   const direction = (flagValue(args, '--direction') ?? 'both') as 'upstream' | 'downstream' | 'both'
   const maxDepth = Number(flagValue(args, '--depth') ?? 3)
-  const result = intel.getBlastRadius(db, target, { direction, maxDepth })
+  const result = intel.getBlastRadius(db, target, {
+    direction,
+    maxDepth,
+    workspaceId: flagValue(args, '--workspace') ?? undefined,
+    repoId: flagValue(args, '--repo') ?? undefined,
+  })
   if (args.includes('--json')) {
     jsonOut(result)
   } else {
@@ -1266,7 +1273,7 @@ switch (command) {
     break
   }
   case 'serve': {
-    const port = Number(args[0] ?? 4310)
+    const port = Number(flagValue(args, '--port') ?? (args[0] && !args[0].startsWith('--') ? args[0] : 4310))
     // ui-dist has to be found both from src/ (a source run) and from next to a
     // built bundle (a standalone install), so resolve by candidate instead of
     // assuming one layout. Without the first candidate the bundled daemon

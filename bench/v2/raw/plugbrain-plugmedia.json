@@ -1,0 +1,3348 @@
+{
+  "tool": "plugbrain",
+  "repo": "plugmedia",
+  "commit": "6748e6f4486ebf3214d8eac3236c60f557aa466a",
+  "indexTimeMs": 2151,
+  "indexSizeBytes": 12773160,
+  "questionCount": 20,
+  "hitCount": 10,
+  "accuracy": 50,
+  "latencyP50Ms": 487.1,
+  "latencyP95Ms": 612.3,
+  "questions": [
+    {
+      "id": "plugmedia-01",
+      "type": "definition",
+      "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "symbol",
+        "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 556.5,
+      "rawOutput": {
+        "query": "SCHEMA_VERSION",
+        "symbols": [
+          {
+            "id": 4183,
+            "name": "SCHEMA_VERSION",
+            "kind": "constant",
+            "file": "packages/contracts/src/index.ts",
+            "line": 5,
+            "endLine": 5,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2319,
+            "name": "schema_version",
+            "kind": "property",
+            "file": "services/runtime/src/db.ts",
+            "line": 124,
+            "endLine": 124,
+            "exported": false,
+            "container": "SchemaCheck",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 3931,
+            "name": "schema_version",
+            "kind": "property",
+            "file": "services/runtime/src/domain/wfImport.ts",
+            "line": 43,
+            "endLine": 43,
+            "exported": false,
+            "container": "IntentDocument",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2326,
+            "name": "schemaVersion",
+            "kind": "variable",
+            "file": "services/runtime/src/db.ts",
+            "line": 141,
+            "endLine": 141,
+            "exported": false,
+            "container": "verifySchema",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "src/main/resources/fabric.mod.json",
+            "title": "fabric.mod.json",
+            "snippet": "… 0.19.3\", \"minecraft\": \"~26.2\", \"java\": \">=25\", \"fabric-api\": \"*\" }, \"suggests\": { \"sodium\": \"*\" }, \"custom\": { \"mcpz:save_[schema_version]\": 1 } }"
+          },
+          {
+            "path": "reports/batch003/survivor/PERSISTENCE_AUDIT.md",
+            "title": "PERSISTENCE_AUDIT",
+            "snippet": "… idempotent; missing progression state is initialized empty. - Future [schema versions] are rejected with a diagnostic; data is not …"
+          },
+          {
+            "path": "docs/architecture/ADR-W3-PERSISTENCE-OWNERSHIP.md",
+            "title": "ADR-W3-PERSISTENCE-OWNERSHIP",
+            "snippet": "… Save [schema versions] migrate independently from protocol versions and Fabric payload classes. ## Consequences - Dedicated and integrated servers use …"
+          },
+          {
+            "path": "tools/pz-local-importer/pz_importer.py",
+            "title": "pz_importer.py",
+            "snippet": "… from typing import Any, Protocol SCHEMA = \"mcpz.worldir\" [SCHEMA_VERSION] = 1 SUPPORTED_SYNTHETIC_SCHEMA = \"mcpz.synthetic-map-cell …"
+          },
+          {
+            "path": "reports/handoffs/lane2/LATEST.yaml",
+            "title": "LATEST.yaml",
+            "snippet": "… mcpz.item-definitions [schema_version]: 1 item_ledger: source: data/content/MASTER_ITEM_LEDGER.md tier_a_implemented …"
+          },
+          {
+            "path": "reports/master-orchestrator/B004-PERSISTENCE-CLOSURE.md",
+            "title": "B004-PERSISTENCE-CLOSURE",
+            "snippet": "… production-path `Lane2GameplayRuntimeAdapter` save → reload → verify all scopes. - `GoldenScenarioTest` updated to assert `[SCHEMA_VERSION]`. - Pre-existing `ItemDataLoaderTest` duplicate …"
+          },
+          {
+            "path": "reports/master-program/CHANGELOG_DEV.md",
+            "title": "CHANGELOG_DEV",
+            "snippet": "… SET_DOOR_LOCK; new LOCKED rejection reason; DATA_[SCHEMA_VERSION] 2 (lock fields + new payload). - Lock state persisted …"
+          }
+        ],
+        "flows": [],
+        "total": 11,
+        "timingMs": 78
+      }
+    },
+    {
+      "id": "plugmedia-02",
+      "type": "definition",
+      "question": "Where are the four QA review axes (QA_AXES) defined?",
+      "query_param": "QA_AXES",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "QA_AXES",
+        "kind": "symbol",
+        "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 503.8,
+      "rawOutput": {
+        "query": "QA_AXES",
+        "symbols": [
+          {
+            "id": 4185,
+            "name": "QA_AXES",
+            "kind": "constant",
+            "file": "packages/contracts/src/index.ts",
+            "line": 16,
+            "endLine": 16,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 1,
+        "timingMs": 58.6
+      }
+    },
+    {
+      "id": "plugmedia-03",
+      "type": "callers",
+      "question": "Which module calls topoSort for compute DAG sorting?",
+      "query_param": "topoSort",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "topoSort",
+        "kind": "callers",
+        "expected_targets": [
+          "tests/graph.test.ts"
+        ],
+        "details": "topoSort performs topological sorting on graph execution DAGs."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 446.8,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 4174,
+          "name": "topoSort",
+          "kind": "function",
+          "file": "packages/graph/src/compute/topo.ts",
+          "line": 7,
+          "endLine": 25,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": null,
+              "name": "graph.test.ts",
+              "kind": "file",
+              "file": "tests/graph.test.ts",
+              "line": 27,
+              "rawTarget": "topoSort"
+            },
+            {
+              "id": null,
+              "name": "graph.test.ts",
+              "kind": "file",
+              "file": "tests/graph.test.ts",
+              "line": 28,
+              "rawTarget": "topoSort"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": null,
+              "name": "map",
+              "kind": "call",
+              "file": "",
+              "line": 8,
+              "rawTarget": "map"
+            },
+            {
+              "id": null,
+              "name": "map",
+              "kind": "call",
+              "file": "",
+              "line": 9,
+              "rawTarget": "map"
+            },
+            {
+              "id": null,
+              "name": "push",
+              "kind": "call",
+              "file": "",
+              "line": 10,
+              "rawTarget": "push"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 10,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "set",
+              "kind": "call",
+              "file": "",
+              "line": 10,
+              "rawTarget": "set"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 10,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "filter",
+              "kind": "call",
+              "file": "",
+              "line": 11,
+              "rawTarget": "filter"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 11,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "shift",
+              "kind": "call",
+              "file": "",
+              "line": 14,
+              "rawTarget": "shift"
+            },
+            {
+              "id": null,
+              "name": "push",
+              "kind": "call",
+              "file": "",
+              "line": 14,
+              "rawTarget": "push"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 15,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "set",
+              "kind": "call",
+              "file": "",
+              "line": 16,
+              "rawTarget": "set"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 16,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 17,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "push",
+              "kind": "call",
+              "file": "",
+              "line": 17,
+              "rawTarget": "push"
+            },
+            {
+              "id": null,
+              "name": "filter",
+              "kind": "call",
+              "file": "",
+              "line": 21,
+              "rawTarget": "filter"
+            },
+            {
+              "id": null,
+              "name": "includes",
+              "kind": "call",
+              "file": "",
+              "line": 21,
+              "rawTarget": "includes"
+            }
+          ],
+          "references": [
+            {
+              "id": null,
+              "name": "Map",
+              "kind": "reference",
+              "file": "",
+              "line": 8,
+              "rawTarget": "Map"
+            },
+            {
+              "id": null,
+              "name": "Map",
+              "kind": "reference",
+              "file": "",
+              "line": 9,
+              "rawTarget": "Map"
+            },
+            {
+              "id": 4172,
+              "name": "CycleError",
+              "kind": "class",
+              "file": "packages/graph/src/compute/topo.ts",
+              "line": 22,
+              "rawTarget": "CycleError"
+            }
+          ]
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "graph.test.ts -> topoSort -> map",
+            "processType": "cross_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "graph.test.ts",
+                "file": "tests/graph.test.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "topoSort",
+                "file": "packages/graph/src/compute/topo.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "map",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "graph.test.ts -> topoSort -> map",
+            "processType": "cross_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "graph.test.ts",
+                "file": "tests/graph.test.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "topoSort",
+                "file": "packages/graph/src/compute/topo.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "map",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "graph.test.ts -> topoSort -> map",
+            "processType": "cross_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "graph.test.ts",
+                "file": "tests/graph.test.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "topoSort",
+                "file": "packages/graph/src/compute/topo.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "map",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "graph.test.ts -> topoSort -> map",
+            "processType": "cross_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "graph.test.ts",
+                "file": "tests/graph.test.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "topoSort",
+                "file": "packages/graph/src/compute/topo.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "map",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-04",
+      "type": "definition",
+      "question": "Where is the CycleError class defined for DAG cycles?",
+      "query_param": "CycleError",
+      "expected": {
+        "path": "packages/graph/src/compute/topo.ts",
+        "symbol": "CycleError",
+        "kind": "symbol",
+        "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 467.2,
+      "rawOutput": {
+        "query": "CycleError",
+        "symbols": [
+          {
+            "id": 4172,
+            "name": "CycleError",
+            "kind": "class",
+            "file": "packages/graph/src/compute/topo.ts",
+            "line": 2,
+            "endLine": 5,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 4173,
+            "name": "cycle",
+            "kind": "property",
+            "file": "packages/graph/src/compute/topo.ts",
+            "line": 3,
+            "endLine": 3,
+            "exported": false,
+            "container": "CycleError",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "CycleError -> join",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "CycleError",
+                "file": "packages/graph/src/compute/topo.ts",
+                "kind": "class"
+              },
+              {
+                "step": 2,
+                "symbolName": "join",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 3,
+        "timingMs": 30.4
+      }
+    },
+    {
+      "id": "plugmedia-05",
+      "type": "definition",
+      "question": "Where is casPath defined for locating content-addressed files?",
+      "query_param": "casPath",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "casPath",
+        "kind": "symbol",
+        "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 618,
+      "rawOutput": {
+        "query": "casPath",
+        "symbols": [
+          {
+            "id": 2247,
+            "name": "casPath",
+            "kind": "function",
+            "file": "services/runtime/src/cas.ts",
+            "line": 30,
+            "endLine": 32,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "storeContent -> casPath -> join",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "casPath",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "join",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "storeContent -> casPath -> slice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "casPath",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "slice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 3,
+        "timingMs": 54.1
+      }
+    },
+    {
+      "id": "plugmedia-06",
+      "type": "callers",
+      "question": "Where is storeContent called in the runtime domains?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/domain/media.ts"
+        ],
+        "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 477.4,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 2253,
+          "name": "storeContent",
+          "kind": "function",
+          "file": "services/runtime/src/cas.ts",
+          "line": 48,
+          "endLine": 83,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": 3221,
+              "name": "commitArtifact",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "line": 69,
+              "rawTarget": "storeContent"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": 2246,
+              "name": "ensureCas",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "line": 49,
+              "rawTarget": "ensureCas"
+            },
+            {
+              "id": 2247,
+              "name": "casPath",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "line": 50,
+              "rawTarget": "casPath"
+            },
+            {
+              "id": null,
+              "name": "existsSync",
+              "kind": "call",
+              "file": "",
+              "line": 51,
+              "rawTarget": "existsSync"
+            },
+            {
+              "id": null,
+              "name": "statSync",
+              "kind": "call",
+              "file": "",
+              "line": 52,
+              "rawTarget": "statSync"
+            },
+            {
+              "id": 2262,
+              "name": "sha256File",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "line": 54,
+              "rawTarget": "sha256File"
+            },
+            {
+              "id": null,
+              "name": "join",
+              "kind": "call",
+              "file": "",
+              "line": 60,
+              "rawTarget": "join"
+            },
+            {
+              "id": null,
+              "name": "slice",
+              "kind": "call",
+              "file": "",
+              "line": 60,
+              "rawTarget": "slice"
+            },
+            {
+              "id": null,
+              "name": "mkdirSync",
+              "kind": "call",
+              "file": "",
+              "line": 61,
+              "rawTarget": "mkdirSync"
+            },
+            {
+              "id": null,
+              "name": "join",
+              "kind": "call",
+              "file": "",
+              "line": 62,
+              "rawTarget": "join"
+            },
+            {
+              "id": null,
+              "name": "now",
+              "kind": "call",
+              "file": "",
+              "line": 62,
+              "rawTarget": "now"
+            },
+            {
+              "id": null,
+              "name": "readFileSync",
+              "kind": "call",
+              "file": "",
+              "line": 63,
+              "rawTarget": "readFileSync"
+            },
+            {
+              "id": null,
+              "name": "digest",
+              "kind": "call",
+              "file": "",
+              "line": 64,
+              "rawTarget": "digest"
+            },
+            {
+              "id": null,
+              "name": "update",
+              "kind": "call",
+              "file": "",
+              "line": 64,
+              "rawTarget": "update"
+            },
+            {
+              "id": null,
+              "name": "createHash",
+              "kind": "call",
+              "file": "",
+              "line": 64,
+              "rawTarget": "createHash"
+            },
+            {
+              "id": null,
+              "name": "writeFileSync",
+              "kind": "call",
+              "file": "",
+              "line": 78,
+              "rawTarget": "writeFileSync"
+            },
+            {
+              "id": 2262,
+              "name": "sha256File",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "line": 79,
+              "rawTarget": "sha256File"
+            },
+            {
+              "id": null,
+              "name": "unlinkSync",
+              "kind": "call",
+              "file": "",
+              "line": 80,
+              "rawTarget": "unlinkSync"
+            },
+            {
+              "id": null,
+              "name": "renameSync",
+              "kind": "call",
+              "file": "",
+              "line": 81,
+              "rawTarget": "renameSync"
+            }
+          ],
+          "references": [
+            {
+              "id": null,
+              "name": "Error",
+              "kind": "reference",
+              "file": "",
+              "line": 56,
+              "rawTarget": "Error"
+            },
+            {
+              "id": null,
+              "name": "Error",
+              "kind": "reference",
+              "file": "",
+              "line": 66,
+              "rawTarget": "Error"
+            },
+            {
+              "id": null,
+              "name": "Error",
+              "kind": "reference",
+              "file": "",
+              "line": 69,
+              "rawTarget": "Error"
+            },
+            {
+              "id": null,
+              "name": "Error",
+              "kind": "reference",
+              "file": "",
+              "line": 80,
+              "rawTarget": "Error"
+            }
+          ]
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "commitArtifact -> storeContent -> ensureCas",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "commitArtifact",
+                "file": "services/runtime/src/domain/media.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "ensureCas",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "commitArtifact -> storeContent -> casPath",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "commitArtifact",
+                "file": "services/runtime/src/domain/media.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "casPath",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-07",
+      "type": "impact",
+      "question": "What is impacted if PGCONFIG default port is changed?",
+      "query_param": "PGCONFIG",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts",
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 480,
+      "rawOutput": {
+        "target": {
+          "name": "PGCONFIG",
+          "file": "services/runtime/src/db.ts",
+          "id": 2284
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "plugmedia-08",
+      "type": "impact",
+      "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+      "query_param": "SCHEMA_VERSION",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "SCHEMA_VERSION",
+        "kind": "impact",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "expected_count": 2,
+        "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 460.9,
+      "rawOutput": {
+        "target": {
+          "name": "SCHEMA_VERSION",
+          "file": "packages/contracts/src/index.ts",
+          "id": 4183
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "plugmedia-09",
+      "type": "dataflow",
+      "question": "How does content storage flow from raw file stream to CAS destination?",
+      "query_param": "storeContent",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "storeContent",
+        "kind": "dataflow",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 529.8,
+      "rawOutput": {
+        "query": "storeContent",
+        "symbols": [
+          {
+            "id": 2253,
+            "name": "storeContent",
+            "kind": "function",
+            "file": "services/runtime/src/cas.ts",
+            "line": 48,
+            "endLine": 83,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2257,
+            "name": "dir",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 60,
+            "endLine": 60,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2258,
+            "name": "tmp",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 62,
+            "endLine": 62,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2259,
+            "name": "src",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 63,
+            "endLine": 63,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2255,
+            "name": "size",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 52,
+            "endLine": 52,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2256,
+            "name": "live",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 54,
+            "endLine": 54,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2260,
+            "name": "live",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 64,
+            "endLine": 64,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2254,
+            "name": "target",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 50,
+            "endLine": 50,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2261,
+            "name": "written",
+            "kind": "constant",
+            "file": "services/runtime/src/cas.ts",
+            "line": 79,
+            "endLine": 79,
+            "exported": false,
+            "container": "storeContent",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "commitArtifact -> storeContent -> ensureCas",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "commitArtifact",
+                "file": "services/runtime/src/domain/media.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "ensureCas",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "commitArtifact -> storeContent -> casPath",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "commitArtifact",
+                "file": "services/runtime/src/domain/media.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "storeContent",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "casPath",
+                "file": "services/runtime/src/cas.ts",
+                "kind": "function"
+              }
+            ]
+          }
+        ],
+        "total": 11,
+        "timingMs": 39.1
+      }
+    },
+    {
+      "id": "plugmedia-10",
+      "type": "config",
+      "question": "Which environment variable overrides the HTTP server port?",
+      "query_param": "PLUGMEDIA_PORT",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "PLUGMEDIA_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 612.3,
+      "rawOutput": {
+        "query": "PLUGMEDIA_PORT",
+        "symbols": [],
+        "notes": [],
+        "flows": [],
+        "total": 0,
+        "timingMs": 84.8
+      }
+    },
+    {
+      "id": "plugmedia-11",
+      "type": "config",
+      "question": "What is the default PostgreSQL database port configured in db.ts?",
+      "query_param": "PGPORT",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "PGCONFIG",
+        "kind": "config",
+        "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 502.8,
+      "rawOutput": {
+        "query": "PGPORT",
+        "symbols": [],
+        "notes": [],
+        "flows": [],
+        "total": 0,
+        "timingMs": 28.2
+      }
+    },
+    {
+      "id": "plugmedia-12",
+      "type": "entrypoint",
+      "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+      "query_param": "Fastify",
+      "expected": {
+        "path": "services/runtime/src/index.ts",
+        "symbol": "app",
+        "kind": "entrypoint",
+        "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 466.9,
+      "rawOutput": {
+        "query": "Fastify",
+        "symbols": [],
+        "notes": [],
+        "flows": [],
+        "total": 0,
+        "timingMs": 29.8
+      }
+    },
+    {
+      "id": "plugmedia-13",
+      "type": "entrypoint",
+      "question": "Where is the CLI command entrypoint for PlugMedia?",
+      "query_param": "main",
+      "expected": {
+        "path": "apps/cli/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 487.1,
+      "rawOutput": {
+        "query": "main",
+        "symbols": [
+          {
+            "id": 114,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/generate_assets.py",
+            "line": 180,
+            "endLine": 180,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 118,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/generate_reports.py",
+            "line": 60,
+            "endLine": 60,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 122,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/generate_task_graph.py",
+            "line": 352,
+            "endLine": 352,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 158,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/generate_w3_assets.py",
+            "line": 485,
+            "endLine": 485,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 189,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/northstar_research.py",
+            "line": 762,
+            "endLine": 762,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 197,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/validate.py",
+            "line": 228,
+            "endLine": 228,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 204,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/vlm-qa/mcpz_vlm/cli.py",
+            "line": 104,
+            "endLine": 104,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 296,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/extract_mechanics.py",
+            "line": 264,
+            "endLine": 264,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 297,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/extract_vehicle_physics.py",
+            "line": 45,
+            "endLine": 45,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 304,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/generate_scrape_report.py",
+            "line": 22,
+            "endLine": 22,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 316,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/map_parser.py",
+            "line": 326,
+            "endLine": 326,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 327,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/pz_importer.py",
+            "line": 135,
+            "endLine": 135,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 343,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/pz-local-importer/scrape_pz.py",
+            "line": 466,
+            "endLine": 466,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1211,
+            "name": "main",
+            "kind": "function",
+            "file": "agent-pack/bootstrap_agent.py",
+            "line": 371,
+            "endLine": 371,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1299,
+            "name": "main",
+            "kind": "function",
+            "file": ".swarm/scripts/init_swarm.py",
+            "line": 21,
+            "endLine": 21,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1389,
+            "name": "main",
+            "kind": "function",
+            "file": "workers/media/d1_characters.py",
+            "line": 430,
+            "endLine": 430,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1402,
+            "name": "main",
+            "kind": "function",
+            "file": "workers/media/d1_diffusion.py",
+            "line": 357,
+            "endLine": 357,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1603,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/handoff/export-handoff.py",
+            "line": 94,
+            "endLine": 94,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1963,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/d1/gate-surfaces.mjs",
+            "line": 130,
+            "endLine": 180,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2041,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/d1/probe-desktop.mjs",
+            "line": 64,
+            "endLine": 123,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2075,
+            "name": "main",
+            "kind": "function",
+            "file": "tools/d1/restart.mjs",
+            "line": 127,
+            "endLine": 193,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2586,
+            "name": "maintainPublication",
+            "kind": "function",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 151,
+            "endLine": 155,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 298,
+            "name": "nums",
+            "kind": "method",
+            "file": "tools/pz-local-importer/extract_vehicle_physics.py",
+            "line": 112,
+            "endLine": 112,
+            "exported": true,
+            "container": "main",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 299,
+            "name": "stat",
+            "kind": "method",
+            "file": "tools/pz-local-importer/extract_vehicle_physics.py",
+            "line": 122,
+            "endLine": 122,
+            "exported": true,
+            "container": "main",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 119,
+            "name": "write",
+            "kind": "method",
+            "file": "tools/generate_reports.py",
+            "line": 67,
+            "endLine": 67,
+            "exported": true,
+            "container": "main",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": ".swarm/SWARM_FLEET.json",
+            "title": "SWARM_FLEET.json",
+            "snippet": "… [main]/java/net/mcpz/server/McpzAuthorityLifecycle.java\", \"src/[main]/java/net/mcpz/server/McpzNetwork.java\", \"src/[main]/java …"
+          },
+          {
+            "path": "research/source-registry/sources.yaml",
+            "title": "sources.yaml",
+            "snippet": "… Minecraft Wiki (community-[maintained]) source_type: [maintained]-wiki canonical_location: https://minecraft.wiki/w/Java_Edition_26.2 …"
+          },
+          {
+            "path": ".swarm/contracts/SHARED_CONTRACT_FREEZE.md",
+            "title": "SHARED_CONTRACT_FREEZE",
+            "snippet": "… [main]/java/net/mcpz/server/McpzAuthorityLifecycle.java` - `src/[main]/java/net/mcpz/server/McpzNetwork.java` - `src/[main]/java …"
+          },
+          {
+            "path": "northstar-content/build.sh",
+            "title": "build.sh",
+            "snippet": "… build/test-classes find src/[main]/java -name '*.java' | sort > build/[main]-sources.txt find src/test/java …"
+          },
+          {
+            "path": "scripts/headless-restart-smoke.sh",
+            "title": "headless-restart-smoke.sh",
+            "snippet": "… northstar-content/src/[main]/java northstar-net/src/[main]/java northstar-server/src/[main]/java northstar-tests/src …"
+          },
+          {
+            "path": "tools/pz-local-importer/generate_scrape_report.py",
+            "title": "generate_scrape_report.py",
+            "snippet": "… Map (media/maps)\") add(\"\") towns = mapc.get(\"towns\", {}) [main]_town = towns.get(\"Muldraugh, KY\") if [main]_town: info …"
+          },
+          {
+            "path": ".swarm/lanes/L05_FVS_WORLD_OBJECTS.md",
+            "title": "L05_FVS_WORLD_OBJECTS",
+            "snippet": "… src/[main]/java/northstar/content/world/` - `src/[main]/java/net/mcpz/world/Mcpz*Block.java` - `src/[main]/java …"
+          },
+          {
+            "path": "scripts/server-smoke.sh",
+            "title": "server-smoke.sh",
+            "snippet": "… northstar-content/src/[main]/java northstar-net/src/[main]/java northstar-server/src/[main]/java northstar-tests/src …"
+          },
+          {
+            "path": ".swarm/lanes/L06_FVS_INVENTORY_LOOT.md",
+            "title": "L06_FVS_INVENTORY_LOOT",
+            "snippet": "… [main]/java/northstar/content/container/` - `northstar-content/src/[main]/java/northstar/content/item/` - `northstar-content/src/[main]/java …"
+          },
+          {
+            "path": "reports/integration/STATUS.md",
+            "title": "STATUS",
+            "snippet": "… 2026-08-09 (evening session) Integration branch: `lane4/research-merge` ([main] repo) · HEAD `db68344` + ledger commits [Main] branch …"
+          }
+        ],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "generate_assets.py -> main -> mkdir",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "generate_assets.py",
+                "file": "tools/generate_assets.py",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "main",
+                "file": "tools/generate_assets.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "mkdir",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "generate_assets.py -> main -> spec",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "generate_assets.py",
+                "file": "tools/generate_assets.py",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "main",
+                "file": "tools/generate_assets.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "spec",
+                "file": "tools/generate_assets.py",
+                "kind": "function"
+              }
+            ]
+          }
+        ],
+        "total": 37,
+        "timingMs": 54.4
+      }
+    },
+    {
+      "id": "plugmedia-14",
+      "type": "docs_notes",
+      "question": "Which document contains the final architecture and verification report for VS0?",
+      "query_param": "VS0_FINAL_REPORT.md",
+      "expected": {
+        "path": "VS0_FINAL_REPORT.md",
+        "symbol": "VS0_FINAL_REPORT.md",
+        "kind": "docs_notes",
+        "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 563.9,
+      "rawOutput": {
+        "query": "VS0_FINAL_REPORT.md",
+        "symbols": [
+          {
+            "id": 1369,
+            "name": "2. Gates",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 34,
+            "endLine": 34,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1379,
+            "name": "9. Reproduktion",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 170,
+            "endLine": 170,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1378,
+            "name": "8. Nächster Schritt",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 157,
+            "endLine": 157,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1368,
+            "name": "1. Was tatsächlich läuft",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 14,
+            "endLine": 14,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1370,
+            "name": "3. Der vertikale Durchstich",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 50,
+            "endLine": 50,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1367,
+            "name": "PlugMedia VS0 — Abschlussbericht",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1371,
+            "name": "Route A — lokaler Original-Short",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 52,
+            "endLine": 52,
+            "exported": false,
+            "container": "3. Der vertikale Durchstich",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1372,
+            "name": "Route B — lokaler Repurpose-Clip",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 61,
+            "endLine": 61,
+            "exported": false,
+            "container": "3. Der vertikale Durchstich",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1376,
+            "name": "6. Sicherheit, Rechte, Isolation",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 126,
+            "endLine": 126,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1373,
+            "name": "Dieselbe Runtime, drei Oberflächen",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 68,
+            "endLine": 68,
+            "exported": false,
+            "container": "3. Der vertikale Durchstich",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1374,
+            "name": "4. Real gefundene und behobene Defekte",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 75,
+            "endLine": 75,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1377,
+            "name": "7. Was ausdrücklich nicht erreicht ist",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 142,
+            "endLine": 142,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1375,
+            "name": "5. Recovery und Idempotenz — mit echten Messungen",
+            "kind": "property",
+            "file": "VS0_FINAL_REPORT.md",
+            "line": 109,
+            "endLine": 109,
+            "exported": false,
+            "container": "PlugMedia VS0 — Abschlussbericht",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 13,
+        "timingMs": 141
+      }
+    },
+    {
+      "id": "plugmedia-15",
+      "type": "docs_notes",
+      "question": "Which document lists the archive manifest and quarantine inventory?",
+      "query_param": "ARCHIVE_MANIFEST.md",
+      "expected": {
+        "path": "ARCHIVE_MANIFEST.md",
+        "symbol": "ARCHIVE_MANIFEST.md",
+        "kind": "docs_notes",
+        "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 540.3,
+      "rawOutput": {
+        "query": "ARCHIVE_MANIFEST.md",
+        "symbols": [
+          {
+            "id": 1356,
+            "name": "Enthalten",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 16,
+            "endLine": 16,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1359,
+            "name": "Archiv prüfen",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 80,
+            "endLine": 80,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1355,
+            "name": "PLUGMEDIA D1 — Build-Archiv",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1357,
+            "name": "Bewusst nicht enthalten (und warum)",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 39,
+            "endLine": 39,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1358,
+            "name": "Verpackter Desktop-Client (Kennung)",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 53,
+            "endLine": 53,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1361,
+            "name": "Ein behobener Defekt, der hier dokumentiert bleibt",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 119,
+            "endLine": 119,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1360,
+            "name": "Zwei Dinge, die neben dem Archiv liegen — und warum",
+            "kind": "property",
+            "file": "ARCHIVE_MANIFEST.md",
+            "line": 108,
+            "endLine": 108,
+            "exported": false,
+            "container": "PLUGMEDIA D1 — Build-Archiv",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 7,
+        "timingMs": 87.1
+      }
+    },
+    {
+      "id": "plugmedia-16",
+      "type": "rename_impact",
+      "question": "What breaks if ensureCas is renamed in cas.ts?",
+      "query_param": "ensureCas",
+      "expected": {
+        "path": "services/runtime/src/cas.ts",
+        "symbol": "ensureCas",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/cas.ts"
+        ],
+        "details": "ensureCas is called inside storeContent and registerContent."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 432.9,
+      "rawOutput": {
+        "target": {
+          "name": "ensureCas",
+          "file": "services/runtime/src/cas.ts",
+          "id": 2246
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 12,
+        "nodes": {
+          "1": [
+            {
+              "depth": 1,
+              "id": 2253,
+              "name": "storeContent",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            }
+          ],
+          "2": [
+            {
+              "depth": 2,
+              "id": 3221,
+              "name": "commitArtifact",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 2247,
+              "name": "casPath",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 2262,
+              "name": "sha256File",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            }
+          ],
+          "3": [
+            {
+              "depth": 3,
+              "id": 3360,
+              "name": "modelVerify",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3439,
+              "name": "doctor",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2661,
+              "name": "commit",
+              "kind": "function",
+              "file": "services/runtime/src/engine/worker.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3239,
+              "name": "insertArtifact",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3718,
+              "name": "episodesImport",
+              "kind": "function",
+              "file": "services/runtime/src/domain/studio.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3838,
+              "name": "sceneEdit",
+              "kind": "function",
+              "file": "services/runtime/src/domain/studio.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3208,
+              "name": "artifactParams",
+              "kind": "function",
+              "file": "services/runtime/src/domain/media.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2268,
+              "name": "registerContent",
+              "kind": "function",
+              "file": "services/runtime/src/cas.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            }
+          ]
+        },
+        "risk": "high"
+      }
+    },
+    {
+      "id": "plugmedia-17",
+      "type": "rename_impact",
+      "question": "What breaks if applyMigrations function is renamed?",
+      "query_param": "applyMigrations",
+      "expected": {
+        "path": "services/runtime/src/db.ts",
+        "symbol": "applyMigrations",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "services/runtime/src/db.ts"
+        ],
+        "details": "applyMigrations executes database schema migrations."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 514.9,
+      "rawOutput": {
+        "target": {
+          "name": "applyMigrations",
+          "file": "services/runtime/src/db.ts",
+          "id": 2294
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 18,
+        "nodes": {
+          "1": [
+            {
+              "depth": 1,
+              "id": 2135,
+              "name": "migrate",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            },
+            {
+              "depth": 1,
+              "id": 3521,
+              "name": "restore",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            },
+            {
+              "depth": 1,
+              "id": 3567,
+              "name": "restoreIsolated",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            },
+            {
+              "depth": 1,
+              "id": 2297,
+              "name": "sha256",
+              "kind": "property",
+              "file": "services/runtime/src/db.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            }
+          ],
+          "2": [
+            {
+              "depth": 2,
+              "id": 2125,
+              "name": "out",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 3499,
+              "name": "verifyArtifactIntegrity",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 2285,
+              "name": "openDb",
+              "kind": "function",
+              "file": "services/runtime/src/db.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 3482,
+              "name": "sha256",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            }
+          ],
+          "3": [
+            {
+              "depth": 3,
+              "id": 2126,
+              "name": "seedIsolationFixture",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2131,
+              "name": "roleBootstrap",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2137,
+              "name": "seedIdentity",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2140,
+              "name": "principalIssue",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2154,
+              "name": "principals",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 2156,
+              "name": "integrityScan",
+              "kind": "function",
+              "file": "tools/admin/plug-admin.mjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3515,
+              "name": "backup",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3530,
+              "name": "compatImport",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3545,
+              "name": "bridgeDescriptor",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 3552,
+              "name": "verifyMedia",
+              "kind": "function",
+              "file": "services/runtime/src/domain/ops.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            }
+          ]
+        },
+        "risk": "high"
+      }
+    },
+    {
+      "id": "plugmedia-18",
+      "type": "definition",
+      "question": "Where is the durable schedulerTick function defined?",
+      "query_param": "schedulerTick",
+      "expected": {
+        "path": "services/runtime/src/engine/scheduler.ts",
+        "symbol": "schedulerTick",
+        "kind": "symbol",
+        "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 489.9,
+      "rawOutput": {
+        "query": "schedulerTick",
+        "symbols": [
+          {
+            "id": 2599,
+            "name": "schedulerTick",
+            "kind": "function",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 215,
+            "endLine": 235,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2604,
+            "name": "aged",
+            "kind": "constant",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 223,
+            "endLine": 223,
+            "exported": false,
+            "container": "schedulerTick",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2602,
+            "name": "slots",
+            "kind": "constant",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 221,
+            "endLine": 221,
+            "exported": false,
+            "container": "schedulerTick",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2603,
+            "name": "outbox",
+            "kind": "constant",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 222,
+            "endLine": 222,
+            "exported": false,
+            "container": "schedulerTick",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2601,
+            "name": "reclaimed",
+            "kind": "constant",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 220,
+            "endLine": 220,
+            "exported": false,
+            "container": "schedulerTick",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2600,
+            "name": "catchupWindowHours",
+            "kind": "property",
+            "file": "services/runtime/src/engine/scheduler.ts",
+            "line": 218,
+            "endLine": 218,
+            "exported": false,
+            "container": "schedulerTick",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "schedulerLoop -> schedulerTick -> reclaimAll",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "schedulerLoop",
+                "file": "services/runtime/src/index.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "schedulerTick",
+                "file": "services/runtime/src/engine/scheduler.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "reclaimAll",
+                "file": "services/runtime/src/engine/scheduler.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "schedulerLoop -> schedulerTick -> fireDueSlots",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "schedulerLoop",
+                "file": "services/runtime/src/index.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "schedulerTick",
+                "file": "services/runtime/src/engine/scheduler.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "fireDueSlots",
+                "file": "services/runtime/src/engine/scheduler.ts",
+                "kind": "function"
+              }
+            ]
+          }
+        ],
+        "total": 8,
+        "timingMs": 31.6
+      }
+    },
+    {
+      "id": "plugmedia-19",
+      "type": "callers",
+      "question": "Where is the command dispatcher register function called to wire media commands?",
+      "query_param": "register",
+      "expected": {
+        "path": "services/runtime/src/commands.ts",
+        "symbol": "register",
+        "kind": "callers",
+        "expected_targets": [
+          "services/runtime/src/index.ts"
+        ],
+        "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 419.6,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 2276,
+          "name": "register",
+          "kind": "function",
+          "file": "services/runtime/src/commands.ts",
+          "line": 12,
+          "endLine": 12,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 52,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 53,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 54,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 55,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 56,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 57,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 58,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 59,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 60,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 61,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 62,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 63,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 64,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 65,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 66,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 67,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 68,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 69,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 70,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 71,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 72,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 73,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 74,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 76,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 77,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 78,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 79,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 80,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 81,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 82,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 83,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 86,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 87,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 88,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 89,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 90,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 91,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 92,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 93,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 94,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 95,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 97,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 98,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 99,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 100,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 101,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 102,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 103,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 104,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 105,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 106,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 107,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 108,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 109,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 110,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 111,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 112,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 114,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 115,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 116,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 117,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 120,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 121,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 124,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 125,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 126,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 127,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 128,
+              "rawTarget": "register"
+            },
+            {
+              "id": null,
+              "name": "index.ts",
+              "kind": "file",
+              "file": "services/runtime/src/index.ts",
+              "line": 129,
+              "rawTarget": "register"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": null,
+              "name": "set",
+              "kind": "call",
+              "file": "",
+              "line": 12,
+              "rawTarget": "set"
+            }
+          ],
+          "references": []
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "index.ts -> register -> set",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "index.ts",
+                "file": "services/runtime/src/index.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "register",
+                "file": "services/runtime/src/commands.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "set",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "index.ts -> register -> set",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "index.ts",
+                "file": "services/runtime/src/index.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "register",
+                "file": "services/runtime/src/commands.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "set",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "index.ts -> register -> set",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "index.ts",
+                "file": "services/runtime/src/index.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "register",
+                "file": "services/runtime/src/commands.ts",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "set",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugmedia-20",
+      "type": "definition",
+      "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+      "query_param": "ALLOWED_ORIGINS",
+      "expected": {
+        "path": "services/runtime/src/auth.ts",
+        "symbol": "ALLOWED_ORIGINS",
+        "kind": "symbol",
+        "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 464.5,
+      "rawOutput": {
+        "query": "ALLOWED_ORIGINS",
+        "symbols": [
+          {
+            "id": 2202,
+            "name": "ALLOWED_ORIGINS",
+            "kind": "constant",
+            "file": "services/runtime/src/auth.ts",
+            "line": 24,
+            "endLine": 28,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 1,
+        "timingMs": 47.7
+      }
+    }
+  ]
+}

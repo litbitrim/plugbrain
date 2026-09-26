@@ -1,0 +1,2425 @@
+{
+  "benchmark": "codegraph-cold",
+  "timestamp": "2026-09-26T04:43:30.916Z",
+  "grandOldHits": 65,
+  "grandOldTotal": 80,
+  "grandOldAccuracy": 81.3,
+  "grandHoldoutHits": 38,
+  "grandHoldoutTotal": 40,
+  "grandHoldoutAccuracy": 95,
+  "grandTotalHits": 103,
+  "grandTotal": 120,
+  "grandTotalAccuracy": 85.8,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 279.7,
+  "latencyP95": 311.3,
+  "repos": [
+    {
+      "repo": "mcpz",
+      "oldHits": 15,
+      "oldTotal": 20,
+      "oldAccuracy": 75,
+      "holdoutHits": 9,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 90,
+      "totalHits": 24,
+      "totalCount": 30,
+      "totalAccuracy": 80,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 286.2,
+      "latencyOldP95": 296.3,
+      "latencyHoldoutP50": 289.3,
+      "latencyHoldoutP95": 317.9,
+      "latencyAllP50": 287,
+      "latencyAllP95": 306.6,
+      "questions": [
+        {
+          "id": "mcpz-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the MOD_ID constant defined for MCPZ?",
+          "query_param": "MOD_ID",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzConstants.java",
+            "symbol": "MOD_ID",
+            "kind": "symbol",
+            "details": "McpzConstants defines public static final String MOD_ID = \"mcpz\"."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 282.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"field:bdcec673ba4490b017e68ecf45e1dcd5\",\n      \"kind\": \"field\",\n      \"name\": \"MOD_ID\",\n      \"qualifiedName\": \"net.mcpz::McpzConstants::MOD_ID\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"language\": \"java\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColumn\": 31,\n      \"endColumn\": 46,\n      \"signature\": \"String MOD_ID\",\n      "
+        },
+        {
+          "id": "mcpz-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where are the default camera settings defined in CameraConfig?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "CameraConfig",
+            "kind": "symbol",
+            "details": "CameraConfig record defining defaults() and from(McpzConfig cfg)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 275,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"kind\": \"file\",\n      \"name\": \"CameraConfig.java\",\n      \"qualifiedName\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"language\": \"java\",\n      \"startLine\": 1,\n      \"endLine\": 60,\n      \"startColumn\": 0,\n      \"endColumn\": "
+        },
+        {
+          "id": "mcpz-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Which method initializes the client runtime McpzRuntime.init?",
+          "query_param": "init",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "onInitializeClient",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java"
+            ],
+            "details": "McpzClient.onInitializeClient calls McpzRuntime.init(cfg)."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 277.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"init\",\n  \"callers\": [\n    {\n      \"name\": \"onInitialize\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"startLine\": 39\n    },\n    {\n      \"name\": \"onInitializeClient\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 50\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "mcpz-04",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is camera.keyRotateLeft bound in the client?",
+          "query_param": "registerKeybindings",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "registerKeybindings",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java"
+            ],
+            "details": "McpzClient.registerKeybindings sets cam.keyRotateLeft = bind(...)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 282.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"registerKeybindings\",\n  \"callers\": [\n    {\n      \"name\": \"onInitializeClient\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 50\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "mcpz-05",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if McpzConstants.FLOOR_HEIGHT_BLOCKS is changed?",
+          "query_param": "FLOOR_HEIGHT_BLOCKS",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzConstants.java",
+            "symbol": "FLOOR_HEIGHT_BLOCKS",
+            "kind": "impact",
+            "expected_targets": [
+              "src/main/java/net/mcpz/McpzMod.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "expected_count": 2,
+            "details": "McpzMod logs it at startup and camera floor tracking calculates floor transitions."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 288.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"FLOOR_HEIGHT_BLOCKS\",\n  \"depth\": 2,\n  \"nodeCount\": 33,\n  \"edgeCount\": 32,\n  \"affected\": [\n    {\n      \"name\": \"FLOOR_HEIGHT_BLOCKS\",\n      \"kind\": \"field\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"startLine\": 22\n    },\n    {\n      \"name\": \"McpzConstants\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"startLi"
+        },
+        {
+          "id": "mcpz-06",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if CameraConfig is modified?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "CameraConfig",
+            "kind": "impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/McpzRuntime.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "expected_count": 3,
+            "details": "CameraConfig is passed from McpzClient into McpzRuntime and McpzCameraController."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 285.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"CameraConfig\",\n  \"depth\": 2,\n  \"nodeCount\": 18,\n  \"edgeCount\": 12,\n  \"affected\": [\n    {\n      \"name\": \"net.mcpz.camera.CameraConfig\",\n      \"kind\": \"import\",\n      \"filePath\": \"src/client/java/net/mcpz/client/camera/McpzCameraController.java\",\n      \"startLine\": 4\n    },\n    {\n      \"name\": \"net.mcpz.client.camera\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"src/client/java/net/"
+        },
+        {
+          "id": "mcpz-07",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How do camera configuration values flow from config files into runtime camera behavior?",
+          "query_param": "CameraConfig",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "onInitializeClient",
+            "kind": "dataflow",
+            "expected_targets": [
+              "src/main/java/net/mcpz/config/McpzConfig.java",
+              "src/main/java/net/mcpz/camera/CameraConfig.java",
+              "src/client/java/net/mcpz/client/McpzRuntime.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "details": "McpzConfig.load -> CameraConfig.from -> McpzRuntime.init -> new McpzCameraController(cfg)."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 278.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"kind\": \"file\",\n      \"name\": \"CameraConfig.java\",\n      \"qualifiedName\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"language\": \"java\",\n      \"startLine\": 1,\n      \"endLine\": 60,\n      \"startColumn\": 0,\n      \"endColumn\": "
+        },
+        {
+          "id": "mcpz-08",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which config key controls the default isometric camera yaw?",
+          "query_param": "cameraYawDefaultDegrees",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "symbol": "cameraYawDefaultDegrees",
+            "kind": "config",
+            "details": "CameraConfig reads cfg.getDouble(\"cameraYawDefaultDegrees\")."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 287,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "mcpz-09",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the common Fabric ModInitializer entrypoint located?",
+          "query_param": "McpzMod",
+          "expected": {
+            "path": "src/main/java/net/mcpz/McpzMod.java",
+            "symbol": "McpzMod",
+            "kind": "entrypoint",
+            "details": "McpzMod implements ModInitializer with onInitialize()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 286.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:0b947e08e529f31a736a189d52c54bf4\",\n      \"kind\": \"class\",\n      \"name\": \"McpzMod\",\n      \"qualifiedName\": \"net.mcpz::McpzMod\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"language\": \"java\",\n      \"startLine\": 19,\n      \"endLine\": 65,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"MCPZ main entrypoint (Fabric \\\"main\\\"). R"
+        },
+        {
+          "id": "mcpz-10",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the client-only Fabric ClientModInitializer entrypoint located?",
+          "query_param": "McpzClient",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzClient.java",
+            "symbol": "McpzClient",
+            "kind": "entrypoint",
+            "details": "McpzClient implements ClientModInitializer with onInitializeClient()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 286.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:03b0f567e74ad7c01883e1344cec28cd\",\n      \"kind\": \"class\",\n      \"name\": \"McpzClient\",\n      \"qualifiedName\": \"net.mcpz.client::McpzClient\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"language\": \"java\",\n      \"startLine\": 45,\n      \"endLine\": 352,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"MCPZ client ent"
+        },
+        {
+          "id": "mcpz-11",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document describes the overarching Northstar architecture and requirements?",
+          "query_param": "MASTER_NORTHSTAR.md",
+          "expected": {
+            "path": "MASTER_NORTHSTAR.md",
+            "symbol": "MASTER_NORTHSTAR.md",
+            "kind": "docs_notes",
+            "details": "MASTER_NORTHSTAR.md contains full architectural plan and acceptance criteria."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 288.9,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "mcpz-12",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document details the detached isometric camera design and specification?",
+          "query_param": "MASTER_CAMERA_PLAN.md",
+          "expected": {
+            "path": "MASTER_CAMERA_PLAN.md",
+            "symbol": "MASTER_CAMERA_PLAN.md",
+            "kind": "docs_notes",
+            "details": "MASTER_CAMERA_PLAN.md specifies camera controls, math, zoom, and floor clipping."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 284.7,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "mcpz-13",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if McpzRuntime.camera() accessor is renamed?",
+          "query_param": "camera",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "symbol": "camera",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/mixin/CameraMixin.java"
+            ],
+            "details": "McpzClient and CameraMixin call rt.camera()."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 290.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"camera\",\n  \"depth\": 2,\n  \"nodeCount\": 199,\n  \"edgeCount\": 191,\n  \"affected\": [\n    {\n      \"name\": \"camera\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n      \"startLine\": 77\n    },\n    {\n      \"name\": \"McpzRuntime\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n      \"startLine\": 29\n   "
+        },
+        {
+          "id": "mcpz-14",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if derive_evidence_class is renamed in python tooling?",
+          "query_param": "derive_evidence_class",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "derive_evidence_class",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "tools/vlm-qa/mcpz_vlm/evidence.py"
+            ],
+            "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 274.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"derive_evidence_class\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 7,\n  \"affected\": [\n    {\n      \"name\": \"derive_evidence_class\",\n      \"kind\": \"function\",\n      \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"startLine\": 43\n    },\n    {\n      \"name\": \"test_os_input_with_vision_reaches_vlm\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \""
+        },
+        {
+          "id": "mcpz-15",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is derive_evidence_class implemented in the python test harness?",
+          "query_param": "derive_evidence_class",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "derive_evidence_class",
+            "kind": "symbol",
+            "details": "evidence.py defines derive_evidence_class(input_source, vision_assessed)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 293.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:4e54bcce09c453d47869492eec579ba6\",\n      \"kind\": \"function\",\n      \"name\": \"derive_evidence_class\",\n      \"qualifiedName\": \"derive_evidence_class\",\n      \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"language\": \"python\",\n      \"startLine\": 43,\n      \"endLine\": 47,\n      \"startColumn\": 0,\n      \"endColumn\": 40,\n      \"signature\": \"(input_source: s"
+        },
+        {
+          "id": "mcpz-16",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is validate_manifest called in the VLM test harness?",
+          "query_param": "validate_manifest",
+          "expected": {
+            "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "symbol": "validate_manifest",
+            "kind": "callers",
+            "expected_targets": [
+              "tools/vlm-qa/mcpz_vlm/cli.py"
+            ],
+            "details": "cli.py calls validate_manifest when checking run manifests."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 285.7,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"validate_manifest\",\n  \"callers\": [\n    {\n      \"name\": \"test_honest_manifest_passes\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \"startLine\": 33\n    },\n    {\n      \"name\": \"test_synthetic_cannot_claim_vlm\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \"startLine\": 36\n    },\n    {\n      \"name\": \"test_missing_fields_r"
+        },
+        {
+          "id": "mcpz-17",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is McpzAtmosphereController defined?",
+          "query_param": "McpzAtmosphereController",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "symbol": "McpzAtmosphereController",
+            "kind": "symbol",
+            "details": "Atmosphere controller managing weather, fog, and lighting overrides."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 291.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:39d66c941c9d014551573f609764e891\",\n      \"kind\": \"class\",\n      \"name\": \"McpzAtmosphereController\",\n      \"qualifiedName\": \"net.mcpz.client.atmosphere::McpzAtmosphereController\",\n      \"filePath\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"language\": \"java\",\n      \"startLine\": 14,\n      \"endLine\": 93,\n      \"startColumn"
+        },
+        {
+          "id": "mcpz-18",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if McpzControlMap.ROTATE_LEFT key name is changed?",
+          "query_param": "ROTATE_LEFT",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/input/McpzControlMap.java",
+            "symbol": "ROTATE_LEFT",
+            "kind": "impact",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/input/McpzKeybindStore.java"
+            ],
+            "expected_count": 2,
+            "details": "ROTATE_LEFT is referenced in McpzClient for keybinding registration and McpzKeybindStore."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 292.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"ROTATE_LEFT\",\n  \"depth\": 2,\n  \"nodeCount\": 54,\n  \"edgeCount\": 52,\n  \"affected\": [\n    {\n      \"name\": \"ROTATE_LEFT\",\n      \"kind\": \"field\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\n      \"startLine\": 34\n    },\n    {\n      \"name\": \"McpzControlMap\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java"
+        },
+        {
+          "id": "mcpz-19",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the MinecraftItemRepresentationRegistry class defined?",
+          "query_param": "MinecraftItemRepresentationRegistry",
+          "expected": {
+            "path": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "symbol": "MinecraftItemRepresentationRegistry",
+            "kind": "symbol",
+            "details": "Class adapting Project Zomboid item concepts to vanilla Minecraft item registries."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 296.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:d96c9c7140684f37e889a9c952419178\",\n      \"kind\": \"method\",\n      \"name\": \"MinecraftItemRepresentationRegistry\",\n      \"qualifiedName\": \"net.mcpz.item::MinecraftItemRepresentationRegistry::MinecraftItemRepresentationRegistry\",\n      \"filePath\": \"src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java\",\n      \"language\": \"java\",\n      \"startLine\":"
+        },
+        {
+          "id": "mcpz-20",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is McpzLog.get called to obtain subsystem loggers?",
+          "query_param": "McpzLog",
+          "expected": {
+            "path": "src/main/java/net/mcpz/log/McpzLog.java",
+            "symbol": "get",
+            "kind": "callers",
+            "expected_targets": [
+              "src/client/java/net/mcpz/client/McpzClient.java",
+              "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            ],
+            "details": "McpzClient and McpzCameraController obtain scoped loggers via McpzLog.get()."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 296.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"McpzLog\",\n  \"callers\": [\n    {\n      \"name\": \"com.mcpz.server\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"net.mcpz.client\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 1\n    },\n  "
+        },
+        {
+          "id": "mcpz-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the PzTrait record defined for selectable character traits?",
+          "query_param": "PzTrait",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzTrait.java",
+            "symbol": "PzTrait",
+            "kind": "symbol",
+            "details": "PzTrait record defining character trait properties: id, displayName, cost, kind, description, exclusiveWith."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 290.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:706d565c3517d37aa1dce0432b0218ab\",\n      \"kind\": \"function\",\n      \"name\": \"PzTrait\",\n      \"qualifiedName\": \"net.mcpz.character::PzTrait\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"language\": \"java\",\n      \"startLine\": 25,\n      \"endLine\": 27,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"signature\": \"(String id, Str"
+        },
+        {
+          "id": "mcpz-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the costLabel method defined for formatting trait cost strings?",
+          "query_param": "costLabel",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzTrait.java",
+            "symbol": "costLabel",
+            "kind": "symbol",
+            "details": "costLabel returns +cost for negatives and -cost for positives."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 289.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:bb359a37e51c58df6148be19d6412886\",\n      \"kind\": \"function\",\n      \"name\": \"costLabel\",\n      \"qualifiedName\": \"net.mcpz.character::costLabel\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"language\": \"java\",\n      \"startLine\": 30,\n      \"endLine\": 32,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"docstring\": \"Trait cost "
+        },
+        {
+          "id": "mcpz-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the PzProfession record defined for character occupations?",
+          "query_param": "PzProfession",
+          "expected": {
+            "path": "src/main/java/net/mcpz/character/PzProfession.java",
+            "symbol": "PzProfession",
+            "kind": "symbol",
+            "details": "PzProfession record defining id, displayName, startingPoints, freeTraitIds, description."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 306.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:27ccfedcbf82700a9e07d247c011e3d7\",\n      \"kind\": \"function\",\n      \"name\": \"PzProfession\",\n      \"qualifiedName\": \"net.mcpz.character::PzProfession\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzProfession.java\",\n      \"language\": \"java\",\n      \"startLine\": 20,\n      \"endLine\": 22,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"signature\": \""
+        },
+        {
+          "id": "mcpz-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the ModuleRegistry class defined for MCPZ initialization backbone?",
+          "query_param": "ModuleRegistry",
+          "expected": {
+            "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+            "symbol": "ModuleRegistry",
+            "kind": "symbol",
+            "details": "ModuleRegistry registers and initializes MCPZ modules in deterministic order."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 317.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:8e66fd4cca6d15ab76ca8ba1059d5a34\",\n      \"kind\": \"method\",\n      \"name\": \"ModuleRegistry\",\n      \"qualifiedName\": \"net.mcpz.module::ModuleRegistry::ModuleRegistry\",\n      \"filePath\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n      \"language\": \"java\",\n      \"startLine\": 21,\n      \"endLine\": 21,\n      \"startColumn\": 4,\n      \"endColumn\": 31,\n      \""
+        },
+        {
+          "id": "mcpz-holdout-05",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is ModuleRegistry.initializeAll called during server/mod initialization?",
+          "query_param": "initializeAll",
+          "expected": {
+            "path": "src/main/java/net/mcpz/module/ModuleRegistry.java",
+            "symbol": "initializeAll",
+            "kind": "callers",
+            "expected_targets": [
+              "src/main/java/net/mcpz/McpzMod.java"
+            ],
+            "details": "McpzMod calls ModuleRegistry.initializeAll() during mod setup."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 294.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"initializeAll\",\n  \"callers\": [\n    {\n      \"name\": \"onInitialize\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"startLine\": 22\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "mcpz-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is SaveSchema defined for save version validation constants and helpers?",
+          "query_param": "SaveSchema",
+          "expected": {
+            "path": "src/main/java/net/mcpz/save/SaveSchema.java",
+            "symbol": "SaveSchema",
+            "kind": "symbol",
+            "details": "SaveSchema defines CURRENT version and DATA_ID helper."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 295.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:7fad3482e8380f2942a1af96ce483e64\",\n      \"kind\": \"method\",\n      \"name\": \"SaveSchema\",\n      \"qualifiedName\": \"net.mcpz.save::SaveSchema::SaveSchema\",\n      \"filePath\": \"src/main/java/net/mcpz/save/SaveSchema.java\",\n      \"language\": \"java\",\n      \"startLine\": 10,\n      \"endLine\": 10,\n      \"startColumn\": 4,\n      \"endColumn\": 27,\n      \"signature\": \"()\",\n  "
+        },
+        {
+          "id": "mcpz-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is AimTargetSnapshot defined for raycast hit results?",
+          "query_param": "AimTargetSnapshot",
+          "expected": {
+            "path": "src/main/java/net/mcpz/target/AimTargetSnapshot.java",
+            "symbol": "AimTargetSnapshot",
+            "kind": "symbol",
+            "details": "AimTargetSnapshot record stores immutable cursor raycast hit data in world space."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 288.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:64e70574a0dc8f7b8965b4c1c8d4a846\",\n      \"kind\": \"import\",\n      \"name\": \"net.mcpz.target.AimTargetSnapshot\",\n      \"qualifiedName\": \"net.mcpz.client.input::net.mcpz.target.AimTargetSnapshot\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzAimController.java\",\n      \"language\": \"java\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColum"
+        },
+        {
+          "id": "mcpz-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is clampBrightness implemented in McpzAtmosphereController?",
+          "query_param": "clampBrightness",
+          "expected": {
+            "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "symbol": "clampBrightness",
+            "kind": "symbol",
+            "details": "clampBrightness clamps exposure multiplier between 0.1 and 3.0."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 279.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:ef0c813a88815516eecb772896f4dae0\",\n      \"kind\": \"method\",\n      \"name\": \"clampBrightness\",\n      \"qualifiedName\": \"net.mcpz.client.atmosphere::McpzAtmosphereController::clampBrightness\",\n      \"filePath\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"language\": \"java\",\n      \"startLine\": 76,\n      \"endLine\": 81,\n      \"s"
+        },
+        {
+          "id": "mcpz-holdout-09",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is HALF_HEIGHT_FACTOR defined for isometric camera orthographic visible scale?",
+          "query_param": "HALF_HEIGHT_FACTOR",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+            "symbol": "HALF_HEIGHT_FACTOR",
+            "kind": "symbol",
+            "details": "CameraProjection defines static final double HALF_HEIGHT_FACTOR = 0.55."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 277.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"field:baaa0d305303bf0056f8fb86d5c62e12\",\n      \"kind\": \"field\",\n      \"name\": \"HALF_HEIGHT_FACTOR\",\n      \"qualifiedName\": \"net.mcpz.camera::CameraProjection::HALF_HEIGHT_FACTOR\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"language\": \"java\",\n      \"startLine\": 14,\n      \"endLine\": 14,\n      \"startColumn\": 31,\n      \"endColumn\": "
+        },
+        {
+          "id": "mcpz-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if CameraProjection.orthographic projection logic is changed?",
+          "query_param": "orthographic",
+          "expected": {
+            "path": "src/main/java/net/mcpz/camera/CameraProjection.java",
+            "symbol": "orthographic",
+            "kind": "impact",
+            "expected_targets": [
+              "src/test/java/net/mcpz/CameraMathTest.java",
+              "src/test/java/net/mcpz/RaycastTest.java"
+            ],
+            "details": "CameraMathTest and RaycastTest rely on CameraProjection.orthographic for projection math."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 276.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"orthographic\",\n  \"depth\": 2,\n  \"nodeCount\": 14,\n  \"edgeCount\": 13,\n  \"affected\": [\n    {\n      \"name\": \"orthographic\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"startLine\": 18\n    },\n    {\n      \"name\": \"projectionIsFiniteOrtho\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n     "
+        }
+      ]
+    },
+    {
+      "repo": "plugmedia",
+      "oldHits": 18,
+      "oldTotal": 20,
+      "oldAccuracy": 90,
+      "holdoutHits": 10,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 100,
+      "totalHits": 28,
+      "totalCount": 30,
+      "totalAccuracy": 93.3,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 240.4,
+      "latencyOldP95": 246.9,
+      "latencyHoldoutP50": 238.4,
+      "latencyHoldoutP95": 249.2,
+      "latencyAllP50": 239.4,
+      "latencyAllP95": 249.2,
+      "questions": [
+        {
+          "id": "plugmedia-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the canonical SCHEMA_VERSION constant defined in PlugMedia contracts?",
+          "query_param": "SCHEMA_VERSION",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "SCHEMA_VERSION",
+            "kind": "symbol",
+            "details": "SCHEMA_VERSION = '1.0.0-vs0' in contracts package."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 244.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:2593ae4703e0bd1df1a32d17936ecca0\",\n      \"kind\": \"constant\",\n      \"name\": \"SCHEMA_VERSION\",\n      \"qualifiedName\": \"SCHEMA_VERSION\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColumn\": 13,\n      \"endColumn\": 41,\n      \"signature\": \"= '1.0.0-vs0'\",\n      \"visibi"
+        },
+        {
+          "id": "plugmedia-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where are the four QA review axes (QA_AXES) defined?",
+          "query_param": "QA_AXES",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "QA_AXES",
+            "kind": "symbol",
+            "details": "QA_AXES = ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUAL_QA', 'RIGHTS_QA'] as const."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 243.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:966427b5e7da446a7172253b39a338c5\",\n      \"kind\": \"constant\",\n      \"name\": \"QA_AXES\",\n      \"qualifiedName\": \"QA_AXES\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 16,\n      \"endLine\": 16,\n      \"startColumn\": 13,\n      \"endColumn\": 90,\n      \"signature\": \"= ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUA"
+        },
+        {
+          "id": "plugmedia-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Which module calls topoSort for compute DAG sorting?",
+          "query_param": "topoSort",
+          "expected": {
+            "path": "packages/graph/src/compute/topo.ts",
+            "symbol": "topoSort",
+            "kind": "callers",
+            "expected_targets": [
+              "tests/graph.test.ts"
+            ],
+            "details": "topoSort performs topological sorting on graph execution DAGs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 244.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"topoSort\",\n  \"callers\": []\n}\n"
+        },
+        {
+          "id": "plugmedia-04",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the CycleError class defined for DAG cycles?",
+          "query_param": "CycleError",
+          "expected": {
+            "path": "packages/graph/src/compute/topo.ts",
+            "symbol": "CycleError",
+            "kind": "symbol",
+            "details": "CycleError extends Error thrown when a compute DAG contains cycles."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 243.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:705aa20b384d6635f19cb248926391a8\",\n      \"kind\": \"class\",\n      \"name\": \"CycleError\",\n      \"qualifiedName\": \"CycleError\",\n      \"filePath\": \"packages/graph/src/compute/topo.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 2,\n      \"endLine\": 5,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true,\n      \"isA"
+        },
+        {
+          "id": "plugmedia-05",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is casPath defined for locating content-addressed files?",
+          "query_param": "casPath",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "casPath",
+            "kind": "symbol",
+            "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 246.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:9cbb1a340833b9d8fff8237364b356c2\",\n      \"kind\": \"function\",\n      \"name\": \"casPath\",\n      \"qualifiedName\": \"casPath\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 30,\n      \"endLine\": 32,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(digest: string): string\",\n      \"visibility\": "
+        },
+        {
+          "id": "plugmedia-06",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is storeContent called in the runtime domains?",
+          "query_param": "storeContent",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "storeContent",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/domain/media.ts"
+            ],
+            "details": "services/runtime/src/domain/media.ts imports and calls storeContent."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 241.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"storeContent\",\n  \"callers\": [\n    {\n      \"name\": \"commitArtifact\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/domain/media.ts\",\n      \"startLine\": 64\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugmedia-07",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if PGCONFIG default port is changed?",
+          "query_param": "PGCONFIG",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "PGCONFIG",
+            "kind": "impact",
+            "expected_targets": [
+              "services/runtime/src/db.ts",
+              "services/runtime/src/index.ts"
+            ],
+            "expected_count": 2,
+            "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 245.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"PGCONFIG\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 7,\n  \"affected\": [\n    {\n      \"name\": \"PGCONFIG\",\n      \"kind\": \"constant\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 13\n    },\n    {\n      \"name\": \"db.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"ops.ts\",\n      \"kind\": \"f"
+        },
+        {
+          "id": "plugmedia-08",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if SCHEMA_VERSION is bumped in contracts?",
+          "query_param": "SCHEMA_VERSION",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "SCHEMA_VERSION",
+            "kind": "impact",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "expected_count": 2,
+            "details": "SCHEMA_VERSION is imported into services/runtime/src/index.ts."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 239.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"SCHEMA_VERSION\",\n  \"depth\": 2,\n  \"nodeCount\": 2,\n  \"edgeCount\": 1,\n  \"affected\": [\n    {\n      \"name\": \"SCHEMA_VERSION\",\n      \"kind\": \"constant\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"startLine\": 5\n    },\n    {\n      \"name\": \"index.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugmedia-09",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How does content storage flow from raw file stream to CAS destination?",
+          "query_param": "storeContent",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "storeContent",
+            "kind": "dataflow",
+            "expected_targets": [
+              "services/runtime/src/cas.ts"
+            ],
+            "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 246.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5c262a6dfbabe655e9b10ef4623887f9\",\n      \"kind\": \"function\",\n      \"name\": \"storeContent\",\n      \"qualifiedName\": \"storeContent\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 48,\n      \"endLine\": 83,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(sourcePath: string, digest: string, "
+        },
+        {
+          "id": "plugmedia-10",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which environment variable overrides the HTTP server port?",
+          "query_param": "PLUGMEDIA_PORT",
+          "expected": {
+            "path": "services/runtime/src/index.ts",
+            "symbol": "PLUGMEDIA_PORT",
+            "kind": "config",
+            "details": "PORT = Number(process.env.PLUGMEDIA_PORT ?? 8620)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 245,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:72a9cfc8ebdb3acf95acb75d4fc00bba\",\n      \"kind\": \"constant\",\n      \"name\": \"PORT\",\n      \"qualifiedName\": \"PORT\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 36,\n      \"endLine\": 36,\n      \"startColumn\": 6,\n      \"endColumn\": 55,\n      \"signature\": \"= Number(process.env.PLUGMEDIA_PORT ?? 8620)\",\n   "
+        },
+        {
+          "id": "plugmedia-11",
+          "isHoldout": false,
+          "type": "config",
+          "question": "What is the default PostgreSQL database port configured in db.ts?",
+          "query_param": "PGPORT",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "PGCONFIG",
+            "kind": "config",
+            "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 234.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:85c68fa8ebbc5bebf1ad14b8cefcbac1\",\n      \"kind\": \"constant\",\n      \"name\": \"PGCONFIG\",\n      \"qualifiedName\": \"PGCONFIG\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 13,\n      \"endLine\": 20,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= {\\r\\n  host: process.env.PGHOST ?? '127.0.0"
+        },
+        {
+          "id": "plugmedia-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the Fastify HTTP server entrypoint for the media runtime?",
+          "query_param": "Fastify",
+          "expected": {
+            "path": "services/runtime/src/index.ts",
+            "symbol": "app",
+            "kind": "entrypoint",
+            "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 236.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:376aa1c7a379ae23fd0b23c2861fa0c2\",\n      \"kind\": \"import\",\n      \"name\": \"fastify\",\n      \"qualifiedName\": \"fastify\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 15,\n      \"endLine\": 15,\n      \"startColumn\": 0,\n      \"endColumn\": 30,\n      \"signature\": \"import Fastify from 'fastify';\",\n      \"visibili"
+        },
+        {
+          "id": "plugmedia-13",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the CLI command entrypoint for PlugMedia?",
+          "query_param": "main",
+          "expected": {
+            "path": "apps/cli/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "apps/cli/src/index.ts handles command-line arguments and dispatches commands."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 240.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:ea041d52e0a3c83db3e1307bd0734844\",\n      \"kind\": \"function\",\n      \"name\": \"main\",\n      \"qualifiedName\": \"main\",\n      \"filePath\": \"tools/d1/gate-surfaces.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 130,\n      \"endLine\": 180,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"()\",\n      \"visibility\": null,\n      \"isExported\": f"
+        },
+        {
+          "id": "plugmedia-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document contains the final architecture and verification report for VS0?",
+          "query_param": "VS0_FINAL_REPORT.md",
+          "expected": {
+            "path": "VS0_FINAL_REPORT.md",
+            "symbol": "VS0_FINAL_REPORT.md",
+            "kind": "docs_notes",
+            "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
+          },
+          "hit": true,
+          "rank": -1,
+          "latencyMs": 236.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:217db26b0d14f011a39839a50567e54c\",\n      \"kind\": \"constant\",\n      \"name\": \"INCLUDE_FILES\",\n      \"qualifiedName\": \"INCLUDE_FILES\",\n      \"filePath\": \"tools/d1/make-archive.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 47,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'ARCHIVE_MANIFEST.md', 'VS0_"
+        },
+        {
+          "id": "plugmedia-15",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document lists the archive manifest and quarantine inventory?",
+          "query_param": "ARCHIVE_MANIFEST.md",
+          "expected": {
+            "path": "ARCHIVE_MANIFEST.md",
+            "symbol": "ARCHIVE_MANIFEST.md",
+            "kind": "docs_notes",
+            "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
+          },
+          "hit": true,
+          "rank": -1,
+          "latencyMs": 239.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:217db26b0d14f011a39839a50567e54c\",\n      \"kind\": \"constant\",\n      \"name\": \"INCLUDE_FILES\",\n      \"qualifiedName\": \"INCLUDE_FILES\",\n      \"filePath\": \"tools/d1/make-archive.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 47,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'ARCHIVE_MANIFEST.md', 'VS0_"
+        },
+        {
+          "id": "plugmedia-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if ensureCas is renamed in cas.ts?",
+          "query_param": "ensureCas",
+          "expected": {
+            "path": "services/runtime/src/cas.ts",
+            "symbol": "ensureCas",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "services/runtime/src/cas.ts"
+            ],
+            "details": "ensureCas is called inside storeContent and registerContent."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 237,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"ensureCas\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 3,\n  \"affected\": [\n    {\n      \"name\": \"ensureCas\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"startLine\": 25\n    },\n    {\n      \"name\": \"storeContent\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"startLine\": 48\n    },\n    {\n      \"name\": \"commitArt"
+        },
+        {
+          "id": "plugmedia-17",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if applyMigrations function is renamed?",
+          "query_param": "applyMigrations",
+          "expected": {
+            "path": "services/runtime/src/db.ts",
+            "symbol": "applyMigrations",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "services/runtime/src/db.ts"
+            ],
+            "details": "applyMigrations executes database schema migrations."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 237.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"applyMigrations\",\n  \"depth\": 2,\n  \"nodeCount\": 12,\n  \"edgeCount\": 11,\n  \"affected\": [\n    {\n      \"name\": \"applyMigrations\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"restore\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/domain/ops.ts\",\n      \"startLine\": 189\n    },\n    {\n      \"n"
+        },
+        {
+          "id": "plugmedia-18",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the durable schedulerTick function defined?",
+          "query_param": "schedulerTick",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "schedulerTick",
+            "kind": "symbol",
+            "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 242.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:b4b2375bbe18f810c8d7ea309d1a8e85\",\n      \"kind\": \"function\",\n      \"name\": \"schedulerTick\",\n      \"qualifiedName\": \"schedulerTick\",\n      \"filePath\": \"services/runtime/src/engine/scheduler.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 215,\n      \"endLine\": 235,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(\\r\\n  db: pg.Pool,\\"
+        },
+        {
+          "id": "plugmedia-19",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is the command dispatcher register function called to wire media commands?",
+          "query_param": "register",
+          "expected": {
+            "path": "services/runtime/src/commands.ts",
+            "symbol": "register",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 236.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"register\",\n  \"callers\": [\n    {\n      \"name\": \"index.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugmedia-20",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is ALLOWED_ORIGINS defined for CORS protection?",
+          "query_param": "ALLOWED_ORIGINS",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "ALLOWED_ORIGINS",
+            "kind": "symbol",
+            "details": "services/runtime/src/auth.ts defines ALLOWED_ORIGINS array for trusted UI clients."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 237.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:5c823d2abffcd44bc9a0d7a3a074f422\",\n      \"kind\": \"constant\",\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"qualifiedName\": \"ALLOWED_ORIGINS\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 24,\n      \"endLine\": 28,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'http://127.0.0.1:51"
+        },
+        {
+          "id": "plugmedia-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is ALLOWED_ORIGINS defined for CORS and loopback security in PlugMedia runtime?",
+          "query_param": "ALLOWED_ORIGINS",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "ALLOWED_ORIGINS",
+            "kind": "symbol",
+            "details": "ALLOWED_ORIGINS defines whitelist of allowed HTTP origins."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 232.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:5c823d2abffcd44bc9a0d7a3a074f422\",\n      \"kind\": \"constant\",\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"qualifiedName\": \"ALLOWED_ORIGINS\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 24,\n      \"endLine\": 28,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'http://127.0.0.1:51"
+        },
+        {
+          "id": "plugmedia-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the issueCapability function defined for media read capabilities?",
+          "query_param": "issueCapability",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "issueCapability",
+            "kind": "symbol",
+            "details": "issueCapability generates signed HMAC capabilities for artifact reads."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 237.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:976aa4db0dcfa44eba381814acb6e7ee\",\n      \"kind\": \"function\",\n      \"name\": \"issueCapability\",\n      \"qualifiedName\": \"issueCapability\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 48,\n      \"endLine\": 55,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(artifactId: string, principal"
+        },
+        {
+          "id": "plugmedia-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the verifyCapability function defined to check artifact access permissions?",
+          "query_param": "verifyCapability",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "verifyCapability",
+            "kind": "symbol",
+            "details": "verifyCapability validates signed HMAC capabilities against expiry and artifact ID."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 243,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:1a50478d02451b4cfcc6624b947f771a\",\n      \"kind\": \"function\",\n      \"name\": \"verifyCapability\",\n      \"qualifiedName\": \"verifyCapability\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 57,\n      \"endLine\": 67,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(cap: string, artifactId: st"
+        },
+        {
+          "id": "plugmedia-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is csrfGuard defined to enforce the x-plugmedia-client header on mutating requests?",
+          "query_param": "csrfGuard",
+          "expected": {
+            "path": "services/runtime/src/auth.ts",
+            "symbol": "csrfGuard",
+            "kind": "symbol",
+            "details": "csrfGuard checks for presence of 'plugmedia-client/1' on mutating requests."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 249.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:04bf33911ffb6d47db9e16a39c8dec2b\",\n      \"kind\": \"function\",\n      \"name\": \"csrfGuard\",\n      \"qualifiedName\": \"csrfGuard\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 124,\n      \"endLine\": 128,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(clientHeader: string | undefined): { ok"
+        },
+        {
+          "id": "plugmedia-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is DEFAULT_CATCHUP_WINDOW_HOURS defined for the durable scheduler?",
+          "query_param": "DEFAULT_CATCHUP_WINDOW_HOURS",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "DEFAULT_CATCHUP_WINDOW_HOURS",
+            "kind": "symbol",
+            "details": "DEFAULT_CATCHUP_WINDOW_HOURS = 24 sets maximum late-fire window for due slots."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 239.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:39d14769aef4e86da97859bae05f432c\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"qualifiedName\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"filePath\": \"services/runtime/src/engine/scheduler.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 46,\n      \"endLine\": 46,\n      \"startColumn\": 13,\n      \"endColumn\": 46,\n      \"sig"
+        },
+        {
+          "id": "plugmedia-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the computeNodeCacheKey function defined for compute DAG caching?",
+          "query_param": "computeNodeCacheKey",
+          "expected": {
+            "path": "packages/graph/src/compute/cacheKey.ts",
+            "symbol": "computeNodeCacheKey",
+            "kind": "symbol",
+            "details": "computeNodeCacheKey computes canonical sha256 hash of node execution inputs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 249.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:0e7363b74e80f800672cfdc934116951\",\n      \"kind\": \"function\",\n      \"name\": \"computeNodeCacheKey\",\n      \"qualifiedName\": \"computeNodeCacheKey\",\n      \"filePath\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 27,\n      \"endLine\": 33,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(i: CacheKey"
+        },
+        {
+          "id": "plugmedia-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the NODE_VERSIONS map defined for tracking local compute node implementations?",
+          "query_param": "NODE_VERSIONS",
+          "expected": {
+            "path": "packages/graph/src/compute/nodeVersions.ts",
+            "symbol": "NODE_VERSIONS",
+            "kind": "symbol",
+            "details": "NODE_VERSIONS maps node identifiers to implementation versions."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 238.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:b19e6f64d8aa544eb613f954180ba079\",\n      \"kind\": \"constant\",\n      \"name\": \"NODE_VERSIONS\",\n      \"qualifiedName\": \"NODE_VERSIONS\",\n      \"filePath\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 13,\n      \"endLine\": 26,\n      \"startColumn\": 13,\n      \"endColumn\": 10,\n      \"signature\": \"= {\\r\\n  'media.im"
+        },
+        {
+          "id": "plugmedia-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is implementationDigest defined to hash compute node version signatures?",
+          "query_param": "implementationDigest",
+          "expected": {
+            "path": "packages/graph/src/compute/nodeVersions.ts",
+            "symbol": "implementationDigest",
+            "kind": "symbol",
+            "details": "implementationDigest creates sha256 prefix from sorted node version tuples."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 238.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:8f2faeabdcf5f656ee7707245c2175e1\",\n      \"kind\": \"function\",\n      \"name\": \"implementationDigest\",\n      \"qualifiedName\": \"implementationDigest\",\n      \"filePath\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 28,\n      \"endLine\": 30,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(nodes"
+        },
+        {
+          "id": "plugmedia-holdout-09",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is schedulerTick called in the runtime service?",
+          "query_param": "schedulerTick",
+          "expected": {
+            "path": "services/runtime/src/engine/scheduler.ts",
+            "symbol": "schedulerTick",
+            "kind": "callers",
+            "expected_targets": [
+              "services/runtime/src/index.ts"
+            ],
+            "details": "services/runtime/src/index.ts invokes schedulerTick to run periodic queue maintenance."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 238.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"schedulerTick\",\n  \"callers\": [\n    {\n      \"name\": \"schedulerLoop\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"startLine\": 367\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugmedia-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if computeNodeCacheKey in cacheKey.ts is modified?",
+          "query_param": "computeNodeCacheKey",
+          "expected": {
+            "path": "packages/graph/src/compute/cacheKey.ts",
+            "symbol": "computeNodeCacheKey",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/graph/src/compute/cacheKey.ts"
+            ],
+            "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 239.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"computeNodeCacheKey\",\n  \"depth\": 2,\n  \"nodeCount\": 6,\n  \"edgeCount\": 5,\n  \"affected\": [\n    {\n      \"name\": \"computeNodeCacheKey\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"startLine\": 27\n    },\n    {\n      \"name\": \"processJob\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/engine/worker.ts\",\n      \"startLine\": 4"
+        }
+      ]
+    },
+    {
+      "repo": "cowork",
+      "oldHits": 17,
+      "oldTotal": 20,
+      "oldAccuracy": 85,
+      "holdoutHits": 10,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 100,
+      "totalHits": 27,
+      "totalCount": 30,
+      "totalAccuracy": 90,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 303.4,
+      "latencyOldP95": 324,
+      "latencyHoldoutP50": 299.6,
+      "latencyHoldoutP95": 318.4,
+      "latencyAllP50": 302.7,
+      "latencyAllP95": 324,
+      "questions": [
+        {
+          "id": "cowork-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+          "query_param": "DEFAULT_LANES",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "DEFAULT_LANES",
+            "kind": "symbol",
+            "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 298.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"variable:fb0ea3d45591f60f6e5a6561f3f72aca\",\n      \"kind\": \"variable\",\n      \"name\": \"DEFAULT_LANES\",\n      \"qualifiedName\": \"DEFAULT_LANES\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 43,\n      \"endLine\": 50,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\n    {\\\"id\\\": \\\"groq-1\\\",       \\\""
+        },
+        {
+          "id": "cowork-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the scrub function defined to remove API keys from output?",
+          "query_param": "scrub",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "scrub",
+            "kind": "symbol",
+            "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 304.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:2cd043ab27f44ee191f4ce7c042563f6\",\n      \"kind\": \"function\",\n      \"name\": \"scrub\",\n      \"qualifiedName\": \"scrub\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 59,\n      \"endLine\": 64,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(text: str) -> str\",\n      \"visibility\": null,\n      "
+        },
+        {
+          "id": "cowork-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is post_event called to update the live station feed?",
+          "query_param": "post_event",
+          "expected": {
+            "path": "ruflo-workers/tools/worker.py",
+            "symbol": "post_event",
+            "kind": "callers",
+            "expected_targets": [
+              "ruflo-workers/tools/worker.py"
+            ],
+            "details": "worker.py calls post_event during worker lifecycle transitions."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 302.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"post_event\",\n  \"callers\": [\n    {\n      \"name\": \"fleet_patch\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 70\n    },\n    {\n      \"name\": \"run_codex\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 116\n    },\n    {\n      \"name\": \"_pump\",\n      \"kind\": \"function\",\n      \"filePath\": \"ru"
+        },
+        {
+          "id": "cowork-04",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is codegraph_context called to enrich worker prompts?",
+          "query_param": "codegraph_context",
+          "expected": {
+            "path": "ruflo-workers/tools/worker.py",
+            "symbol": "codegraph_context",
+            "kind": "callers",
+            "expected_targets": [
+              "ruflo-workers/tools/worker.py"
+            ],
+            "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 308.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"codegraph_context\",\n  \"callers\": [\n    {\n      \"name\": \"run_part_as_worker\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 226\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "cowork-05",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if CONFIG path in fleet.py is moved?",
+          "query_param": "CONFIG",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "CONFIG",
+            "kind": "impact",
+            "expected_targets": [
+              "ruflo-workers/tools/fleet.py",
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 2,
+            "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 304.7,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"CONFIG\",\n  \"depth\": 2,\n  \"nodeCount\": 10,\n  \"edgeCount\": 5,\n  \"affected\": [\n    {\n      \"name\": \"CONFIG\",\n      \"kind\": \"constant\",\n      \"filePath\": \".claude/helpers/learning-service.mjs\",\n      \"startLine\": 43\n    },\n    {\n      \"name\": \"learning-service.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \".claude/helpers/learning-service.mjs\",\n      \"startLine\": 1\n    },\n    {\n      \"n"
+        },
+        {
+          "id": "cowork-06",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+          "query_param": "RATE",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "RATE",
+            "kind": "impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 1,
+            "details": "RATE determines cost calculation for different AI model providers."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 303.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"RATE\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"RATE\",\n      \"kind\": \"constant\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 33\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"RATE\",\n      \"kind\": \"cons"
+        },
+        {
+          "id": "cowork-07",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+          "query_param": "writeConfig",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "writeConfig",
+            "kind": "dataflow",
+            "expected_targets": [
+              "cockpit/server.cjs",
+              "ruflo-workers/tools/fleet.py"
+            ],
+            "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 302.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5475522953b3e6517f6aec41ef08d958\",\n      \"kind\": \"function\",\n      \"name\": \"writeConfig\",\n      \"qualifiedName\": \"writeConfig\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 44,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(cfg)\",\n      \"visibility\": null,\n     "
+        },
+        {
+          "id": "cowork-08",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Which environment variable configures the Cockpit server port?",
+          "query_param": "PLUGOS_COCKPIT_PORT",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "PLUGOS_COCKPIT_PORT",
+            "kind": "config",
+            "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 309.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:d115f0f3ee46b28d6b38c520f8f6d2a1\",\n      \"kind\": \"constant\",\n      \"name\": \"PORT\",\n      \"qualifiedName\": \"PORT\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 35,\n      \"endLine\": 35,\n      \"startColumn\": 6,\n      \"endColumn\": 80,\n      \"signature\": \"= Number(process.env.PLUGOS_COCKPIT_PORT || process."
+        },
+        {
+          "id": "cowork-09",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where are the active swarm chain configuration rules defined?",
+          "query_param": "swarm-chain.config.json",
+          "expected": {
+            "path": "ruflo-workers/swarm-chain.config.json",
+            "symbol": "swarm-chain.config.json",
+            "kind": "config",
+            "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 308.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:7678def96e179a3e1c6a1243868d8416\",\n      \"kind\": \"function\",\n      \"name\": \"listLanes\",\n      \"qualifiedName\": \"listLanes\",\n      \"filePath\": \"ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/cowork-host.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 235,\n      \"endLine\": 281,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"--"
+        },
+        {
+          "id": "cowork-10",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+          "query_param": "fleet",
+          "expected": {
+            "path": "ruflo-workers/tools/fleet.py",
+            "symbol": "main",
+            "kind": "entrypoint",
+            "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 300.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:98ca1271538e274b7e4117ffee175e6f\",\n      \"kind\": \"class\",\n      \"name\": \"Fleet\",\n      \"qualifiedName\": \"Fleet\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 208,\n      \"endLine\": 321,\n      \"startColumn\": 0,\n      \"endColumn\": 75,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsync\": false,\n"
+        },
+        {
+          "id": "cowork-11",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the HTTP server listening loop for Cockpit?",
+          "query_param": "server.cjs",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "server.cjs",
+            "kind": "entrypoint",
+            "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 299.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:cockpit/server.cjs\",\n      \"kind\": \"file\",\n      \"name\": \"server.cjs\",\n      \"qualifiedName\": \"cockpit/server.cjs\",\n      \"filePath\": \"cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 1,\n      \"endLine\": 674,\n      \"startColumn\": 0,\n      \"endColumn\": 0,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsync\": false,\n      \""
+        },
+        {
+          "id": "cowork-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "main",
+            "kind": "entrypoint",
+            "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 300.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5f23111b483f266d492955ac74161033\",\n      \"kind\": \"function\",\n      \"name\": \"produce_one\",\n      \"qualifiedName\": \"produce_one\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"language\": \"python\",\n      \"startLine\": 13,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(row"
+        },
+        {
+          "id": "cowork-13",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document outlines the core CANON principles of the workspace?",
+          "query_param": "CANON.md",
+          "expected": {
+            "path": "CANON.md",
+            "symbol": "CANON.md",
+            "kind": "docs_notes",
+            "details": "CANON.md defines foundational operating rules and non-negotiables."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 324,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "cowork-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document specifies guidelines for social and video content style?",
+          "query_param": "CONTENT_STYLE_GUIDE.md",
+          "expected": {
+            "path": "CONTENT_STYLE_GUIDE.md",
+            "symbol": "CONTENT_STYLE_GUIDE.md",
+            "kind": "docs_notes",
+            "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 338,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "cowork-15",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "produce_one",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "shortsfactory/pipeline/run.py"
+            ],
+            "details": "produce_one is called in main loop of run.py."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 311.7,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"produce_one\",\n  \"depth\": 2,\n  \"nodeCount\": 6,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"startLine\": 13\n    },\n    {\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipel"
+        },
+        {
+          "id": "cowork-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+          "query_param": "writeConfig",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "writeConfig",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "details": "writeConfig is called by lane and runner mutation handlers."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 311.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"writeConfig\",\n  \"depth\": 2,\n  \"nodeCount\": 22,\n  \"edgeCount\": 17,\n  \"affected\": [\n    {\n      \"name\": \"writeConfig\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"upsertLane\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 131\n    },\n    {\n      \"name\": \"serv"
+        },
+        {
+          "id": "cowork-17",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the produce_one pipeline function implemented?",
+          "query_param": "produce_one",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "produce_one",
+            "kind": "symbol",
+            "details": "produces voiceover, captions, video composition, and social uploads."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 295.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5f23111b483f266d492955ac74161033\",\n      \"kind\": \"function\",\n      \"name\": \"produce_one\",\n      \"qualifiedName\": \"produce_one\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"language\": \"python\",\n      \"startLine\": 13,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(row"
+        },
+        {
+          "id": "cowork-18",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is synth_voiceover called in the shorts pipeline?",
+          "query_param": "synth_voiceover",
+          "expected": {
+            "path": "shortsfactory/pipeline/run.py",
+            "symbol": "synth_voiceover",
+            "kind": "callers",
+            "expected_targets": [
+              "shortsfactory/pipeline/run.py"
+            ],
+            "details": "tts.synth_voiceover is called inside produce_one in run.py."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 298.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"synth_voiceover\",\n  \"callers\": []\n}\n"
+        },
+        {
+          "id": "cowork-19",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the ROLES array defined for valid fleet lane roles?",
+          "query_param": "ROLES",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "ROLES",
+            "kind": "symbol",
+            "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 299,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:a82a9863f01fd5e55fa0c646205188b6\",\n      \"kind\": \"constant\",\n      \"name\": \"ROLES\",\n      \"qualifiedName\": \"ROLES\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 38,\n      \"endLine\": 38,\n      \"startColumn\": 6,\n      \"endColumn\": 53,\n      \"signature\": \"= [\\\"cheap\\\", \\\"reviewer\\\", \\\"auditor\\\", \\\"off\\\"]\""
+        },
+        {
+          "id": "cowork-20",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+          "query_param": "KEY_ALIAS",
+          "expected": {
+            "path": "cockpit/server.cjs",
+            "symbol": "KEY_ALIAS",
+            "kind": "impact",
+            "expected_targets": [
+              "cockpit/server.cjs"
+            ],
+            "expected_count": 1,
+            "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 305.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"KEY_ALIAS\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"KEY_ALIAS\",\n      \"kind\": \"constant\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 58\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"KEY_ALIAS\",\n    "
+        },
+        {
+          "id": "cowork-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is readLedger defined for reading roadmap.jsonl into memory?",
+          "query_param": "readLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "readLedger",
+            "kind": "symbol",
+            "details": "readLedger reads and parses line-delimited roadmap.jsonl into objects."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 318.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:fb3fe9a7badd57fb28467d0b7b139673\",\n      \"kind\": \"function\",\n      \"name\": \"readLedger\",\n      \"qualifiedName\": \"readLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 44,\n      \"endLine\": 54,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"()\",\n      \"visibility\": null,\n      \"isExported\":"
+        },
+        {
+          "id": "cowork-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is writeLedger defined to persist updated parts back to roadmap.jsonl?",
+          "query_param": "writeLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "writeLedger",
+            "kind": "symbol",
+            "details": "writeLedger serializes array of parts back to roadmap.jsonl."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 299.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:28029d2ca2a76803fe590ad703ec27c7\",\n      \"kind\": \"function\",\n      \"name\": \"writeLedger\",\n      \"qualifiedName\": \"writeLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 55,\n      \"endLine\": 58,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(rows)\",\n      \"visibility\": null,\n      \"isExpo"
+        },
+        {
+          "id": "cowork-holdout-03",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is missionOf defined to categorize roadmap items into mission groups?",
+          "query_param": "missionOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "missionOf",
+            "kind": "symbol",
+            "details": "missionOf maps part product identifiers to human-readable mission titles."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 298.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:a1b7ce6c4aa445b3c233612b6d5cd02f\",\n      \"kind\": \"function\",\n      \"name\": \"missionOf\",\n      \"qualifiedName\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 33,\n      \"endLine\": 39,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(p)\",\n      \"visibility\": null,\n      \"isExported\": "
+        },
+        {
+          "id": "cowork-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is FLEET_PARALLELISM defined for estimating overall loop completion time?",
+          "query_param": "FLEET_PARALLELISM",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "FLEET_PARALLELISM",
+            "kind": "symbol",
+            "details": "FLEET_PARALLELISM reads PLUGOS_FLEET_PARALLELISM env var or defaults to 3."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 298.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:0b66084241fb0e64ed5949dfa4e0d249\",\n      \"kind\": \"constant\",\n      \"name\": \"FLEET_PARALLELISM\",\n      \"qualifiedName\": \"FLEET_PARALLELISM\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 31,\n      \"endLine\": 31,\n      \"startColumn\": 6,\n      \"endColumn\": 75,\n      \"signature\": \"= Number(process.env.PLUGOS_FLEET_P"
+        },
+        {
+          "id": "cowork-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the decompose_room asset generator entrypoint implemented?",
+          "query_param": "decompose_room",
+          "expected": {
+            "path": "tools/decompose_room.py",
+            "symbol": "main",
+            "kind": "symbol",
+            "details": "tools/decompose_room.py main function executes object cropping and inpainting pipeline."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 297,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:tools/decompose_room.py\",\n      \"kind\": \"file\",\n      \"name\": \"decompose_room.py\",\n      \"qualifiedName\": \"tools/decompose_room.py\",\n      \"filePath\": \"tools/decompose_room.py\",\n      \"language\": \"python\",\n      \"startLine\": 1,\n      \"endLine\": 108,\n      \"startColumn\": 0,\n      \"endColumn\": 0,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsyn"
+        },
+        {
+          "id": "cowork-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the verdictOf function defined to read verify.json verdicts?",
+          "query_param": "verdictOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "verdictOf",
+            "kind": "symbol",
+            "details": "verdictOf inspects reports/<id>/verify.json to retrieve verification outcome."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 295.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5540c34bb4e11f006efe32af1921798a\",\n      \"kind\": \"function\",\n      \"name\": \"verdictOf\",\n      \"qualifiedName\": \"verdictOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 59,\n      \"endLine\": 64,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(id)\",\n      \"visibility\": null,\n      \"isExported\":"
+        },
+        {
+          "id": "cowork-holdout-07",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is writeLedger called to save priority changes in the station server?",
+          "query_param": "writeLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "writeLedger",
+            "kind": "callers",
+            "expected_targets": [
+              "station/server.cjs"
+            ],
+            "details": "station/server.cjs invokes writeLedger when reordering parts in /api/prio."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 308.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"writeLedger\",\n  \"callers\": [\n    {\n      \"name\": \"movePrio\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 105\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "cowork-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the DEFAULT_EFFORT constant set for roadmap items lacking explicit estimates?",
+          "query_param": "DEFAULT_EFFORT",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "DEFAULT_EFFORT",
+            "kind": "symbol",
+            "details": "const DEFAULT_EFFORT = 3 in station/server.cjs."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 311.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:a1e3eb161cbc09180997f8ce67458648\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_EFFORT\",\n      \"qualifiedName\": \"DEFAULT_EFFORT\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 30,\n      \"endLine\": 30,\n      \"startColumn\": 6,\n      \"endColumn\": 24,\n      \"signature\": \"= 3\",\n      \"visibility\": null,\n      \"is"
+        },
+        {
+          "id": "cowork-holdout-09",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if readLedger in station/server.cjs changes its return format?",
+          "query_param": "readLedger",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "readLedger",
+            "kind": "impact",
+            "expected_targets": [
+              "station/server.cjs"
+            ],
+            "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 309.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"readLedger\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 3,\n  \"affected\": [\n    {\n      \"name\": \"readLedger\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"buildProgress\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 66\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind"
+        },
+        {
+          "id": "cowork-holdout-10",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the effortOf helper defined to compute swarm hours per part?",
+          "query_param": "effortOf",
+          "expected": {
+            "path": "station/server.cjs",
+            "symbol": "effortOf",
+            "kind": "symbol",
+            "details": "effortOf returns estimate_hours or maps severity through EFFORT table."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 301.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:1e23078c715fff6946b51bf5e7262f1b\",\n      \"kind\": \"function\",\n      \"name\": \"effortOf\",\n      \"qualifiedName\": \"effortOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 40,\n      \"endLine\": 42,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(p)\",\n      \"visibility\": null,\n      \"isExported\": fa"
+        }
+      ]
+    },
+    {
+      "repo": "plugengine",
+      "oldHits": 15,
+      "oldTotal": 20,
+      "oldAccuracy": 75,
+      "holdoutHits": 9,
+      "holdoutTotal": 10,
+      "holdoutAccuracy": 90,
+      "totalHits": 24,
+      "totalCount": 30,
+      "totalAccuracy": 80,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 267.2,
+      "latencyOldP95": 293,
+      "latencyHoldoutP50": 276.1,
+      "latencyHoldoutP95": 287.5,
+      "latencyAllP50": 272,
+      "latencyAllP95": 293,
+      "questions": [
+        {
+          "id": "plugengine-01",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the CommandBus class implemented for undo/redo state management?",
+          "query_param": "CommandBus",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "CommandBus",
+            "kind": "symbol",
+            "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 270.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:efdf648ddedc36b73dbe88105e8a834b\",\n      \"kind\": \"class\",\n      \"name\": \"CommandBus\",\n      \"qualifiedName\": \"CommandBus\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 40,\n      \"endLine\": 122,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
+        },
+        {
+          "id": "plugengine-02",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+          "query_param": "DEFAULT_LIMIT",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "DEFAULT_LIMIT",
+            "kind": "symbol",
+            "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+          },
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 264,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:af39b6158cc480d27be5ec2a42bfa454\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_LIMIT\",\n      \"qualifiedName\": \"DEFAULT_LIMIT\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 50,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 26,\n      \"signature\": \"= 2000\",\n      \"visibi"
+        },
+        {
+          "id": "plugengine-03",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is CommandBus.dispatch called in tests or consumers?",
+          "query_param": "dispatch",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "dispatch",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "details": "bus.test.ts executes dispatches against CommandBus instances."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 267.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"dispatch\",\n  \"callers\": [\n    {\n      \"name\": \"startComposer\",\n      \"kind\": \"function\",\n      \"filePath\": \"apps/engine-lab/src/composerMode.ts\",\n      \"startLine\": 83\n    },\n    {\n      \"name\": \"placeEntry\",\n      \"kind\": \"function\",\n      \"filePath\": \"apps/engine-lab/src/composerMode.ts\",\n      \"startLine\": 278\n    },\n    {\n      \"name\": \"commitMove\",\n      \"kind\": \"function\",\n   "
+        },
+        {
+          "id": "plugengine-04",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+          "query_param": "PLUG_PACKAGE_KINDS",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "PLUG_PACKAGE_KINDS",
+            "kind": "symbol",
+            "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 264.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:7cb6f2a02e504cb175edc808134e776e\",\n      \"kind\": \"constant\",\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"qualifiedName\": \"PLUG_PACKAGE_KINDS\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 37,\n      \"endLine\": 43,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'plugprojec"
+        },
+        {
+          "id": "plugengine-05",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is the isPlugPackageKind type guard defined?",
+          "query_param": "isPlugPackageKind",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "isPlugPackageKind",
+            "kind": "symbol",
+            "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 261.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:2d4f9fabb1e31bd5755fabbe0b0d8a40\",\n      \"kind\": \"function\",\n      \"name\": \"isPlugPackageKind\",\n      \"qualifiedName\": \"isPlugPackageKind\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 45,\n      \"endLine\": 47,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(value: unknown): value"
+        },
+        {
+          "id": "plugengine-06",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is isPlugPackageKind tested or called?",
+          "query_param": "isPlugPackageKind",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "isPlugPackageKind",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/contracts/src/addon.test.ts"
+            ],
+            "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 262.7,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"isPlugPackageKind\",\n  \"callers\": []\n}\n"
+        },
+        {
+          "id": "plugengine-07",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+          "query_param": "DEFAULT_LIMIT",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "DEFAULT_LIMIT",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.ts",
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "expected_count": 2,
+            "details": "Limits default undo history buffer size in CommandBus constructor."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 259.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"DEFAULT_LIMIT\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"DEFAULT_LIMIT\",\n      \"kind\": \"constant\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"startLine\": 50\n    },\n    {\n      \"name\": \"agentTrace.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"startLine\": 1\n    },\n  "
+        },
+        {
+          "id": "plugengine-08",
+          "isHoldout": false,
+          "type": "impact",
+          "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+          "query_param": "PLUG_PACKAGE_KINDS",
+          "expected": {
+            "path": "packages/contracts/src/addon.ts",
+            "symbol": "PLUG_PACKAGE_KINDS",
+            "kind": "impact",
+            "expected_targets": [
+              "packages/contracts/src/addon.ts",
+              "packages/contracts/src/addon.test.ts"
+            ],
+            "expected_count": 2,
+            "details": "PlugPackageKind union and package kind validation in addon contracts."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 263.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"PLUG_PACKAGE_KINDS\",\n  \"depth\": 2,\n  \"nodeCount\": 2,\n  \"edgeCount\": 1,\n  \"affected\": [\n    {\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"kind\": \"constant\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"startLine\": 37\n    },\n    {\n      \"name\": \"addon.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugengine-09",
+          "isHoldout": false,
+          "type": "dataflow",
+          "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+          "query_param": "CommandBus",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "dispatch",
+            "kind": "dataflow",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.ts"
+            ],
+            "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 260.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:efdf648ddedc36b73dbe88105e8a834b\",\n      \"kind\": \"class\",\n      \"name\": \"CommandBus\",\n      \"qualifiedName\": \"CommandBus\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 40,\n      \"endLine\": 122,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
+        },
+        {
+          "id": "plugengine-10",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+          "query_param": "CommandBusOptions",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "CommandBusOptions",
+            "kind": "config",
+            "details": "export interface CommandBusOptions { limit?: number; }."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 264.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:6d3ff82f7ad87056a981a57381bfbb6c\",\n      \"kind\": \"interface\",\n      \"name\": \"CommandBusOptions\",\n      \"qualifiedName\": \"CommandBusOptions\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 3,\n      \"endLine\": 6,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n     "
+        },
+        {
+          "id": "plugengine-11",
+          "isHoldout": false,
+          "type": "config",
+          "question": "Where are npm workspaces declared for the engine monorepo?",
+          "query_param": "workspaces",
+          "expected": {
+            "path": "package.json",
+            "symbol": "workspaces",
+            "kind": "config",
+            "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 275.9,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "plugengine-12",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the entrypoint barrel for plugengine-core?",
+          "query_param": "plugengine-core",
+          "expected": {
+            "path": "packages/plugengine-core/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 272,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:a56654b0f33331fa2071ac95eb543bd2\",\n      \"kind\": \"import\",\n      \"name\": \"@plugengine/core\",\n      \"qualifiedName\": \"@plugengine/core\",\n      \"filePath\": \"apps/engine-lab/src/agent/coreEditorAddon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 14,\n      \"endLine\": 14,\n      \"startColumn\": 0,\n      \"endColumn\": 57,\n      \"signature\": \"import { comman"
+        },
+        {
+          "id": "plugengine-13",
+          "isHoldout": false,
+          "type": "entrypoint",
+          "question": "Where is the root contracts entrypoint barrel for plugengine?",
+          "query_param": "contracts",
+          "expected": {
+            "path": "packages/contracts/src/index.ts",
+            "symbol": "index.ts",
+            "kind": "entrypoint",
+            "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+          },
+          "hit": true,
+          "rank": -1,
+          "latencyMs": 273,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:297ebfcb40073e75ea9c3afdae2ed11a\",\n      \"kind\": \"constant\",\n      \"name\": \"contracts\",\n      \"qualifiedName\": \"contracts\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 94,\n      \"endLine\": 94,\n      \"startColumn\": 8,\n      \"endColumn\": 78,\n      \"signature\": \"= await runner.executeId('/packages/"
+        },
+        {
+          "id": "plugengine-14",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document maintains the technical debt register for the engine?",
+          "query_param": "TECH_DEBT_REGISTER.md",
+          "expected": {
+            "path": "docs/TECH_DEBT_REGISTER.md",
+            "symbol": "TECH_DEBT_REGISTER.md",
+            "kind": "docs_notes",
+            "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 289.6,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "plugengine-15",
+          "isHoldout": false,
+          "type": "docs_notes",
+          "question": "Which document contains the specification for the creator editor?",
+          "query_param": "CREATOR_EDITOR_SPEC.md",
+          "expected": {
+            "path": "docs/CREATOR_EDITOR_SPEC.md",
+            "symbol": "CREATOR_EDITOR_SPEC.md",
+            "kind": "docs_notes",
+            "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 293,
+          "error": null,
+          "rawAnswer": "[]\n"
+        },
+        {
+          "id": "plugengine-16",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if canUndo getter is renamed on CommandBus?",
+          "query_param": "canUndo",
+          "expected": {
+            "path": "packages/plugengine-core/src/command/bus.ts",
+            "symbol": "canUndo",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "packages/plugengine-core/src/command/bus.test.ts"
+            ],
+            "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 296.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"canUndo\",\n  \"depth\": 2,\n  \"nodeCount\": 97,\n  \"edgeCount\": 96,\n  \"affected\": [\n    {\n      \"name\": \"canUndo\",\n      \"kind\": \"method\",\n      \"filePath\": \"apps/engine-lab/src/studio/character/characterPanelModel.ts\",\n      \"startLine\": 159\n    },\n    {\n      \"name\": \"CharacterPanelModel\",\n      \"kind\": \"class\",\n      \"filePath\": \"apps/engine-lab/src/studio/character/characterPanelModel"
+        },
+        {
+          "id": "plugengine-17",
+          "isHoldout": false,
+          "type": "rename_impact",
+          "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+          "query_param": "impactToEdit",
+          "expected": {
+            "path": "packages/plugengine-combat/src/index.ts",
+            "symbol": "impactToEdit",
+            "kind": "rename_impact",
+            "expected_targets": [
+              "packages/plugengine-combat/src/blockDestruction.ts"
+            ],
+            "details": "impactToEdit converts projectile block hits into voxel edits."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 276.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"impactToEdit\",\n  \"depth\": 2,\n  \"nodeCount\": 5,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"impactToEdit\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/plugengine-combat/src/blockDestruction.ts\",\n      \"startLine\": 46\n    },\n    {\n      \"name\": \"advance\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": "
+        },
+        {
+          "id": "plugengine-18",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is COMBAT_PACKAGE package name constant defined?",
+          "query_param": "COMBAT_PACKAGE",
+          "expected": {
+            "path": "packages/plugengine-combat/src/index.ts",
+            "symbol": "COMBAT_PACKAGE",
+            "kind": "symbol",
+            "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 267.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:19ff2342023d32e266b78fdb2e1622c1\",\n      \"kind\": \"constant\",\n      \"name\": \"COMBAT_PACKAGE\",\n      \"qualifiedName\": \"COMBAT_PACKAGE\",\n      \"filePath\": \"packages/plugengine-combat/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 11,\n      \"endLine\": 11,\n      \"startColumn\": 13,\n      \"endColumn\": 50,\n      \"signature\": \"= '@plugengine/comb"
+        },
+        {
+          "id": "plugengine-19",
+          "isHoldout": false,
+          "type": "callers",
+          "question": "Where is canHit defined and exported for faction combat checks?",
+          "query_param": "canHit",
+          "expected": {
+            "path": "packages/plugengine-combat/src/teams.ts",
+            "symbol": "canHit",
+            "kind": "symbol",
+            "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 267.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"canHit\",\n  \"callers\": [\n    {\n      \"name\": \"resolveEnemyHit\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": 219\n    },\n    {\n      \"name\": \"retarget\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": 247\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugengine-20",
+          "isHoldout": false,
+          "type": "definition",
+          "question": "Where is ProjectilePool implemented for ballistics physics?",
+          "query_param": "ProjectilePool",
+          "expected": {
+            "path": "packages/plugengine-combat/src/projectiles.ts",
+            "symbol": "ProjectilePool",
+            "kind": "symbol",
+            "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 274.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:3a39f3ba74516d77f9ff891da3584cd8\",\n      \"kind\": \"class\",\n      \"name\": \"ProjectilePool\",\n      \"qualifiedName\": \"ProjectilePool\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 120,\n      \"endLine\": 301,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExpo"
+        },
+        {
+          "id": "plugengine-holdout-01",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is createKeyVault defined to instantiate the session-only BYOK key store?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "symbol",
+            "details": "createKeyVault instantiates in-memory KeyVaultHandle with closure-isolated Map."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 269.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:3af45fa30324f1312d86d82ba743b127\",\n      \"kind\": \"function\",\n      \"name\": \"createKeyVault\",\n      \"qualifiedName\": \"createKeyVault\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 22,\n      \"endLine\": 44,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(): KeyVaultHandle\",\n "
+        },
+        {
+          "id": "plugengine-holdout-02",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the KeyVaultHandle interface defined for managing API keys in memory?",
+          "query_param": "KeyVaultHandle",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "KeyVaultHandle",
+            "kind": "symbol",
+            "details": "KeyVaultHandle exposes set, get, has, delete, size, and dispose."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 283.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:c59c90e8d341ab09c8e10c6d5995fc32\",\n      \"kind\": \"interface\",\n      \"name\": \"KeyVaultHandle\",\n      \"qualifiedName\": \"KeyVaultHandle\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 11,\n      \"endLine\": 20,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExpor"
+        },
+        {
+          "id": "plugengine-holdout-03",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is createKeyVault invoked to initialize an AI builder instance?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "callers",
+            "expected_targets": [
+              "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts"
+            ],
+            "details": "aiBuilderModel constructor and aiBuild.test.ts call createKeyVault."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 276.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"createKeyVault\",\n  \"callers\": [\n    {\n      \"name\": \"ai-builder-mock-proof.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
+        },
+        {
+          "id": "plugengine-holdout-04",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the generate function defined to orchestrate AI scene generation?",
+          "query_param": "generate",
+          "expected": {
+            "path": "packages/plugengine-ai/src/aiBuilder.ts",
+            "symbol": "generate",
+            "kind": "symbol",
+            "details": "generate orchestrates buildJob + providerProfiles + stagingDiff + buildRecipeFactory."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 271.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5659e1928247e369503109bb69c2bf3b\",\n      \"kind\": \"function\",\n      \"name\": \"generate\",\n      \"qualifiedName\": \"generate\",\n      \"filePath\": \"packages/plugengine-ai/src/aiBuilder.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 26,\n      \"endLine\": 37,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(prompt: string, options: Generat"
+        },
+        {
+          "id": "plugengine-holdout-05",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the ArtProfile interface defined for sprite and art style configuration?",
+          "query_param": "ArtProfile",
+          "expected": {
+            "path": "packages/contracts/src/artProfile.ts",
+            "symbol": "ArtProfile",
+            "kind": "symbol",
+            "details": "ArtProfile defines palette, resolution, tile dimensions, and shading properties."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 275,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:ac3ec1ea41f09f2ddaf60f73560a58a6\",\n      \"kind\": \"interface\",\n      \"name\": \"ArtProfile\",\n      \"qualifiedName\": \"ArtProfile\",\n      \"filePath\": \"packages/contracts/src/artProfile.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 58,\n      \"endLine\": 66,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
+        },
+        {
+          "id": "plugengine-holdout-06",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the StagingDiff interface defined for previewing builder changes before apply?",
+          "query_param": "StagingDiff",
+          "expected": {
+            "path": "packages/plugengine-ai/src/stagingDiff.ts",
+            "symbol": "StagingDiff",
+            "kind": "symbol",
+            "details": "StagingDiff holds added, modified, removed template objects and change summaries."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 287.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:4c0f770ca1dfcc94977935867892e101\",\n      \"kind\": \"interface\",\n      \"name\": \"StagingDiff\",\n      \"qualifiedName\": \"StagingDiff\",\n      \"filePath\": \"packages/plugengine-ai/src/stagingDiff.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 10,\n      \"endLine\": 14,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported"
+        },
+        {
+          "id": "plugengine-holdout-07",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the BuildJob interface defined for engine generation jobs?",
+          "query_param": "BuildJob",
+          "expected": {
+            "path": "packages/plugengine-ai/src/buildJob.ts",
+            "symbol": "BuildJob",
+            "kind": "symbol",
+            "details": "BuildJob defines prompt, seed, provider, clock timestamp, and metadata."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 280.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:bb0c41394407556bd9f9a0c2bc3698d2\",\n      \"kind\": \"interface\",\n      \"name\": \"BuildJob\",\n      \"qualifiedName\": \"BuildJob\",\n      \"filePath\": \"packages/plugengine-ai/src/buildJob.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 14,\n      \"endLine\": 19,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true,\n"
+        },
+        {
+          "id": "plugengine-holdout-08",
+          "isHoldout": true,
+          "type": "definition",
+          "question": "Where is the generateMockPlan function defined for deterministic scene generation?",
+          "query_param": "generateMockPlan",
+          "expected": {
+            "path": "packages/plugengine-ai/src/mockProvider.ts",
+            "symbol": "generateMockPlan",
+            "kind": "symbol",
+            "details": "generateMockPlan uses mulberry32 PRNG and keyword detection to build mock templates."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 278.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:b0f0cc5c6f77c64d3338bccf98c0e0b5\",\n      \"kind\": \"function\",\n      \"name\": \"generateMockPlan\",\n      \"qualifiedName\": \"generateMockPlan\",\n      \"filePath\": \"packages/plugengine-ai/src/mockProvider.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 110,\n      \"endLine\": 130,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(job: BuildJ"
+        },
+        {
+          "id": "plugengine-holdout-09",
+          "isHoldout": true,
+          "type": "callers",
+          "question": "Where is generateMockPlan called during mock provider execution?",
+          "query_param": "generateMockPlan",
+          "expected": {
+            "path": "packages/plugengine-ai/src/mockProvider.ts",
+            "symbol": "generateMockPlan",
+            "kind": "callers",
+            "expected_targets": [
+              "packages/plugengine-ai/src/providerProfiles.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts"
+            ],
+            "details": "providerProfiles mock profile delegates to generateMockPlan."
+          },
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 283.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"generateMockPlan\",\n  \"callers\": []\n}\n"
+        },
+        {
+          "id": "plugengine-holdout-10",
+          "isHoldout": true,
+          "type": "impact",
+          "question": "What is impacted if createKeyVault signature or interface is modified?",
+          "query_param": "createKeyVault",
+          "expected": {
+            "path": "packages/plugengine-ai/src/keyVault.ts",
+            "symbol": "createKeyVault",
+            "kind": "impact",
+            "expected_targets": [
+              "apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts",
+              "packages/plugengine-ai/src/aiBuild.test.ts",
+              "packages/plugengine-ai/src/index.ts"
+            ],
+            "details": "Consumers importing createKeyVault for BYOK secret management are impacted."
+          },
+          "hit": false,
+          "rank": -1,
+          "latencyMs": 272.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"createKeyVault\",\n  \"depth\": 2,\n  \"nodeCount\": 3,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"createKeyVault\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"startLine\": 22\n    },\n    {\n      \"name\": \"ai-builder-mock-proof.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"startLine\": 1\n  "
+        }
+      ]
+    }
+  ]
+}
