@@ -36,6 +36,31 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [searchedQuery, setSearchedQuery] = useState('')
+  const [searchCopyFeedback, setSearchCopyFeedback] = useState('')
+
+  const handleCopySearchContext = () => {
+    let md = `# Suchtreffer-Kontext: "${searchedQuery}"\nWorkspace: ${workspaceId}\n\n`
+    if (mode === 'notes') {
+      md += `Gefundene Notizen (${noteHits.length}):\n`
+      for (const n of noteHits) {
+        md += `- **${n.title}** (\`${n.path}\`)${n.stand ? ` [${n.stand}]` : ''}\n`
+      }
+    } else {
+      md += `Gefundene Treffer (${unifiedHits.length}):\n`
+      for (const h of unifiedHits) {
+        md += `- **${h.name}** (${h.kind}) — \`${h.path}${h.line ? `:${h.line}` : ''}\`\n`
+        if (h.snippet) {
+          md += `  > ${h.snippet.replace(/\n/g, ' ')}\n`
+        }
+      }
+    }
+    navigator.clipboard.writeText(md).then(() => {
+      setSearchCopyFeedback('✓ Suchergebnisse als Kontext kopiert (bereit für ChatGPT, Claude & Co.)')
+      setTimeout(() => setSearchCopyFeedback(''), 3000)
+    }).catch(() => {
+      setSearchCopyFeedback('Fehler beim Kopieren in die Zwischenablage')
+    })
+  }
 
   const handleSearch = async (e?: React.FormEvent, overrideQ?: string, overrideMode?: SearchMode) => {
     if (e) e.preventDefault()
@@ -225,21 +250,50 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
 
       <div className="search-results">
         {searchedQuery && (
-          <div className="search-results-summary">
-            {mode === 'notes' ? (
-              noteHits.length === 0
-                ? `Keine Notizen entsprechen dem Filter "${searchedQuery}"`
-                : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
-            ) : (
-              unifiedHits.length === 0
-                ? `Keine Treffer für "${searchedQuery}" im Brain-Index`
-                : `${unifiedHits.length} Treffer für "${searchedQuery}":`
+          <div className="search-results-summary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <div>
+              {mode === 'notes' ? (
+                noteHits.length === 0
+                  ? `Keine Notizen entsprechen dem Filter "${searchedQuery}"`
+                  : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
+              ) : (
+                unifiedHits.length === 0
+                  ? `Keine Treffer für "${searchedQuery}" im Brain-Index`
+                  : `${unifiedHits.length} Treffer für "${searchedQuery}":`
+              )}
+              {elapsedMs !== null && (
+                <span className="search-results-time mono" style={{ marginLeft: '8px', opacity: .7 }}>
+                  {elapsedMs} ms
+                </span>
+              )}
+            </div>
+
+            {((mode === 'notes' && noteHits.length > 0) || (mode !== 'notes' && unifiedHits.length > 0)) && (
+              <button
+                type="button"
+                className="pb-button pb-button--secondary"
+                onClick={() => handleCopySearchContext()}
+                title="Alle Suchtreffer als Markdown-Kontext kopieren"
+                style={{ fontSize: '11px', padding: '4px 10px' }}
+              >
+                📋 Als Kontext kopieren
+              </button>
             )}
-            {elapsedMs !== null && (
-              <span className="search-results-time mono" style={{ marginLeft: '8px', opacity: .7 }}>
-                {elapsedMs} ms
-              </span>
-            )}
+          </div>
+        )}
+
+        {searchCopyFeedback && (
+          <div style={{
+            margin: '8px 0',
+            padding: '6px 12px',
+            background: 'var(--accent-soft)',
+            border: '1px solid var(--pos)',
+            borderRadius: 'var(--r)',
+            fontSize: '12px',
+            color: 'var(--ink)',
+            fontFamily: 'var(--mono)',
+          }}>
+            {searchCopyFeedback}
           </div>
         )}
 
