@@ -1,0 +1,3507 @@
+{
+  "tool": "plugbrain",
+  "repo": "cowork",
+  "commit": "5c2b2addb16d960a270bad15f80f0581e16a7cf9",
+  "indexTimeMs": 187385,
+  "indexSizeBytes": 1269656291,
+  "questionCount": 20,
+  "hitCount": 6,
+  "accuracy": 30,
+  "latencyP50Ms": 4047.4,
+  "latencyP95Ms": 15020,
+  "questions": [
+    {
+      "id": "cowork-01",
+      "type": "definition",
+      "question": "Where is the DEFAULT_LANES list defined for LLM fleet workers?",
+      "query_param": "DEFAULT_LANES",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "DEFAULT_LANES",
+        "kind": "symbol",
+        "details": "DEFAULT_LANES in fleet.py specifies provider, model, role, cost and rpm."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15016.8,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-02",
+      "type": "definition",
+      "question": "Where is the scrub function defined to remove API keys from output?",
+      "query_param": "scrub",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "scrub",
+        "kind": "symbol",
+        "details": "fleet.py implements scrub(text) using SECRET_RE patterns."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 8014.7,
+      "rawOutput": {
+        "query": "scrub",
+        "symbols": [
+          {
+            "id": 5379,
+            "name": "scrub",
+            "kind": "function",
+            "file": "ruflo-workers/tools/fleet.py",
+            "line": 59,
+            "endLine": 59,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5449,
+            "name": "scrub",
+            "kind": "function",
+            "file": "ruflo-workers/tools/verify_gate.py",
+            "line": 53,
+            "endLine": 53,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 51548,
+            "name": "scrub",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "line": 60,
+            "endLine": 65,
+            "exported": false,
+            "container": "DemoEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60823,
+            "name": "scrub",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/fleet-direct.cjs",
+            "line": 83,
+            "endLine": 89,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 102379,
+            "name": "scrub",
+            "kind": "method",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "line": 60,
+            "endLine": 65,
+            "exported": false,
+            "container": "DemoEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 109529,
+            "name": "scrub",
+            "kind": "method",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "line": 60,
+            "endLine": 65,
+            "exported": false,
+            "container": "DemoEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115329,
+            "name": "scrub",
+            "kind": "function",
+            "file": "cockpit/fleet-direct.cjs",
+            "line": 83,
+            "endLine": 89,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 124496,
+            "name": "scrub",
+            "kind": "method",
+            "file": "04_WORKSPACE_SANDBOX/deep_audit/plugbraingui/plugbrain ui/unpacked_source/plugbrain/plugbrain/web_static/assets/data/demo-engine.js",
+            "line": 60,
+            "endLine": 65,
+            "exported": false,
+            "container": "DemoEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12911,
+            "name": "scrub_text",
+            "kind": "function",
+            "file": "plugos-showcase/tools/security/secscan/masking.py",
+            "line": 103,
+            "endLine": 103,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 38638,
+            "name": "scrub_text",
+            "kind": "function",
+            "file": "plugos-ecospace/tools/security/secscan/masking.py",
+            "line": 103,
+            "endLine": 103,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12671,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-x3/apps/plugbrain-mcp/plugbrain_mcp/secrets.py",
+            "line": 118,
+            "endLine": 118,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21930,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-showcase/apps/plugmcp/plugmcp/secrets.py",
+            "line": 121,
+            "endLine": 121,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 22150,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-showcase/apps/plugbrain-mcp/plugbrain_mcp/secrets.py",
+            "line": 118,
+            "endLine": 118,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 38102,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-fix/apps/plugmcp/plugmcp/secrets.py",
+            "line": 121,
+            "endLine": 121,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 38309,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-fix/apps/plugbrain-mcp/plugbrain_mcp/secrets.py",
+            "line": 118,
+            "endLine": 118,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 46548,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-ecospace/apps/plugmcp/plugmcp/secrets.py",
+            "line": 121,
+            "endLine": 121,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 53194,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "plugos-ecospace/apps/plugbrain-mcp/plugbrain_mcp/secrets.py",
+            "line": 118,
+            "endLine": 118,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 104529,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/secrets.py",
+            "line": 121,
+            "endLine": 121,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 111175,
+            "name": "scrub_payload",
+            "kind": "function",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/plugbrain-mcp/plugbrain_mcp/secrets.py",
+            "line": 118,
+            "endLine": 118,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 8351,
+            "name": "_scrub",
+            "kind": "function",
+            "file": "plugos-x3/packages/plugbot/plugbot/onboarding.py",
+            "line": 119,
+            "endLine": 119,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 8447,
+            "name": "_scrub",
+            "kind": "method",
+            "file": "plugos-x3/packages/plugbot/plugbot/providers.py",
+            "line": 172,
+            "endLine": 172,
+            "exported": false,
+            "container": "OpenAICompatProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16076,
+            "name": "_scrub",
+            "kind": "function",
+            "file": "plugos-showcase/packages/plugbot/plugbot/onboarding.py",
+            "line": 119,
+            "endLine": 119,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16172,
+            "name": "_scrub",
+            "kind": "method",
+            "file": "plugos-showcase/packages/plugbot/plugbot/providers.py",
+            "line": 172,
+            "endLine": 172,
+            "exported": false,
+            "container": "OpenAICompatProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 26425,
+            "name": "_scrub",
+            "kind": "function",
+            "file": "plugos-s3/packages/plugbot/plugbot/onboarding.py",
+            "line": 119,
+            "endLine": 119,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 26521,
+            "name": "_scrub",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/plugbot/providers.py",
+            "line": 172,
+            "endLine": 172,
+            "exported": false,
+            "container": "OpenAICompatProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "plugos-ecospace/apps/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "plugos-fix/apps/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "plugos-s3/apps/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "plugos-showcase/apps/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "plugos-x3/apps/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/tests/test_health.py",
+            "title": "test_health.py",
+            "snippet": "… [scrub]_payload output ─────────────────────────── [scrubbed] = [scrub]_payload(result, environ=fake_env) [scrubbed]_json: str = json.dumps([scrubbed]) for key …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/eefb024833d90b39ece34e94bb0d87d7dc5e63790617632992895e5be938a479.json",
+            "title": "eefb024833d90b39ece34e94bb0d87d7dc5e63790617632992895e5be938a479.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_apps_shorts_factory_scripts_[scrub]_release_ps1 …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/051ecd2eebe814dd5ca7f143df6b39edc0214758d51ad32112cd13e36dff7a81.json",
+            "title": "051ecd2eebe814dd5ca7f143df6b39edc0214758d51ad32112cd13e36dff7a81.json",
+            "snippet": "… 1.0}, {\"source\": \"secscan_masking_[scrub]_text\", \"target\": \"secscan_masking_mask_secret\", \"relation\": \"calls\", \"context\": \"call\", \"confidence\": \"EXTRACTED …"
+          },
+          {
+            "path": "plugos-ecospace/tools/security/tests/test_audit_hardening.py",
+            "title": "test_audit_hardening.py",
+            "snippet": "… secret, body = H.google_key() note = \"committed .env value for key \" + secret [scrubbed] = [scrub]_text(note) self.assertNotIn …"
+          },
+          {
+            "path": "plugos-showcase/tools/security/tests/test_audit_hardening.py",
+            "title": "test_audit_hardening.py",
+            "snippet": "… secret, body = H.google_key() note = \"committed .env value for key \" + secret [scrubbed] = [scrub]_text(note) self.assertNotIn …"
+          }
+        ],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "list_models -> scrub -> sub",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "list_models",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "sub",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "list_models -> scrub -> group",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "list_models",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "group",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "list_models -> scrub -> sub",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "list_models",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "sub",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "list_models -> scrub -> group",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "list_models",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "group",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-5",
+            "label": "__init__ -> scrub -> sub",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "__init__",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "sub",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-6",
+            "label": "__init__ -> scrub -> group",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "__init__",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "scrub",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "group",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 41,
+        "timingMs": 7361.9
+      }
+    },
+    {
+      "id": "cowork-03",
+      "type": "callers",
+      "question": "Where is post_event called to update the live station feed?",
+      "query_param": "post_event",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "post_event",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls post_event during worker lifecycle transitions."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 667.2,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 5453,
+          "name": "post_event",
+          "kind": "function",
+          "file": "ruflo-workers/tools/worker.py",
+          "line": 42,
+          "endLine": 42,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": 5455,
+              "name": "fleet_patch",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 71,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5455,
+              "name": "fleet_patch",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 78,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5455,
+              "name": "fleet_patch",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 81,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5457,
+              "name": "run_codex",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 126,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5457,
+              "name": "run_codex",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 128,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5458,
+              "name": "_pump",
+              "kind": "method",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 142,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5457,
+              "name": "run_codex",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 152,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5459,
+              "name": "run_fleet",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 170,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5459,
+              "name": "run_fleet",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 177,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5459,
+              "name": "run_fleet",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 195,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5461,
+              "name": "run_part_as_worker",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 231,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5461,
+              "name": "run_part_as_worker",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 240,
+              "rawTarget": "post_event"
+            },
+            {
+              "id": 5461,
+              "name": "run_part_as_worker",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 260,
+              "rawTarget": "post_event"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": null,
+              "name": "dumps",
+              "kind": "call",
+              "file": "",
+              "line": 46,
+              "rawTarget": "dumps"
+            },
+            {
+              "id": null,
+              "name": "encode",
+              "kind": "call",
+              "file": "",
+              "line": 46,
+              "rawTarget": "encode"
+            },
+            {
+              "id": null,
+              "name": "Request",
+              "kind": "call",
+              "file": "",
+              "line": 47,
+              "rawTarget": "Request"
+            },
+            {
+              "id": null,
+              "name": "rstrip",
+              "kind": "call",
+              "file": "",
+              "line": 47,
+              "rawTarget": "rstrip"
+            },
+            {
+              "id": null,
+              "name": "urlopen",
+              "kind": "call",
+              "file": "",
+              "line": 49,
+              "rawTarget": "urlopen"
+            },
+            {
+              "id": null,
+              "name": "read",
+              "kind": "call",
+              "file": "",
+              "line": 49,
+              "rawTarget": "read"
+            }
+          ],
+          "references": []
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "fleet_patch -> post_event -> dumps",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "dumps",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "fleet_patch -> post_event -> encode",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "encode",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "fleet_patch -> post_event -> dumps",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "dumps",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "fleet_patch -> post_event -> encode",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "encode",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-5",
+            "label": "fleet_patch -> post_event -> dumps",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "dumps",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-6",
+            "label": "fleet_patch -> post_event -> encode",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "fleet_patch",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "post_event",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "encode",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-04",
+      "type": "callers",
+      "question": "Where is codegraph_context called to enrich worker prompts?",
+      "query_param": "codegraph_context",
+      "expected": {
+        "path": "ruflo-workers/tools/worker.py",
+        "symbol": "codegraph_context",
+        "kind": "callers",
+        "expected_targets": [
+          "ruflo-workers/tools/worker.py"
+        ],
+        "details": "worker.py calls codegraph_context to fetch symbol context via codegraph CLI."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 730.6,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 5454,
+          "name": "codegraph_context",
+          "kind": "function",
+          "file": "ruflo-workers/tools/worker.py",
+          "line": 54,
+          "endLine": 54,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": 5461,
+              "name": "run_part_as_worker",
+              "kind": "function",
+              "file": "ruflo-workers/tools/worker.py",
+              "line": 235,
+              "rawTarget": "codegraph_context"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 58,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "Path",
+              "kind": "call",
+              "file": "",
+              "line": 59,
+              "rawTarget": "Path"
+            },
+            {
+              "id": null,
+              "name": "else",
+              "kind": "call",
+              "file": "",
+              "line": 59,
+              "rawTarget": "else"
+            },
+            {
+              "id": null,
+              "name": "get",
+              "kind": "call",
+              "file": "",
+              "line": 59,
+              "rawTarget": "get"
+            },
+            {
+              "id": null,
+              "name": "sh",
+              "kind": "call",
+              "file": "",
+              "line": 63,
+              "rawTarget": "sh"
+            },
+            {
+              "id": null,
+              "name": "strip",
+              "kind": "call",
+              "file": "",
+              "line": 65,
+              "rawTarget": "strip"
+            }
+          ],
+          "references": []
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "run_part_as_worker -> codegraph_context -> get",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "run_part_as_worker",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "codegraph_context",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "get",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "run_part_as_worker -> codegraph_context -> Path",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "run_part_as_worker",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "codegraph_context",
+                "file": "ruflo-workers/tools/worker.py",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "Path",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cowork-05",
+      "type": "impact",
+      "question": "What is impacted if CONFIG path in fleet.py is moved?",
+      "query_param": "CONFIG",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "CONFIG",
+        "kind": "impact",
+        "expected_targets": [
+          "ruflo-workers/tools/fleet.py",
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 2,
+        "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 566.6,
+      "rawOutput": {
+        "target": {
+          "name": "CONFIG",
+          "file": "ECOSPACE/cockpit/server.cjs",
+          "id": 60865
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "cowork-06",
+      "type": "impact",
+      "question": "What is impacted if RATE table in cockpit/server.cjs is updated?",
+      "query_param": "RATE",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "RATE",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "RATE determines cost calculation for different AI model providers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 462.3,
+      "rawOutput": {
+        "target": {
+          "name": "RATE",
+          "file": "ECOSPACE/cockpit/server.cjs",
+          "id": 60873
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "cowork-07",
+      "type": "dataflow",
+      "question": "How do swarm lane configuration changes flow from HTTP API to disk and fleet workers?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "dataflow",
+        "expected_targets": [
+          "cockpit/server.cjs",
+          "ruflo-workers/tools/fleet.py"
+        ],
+        "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 4047.4,
+      "rawOutput": {
+        "query": "writeConfig",
+        "symbols": [
+          {
+            "id": 60880,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 44,
+            "endLine": 49,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73625,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 39,
+            "endLine": 46,
+            "exported": false,
+            "container": "PlugCodeProxyPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96645,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 39,
+            "endLine": 46,
+            "exported": false,
+            "container": "PlugCodeProxyPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115386,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 44,
+            "endLine": 49,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 437083,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 39,
+            "endLine": 46,
+            "exported": false,
+            "container": "PlugCodeProxyPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 459315,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 39,
+            "endLine": 46,
+            "exported": false,
+            "container": "PlugCodeProxyPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 223625,
+            "name": "writeConfig",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "line": 49,
+            "endLine": 51,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60881,
+            "name": "tmp",
+            "kind": "constant",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 46,
+            "endLine": 46,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73626,
+            "name": "res",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96646,
+            "name": "res",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115387,
+            "name": "tmp",
+            "kind": "constant",
+            "file": "cockpit/server.cjs",
+            "line": 46,
+            "endLine": 46,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 437084,
+            "name": "res",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 459316,
+            "name": "res",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "writeConfig",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js",
+            "title": "mcp-health-check.test.js",
+            "snippet": "… true }); } function [writeConfig](configPath, body) { fs.writeFileSync(configPath, JSON.stringify(body, null, 2)); } function readState(statePath) { return JSON …"
+          },
+          {
+            "path": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "title": "PlugCodeProxyPage.tsx",
+            "snippet": "… xs\" onClick={() => [writeConfig](false)} > Write opencode.json </button> <button className=\"btn text-xs\" onClick={() => [writeConfig](true)} > Write global …"
+          },
+          {
+            "path": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "title": "PlugCodeProxyPage.tsx",
+            "snippet": "… xs\" onClick={() => [writeConfig](false)} > Write opencode.json </button> <button className=\"btn text-xs\" onClick={() => [writeConfig](true)} > Write global …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "title": "PlugCodeProxyPage.tsx",
+            "snippet": "… xs\" onClick={() => [writeConfig](false)} > Write opencode.json </button> <button className=\"btn text-xs\" onClick={() => [writeConfig](true)} > Write global …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/PlugCodeProxyPage.tsx",
+            "title": "PlugCodeProxyPage.tsx",
+            "snippet": "… xs\" onClick={() => [writeConfig](false)} > Write opencode.json </button> <button className=\"btn text-xs\" onClick={() => [writeConfig](true)} > Write global …"
+          },
+          {
+            "path": "cockpit/server.cjs",
+            "title": "server.cjs",
+            "snippet": "… false, error: \"need id+provider+key_env to add a lane\" }; } [writeConfig](cfg); return { ok: true }; } function setRunner …"
+          },
+          {
+            "path": "ECOSPACE/cockpit/server.cjs",
+            "title": "server.cjs",
+            "snippet": "… false, error: \"need id+provider+key_env to add a lane\" }; } [writeConfig](cfg); return { ok: true }; } function setRunner …"
+          }
+        ],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "upsertLane -> writeConfig -> writeFileSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "upsertLane",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "writeFileSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "upsertLane -> writeConfig -> stringify",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "upsertLane",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "stringify",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "setRunner -> writeConfig -> writeFileSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "setRunner",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "writeFileSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "setRunner -> writeConfig -> stringify",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "setRunner",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "stringify",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-5",
+            "label": "applyChain -> writeConfig -> writeFileSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "applyChain",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "writeFileSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-6",
+            "label": "applyChain -> writeConfig -> stringify",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "applyChain",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "writeConfig",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "stringify",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 26,
+        "timingMs": 3458.4
+      }
+    },
+    {
+      "id": "cowork-08",
+      "type": "config",
+      "question": "Which environment variable configures the Cockpit server port?",
+      "query_param": "PLUGOS_COCKPIT_PORT",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "PLUGOS_COCKPIT_PORT",
+        "kind": "config",
+        "details": "PORT = Number(process.env.PLUGOS_COCKPIT_PORT || process.env.PORT || 7980)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15019.7,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-09",
+      "type": "config",
+      "question": "Where are the active swarm chain configuration rules defined?",
+      "query_param": "swarm-chain.config.json",
+      "expected": {
+        "path": "ruflo-workers/swarm-chain.config.json",
+        "symbol": "swarm-chain.config.json",
+        "kind": "config",
+        "details": "JSON configuration defining lanes, chain tiers, and worker concurrency."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15011.5,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-10",
+      "type": "entrypoint",
+      "question": "Where is the main entrypoint for the multi-provider fleet dispatcher?",
+      "query_param": "fleet",
+      "expected": {
+        "path": "ruflo-workers/tools/fleet.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 3678.6,
+      "rawOutput": {
+        "query": "fleet",
+        "symbols": [
+          {
+            "id": 5387,
+            "name": "Fleet",
+            "kind": "class",
+            "file": "ruflo-workers/tools/fleet.py",
+            "line": 208,
+            "endLine": 208,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5455,
+            "name": "fleet_patch",
+            "kind": "function",
+            "file": "ruflo-workers/tools/worker.py",
+            "line": 70,
+            "endLine": 70,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 61057,
+            "name": "fleetAsk",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 515,
+            "endLine": 520,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115563,
+            "name": "fleetAsk",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 515,
+            "endLine": 520,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 61048,
+            "name": "fleetDirect",
+            "kind": "constant",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 498,
+            "endLine": 498,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115554,
+            "name": "fleetDirect",
+            "kind": "constant",
+            "file": "cockpit/server.cjs",
+            "line": 498,
+            "endLine": 498,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5012,
+            "name": "FLEET_PARALLELISM",
+            "kind": "constant",
+            "file": "station/server.cjs",
+            "line": 31,
+            "endLine": 31,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 301855,
+            "name": "Fleet API Endpoints",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "line": 25,
+            "endLine": 25,
+            "exported": false,
+            "container": "osquery Endpoint Monitoring — API Reference",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 486694,
+            "name": "Fleet API Endpoints",
+            "kind": "property",
+            "file": ".claude/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "line": 25,
+            "endLine": 25,
+            "exported": false,
+            "container": "osquery Endpoint Monitoring — API Reference",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 524707,
+            "name": "Fleet API Endpoints",
+            "kind": "property",
+            "file": ".agents/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "line": 25,
+            "endLine": 25,
+            "exported": false,
+            "container": "osquery Endpoint Monitoring — API Reference",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5333,
+            "name": "The two special workers (not fleet HTTP lanes)",
+            "kind": "property",
+            "file": "ruflo-workers/FLEET_PROFILES.md",
+            "line": 18,
+            "endLine": 18,
+            "exported": false,
+            "container": "PlugBot Fleet — Provider Profiles & Loop Roles",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5459,
+            "name": "run_fleet",
+            "kind": "function",
+            "file": "ruflo-workers/tools/worker.py",
+            "line": 165,
+            "endLine": 165,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 294127,
+            "name": "print_fleet_report",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 112,
+            "endLine": 112,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 301846,
+            "name": "check_fleet_status",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "line": 38,
+            "endLine": 38,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 478490,
+            "name": "print_fleet_report",
+            "kind": "function",
+            "file": ".claude/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 112,
+            "endLine": 112,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 486685,
+            "name": "check_fleet_status",
+            "kind": "function",
+            "file": ".claude/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "line": 38,
+            "endLine": 38,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 516503,
+            "name": "print_fleet_report",
+            "kind": "function",
+            "file": ".agents/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 112,
+            "endLine": 112,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 524698,
+            "name": "check_fleet_status",
+            "kind": "function",
+            "file": ".agents/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "line": 38,
+            "endLine": 38,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 294126,
+            "name": "generate_fleet_report",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 65,
+            "endLine": 65,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 478489,
+            "name": "generate_fleet_report",
+            "kind": "function",
+            "file": ".claude/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 65,
+            "endLine": 65,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 516502,
+            "name": "generate_fleet_report",
+            "kind": "function",
+            "file": ".agents/skills/implementing-aqua-security-for-container-scanning/scripts/process.py",
+            "line": 65,
+            "endLine": 65,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5392,
+            "name": "complete",
+            "kind": "method",
+            "file": "ruflo-workers/tools/fleet.py",
+            "line": 275,
+            "endLine": 275,
+            "exported": true,
+            "container": "Fleet",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5393,
+            "name": "call_one",
+            "kind": "method",
+            "file": "ruflo-workers/tools/fleet.py",
+            "line": 304,
+            "endLine": 304,
+            "exported": true,
+            "container": "Fleet",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5390,
+            "name": "available",
+            "kind": "method",
+            "file": "ruflo-workers/tools/fleet.py",
+            "line": 231,
+            "endLine": 231,
+            "exported": true,
+            "container": "Fleet",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 534076,
+            "name": "#fleet-management",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/SKILL.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": ".agents/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… [fleet] = check_[fleet]_status([fleet]_url, api_token) results[\"[fleet]_hosts\"] = [fleet] print(f\"\\n--- [FLEET] HOSTS ({len …"
+          },
+          {
+            "path": ".claude/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… [fleet] = check_[fleet]_status([fleet]_url, api_token) results[\"[fleet]_hosts\"] = [fleet] print(f\"\\n--- [FLEET] HOSTS ({len …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… [fleet] = check_[fleet]_status([fleet]_url, api_token) results[\"[fleet]_hosts\"] = [fleet] print(f\"\\n--- [FLEET] HOSTS ({len …"
+          },
+          {
+            "path": ".agents/skills/deploying-osquery-for-endpoint-monitoring/SKILL.md",
+            "title": "SKILL",
+            "snippet": "… Deploy [FleetDM] for Centralized Management ```bash # [FleetDM] provides centralized osquery management # Deploy [FleetDM] server, configure agents to report …"
+          },
+          {
+            "path": ".claude/skills/deploying-osquery-for-endpoint-monitoring/SKILL.md",
+            "title": "SKILL",
+            "snippet": "… Deploy [FleetDM] for Centralized Management ```bash # [FleetDM] provides centralized osquery management # Deploy [FleetDM] server, configure agents to report …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/SKILL.md",
+            "title": "SKILL",
+            "snippet": "… Deploy [FleetDM] for Centralized Management ```bash # [FleetDM] provides centralized osquery management # Deploy [FleetDM] server, configure agents to report …"
+          },
+          {
+            "path": ".agents/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "title": "api-reference",
+            "snippet": "… [Fleet] API Endpoints | Method | Endpoint | Description | |--------|----------|-------------| | GET | `/api/v1/[fleet]/hosts` | List enrolled hosts | | GET | `/api/v1/[fleet] …"
+          },
+          {
+            "path": ".claude/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "title": "api-reference",
+            "snippet": "… [Fleet] API Endpoints | Method | Endpoint | Description | |--------|----------|-------------| | GET | `/api/v1/[fleet]/hosts` | List enrolled hosts | | GET | `/api/v1/[fleet] …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/references/api-reference.md",
+            "title": "api-reference",
+            "snippet": "… [Fleet] API Endpoints | Method | Endpoint | Description | |--------|----------|-------------| | GET | `/api/v1/[fleet]/hosts` | List enrolled hosts | | GET | `/api/v1/[fleet] …"
+          },
+          {
+            "path": ".agents/skills/deploying-osquery-for-endpoint-monitoring/references/workflows.md",
+            "title": "workflows",
+            "snippet": "… Osquery [Fleet] Deployment ``` [Install [FleetDM] server] → [Generate enrollment secret] → [Package osquery with [fleet] config] → [Deploy to pilot group …"
+          }
+        ],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "cmd_list -> Fleet",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "cmd_list",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "Fleet",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "class"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "cmd_selftest -> Fleet",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "cmd_selftest",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "Fleet",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "class"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "cmd_selftest -> Fleet",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "cmd_selftest",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "Fleet",
+                "file": "ruflo-workers/tools/fleet.py",
+                "kind": "class"
+              }
+            ]
+          }
+        ],
+        "total": 38,
+        "timingMs": 3249.3
+      }
+    },
+    {
+      "id": "cowork-11",
+      "type": "entrypoint",
+      "question": "Where is the HTTP server listening loop for Cockpit?",
+      "query_param": "server.cjs",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "server.cjs",
+        "kind": "entrypoint",
+        "details": "cockpit/server.cjs creates http.createServer and starts listening on 127.0.0.1."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 10076.9,
+      "rawOutput": {
+        "query": "server.cjs",
+        "symbols": [
+          {
+            "id": 60896,
+            "name": "ver",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 97,
+            "endLine": 97,
+            "exported": false,
+            "container": "doctor",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60961,
+            "name": "top",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 260,
+            "endLine": 260,
+            "exported": false,
+            "container": "stats",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60980,
+            "name": "out",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 313,
+            "endLine": 313,
+            "exported": false,
+            "container": "runnerStart",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115402,
+            "name": "ver",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 97,
+            "endLine": 97,
+            "exported": false,
+            "container": "doctor",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115467,
+            "name": "top",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 260,
+            "endLine": 260,
+            "exported": false,
+            "container": "stats",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115486,
+            "name": "out",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 313,
+            "endLine": 313,
+            "exported": false,
+            "container": "runnerStart",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5049,
+            "name": "send",
+            "kind": "function",
+            "file": "station/server.cjs",
+            "line": 139,
+            "endLine": 144,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 55124,
+            "name": "send",
+            "kind": "function",
+            "file": "ECOSPACE/_RELEASE/plugos-command-center/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60927,
+            "name": "rate",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 203,
+            "endLine": 203,
+            "exported": false,
+            "container": "stats",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 61022,
+            "name": "rect",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 415,
+            "endLine": 415,
+            "exported": false,
+            "container": "botSprite",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 61081,
+            "name": "send",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 617,
+            "endLine": 621,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 74668,
+            "name": "send",
+            "kind": "function",
+            "file": "ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/control-server.cjs",
+            "line": 15,
+            "endLine": 20,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115433,
+            "name": "rate",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 203,
+            "endLine": 203,
+            "exported": false,
+            "container": "stats",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115528,
+            "name": "rect",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 415,
+            "endLine": 415,
+            "exported": false,
+            "container": "botSprite",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115587,
+            "name": "send",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 617,
+            "endLine": 621,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 116058,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_verify_new_zip_20260613_04/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 116484,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 116910,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_fix_plugos_command_center_20260613_04/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 117359,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_03/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 117818,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_02/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 118283,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/release_audit_plugos_command_center_20260613_01/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 118681,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/plugos_command_center_release_stage_20260613_04_final/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 119107,
+            "name": "send",
+            "kind": "function",
+            "file": "04_WORKSPACE_SANDBOX/plugos_command_center_release_stage_20260613_04/app/src/control-server.cjs",
+            "line": 13,
+            "endLine": 18,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60925,
+            "name": "stats",
+            "kind": "function",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 201,
+            "endLine": 273,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115431,
+            "name": "stats",
+            "kind": "function",
+            "file": "cockpit/server.cjs",
+            "line": 201,
+            "endLine": 273,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/browser/tests/server_cjs.test.cts",
+            "title": "server_cjs.test.cts",
+            "snippet": "… createServerCjs } = require('../dist/[server.cjs]'); describe('Browser MCP Server modules cjs', () => { test('should create server from cjs', async …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/create-new-mcp/template-default/package.json",
+            "title": "package.json",
+            "snippet": "… MCP server for {{name}}\", \"type\": \"module\", \"main\": \"./dist/[server.cjs]\", \"module\": \"./dist/server.js\", \"types\": \"./dist/server.d …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/search/package.json",
+            "title": "package.json",
+            "snippet": "… for web search operations\", \"type\": \"module\", \"main\": \"./dist/[server.cjs]\", \"module\": \"./dist/server.js\", \"types\": \"./dist/server.d …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/commands/package.json",
+            "title": "package.json",
+            "snippet": "… to run arbitrary commands\", \"type\": \"module\", \"main\": \"./dist/[server.cjs]\", \"module\": \"./dist/server.js\", \"types\": \"./dist/server.d …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/filesystem/package.json",
+            "title": "package.json",
+            "snippet": "… filesystem access\", \"license\": \"MIT\", \"type\": \"module\", \"main\": \"./dist/[server.cjs]\", \"module\": \"./dist/server.js\", \"types\": \"./dist/server.d …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/browser/package.json",
+            "title": "package.json",
+            "snippet": "… mcp-server-browser\": \"dist/index.cjs\" }, \"main\": \"dist/[server.cjs]\", \"module\": \"dist/server.js\", \"types\": \"dist/server.d …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-servers/browser/tests/server_esm.test.mts",
+            "title": "server_esm.test.mts",
+            "snippet": "… createServerCjs } = require('../dist/[server.cjs]'); describe('Browser MCP Server modules esm', () => { test('should create server from esm', async …"
+          },
+          {
+            "path": ".claude/launch.json",
+            "title": "launch.json",
+            "snippet": "… true }, { \"name\": \"cockpit\", \"runtimeExecutable\": \"node\", \"runtimeArgs\": [\"cockpit/[server.cjs]\"], \"port\": 7980, \"autoPort\": true }, { \"name\": \"staroffice\", \"runtimeExecutable\": \"C:/Users …"
+          },
+          {
+            "path": "ECOSPACE/_RELEASE/plugos-command-center/app/src/control-server.cjs",
+            "title": "control-server.cjs",
+            "snippet": "/* control-[server.cjs] — lokale Agent-Control-Surface fuer den PlugOS Shell. * Hermes/Pi (oder PlugBot Layer 2) koennen …"
+          },
+          {
+            "path": "04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/app/src/control-server.cjs",
+            "title": "control-server.cjs",
+            "snippet": "/* control-[server.cjs] — lokale Agent-Control-Surface fuer den PlugOS Shell. * Hermes/Pi (oder PlugBot Layer 2) koennen …"
+          }
+        ],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "doctor -> ver -> spawnSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "spawnSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "doctor -> ver -> slice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "slice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "doctor -> ver -> spawnSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "spawnSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "doctor -> ver -> slice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "slice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-5",
+            "label": "doctor -> ver -> spawnSync",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "spawnSync",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-6",
+            "label": "doctor -> ver -> slice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "doctor",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "ver",
+                "file": "ECOSPACE/cockpit/server.cjs",
+                "kind": "function"
+              },
+              {
+                "step": 3,
+                "symbolName": "slice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 41,
+        "timingMs": 9637.5
+      }
+    },
+    {
+      "id": "cowork-12",
+      "type": "entrypoint",
+      "question": "Where is the main orchestrator for the video shorts generation pipeline?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "main",
+        "kind": "entrypoint",
+        "details": "shortsfactory/pipeline/run.py queries notion and runs produce_one."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15020,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-13",
+      "type": "docs_notes",
+      "question": "Which document outlines the core CANON principles of the workspace?",
+      "query_param": "CANON.md",
+      "expected": {
+        "path": "CANON.md",
+        "symbol": "CANON.md",
+        "kind": "docs_notes",
+        "details": "CANON.md defines foundational operating rules and non-negotiables."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15021.8,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-14",
+      "type": "docs_notes",
+      "question": "Which document specifies guidelines for social and video content style?",
+      "query_param": "CONTENT_STYLE_GUIDE.md",
+      "expected": {
+        "path": "CONTENT_STYLE_GUIDE.md",
+        "symbol": "CONTENT_STYLE_GUIDE.md",
+        "kind": "docs_notes",
+        "details": "CONTENT_STYLE_GUIDE.md describes pacing, tone, and brand aesthetics."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15008.7,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-15",
+      "type": "rename_impact",
+      "question": "What breaks if produce_one is renamed in shortsfactory/pipeline/run.py?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "produce_one is called in main loop of run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 496.5,
+      "rawOutput": "{\n  \"target\": {\n    \"name\": \"produce_one\",\n    \"file\": \"shortsfactory/pipeline/run.py\",\n    \"id\": 5249\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 4662,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 5250,\n        \"name\": \"main\",\n        \"kind\": \"function\",\n        \"file\": \"shortsfactory/pipeline/run.py\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n        \"relationType\": \"calls\",\n        \"confidence\": 0.9\n      },\n      {\n        \"depth\": 1,\n      "
+    },
+    {
+      "id": "cowork-16",
+      "type": "rename_impact",
+      "question": "What breaks if writeConfig is renamed in cockpit/server.cjs?",
+      "query_param": "writeConfig",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "writeConfig",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "details": "writeConfig is called by lane and runner mutation handlers."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 457.2,
+      "rawOutput": {
+        "target": {
+          "name": "writeConfig",
+          "file": "ECOSPACE/cockpit/server.cjs",
+          "id": 60880
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 23,
+        "nodes": {
+          "1": [
+            {
+              "depth": 1,
+              "id": 60906,
+              "name": "upsertLane",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            },
+            {
+              "depth": 1,
+              "id": 60909,
+              "name": "setRunner",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            },
+            {
+              "depth": 1,
+              "id": 61063,
+              "name": "applyChain",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            }
+          ],
+          "2": [
+            {
+              "depth": 2,
+              "id": 60878,
+              "name": "readConfig",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 60973,
+              "name": "appendEvent",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            }
+          ],
+          "3": [
+            {
+              "depth": 3,
+              "id": 60889,
+              "name": "keyPresence",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60901,
+              "name": "swarmState",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61049,
+              "name": "laneById",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61057,
+              "name": "fleetAsk",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61061,
+              "name": "chainState",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60963,
+              "name": "reorderPart",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60980,
+              "name": "out",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60977,
+              "name": "runnerStart",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60982,
+              "name": "runnerStop",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60984,
+              "name": "planGoal",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60990,
+              "name": "planScope",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61000,
+              "name": "planExpand",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61003,
+              "name": "planRoadmap",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61007,
+              "name": "planSpec",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61033,
+              "name": "claudeScope",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 61067,
+              "name": "claudeSpec",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 159402,
+              "name": "Date",
+              "kind": "property",
+              "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/state/reports/operator_notes/SECURITY_FAIL_key_isolation.md",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "references",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 60971,
+              "name": "broadcast",
+              "kind": "function",
+              "file": "ECOSPACE/cockpit/server.cjs",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            }
+          ]
+        },
+        "risk": "high"
+      }
+    },
+    {
+      "id": "cowork-17",
+      "type": "definition",
+      "question": "Where is the produce_one pipeline function implemented?",
+      "query_param": "produce_one",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "produce_one",
+        "kind": "symbol",
+        "details": "produces voiceover, captions, video composition, and social uploads."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15011,
+      "rawOutput": ""
+    },
+    {
+      "id": "cowork-18",
+      "type": "callers",
+      "question": "Where is synth_voiceover called in the shorts pipeline?",
+      "query_param": "synth_voiceover",
+      "expected": {
+        "path": "shortsfactory/pipeline/run.py",
+        "symbol": "synth_voiceover",
+        "kind": "callers",
+        "expected_targets": [
+          "shortsfactory/pipeline/run.py"
+        ],
+        "details": "tts.synth_voiceover is called inside produce_one in run.py."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 414.9,
+      "rawOutput": {
+        "status": "ambiguous",
+        "candidates": [
+          {
+            "id": 5254,
+            "name": "synth_voiceover",
+            "kind": "function",
+            "file": "shortsfactory/pipeline/tts.py",
+            "line": 53,
+            "endLine": 53,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 67064,
+            "name": "synth_voiceover",
+            "kind": "function",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/tts.py",
+            "line": 53,
+            "endLine": 53,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "symbol": null,
+        "incoming": {
+          "calls": [],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [],
+          "references": []
+        },
+        "processes": []
+      }
+    },
+    {
+      "id": "cowork-19",
+      "type": "definition",
+      "question": "Where is the ROLES array defined for valid fleet lane roles?",
+      "query_param": "ROLES",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "ROLES",
+        "kind": "symbol",
+        "details": "const ROLES = [\"cheap\", \"reviewer\", \"auditor\", \"off\"]."
+      },
+      "hit": true,
+      "rank": 3,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 9678.8,
+      "rawOutput": {
+        "query": "ROLES",
+        "symbols": [
+          {
+            "id": 1432,
+            "name": "roles",
+            "kind": "constant",
+            "file": "tools/verify/verify.mjs",
+            "line": 77,
+            "endLine": 77,
+            "exported": false,
+            "container": "g05_g07",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1737,
+            "name": "roles",
+            "kind": "constant",
+            "file": "tools/d1/gate-channels.mjs",
+            "line": 61,
+            "endLine": 61,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 60877,
+            "name": "ROLES",
+            "kind": "constant",
+            "file": "ECOSPACE/cockpit/server.cjs",
+            "line": 38,
+            "endLine": 38,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115383,
+            "name": "ROLES",
+            "kind": "constant",
+            "file": "cockpit/server.cjs",
+            "line": 38,
+            "endLine": 38,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 159374,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/state/reports/v4_18_5_codex_led_2h/RUN_START.md",
+            "line": 3,
+            "endLine": 3,
+            "exported": false,
+            "container": "v4.18.5 Codex-Led 2H Live Run",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 207926,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/rest-api/references/accounts.md",
+            "line": 105,
+            "endLine": 105,
+            "exported": false,
+            "container": "Endpoints by Tag",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 208056,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/rest-api/references/contact-center.md",
+            "line": 344,
+            "endLine": 344,
+            "exported": false,
+            "container": "Endpoints by Tag",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 209448,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/oauth/references/granular-scopes.md",
+            "line": 360,
+            "endLine": 360,
+            "exported": false,
+            "container": "Contact Center",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 209502,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/oauth/references/granular-scopes.md",
+            "line": 988,
+            "endLine": 988,
+            "exported": false,
+            "container": "Zoom Account",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 230280,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/skills/council/SKILL.md",
+            "line": 43,
+            "endLine": 43,
+            "exported": false,
+            "container": "Council",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 402574,
+            "name": "Roles",
+            "kind": "property",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/agentmemory/GOVERNANCE.md",
+            "line": 16,
+            "endLine": 16,
+            "exported": false,
+            "container": "Governance",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 5340,
+            "name": "Roles & delegation (1 Opus + ≤3 Sonnet + ≤2 Haiku)",
+            "kind": "property",
+            "file": "ruflo-workers/VERIFY_GATE.md",
+            "line": 11,
+            "endLine": 11,
+            "exported": false,
+            "container": "Verification Gate — Post-Swarm Functional Proof (Opus-owned)",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 216688,
+            "name": "roleSection",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/codex-config.test.js",
+            "line": 81,
+            "endLine": 81,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 278139,
+            "name": "list_lambda_roles",
+            "kind": "function",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "line": 9,
+            "endLine": 9,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 462386,
+            "name": "list_lambda_roles",
+            "kind": "function",
+            "file": ".claude/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "line": 9,
+            "endLine": 9,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 500399,
+            "name": "list_lambda_roles",
+            "kind": "function",
+            "file": ".agents/skills/securing-aws-lambda-execution-roles/scripts/agent.py",
+            "line": 9,
+            "endLine": 9,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 532478,
+            "name": "#execution-roles",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/securing-aws-lambda-execution-roles/SKILL.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 292760,
+            "name": "get_roles",
+            "kind": "method",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-delinea-secret-server-for-pam/scripts/agent.py",
+            "line": 111,
+            "endLine": 111,
+            "exported": true,
+            "container": "SecretServerClient",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 477123,
+            "name": "get_roles",
+            "kind": "method",
+            "file": ".claude/skills/implementing-delinea-secret-server-for-pam/scripts/agent.py",
+            "line": 111,
+            "endLine": 111,
+            "exported": true,
+            "container": "SecretServerClient",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 515136,
+            "name": "get_roles",
+            "kind": "method",
+            "file": ".agents/skills/implementing-delinea-secret-server-for-pam/scripts/agent.py",
+            "line": 111,
+            "endLine": 111,
+            "exported": true,
+            "container": "SecretServerClient",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 304988,
+            "name": "export_roles",
+            "kind": "method",
+            "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "line": 202,
+            "endLine": 202,
+            "exported": true,
+            "container": "RoleMiningEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 489827,
+            "name": "export_roles",
+            "kind": "method",
+            "file": ".claude/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "line": 202,
+            "endLine": 202,
+            "exported": true,
+            "container": "RoleMiningEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 527840,
+            "name": "export_roles",
+            "kind": "method",
+            "file": ".agents/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "line": 202,
+            "endLine": 202,
+            "exported": true,
+            "container": "RoleMiningEngine",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 46448,
+            "name": "get_key_roles",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/plugmcp/plugmcp/auth.py",
+            "line": 182,
+            "endLine": 182,
+            "exported": true,
+            "container": "AuthStore",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 104429,
+            "name": "get_key_roles",
+            "kind": "method",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/plugmcp/plugmcp/auth.py",
+            "line": 182,
+            "endLine": 182,
+            "exported": true,
+            "container": "AuthStore",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": ".agents/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "title": "process.py",
+            "snippet": "… len(core_perms), } self.mined_[roles] = [roles] print(f\"[OK] Mined {len([roles])} [roles] via clustering\") return [roles] …"
+          },
+          {
+            "path": ".claude/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "title": "process.py",
+            "snippet": "… len(core_perms), } self.mined_[roles] = [roles] print(f\"[OK] Mined {len([roles])} [roles] via clustering\") return [roles] …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/process.py",
+            "title": "process.py",
+            "snippet": "… len(core_perms), } self.mined_[roles] = [roles] print(f\"[OK] Mined {len([roles])} [roles] via clustering\") return [roles] …"
+          },
+          {
+            "path": ".agents/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "title": "process.py",
+            "snippet": "#!/usr/bin/env python3 \"\"\" AWS IAM Permission Boundary Management Tool Audits IAM [roles] for permission boundary compliance, identifies …"
+          },
+          {
+            "path": ".claude/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "title": "process.py",
+            "snippet": "#!/usr/bin/env python3 \"\"\" AWS IAM Permission Boundary Management Tool Audits IAM [roles] for permission boundary compliance, identifies …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py",
+            "title": "process.py",
+            "snippet": "#!/usr/bin/env python3 \"\"\" AWS IAM Permission Boundary Management Tool Audits IAM [roles] for permission boundary compliance, identifies …"
+          },
+          {
+            "path": ".agents/skills/building-role-mining-for-rbac-optimization/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… round(role_assignments / len(candidate_[roles]), 1) if candidate_[roles] else 0, } def generate_report(candidate_[roles], clusters …"
+          },
+          {
+            "path": ".claude/skills/building-role-mining-for-rbac-optimization/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… round(role_assignments / len(candidate_[roles]), 1) if candidate_[roles] else 0, } def generate_report(candidate_[roles], clusters …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/building-role-mining-for-rbac-optimization/scripts/agent.py",
+            "title": "agent.py",
+            "snippet": "… round(role_assignments / len(candidate_[roles]), 1) if candidate_[roles] else 0, } def generate_report(candidate_[roles], clusters …"
+          },
+          {
+            "path": ".agents/skills/building-role-mining-for-rbac-optimization/SKILL.md",
+            "title": "SKILL",
+            "snippet": "… x[1])[0] return optimal_k, scores def mine_[roles]_clustering(upa_matrix, n_clusters): \"\"\"Mine [roles] using …"
+          }
+        ],
+        "flows": [],
+        "total": 35,
+        "timingMs": 9242.8
+      }
+    },
+    {
+      "id": "cowork-20",
+      "type": "impact",
+      "question": "What is impacted if KEY_ALIAS mapping is altered in server.cjs?",
+      "query_param": "KEY_ALIAS",
+      "expected": {
+        "path": "cockpit/server.cjs",
+        "symbol": "KEY_ALIAS",
+        "kind": "impact",
+        "expected_targets": [
+          "cockpit/server.cjs"
+        ],
+        "expected_count": 1,
+        "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 433.5,
+      "rawOutput": {
+        "target": {
+          "name": "KEY_ALIAS",
+          "file": "ECOSPACE/cockpit/fleet-direct.cjs",
+          "id": 60798
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    }
+  ]
+}

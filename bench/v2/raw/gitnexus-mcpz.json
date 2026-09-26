@@ -1,0 +1,2897 @@
+{
+  "tool": "gitnexus",
+  "repo": "mcpz",
+  "commit": "1b35b03d536d8fdd6e63e6c7f17b8e6cfbfdc4eb",
+  "indexTimeMs": 27205,
+  "indexSizeBytes": 142096247,
+  "questionCount": 20,
+  "hitCount": 4,
+  "accuracy": 20,
+  "latencyP50Ms": 1261.7,
+  "latencyP95Ms": 1488.1,
+  "questions": [
+    {
+      "id": "mcpz-01",
+      "type": "definition",
+      "question": "Where is the MOD_ID constant defined for MCPZ?",
+      "query_param": "MOD_ID",
+      "expected": {
+        "path": "src/main/java/net/mcpz/McpzConstants.java",
+        "symbol": "MOD_ID",
+        "kind": "symbol",
+        "details": "McpzConstants defines public static final String MOD_ID = \"mcpz\"."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2162.6,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_57_oninitialize",
+            "summary": "OnInitialize → ProtocolLine",
+            "priority": 0.109,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_121_oninitialize",
+            "summary": "OnInitialize → Defaults",
+            "priority": 0.108,
+            "symbol_count": 3,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_107_oninitializeclient",
+            "summary": "OnInitializeClient → Defaults",
+            "priority": 0.092,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_259_onservertick",
+            "summary": "OnServerTick → Survivor",
+            "priority": 0.09,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_0_oninitialize",
+            "summary": "OnInitialize → NanosToMillis",
+            "priority": 0.086,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/McpzMod.java:McpzMod.onInitialize#0",
+            "name": "onInitialize",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java",
+            "startLine": 21,
+            "endLine": 63,
+            "module": "Config",
+            "process_id": "proc_57_oninitialize",
+            "step_index": 1
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzAuthorityLifecycle.java:McpzAuthorityLifecycle.protocolLine#0",
+            "name": "protocolLine",
+            "filePath": "src/main/java/net/mcpz/server/McpzAuthorityLifecycle.java",
+            "startLine": 673,
+            "endLine": 676,
+            "module": "Command",
+            "process_id": "proc_57_oninitialize",
+            "step_index": 5
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig.load#1",
+            "name": "load",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 25,
+            "endLine": 50,
+            "module": "Config",
+            "process_id": "proc_121_oninitialize",
+            "step_index": 2
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig",
+            "name": "McpzConfig",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 19,
+            "endLine": 112,
+            "module": "Config",
+            "process_id": "proc_121_oninitialize",
+            "step_index": 3
+          },
+          {
+            "id": "Method:northstar-server/src/main/java/com/mcpz/server/AuthoritativeServer.java:AuthoritativeServer.survivor#1",
+            "name": "survivor",
+            "filePath": "northstar-server/src/main/java/com/mcpz/server/AuthoritativeServer.java",
+            "startLine": 459,
+            "endLine": 459,
+            "module": "Server",
+            "process_id": "proc_259_onservertick",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzReplicationPayloads.java:McpzReplicationPayloads.id#1",
+            "name": "id",
+            "filePath": "src/main/java/net/mcpz/server/McpzReplicationPayloads.java",
+            "startLine": 24,
+            "endLine": 24,
+            "module": "Server"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzReplicationPayloads.java:McpzReplicationPayloads.text#2",
+            "name": "text",
+            "filePath": "src/main/java/net/mcpz/server/McpzReplicationPayloads.java",
+            "startLine": 25,
+            "endLine": 25,
+            "module": "Server"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzReplicationPayloads.java:McpzReplicationPayloads.text#1",
+            "name": "text",
+            "filePath": "src/main/java/net/mcpz/server/McpzReplicationPayloads.java",
+            "startLine": 26,
+            "endLine": 26,
+            "module": "Server"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/McpzMod.java:McpzMod",
+            "name": "McpzMod",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java",
+            "startLine": 18,
+            "endLine": 64
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/McpzMod.java",
+            "name": "McpzMod.java",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:_validate_claim",
+            "name": "_validate_claim",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 342,
+            "endLine": 358,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_experiment_add",
+            "name": "cmd_experiment_add",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 580,
+            "endLine": 598,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_report",
+            "name": "cmd_report",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 701,
+            "endLine": 754,
+            "module": "Tools"
+          },
+          {
+            "id": "Method:northstar-net/src/main/java/com/mcpz/net/Protocol.java:Protocol.negotiate#3",
+            "name": "negotiate",
+            "filePath": "northstar-net/src/main/java/com/mcpz/net/Protocol.java",
+            "startLine": 153,
+            "endLine": 158,
+            "module": "Server"
+          },
+          {
+            "id": "File:northstar-net/src/main/java/com/mcpz/net/Protocol.java",
+            "name": "Protocol.java",
+            "filePath": "northstar-net/src/main/java/com/mcpz/net/Protocol.java"
+          },
+          {
+            "id": "Class:northstar-net/src/main/java/com/mcpz/net/Protocol.java:Protocol",
+            "name": "Protocol",
+            "filePath": "northstar-net/src/main/java/com/mcpz/net/Protocol.java",
+            "startLine": 8,
+            "endLine": 267
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzPayloads.java:McpzPayloads.id#1",
+            "name": "id",
+            "filePath": "src/main/java/net/mcpz/server/McpzPayloads.java",
+            "startLine": 20,
+            "endLine": 22,
+            "module": "Server"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/server/McpzPayloads.java:McpzPayloads",
+            "name": "McpzPayloads",
+            "filePath": "src/main/java/net/mcpz/server/McpzPayloads.java",
+            "startLine": 17,
+            "endLine": 406,
+            "module": "Server"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/McpzConstants.java:McpzConstants",
+            "name": "McpzConstants",
+            "filePath": "src/main/java/net/mcpz/McpzConstants.java",
+            "startLine": 3,
+            "endLine": 30
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/McpzConstants.java",
+            "name": "McpzConstants.java",
+            "filePath": "src/main/java/net/mcpz/McpzConstants.java"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzAuthorityLifecycle.java:McpzAuthorityLifecycle.onJoin#1",
+            "name": "onJoin",
+            "filePath": "src/main/java/net/mcpz/server/McpzAuthorityLifecycle.java",
+            "startLine": 246,
+            "endLine": 274,
+            "module": "Server"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/MixinConfigRegistrationTest.java:MixinConfigRegistrationTest.fabricModJsonDeclaresClientMixinConfig#0",
+            "name": "fabricModJsonDeclaresClientMixinConfig",
+            "filePath": "src/test/java/net/mcpz/MixinConfigRegistrationTest.java",
+            "startLine": 20,
+            "endLine": 30,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/MixinConfigRegistrationTest.java:MixinConfigRegistrationTest",
+            "name": "MixinConfigRegistrationTest",
+            "filePath": "src/test/java/net/mcpz/MixinConfigRegistrationTest.java",
+            "startLine": 18,
+            "endLine": 88
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java:MinecraftItemRepresentationRegistry.ids#0",
+            "name": "ids",
+            "filePath": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "startLine": 151,
+            "endLine": 154
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java:MinecraftItemRepresentationRegistry",
+            "name": "MinecraftItemRepresentationRegistry",
+            "filePath": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "startLine": 26,
+            "endLine": 155,
+            "module": "Item"
+          }
+        ],
+        "timing": {
+          "vector": 7.2,
+          "bm25": 263,
+          "merge": 0.2,
+          "symbol_lookup": 24.3,
+          "ranking": 0.1,
+          "formatting": 0.2,
+          "wall": 289.6
+        }
+      }
+    },
+    {
+      "id": "mcpz-02",
+      "type": "definition",
+      "question": "Where are the default camera settings defined in CameraConfig?",
+      "query_param": "CameraConfig",
+      "expected": {
+        "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+        "symbol": "CameraConfig",
+        "kind": "symbol",
+        "details": "CameraConfig record defining defaults() and from(McpzConfig cfg)."
+      },
+      "hit": true,
+      "rank": 2,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1423.7,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_215_oninitializeclient",
+            "summary": "OnInitializeClient → Parse",
+            "priority": 0.11,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_47_oninitializeclient",
+            "summary": "OnInitializeClient → Reset",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_108_oninitializeclient",
+            "summary": "OnInitializeClient → McpzRevealManager",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_109_oninitializeclient",
+            "summary": "OnInitializeClient → ClientMcpzState",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_110_oninitializeclient",
+            "summary": "OnInitializeClient → McpzCommandClient",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraConfig.java:CameraConfig.from#1",
+            "name": "from",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "startLine": 30,
+            "endLine": 52,
+            "module": "Config",
+            "process_id": "proc_215_oninitializeclient",
+            "step_index": 2
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.onInitializeClient#0",
+            "name": "onInitializeClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 49,
+            "endLine": 84,
+            "module": "Debug",
+            "process_id": "proc_215_oninitializeclient",
+            "step_index": 1
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.init#1",
+            "name": "init",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 67,
+            "endLine": 70,
+            "module": "Debug",
+            "process_id": "proc_47_oninitializeclient",
+            "step_index": 2
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraConfig.java:CameraConfig.defaults#0",
+            "name": "defaults",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "startLine": 54,
+            "endLine": 57,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraConfig.java",
+            "name": "CameraConfig.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/MouseRotateStyleTest.java:MouseRotateStyleTest.cameraDefaultsEnableMouseRotation#0",
+            "name": "cameraDefaultsEnableMouseRotation",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "startLine": 38,
+            "endLine": 45,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "name": "MouseRotateStyleTest.java",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/MouseRotateStyleTest.java:MouseRotateStyleTest",
+            "name": "MouseRotateStyleTest",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "startLine": 15,
+            "endLine": 46
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/CameraMathTest.java:CameraMathTest.orbitPositionAtZeroYawIsOnPlusZ#0",
+            "name": "orbitPositionAtZeroYawIsOnPlusZ",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java",
+            "startLine": 18,
+            "endLine": 25,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/CameraMathTest.java:CameraMathTest",
+            "name": "CameraMathTest",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java",
+            "startLine": 14,
+            "endLine": 79,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/CameraMathTest.java",
+            "name": "CameraMathTest.java",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraZoom.java:CameraZoom.nudge#3",
+            "name": "nudge",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java",
+            "startLine": 32,
+            "endLine": 35,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/camera/CameraZoom.java:CameraZoom",
+            "name": "CameraZoom",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java",
+            "startLine": 6,
+            "endLine": 36
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraZoom.java",
+            "name": "CameraZoom.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/RaycastTest.java:RaycastTest.viewProj#2",
+            "name": "viewProj",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java",
+            "startLine": 19,
+            "endLine": 28,
+            "module": "Camera"
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/RaycastTest.java",
+            "name": "RaycastTest.java",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/RaycastTest.java:RaycastTest",
+            "name": "RaycastTest",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java",
+            "startLine": 16,
+            "endLine": 81,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/McpzRuntime.java",
+            "name": "McpzRuntime.java",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime",
+            "name": "McpzRuntime",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 28,
+            "endLine": 189
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraCollisionResolver.java:CameraCollisionResolver.resolve#6",
+            "name": "resolve",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "startLine": 16,
+            "endLine": 40,
+            "module": "Camera"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "name": "CameraCollisionResolver.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/camera/CameraCollisionResolver.java:CameraCollisionResolver",
+            "name": "CameraCollisionResolver",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "startLine": 8,
+            "endLine": 48
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/McpzClient.java",
+            "name": "McpzClient.java",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java"
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 78.4,
+          "merge": 0.1,
+          "symbol_lookup": 12.6,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 92.9
+        }
+      }
+    },
+    {
+      "id": "mcpz-03",
+      "type": "callers",
+      "question": "Which method initializes the client runtime McpzRuntime.init?",
+      "query_param": "init",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/McpzClient.java",
+        "symbol": "onInitializeClient",
+        "kind": "callers",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java"
+        ],
+        "details": "McpzClient.onInitializeClient calls McpzRuntime.init(cfg)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1243.7,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 10 symbols matching 'init'. Use uid, file_path, or kind to disambiguate.",
+        "candidates": [
+          {
+            "uid": "Method:src/main/java/net/mcpz/save/McpzSaveData.java:McpzSaveData.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/main/java/net/mcpz/save/McpzSaveData.java",
+            "line": 47,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.init#1",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "line": 67,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzBodyScreen.java:McpzBodyScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzBodyScreen.java",
+            "line": 37,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzBuildScreen.java:McpzBuildScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzBuildScreen.java",
+            "line": 69,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzContextMenu.java:McpzContextMenu.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzContextMenu.java",
+            "line": 66,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzPauseScreen.java:McpzPauseScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzPauseScreen.java",
+            "line": 39,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzTitleScreen.java:McpzTitleScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzTitleScreen.java",
+            "line": 52,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzControlsScreen.java:McpzControlsScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzControlsScreen.java",
+            "line": 53,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java:McpzInventoryScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java",
+            "line": 42,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/screen/McpzCharacterCreationScreen.java:McpzCharacterCreationScreen.init#0",
+            "name": "init",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzCharacterCreationScreen.java",
+            "line": 98,
+            "score": 0.54
+          }
+        ]
+      }
+    },
+    {
+      "id": "mcpz-04",
+      "type": "callers",
+      "question": "Where is camera.keyRotateLeft bound in the client?",
+      "query_param": "registerKeybindings",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/McpzClient.java",
+        "symbol": "registerKeybindings",
+        "kind": "callers",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java"
+        ],
+        "details": "McpzClient.registerKeybindings sets cam.keyRotateLeft = bind(...)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1241.9,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.registerKeybindings#1",
+          "name": "registerKeybindings",
+          "kind": "Method",
+          "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+          "startLine": 86,
+          "endLine": 116
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.onInitializeClient#0",
+              "name": "onInitializeClient",
+              "filePath": "src/client/java/net/mcpz/client/McpzClient.java"
+            }
+          ],
+          "has_method": [
+            {
+              "uid": "Class:src/client/java/net/mcpz/client/McpzClient.java:McpzClient",
+              "name": "McpzClient",
+              "filePath": "src/client/java/net/mcpz/client/McpzClient.java"
+            }
+          ]
+        },
+        "outgoing": {
+          "accesses": [
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyRotateLeft",
+              "name": "keyRotateLeft",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyRotateRight",
+              "name": "keyRotateRight",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyZoomIn",
+              "name": "keyZoomIn",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyZoomOut",
+              "name": "keyZoomOut",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyFreeInspect",
+              "name": "keyFreeInspect",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyFloorUp",
+              "name": "keyFloorUp",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyFloorDown",
+              "name": "keyFloorDown",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyDebug",
+              "name": "keyDebug",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyInventory",
+              "name": "keyInventory",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyBody",
+              "name": "keyBody",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyBuild",
+              "name": "keyBuild",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyQuickInteract",
+              "name": "keyQuickInteract",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyPitchUp",
+              "name": "keyPitchUp",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.keyPitchDown",
+              "name": "keyPitchDown",
+              "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_LEFT",
+              "name": "ROTATE_LEFT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_LEFT",
+              "name": "ROTATE_LEFT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_RIGHT",
+              "name": "ROTATE_RIGHT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_RIGHT",
+              "name": "ROTATE_RIGHT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ZOOM_IN",
+              "name": "ZOOM_IN",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ZOOM_IN",
+              "name": "ZOOM_IN",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ZOOM_OUT",
+              "name": "ZOOM_OUT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ZOOM_OUT",
+              "name": "ZOOM_OUT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FREE_INSPECT",
+              "name": "FREE_INSPECT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FREE_INSPECT",
+              "name": "FREE_INSPECT",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FLOOR_UP",
+              "name": "FLOOR_UP",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FLOOR_UP",
+              "name": "FLOOR_UP",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FLOOR_DOWN",
+              "name": "FLOOR_DOWN",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.FLOOR_DOWN",
+              "name": "FLOOR_DOWN",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.PITCH_UP",
+              "name": "PITCH_UP",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            },
+            {
+              "uid": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.PITCH_UP",
+              "name": "PITCH_UP",
+              "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+            }
+          ]
+        },
+        "processes": []
+      }
+    },
+    {
+      "id": "mcpz-05",
+      "type": "impact",
+      "question": "What is impacted if McpzConstants.FLOOR_HEIGHT_BLOCKS is changed?",
+      "query_param": "FLOOR_HEIGHT_BLOCKS",
+      "expected": {
+        "path": "src/main/java/net/mcpz/McpzConstants.java",
+        "symbol": "FLOOR_HEIGHT_BLOCKS",
+        "kind": "impact",
+        "expected_targets": [
+          "src/main/java/net/mcpz/McpzMod.java",
+          "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+        ],
+        "expected_count": 2,
+        "details": "McpzMod logs it at startup and camera floor tracking calculates floor transitions."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1258.5,
+      "rawOutput": {
+        "target": {
+          "id": "Property:src/main/java/net/mcpz/McpzConstants.java:McpzConstants.FLOOR_HEIGHT_BLOCKS",
+          "name": "FLOOR_HEIGHT_BLOCKS",
+          "type": "",
+          "filePath": "src/main/java/net/mcpz/McpzConstants.java"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "mcpz-06",
+      "type": "impact",
+      "question": "What is impacted if CameraConfig is modified?",
+      "query_param": "CameraConfig",
+      "expected": {
+        "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+        "symbol": "CameraConfig",
+        "kind": "impact",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java",
+          "src/client/java/net/mcpz/client/McpzRuntime.java",
+          "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+        ],
+        "expected_count": 3,
+        "details": "CameraConfig is passed from McpzClient into McpzRuntime and McpzCameraController."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1219.7,
+      "rawOutput": {
+        "error": "Target 'CameraConfig' not found",
+        "target": {
+          "name": "CameraConfig"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN"
+      }
+    },
+    {
+      "id": "mcpz-07",
+      "type": "dataflow",
+      "question": "How do camera configuration values flow from config files into runtime camera behavior?",
+      "query_param": "CameraConfig",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/McpzClient.java",
+        "symbol": "onInitializeClient",
+        "kind": "dataflow",
+        "expected_targets": [
+          "src/main/java/net/mcpz/config/McpzConfig.java",
+          "src/main/java/net/mcpz/camera/CameraConfig.java",
+          "src/client/java/net/mcpz/client/McpzRuntime.java",
+          "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+        ],
+        "details": "McpzConfig.load -> CameraConfig.from -> McpzRuntime.init -> new McpzCameraController(cfg)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1265.4,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_215_oninitializeclient",
+            "summary": "OnInitializeClient → Parse",
+            "priority": 0.11,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_47_oninitializeclient",
+            "summary": "OnInitializeClient → Reset",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_108_oninitializeclient",
+            "summary": "OnInitializeClient → McpzRevealManager",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_109_oninitializeclient",
+            "summary": "OnInitializeClient → ClientMcpzState",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_110_oninitializeclient",
+            "summary": "OnInitializeClient → McpzCommandClient",
+            "priority": 0.083,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraConfig.java:CameraConfig.from#1",
+            "name": "from",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "startLine": 30,
+            "endLine": 52,
+            "module": "Config",
+            "process_id": "proc_215_oninitializeclient",
+            "step_index": 2
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.onInitializeClient#0",
+            "name": "onInitializeClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 49,
+            "endLine": 84,
+            "module": "Debug",
+            "process_id": "proc_215_oninitializeclient",
+            "step_index": 1
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.init#1",
+            "name": "init",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 67,
+            "endLine": 70,
+            "module": "Debug",
+            "process_id": "proc_47_oninitializeclient",
+            "step_index": 2
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraConfig.java:CameraConfig.defaults#0",
+            "name": "defaults",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "startLine": 54,
+            "endLine": 57,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraConfig.java",
+            "name": "CameraConfig.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/MouseRotateStyleTest.java:MouseRotateStyleTest.cameraDefaultsEnableMouseRotation#0",
+            "name": "cameraDefaultsEnableMouseRotation",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "startLine": 38,
+            "endLine": 45,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/MouseRotateStyleTest.java:MouseRotateStyleTest",
+            "name": "MouseRotateStyleTest",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "startLine": 15,
+            "endLine": 46
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/MouseRotateStyleTest.java",
+            "name": "MouseRotateStyleTest.java",
+            "filePath": "src/test/java/net/mcpz/MouseRotateStyleTest.java"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/CameraMathTest.java:CameraMathTest.orbitPositionAtZeroYawIsOnPlusZ#0",
+            "name": "orbitPositionAtZeroYawIsOnPlusZ",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java",
+            "startLine": 18,
+            "endLine": 25,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/CameraMathTest.java:CameraMathTest",
+            "name": "CameraMathTest",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java",
+            "startLine": 14,
+            "endLine": 79,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/CameraMathTest.java",
+            "name": "CameraMathTest.java",
+            "filePath": "src/test/java/net/mcpz/CameraMathTest.java"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraZoom.java:CameraZoom.nudge#3",
+            "name": "nudge",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java",
+            "startLine": 32,
+            "endLine": 35,
+            "module": "Camera"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraZoom.java",
+            "name": "CameraZoom.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/camera/CameraZoom.java:CameraZoom",
+            "name": "CameraZoom",
+            "filePath": "src/main/java/net/mcpz/camera/CameraZoom.java",
+            "startLine": 6,
+            "endLine": 36
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/RaycastTest.java:RaycastTest.viewProj#2",
+            "name": "viewProj",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java",
+            "startLine": 19,
+            "endLine": 28,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/RaycastTest.java:RaycastTest",
+            "name": "RaycastTest",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java",
+            "startLine": 16,
+            "endLine": 81,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/RaycastTest.java",
+            "name": "RaycastTest.java",
+            "filePath": "src/test/java/net/mcpz/RaycastTest.java"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/McpzRuntime.java",
+            "name": "McpzRuntime.java",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime",
+            "name": "McpzRuntime",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 28,
+            "endLine": 189
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraCollisionResolver.java:CameraCollisionResolver.resolve#6",
+            "name": "resolve",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "startLine": 16,
+            "endLine": 40,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/camera/CameraCollisionResolver.java:CameraCollisionResolver",
+            "name": "CameraCollisionResolver",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "startLine": 8,
+            "endLine": 48
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraCollisionResolver.java",
+            "name": "CameraCollisionResolver.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraCollisionResolver.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/McpzClient.java:McpzClient",
+            "name": "McpzClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 44,
+            "endLine": 351
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 69.9,
+          "merge": 0.1,
+          "symbol_lookup": 13,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 84.4
+        }
+      }
+    },
+    {
+      "id": "mcpz-08",
+      "type": "config",
+      "question": "Which config key controls the default isometric camera yaw?",
+      "query_param": "cameraYawDefaultDegrees",
+      "expected": {
+        "path": "src/main/java/net/mcpz/camera/CameraConfig.java",
+        "symbol": "cameraYawDefaultDegrees",
+        "kind": "config",
+        "details": "CameraConfig reads cfg.getDouble(\"cameraYawDefaultDegrees\")."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1259.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_107_oninitializeclient",
+            "summary": "OnInitializeClient → Defaults",
+            "priority": 0.114,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_121_oninitialize",
+            "summary": "OnInitialize → Defaults",
+            "priority": 0.114,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_215_oninitializeclient",
+            "summary": "OnInitializeClient → Parse",
+            "priority": 0.097,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig.defaults#0",
+            "name": "defaults",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 52,
+            "endLine": 91,
+            "module": "Config",
+            "process_id": "proc_107_oninitializeclient",
+            "step_index": 4
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig",
+            "name": "McpzConfig",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 19,
+            "endLine": 112,
+            "module": "Config",
+            "process_id": "proc_107_oninitializeclient",
+            "step_index": 3
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraConfig.java:CameraConfig.from#1",
+            "name": "from",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java",
+            "startLine": 30,
+            "endLine": 52,
+            "module": "Config",
+            "process_id": "proc_215_oninitializeclient",
+            "step_index": 2
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:src/main/java/net/mcpz/config/McpzConfig.java",
+            "name": "McpzConfig.java",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/camera/CameraConfig.java",
+            "name": "CameraConfig.java",
+            "filePath": "src/main/java/net/mcpz/camera/CameraConfig.java"
+          }
+        ],
+        "timing": {
+          "vector": 5.1,
+          "bm25": 44.9,
+          "merge": 0,
+          "symbol_lookup": 11.1,
+          "ranking": 0,
+          "formatting": 0.1,
+          "wall": 57.7
+        }
+      }
+    },
+    {
+      "id": "mcpz-09",
+      "type": "entrypoint",
+      "question": "Where is the common Fabric ModInitializer entrypoint located?",
+      "query_param": "McpzMod",
+      "expected": {
+        "path": "src/main/java/net/mcpz/McpzMod.java",
+        "symbol": "McpzMod",
+        "kind": "entrypoint",
+        "details": "McpzMod implements ModInitializer with onInitialize()."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1297.1,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:src/main/java/net/mcpz/server/McpzServer.java:McpzServer.onInitializeServer#0",
+            "name": "onInitializeServer",
+            "filePath": "src/main/java/net/mcpz/server/McpzServer.java",
+            "startLine": 12,
+            "endLine": 18,
+            "module": "Server"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/server/McpzServer.java",
+            "name": "McpzServer.java",
+            "filePath": "src/main/java/net/mcpz/server/McpzServer.java"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/server/McpzServer.java:McpzServer",
+            "name": "McpzServer",
+            "filePath": "src/main/java/net/mcpz/server/McpzServer.java",
+            "startLine": 10,
+            "endLine": 19
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/McpzMod.java",
+            "name": "McpzMod.java",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/McpzMod.java:McpzMod",
+            "name": "McpzMod",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java",
+            "startLine": 18,
+            "endLine": 64
+          },
+          {
+            "id": "File:reports/master-review/DUPLICATED_CONCEPTS.md",
+            "name": "DUPLICATED_CONCEPTS.md",
+            "filePath": "reports/master-review/DUPLICATED_CONCEPTS.md"
+          },
+          {
+            "id": "File:reports/master-review/ARCHITECTURE_DEBT.md",
+            "name": "ARCHITECTURE_DEBT.md",
+            "filePath": "reports/master-review/ARCHITECTURE_DEBT.md"
+          },
+          {
+            "id": "File:reports/master-review/LANE4_REVIEW.md",
+            "name": "LANE4_REVIEW.md",
+            "filePath": "reports/master-review/LANE4_REVIEW.md"
+          },
+          {
+            "id": "File:reports/master-wave2/MASTER_REVIEW.md",
+            "name": "MASTER_REVIEW.md",
+            "filePath": "reports/master-wave2/MASTER_REVIEW.md"
+          },
+          {
+            "id": "File:src/main/resources/fabric.mod.json",
+            "name": "fabric.mod.json",
+            "filePath": "src/main/resources/fabric.mod.json"
+          },
+          {
+            "id": "File:reports/master-wave2/WAVE2_COMMIT_MATRIX.json",
+            "name": "WAVE2_COMMIT_MATRIX.json",
+            "filePath": "reports/master-wave2/WAVE2_COMMIT_MATRIX.json"
+          },
+          {
+            "id": "File:reports/master-wave2/rescue/lane1/STATUS.md",
+            "name": "STATUS.md",
+            "filePath": "reports/master-wave2/rescue/lane1/STATUS.md"
+          },
+          {
+            "id": "File:reports/handoffs/lane4/LATEST.yaml",
+            "name": "LATEST.yaml",
+            "filePath": "reports/handoffs/lane4/LATEST.yaml"
+          },
+          {
+            "id": "File:reports/master-wave2/LANE3_FORENSIC_REVIEW.md",
+            "name": "LANE3_FORENSIC_REVIEW.md",
+            "filePath": "reports/master-wave2/LANE3_FORENSIC_REVIEW.md"
+          },
+          {
+            "id": "File:reports/master-wave2/LANE1_FORENSIC_REVIEW.md",
+            "name": "LANE1_FORENSIC_REVIEW.md",
+            "filePath": "reports/master-wave2/LANE1_FORENSIC_REVIEW.md"
+          },
+          {
+            "id": "File:reports/master-review/LANE1_REVIEW.md",
+            "name": "LANE1_REVIEW.md",
+            "filePath": "reports/master-review/LANE1_REVIEW.md"
+          },
+          {
+            "id": "File:reports/handoffs/lane4/LATEST.md",
+            "name": "LATEST.md",
+            "filePath": "reports/handoffs/lane4/LATEST.md"
+          },
+          {
+            "id": "File:reports/integration/TEST_BUILD.md",
+            "name": "TEST_BUILD.md",
+            "filePath": "reports/integration/TEST_BUILD.md"
+          },
+          {
+            "id": "File:reports/wave3/lane1/BASELINE.md",
+            "name": "BASELINE.md",
+            "filePath": "reports/wave3/lane1/BASELINE.md"
+          },
+          {
+            "id": "File:docs/mechanics/multiplayer/MCPZ_SERVER_CONTRACT.md",
+            "name": "MCPZ_SERVER_CONTRACT.md",
+            "filePath": "docs/mechanics/multiplayer/MCPZ_SERVER_CONTRACT.md"
+          }
+        ],
+        "timing": {
+          "vector": 5.7,
+          "bm25": 91.5,
+          "merge": 0.1,
+          "symbol_lookup": 11.7,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 105
+        }
+      }
+    },
+    {
+      "id": "mcpz-10",
+      "type": "entrypoint",
+      "question": "Where is the client-only Fabric ClientModInitializer entrypoint located?",
+      "query_param": "McpzClient",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/McpzClient.java",
+        "symbol": "McpzClient",
+        "kind": "entrypoint",
+        "details": "McpzClient implements ClientModInitializer with onInitializeClient()."
+      },
+      "hit": true,
+      "rank": 2,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1283.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_107_oninitializeclient",
+            "summary": "OnInitializeClient → Defaults",
+            "priority": 0.114,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_121_oninitialize",
+            "summary": "OnInitialize → Defaults",
+            "priority": 0.114,
+            "symbol_count": 2,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig.defaults#0",
+            "name": "defaults",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 52,
+            "endLine": 91,
+            "module": "Config",
+            "process_id": "proc_107_oninitializeclient",
+            "step_index": 4
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/config/McpzConfig.java:McpzConfig",
+            "name": "McpzConfig",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java",
+            "startLine": 19,
+            "endLine": 112,
+            "module": "Config",
+            "process_id": "proc_107_oninitializeclient",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "File:src/main/java/net/mcpz/config/McpzConfig.java",
+            "name": "McpzConfig.java",
+            "filePath": "src/main/java/net/mcpz/config/McpzConfig.java"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/McpzClient.java",
+            "name": "McpzClient.java",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/McpzClient.java:McpzClient",
+            "name": "McpzClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 44,
+            "endLine": 351
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/McpzControlMapTest.java",
+            "name": "McpzControlMapTest.java",
+            "filePath": "src/test/java/net/mcpz/McpzControlMapTest.java"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/McpzControlMapTest.java:McpzControlMapTest",
+            "name": "McpzControlMapTest",
+            "filePath": "src/test/java/net/mcpz/McpzControlMapTest.java",
+            "startLine": 20,
+            "endLine": 85
+          },
+          {
+            "id": "File:reports/master-review/DUPLICATED_CONCEPTS.md",
+            "name": "DUPLICATED_CONCEPTS.md",
+            "filePath": "reports/master-review/DUPLICATED_CONCEPTS.md"
+          },
+          {
+            "id": "File:reports/master-program/DIRTY_WORK_RESCUE_2026-08-16.md",
+            "name": "DIRTY_WORK_RESCUE_2026-08-16.md",
+            "filePath": "reports/master-program/DIRTY_WORK_RESCUE_2026-08-16.md"
+          },
+          {
+            "id": "File:reports/master-review/LANE1_REVIEW.md",
+            "name": "LANE1_REVIEW.md",
+            "filePath": "reports/master-review/LANE1_REVIEW.md"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/camera/McpzCameraController.java",
+            "name": "McpzCameraController.java",
+            "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController",
+            "name": "McpzCameraController",
+            "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java",
+            "startLine": 25,
+            "endLine": 533
+          },
+          {
+            "id": "File:reports/master-review/STUBS_AND_PLACEHOLDERS.md",
+            "name": "STUBS_AND_PLACEHOLDERS.md",
+            "filePath": "reports/master-review/STUBS_AND_PLACEHOLDERS.md"
+          },
+          {
+            "id": "File:src/main/resources/fabric.mod.json",
+            "name": "fabric.mod.json",
+            "filePath": "src/main/resources/fabric.mod.json"
+          },
+          {
+            "id": "File:reports/master-wave2/rescue/lane1/tracked.patch",
+            "name": "tracked.patch",
+            "filePath": "reports/master-wave2/rescue/lane1/tracked.patch"
+          },
+          {
+            "id": "File:reports/master-wave2/rescue/lane1/STATUS.md",
+            "name": "STATUS.md",
+            "filePath": "reports/master-wave2/rescue/lane1/STATUS.md"
+          },
+          {
+            "id": "File:reports/handoffs/lane4/LATEST.yaml",
+            "name": "LATEST.yaml",
+            "filePath": "reports/handoffs/lane4/LATEST.yaml"
+          },
+          {
+            "id": "File:reports/master-wave2/LANE1_FORENSIC_REVIEW.md",
+            "name": "LANE1_FORENSIC_REVIEW.md",
+            "filePath": "reports/master-wave2/LANE1_FORENSIC_REVIEW.md"
+          },
+          {
+            "id": "File:reports/handoffs/lane4/LATEST.md",
+            "name": "LATEST.md",
+            "filePath": "reports/handoffs/lane4/LATEST.md"
+          },
+          {
+            "id": "File:reports/integration/TEST_BUILD.md",
+            "name": "TEST_BUILD.md",
+            "filePath": "reports/integration/TEST_BUILD.md"
+          },
+          {
+            "id": "File:reports/master-orchestrator/B004-AUTOPLAY-RUNNER.md",
+            "name": "B004-AUTOPLAY-RUNNER.md",
+            "filePath": "reports/master-orchestrator/B004-AUTOPLAY-RUNNER.md"
+          },
+          {
+            "id": "File:prompts/current/LANE1_NEXT.md",
+            "name": "LANE1_NEXT.md",
+            "filePath": "prompts/current/LANE1_NEXT.md"
+          }
+        ],
+        "timing": {
+          "vector": 5.1,
+          "bm25": 104.5,
+          "merge": 0.1,
+          "symbol_lookup": 12.8,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 119
+        }
+      }
+    },
+    {
+      "id": "mcpz-11",
+      "type": "docs_notes",
+      "question": "Which document describes the overarching Northstar architecture and requirements?",
+      "query_param": "MASTER_NORTHSTAR.md",
+      "expected": {
+        "path": "MASTER_NORTHSTAR.md",
+        "symbol": "MASTER_NORTHSTAR.md",
+        "kind": "docs_notes",
+        "details": "MASTER_NORTHSTAR.md contains full architectural plan and acceptance criteria."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1488.1,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_157_main",
+            "summary": "Main → Run",
+            "priority": 0.109,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_158_main",
+            "summary": "Main → Parse_json_list",
+            "priority": 0.109,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_287_main",
+            "summary": "Main → Section",
+            "priority": 0.109,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          },
+          {
+            "id": "proc_47_oninitializeclient",
+            "summary": "OnInitializeClient → Reset",
+            "priority": 0.067,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 5
+          },
+          {
+            "id": "proc_107_oninitializeclient",
+            "summary": "OnInitializeClient → Defaults",
+            "priority": 0.067,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 4
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Function:agent-pack/bootstrap_agent.py:build_context",
+            "name": "build_context",
+            "filePath": "agent-pack/bootstrap_agent.py",
+            "startLine": 265,
+            "endLine": 367,
+            "module": "Agent-pack",
+            "process_id": "proc_157_main",
+            "step_index": 2
+          },
+          {
+            "id": "Function:agent-pack/bootstrap_agent.py:main",
+            "name": "main",
+            "filePath": "agent-pack/bootstrap_agent.py",
+            "startLine": 370,
+            "endLine": 413,
+            "module": "Agent-pack",
+            "process_id": "proc_157_main",
+            "step_index": 1
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.onInitializeClient#0",
+            "name": "onInitializeClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 49,
+            "endLine": 84,
+            "module": "Debug",
+            "process_id": "proc_47_oninitializeclient",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java:Lane2GameplayRuntimeAdapter.drainEvents#1",
+            "name": "drainEvents",
+            "filePath": "northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java",
+            "startLine": 927,
+            "endLine": 938,
+            "module": "Server"
+          },
+          {
+            "id": "Method:northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java:Lane2GameplayRuntimeAdapter.subjectOf#1",
+            "name": "subjectOf",
+            "filePath": "northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java",
+            "startLine": 945,
+            "endLine": 1064,
+            "module": "Server"
+          },
+          {
+            "id": "Method:northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java:Lane2GameplayRuntimeAdapter.itemSnapshot#1",
+            "name": "itemSnapshot",
+            "filePath": "northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java",
+            "startLine": 2181,
+            "endLine": 2184,
+            "module": "Container"
+          },
+          {
+            "id": "Method:northstar-content/src/test/java/northstar/content/event/EventBusTest.java:DomainResultCheck.isSuccess#0",
+            "name": "isSuccess",
+            "filePath": "northstar-content/src/test/java/northstar/content/event/EventBusTest.java",
+            "startLine": 150,
+            "endLine": 150,
+            "module": "Zombie"
+          },
+          {
+            "id": "Method:northstar-content/src/test/java/northstar/content/event/EventBusTest.java:DomainResultCheck.of#1",
+            "name": "of",
+            "filePath": "northstar-content/src/test/java/northstar/content/event/EventBusTest.java",
+            "startLine": 152,
+            "endLine": 164,
+            "module": "Zombie"
+          },
+          {
+            "id": "Method:northstar-content/src/test/java/northstar/content/event/EventBusTest.java:TransferOk.of#1",
+            "name": "of",
+            "filePath": "northstar-content/src/test/java/northstar/content/event/EventBusTest.java",
+            "startLine": 170,
+            "endLine": 182
+          },
+          {
+            "id": "Function:tools/generate_reports.py:main",
+            "name": "main",
+            "filePath": "tools/generate_reports.py",
+            "startLine": 59,
+            "endLine": 276,
+            "module": "Tools"
+          },
+          {
+            "id": "File:tools/generate_reports.py",
+            "name": "generate_reports.py",
+            "filePath": "tools/generate_reports.py"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_export_context",
+            "name": "cmd_export_context",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 605,
+            "endLine": 659,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_report",
+            "name": "cmd_report",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 701,
+            "endLine": 754,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:md",
+            "name": "md",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 722,
+            "endLine": 723,
+            "module": "Tools"
+          },
+          {
+            "id": "Method:northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java:Lane2GameplayAdapterTest.doorToggleAndPersistence#0",
+            "name": "doorToggleAndPersistence",
+            "filePath": "northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java",
+            "startLine": 390,
+            "endLine": 424,
+            "module": "Container"
+          },
+          {
+            "id": "Method:northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java:Lane2GameplayAdapterTest.doorLockFamilyEndToEnd#0",
+            "name": "doorLockFamilyEndToEnd",
+            "filePath": "northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java",
+            "startLine": 459,
+            "endLine": 534,
+            "module": "Container"
+          },
+          {
+            "id": "Method:northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java:Lane2GameplayAdapterTest.windowCurtainsEndToEnd#0",
+            "name": "windowCurtainsEndToEnd",
+            "filePath": "northstar-tests/src/test/java/com/mcpz/tests/Lane2GameplayAdapterTest.java",
+            "startLine": 588,
+            "endLine": 630,
+            "module": "Container"
+          },
+          {
+            "id": "Method:northstar-content/src/test/java/northstar/content/test/TestFixtures.java:TestFixtures.def#7",
+            "name": "def",
+            "filePath": "northstar-content/src/test/java/northstar/content/test/TestFixtures.java",
+            "startLine": 65,
+            "endLine": 69,
+            "module": "Zombie"
+          },
+          {
+            "id": "Method:northstar-content/src/test/java/northstar/content/test/TestFixtures.java:TestFixtures.Ids#1",
+            "name": "Ids",
+            "filePath": "northstar-content/src/test/java/northstar/content/test/TestFixtures.java",
+            "startLine": 71,
+            "endLine": 73,
+            "module": "Zombie"
+          },
+          {
+            "id": "Class:northstar-content/src/test/java/northstar/content/test/TestFixtures.java:TestFixtures",
+            "name": "TestFixtures",
+            "filePath": "northstar-content/src/test/java/northstar/content/test/TestFixtures.java",
+            "startLine": 18,
+            "endLine": 88
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/app/McpzGameplayRuntime.java:McpzGameplayRuntime.registerProgressionData#1",
+            "name": "registerProgressionData",
+            "filePath": "northstar-content/src/main/java/northstar/content/app/McpzGameplayRuntime.java",
+            "startLine": 242,
+            "endLine": 254,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Class:northstar-content/src/main/java/northstar/content/app/McpzGameplayRuntime.java:McpzGameplayRuntime",
+            "name": "McpzGameplayRuntime",
+            "filePath": "northstar-content/src/main/java/northstar/content/app/McpzGameplayRuntime.java",
+            "startLine": 70,
+            "endLine": 531
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/SurvivorPersistenceTest.java:SurvivorPersistenceTest.healthPhysiologyAndProgressionRoundTripAndContinue#0",
+            "name": "healthPhysiologyAndProgressionRoundTripAndContinue",
+            "filePath": "src/test/java/net/mcpz/SurvivorPersistenceTest.java",
+            "startLine": 29,
+            "endLine": 62,
+            "module": "Progression"
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 205.8,
+          "merge": 0.3,
+          "symbol_lookup": 15.3,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 222.9
+        }
+      }
+    },
+    {
+      "id": "mcpz-12",
+      "type": "docs_notes",
+      "question": "Which document details the detached isometric camera design and specification?",
+      "query_param": "MASTER_CAMERA_PLAN.md",
+      "expected": {
+        "path": "MASTER_CAMERA_PLAN.md",
+        "symbol": "MASTER_CAMERA_PLAN.md",
+        "kind": "docs_notes",
+        "details": "MASTER_CAMERA_PLAN.md specifies camera controls, math, zoom, and floor clipping."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1383.2,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_153_register",
+            "summary": "Register → Camera",
+            "priority": 0.128,
+            "symbol_count": 4,
+            "process_type": "cross_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_32_register",
+            "summary": "Register → Get",
+            "priority": 0.116,
+            "symbol_count": 3,
+            "process_type": "cross_community",
+            "step_count": 6
+          },
+          {
+            "id": "proc_157_main",
+            "summary": "Main → Run",
+            "priority": 0.106,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_158_main",
+            "summary": "Main → Parse_json_list",
+            "priority": 0.106,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_287_main",
+            "summary": "Main → Section",
+            "priority": 0.106,
+            "symbol_count": 2,
+            "process_type": "intra_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.camera#0",
+            "name": "camera",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 76,
+            "endLine": 78,
+            "module": "Mixin",
+            "process_id": "proc_153_register",
+            "step_index": 4
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java:McpzSyntheticInput.camera#0",
+            "name": "camera",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java",
+            "startLine": 140,
+            "endLine": 143,
+            "module": "Playbot",
+            "process_id": "proc_153_register",
+            "step_index": 3
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java:McpzSyntheticInput.resetCamera#0",
+            "name": "resetCamera",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java",
+            "startLine": 180,
+            "endLine": 185,
+            "module": "Camera",
+            "process_id": "proc_153_register",
+            "step_index": 2
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/playbot/McpzDevCommands.java:McpzDevCommands.register#2",
+            "name": "register",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzDevCommands.java",
+            "startLine": 27,
+            "endLine": 163,
+            "module": "Playbot",
+            "process_id": "proc_153_register",
+            "step_index": 1
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.get#0",
+            "name": "get",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 72,
+            "endLine": 74,
+            "module": "Playbot",
+            "process_id": "proc_32_register",
+            "step_index": 6
+          },
+          {
+            "id": "Function:agent-pack/bootstrap_agent.py:build_context",
+            "name": "build_context",
+            "filePath": "agent-pack/bootstrap_agent.py",
+            "startLine": 265,
+            "endLine": 367,
+            "module": "Agent-pack",
+            "process_id": "proc_157_main",
+            "step_index": 2
+          },
+          {
+            "id": "Function:agent-pack/bootstrap_agent.py:main",
+            "name": "main",
+            "filePath": "agent-pack/bootstrap_agent.py",
+            "startLine": 370,
+            "endLine": 413,
+            "module": "Agent-pack",
+            "process_id": "proc_157_main",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:src/test/java/net/mcpz/McpzGroundPathfinderTest.java:McpzGroundPathfinderTest.startEqualsGoalIsSingleCell#0",
+            "name": "startEqualsGoalIsSingleCell",
+            "filePath": "src/test/java/net/mcpz/McpzGroundPathfinderTest.java",
+            "startLine": 115,
+            "endLine": 119,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/McpzGroundPathfinderTest.java:McpzGroundPathfinderTest.radiusBoundMakesFarGoalUnreachable#0",
+            "name": "radiusBoundMakesFarGoalUnreachable",
+            "filePath": "src/test/java/net/mcpz/McpzGroundPathfinderTest.java",
+            "startLine": 121,
+            "endLine": 125,
+            "module": "Path"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/McpzGroundPathfinderTest.java:McpzGroundPathfinderTest",
+            "name": "McpzGroundPathfinderTest",
+            "filePath": "src/test/java/net/mcpz/McpzGroundPathfinderTest.java",
+            "startLine": 21,
+            "endLine": 126
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/overlay/McpzClickToMove.java:McpzClickToMove.holdToMove#0",
+            "name": "holdToMove",
+            "filePath": "src/client/java/net/mcpz/client/overlay/McpzClickToMove.java",
+            "startLine": 95,
+            "endLine": 97,
+            "module": "Overlay"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/overlay/McpzClickToMove.java:McpzClickToMove.pathFailed#0",
+            "name": "pathFailed",
+            "filePath": "src/client/java/net/mcpz/client/overlay/McpzClickToMove.java",
+            "startLine": 100,
+            "endLine": 102
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/overlay/McpzClickToMove.java:McpzClickToMove",
+            "name": "McpzClickToMove",
+            "filePath": "src/client/java/net/mcpz/client/overlay/McpzClickToMove.java",
+            "startLine": 28,
+            "endLine": 354,
+            "module": "Overlay"
+          },
+          {
+            "id": "File:tools/validate.py",
+            "name": "validate.py",
+            "filePath": "tools/validate.py"
+          },
+          {
+            "id": "Function:tools/validate.py:check_provenance",
+            "name": "check_provenance",
+            "filePath": "tools/validate.py",
+            "startLine": 94,
+            "endLine": 108,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/validate.py:check_isocraft_parity",
+            "name": "check_isocraft_parity",
+            "filePath": "tools/validate.py",
+            "startLine": 131,
+            "endLine": 171,
+            "module": "Tools"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.registerClientDispatcher#2",
+            "name": "registerClientDispatcher",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 258,
+            "endLine": 272,
+            "module": "Client"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/McpzClient.java:McpzClient",
+            "name": "McpzClient",
+            "filePath": "src/client/java/net/mcpz/client/McpzClient.java",
+            "startLine": 44,
+            "endLine": 351
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzCameraMath.java:McpzCameraMath.mcYawScreenUp#1",
+            "name": "mcYawScreenUp",
+            "filePath": "src/client/java/net/mcpz/client/McpzCameraMath.java",
+            "startLine": 43,
+            "endLine": 48,
+            "module": "Playbot"
+          },
+          {
+            "id": "Function:tools/generate_reports.py:main",
+            "name": "main",
+            "filePath": "tools/generate_reports.py",
+            "startLine": 59,
+            "endLine": 276,
+            "module": "Tools"
+          },
+          {
+            "id": "File:tools/generate_reports.py",
+            "name": "generate_reports.py",
+            "filePath": "tools/generate_reports.py"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.mcYRotDeg#0",
+            "name": "mcYRotDeg",
+            "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java",
+            "startLine": 494,
+            "endLine": 499,
+            "module": "Mixin"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.mcPitchDeg#0",
+            "name": "mcPitchDeg",
+            "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java",
+            "startLine": 501,
+            "endLine": 503,
+            "module": "Mixin"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/camera/McpzCameraController.java:McpzCameraController.movementCameraYawDeg#0",
+            "name": "movementCameraYawDeg",
+            "filePath": "src/client/java/net/mcpz/client/camera/McpzCameraController.java",
+            "startLine": 506,
+            "endLine": 508,
+            "module": "Playbot"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java:McpzSyntheticInput.zoomOut#1",
+            "name": "zoomOut",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java",
+            "startLine": 166,
+            "endLine": 171,
+            "module": "Playbot"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/mixin/CameraMixin.java:CameraMixin.mcpz$alignOrApply#2",
+            "name": "mcpz$alignOrApply",
+            "filePath": "src/client/java/net/mcpz/client/mixin/CameraMixin.java",
+            "startLine": 42,
+            "endLine": 57,
+            "module": "Mixin"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/mixin/CameraMixin.java:CameraMixin.mcpz$narrowFov#1",
+            "name": "mcpz$narrowFov",
+            "filePath": "src/client/java/net/mcpz/client/mixin/CameraMixin.java",
+            "startLine": 64,
+            "endLine": 75,
+            "module": "Mixin"
+          }
+        ],
+        "timing": {
+          "vector": 4.7,
+          "bm25": 192.5,
+          "merge": 0.1,
+          "symbol_lookup": 13.8,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 208.9
+        }
+      }
+    },
+    {
+      "id": "mcpz-13",
+      "type": "rename_impact",
+      "question": "What breaks if McpzRuntime.camera() accessor is renamed?",
+      "query_param": "camera",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/McpzRuntime.java",
+        "symbol": "camera",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java",
+          "src/client/java/net/mcpz/client/mixin/CameraMixin.java"
+        ],
+        "details": "McpzClient and CameraMixin call rt.camera()."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1181.7,
+      "rawOutput": {
+        "status": "ambiguous",
+        "message": "Found 8 symbols matching 'camera'. Use target_uid, file_path, or kind to disambiguate.",
+        "target": {
+          "name": "camera"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "UNKNOWN",
+        "candidates": [
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.camera#0",
+            "name": "camera",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "line": 76,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/playbot/McpzDevCommands.java:McpzDevCommands.camera#4",
+            "name": "camera",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzDevCommands.java",
+            "line": 185,
+            "score": 0.54
+          },
+          {
+            "uid": "Method:src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java:McpzSyntheticInput.camera#0",
+            "name": "camera",
+            "kind": "Method",
+            "filePath": "src/client/java/net/mcpz/client/playbot/McpzSyntheticInput.java",
+            "line": 140,
+            "score": 0.54
+          },
+          {
+            "uid": "Folder:docs/camera",
+            "name": "camera",
+            "kind": "",
+            "filePath": "docs/camera",
+            "score": 0.5
+          },
+          {
+            "uid": "Folder:tests/specs/camera",
+            "name": "camera",
+            "kind": "",
+            "filePath": "tests/specs/camera",
+            "score": 0.5
+          },
+          {
+            "uid": "Folder:src/main/java/net/mcpz/camera",
+            "name": "camera",
+            "kind": "",
+            "filePath": "src/main/java/net/mcpz/camera",
+            "score": 0.5
+          },
+          {
+            "uid": "Folder:src/client/java/net/mcpz/client/camera",
+            "name": "camera",
+            "kind": "",
+            "filePath": "src/client/java/net/mcpz/client/camera",
+            "score": 0.5
+          },
+          {
+            "uid": "Property:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.camera",
+            "name": "camera",
+            "kind": "",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "line": 31,
+            "score": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "id": "mcpz-14",
+      "type": "rename_impact",
+      "question": "What breaks if derive_evidence_class is renamed in python tooling?",
+      "query_param": "derive_evidence_class",
+      "expected": {
+        "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+        "symbol": "derive_evidence_class",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "tools/vlm-qa/mcpz_vlm/evidence.py"
+        ],
+        "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1268.2,
+      "rawOutput": {
+        "target": {
+          "id": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:derive_evidence_class",
+          "name": "derive_evidence_class",
+          "type": "Function",
+          "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py"
+        },
+        "direction": "upstream",
+        "impactedCount": 1,
+        "risk": "LOW",
+        "summary": {
+          "direct": 1,
+          "processes_affected": 0,
+          "modules_affected": 1
+        },
+        "byDepthCounts": {
+          "1": 1
+        },
+        "affected_processes": [],
+        "affected_modules": [
+          {
+            "name": "Mcpz_vlm",
+            "hits": 1,
+            "impact": "direct"
+          }
+        ],
+        "byDepth": {
+          "1": [
+            {
+              "depth": 1,
+              "id": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:write_manifest",
+              "name": "write_manifest",
+              "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py",
+              "relationType": "CALLS",
+              "confidence": 0.85,
+              "processes": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mcpz-15",
+      "type": "definition",
+      "question": "Where is derive_evidence_class implemented in the python test harness?",
+      "query_param": "derive_evidence_class",
+      "expected": {
+        "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+        "symbol": "derive_evidence_class",
+        "kind": "symbol",
+        "details": "evidence.py defines derive_evidence_class(input_source, vision_assessed)."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1371.6,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_211_neededfornextlevel",
+            "summary": "NeededForNextLevel → XpToNext",
+            "priority": 0.096,
+            "symbol_count": 1,
+            "process_type": "intra_community",
+            "step_count": 4
+          },
+          {
+            "id": "proc_216_create",
+            "summary": "Create → MoodleCatalog",
+            "priority": 0.09,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 3
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/progression/SkillState.java:SkillState.derivedLevel#0",
+            "name": "derivedLevel",
+            "filePath": "northstar-content/src/main/java/northstar/content/progression/SkillState.java",
+            "startLine": 75,
+            "endLine": 87,
+            "module": "Progression",
+            "process_id": "proc_211_neededfornextlevel",
+            "step_index": 3
+          },
+          {
+            "id": "Class:northstar-content/src/main/java/northstar/content/physiology/MoodleCatalog.java:MoodleCatalog",
+            "name": "MoodleCatalog",
+            "filePath": "northstar-content/src/main/java/northstar/content/physiology/MoodleCatalog.java",
+            "startLine": 7,
+            "endLine": 48,
+            "module": "Physiology",
+            "process_id": "proc_216_create",
+            "step_index": 3
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:tests/vlm/test_evidence.py:EvidenceClassTest.test_os_input_with_vision_reaches_vlm#0",
+            "name": "test_os_input_with_vision_reaches_vlm",
+            "filePath": "tests/vlm/test_evidence.py",
+            "startLine": 12,
+            "endLine": 13
+          },
+          {
+            "id": "Method:tests/vlm/test_evidence.py:EvidenceClassTest.test_os_input_without_vision_capped#0",
+            "name": "test_os_input_without_vision_capped",
+            "filePath": "tests/vlm/test_evidence.py",
+            "startLine": 15,
+            "endLine": 16
+          },
+          {
+            "id": "Method:tests/vlm/test_evidence.py:EvidenceClassTest.test_synthetic_is_capped#0",
+            "name": "test_synthetic_is_capped",
+            "filePath": "tests/vlm/test_evidence.py",
+            "startLine": 18,
+            "endLine": 19
+          },
+          {
+            "id": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:derive_evidence_class",
+            "name": "derive_evidence_class",
+            "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "startLine": 42,
+            "endLine": 46,
+            "module": "Mcpz_vlm"
+          },
+          {
+            "id": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:write_manifest",
+            "name": "write_manifest",
+            "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py",
+            "startLine": 78,
+            "endLine": 106,
+            "module": "Mcpz_vlm"
+          },
+          {
+            "id": "File:tools/vlm-qa/mcpz_vlm/evidence.py",
+            "name": "evidence.py",
+            "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py"
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/progression/SkillState.java:SkillState.addXp#1",
+            "name": "addXp",
+            "filePath": "northstar-content/src/main/java/northstar/content/progression/SkillState.java",
+            "startLine": 60,
+            "endLine": 67,
+            "module": "Progression"
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/progression/SkillState.java:SkillState.level#0",
+            "name": "level",
+            "filePath": "northstar-content/src/main/java/northstar/content/progression/SkillState.java",
+            "startLine": 70,
+            "endLine": 72,
+            "module": "Progression"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_source_add",
+            "name": "cmd_source_add",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 164,
+            "endLine": 202,
+            "module": "Tools"
+          },
+          {
+            "id": "Function:tools/northstar_research.py:cmd_claims_extract",
+            "name": "cmd_claims_extract",
+            "filePath": "tools/northstar_research.py",
+            "startLine": 361,
+            "endLine": 394,
+            "module": "Tools"
+          },
+          {
+            "id": "File:tools/northstar_research.py",
+            "name": "northstar_research.py",
+            "filePath": "tools/northstar_research.py"
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/testing/TestMain.java:TestMain.main#1",
+            "name": "main",
+            "filePath": "northstar-content/src/main/java/northstar/content/testing/TestMain.java",
+            "startLine": 21,
+            "endLine": 83,
+            "module": "Testing"
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/testing/TestMain.java:TestMain.findRunMethod#1",
+            "name": "findRunMethod",
+            "filePath": "northstar-content/src/main/java/northstar/content/testing/TestMain.java",
+            "startLine": 85,
+            "endLine": 93,
+            "module": "Testing"
+          },
+          {
+            "id": "Method:northstar-content/src/main/java/northstar/content/testing/TestMain.java:TestMain.instantiate#1",
+            "name": "instantiate",
+            "filePath": "northstar-content/src/main/java/northstar/content/testing/TestMain.java",
+            "startLine": 95,
+            "endLine": 99,
+            "module": "Testing"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraState.java:CameraState.withPhase#1",
+            "name": "withPhase",
+            "filePath": "src/main/java/net/mcpz/camera/CameraState.java",
+            "startLine": 46,
+            "endLine": 48
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/camera/CameraState.java:CameraState.position#0",
+            "name": "position",
+            "filePath": "src/main/java/net/mcpz/camera/CameraState.java",
+            "startLine": 51,
+            "endLine": 53,
+            "module": "Camera"
+          },
+          {
+            "id": "Class:tools/vlm-qa/mcpz_vlm/input_driver.py:RecordedEvent",
+            "name": "RecordedEvent",
+            "filePath": "tools/vlm-qa/mcpz_vlm/input_driver.py",
+            "startLine": 54,
+            "endLine": 62
+          },
+          {
+            "id": "Class:tools/vlm-qa/mcpz_vlm/input_driver.py:RecordingDriver",
+            "name": "RecordingDriver",
+            "filePath": "tools/vlm-qa/mcpz_vlm/input_driver.py",
+            "startLine": 65,
+            "endLine": 124
+          },
+          {
+            "id": "File:reports/vlm/README.md",
+            "name": "README.md",
+            "filePath": "reports/vlm/README.md"
+          },
+          {
+            "id": "File:northstar-content/src/main/java/northstar/content/physiology/MoodleCatalog.java",
+            "name": "MoodleCatalog.java",
+            "filePath": "northstar-content/src/main/java/northstar/content/physiology/MoodleCatalog.java"
+          }
+        ],
+        "timing": {
+          "vector": 4.8,
+          "bm25": 202.8,
+          "merge": 0.1,
+          "symbol_lookup": 15.5,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 220
+        }
+      }
+    },
+    {
+      "id": "mcpz-16",
+      "type": "callers",
+      "question": "Where is validate_manifest called in the VLM test harness?",
+      "query_param": "validate_manifest",
+      "expected": {
+        "path": "tools/vlm-qa/mcpz_vlm/evidence.py",
+        "symbol": "validate_manifest",
+        "kind": "callers",
+        "expected_targets": [
+          "tools/vlm-qa/mcpz_vlm/cli.py"
+        ],
+        "details": "cli.py calls validate_manifest when checking run manifests."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1261.7,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "uid": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:validate_manifest",
+          "name": "validate_manifest",
+          "kind": "Function",
+          "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py",
+          "startLine": 49,
+          "endLine": 75
+        },
+        "incoming": {
+          "calls": [
+            {
+              "uid": "Function:tools/vlm-qa/mcpz_vlm/cli.py:_cmd_check",
+              "name": "_cmd_check",
+              "filePath": "tools/vlm-qa/mcpz_vlm/cli.py"
+            },
+            {
+              "uid": "Function:tools/vlm-qa/mcpz_vlm/evidence.py:write_manifest",
+              "name": "write_manifest",
+              "filePath": "tools/vlm-qa/mcpz_vlm/evidence.py"
+            }
+          ]
+        },
+        "outgoing": {},
+        "processes": []
+      }
+    },
+    {
+      "id": "mcpz-17",
+      "type": "definition",
+      "question": "Where is McpzAtmosphereController defined?",
+      "query_param": "McpzAtmosphereController",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+        "symbol": "McpzAtmosphereController",
+        "kind": "symbol",
+        "details": "Atmosphere controller managing weather, fog, and lighting overrides."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1259.7,
+      "rawOutput": {
+        "processes": [],
+        "process_symbols": [],
+        "definitions": [
+          {
+            "id": "Method:src/test/java/net/mcpz/AtmosphereFogTest.java:AtmosphereFogTest.fogColorScalesWithBrightnessAndClamps#0",
+            "name": "fogColorScalesWithBrightnessAndClamps",
+            "filePath": "src/test/java/net/mcpz/AtmosphereFogTest.java",
+            "startLine": 16,
+            "endLine": 28,
+            "module": "Atmosphere"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/AtmosphereFogTest.java:AtmosphereFogTest.fogDistancesStayOrderedAndPositive#0",
+            "name": "fogDistancesStayOrderedAndPositive",
+            "filePath": "src/test/java/net/mcpz/AtmosphereFogTest.java",
+            "startLine": 30,
+            "endLine": 41,
+            "module": "Atmosphere"
+          },
+          {
+            "id": "Method:src/test/java/net/mcpz/AtmosphereFogTest.java:AtmosphereFogTest.brightnessRejectsNaNAndExtremes#0",
+            "name": "brightnessRejectsNaNAndExtremes",
+            "filePath": "src/test/java/net/mcpz/AtmosphereFogTest.java",
+            "startLine": 43,
+            "endLine": 49,
+            "module": "Atmosphere"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.overlay#0",
+            "name": "overlay",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 117,
+            "endLine": 119,
+            "module": "Client"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.atmosphere#0",
+            "name": "atmosphere",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java",
+            "startLine": 121,
+            "endLine": 123,
+            "module": "Mixin"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/McpzRuntime.java",
+            "name": "McpzRuntime.java",
+            "filePath": "src/client/java/net/mcpz/client/McpzRuntime.java"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "name": "McpzAtmosphereController.java",
+            "filePath": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java:McpzAtmosphereController",
+            "name": "McpzAtmosphereController",
+            "filePath": "src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java",
+            "startLine": 13,
+            "endLine": 92
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/mixin/FogRendererMixin.java",
+            "name": "FogRendererMixin.java",
+            "filePath": "src/client/java/net/mcpz/client/mixin/FogRendererMixin.java"
+          },
+          {
+            "id": "File:reports/visual/baselines/P0-VISUAL-FAIL-CURSED-POV-001.md",
+            "name": "P0-VISUAL-FAIL-CURSED-POV-001.md",
+            "filePath": "reports/visual/baselines/P0-VISUAL-FAIL-CURSED-POV-001.md"
+          },
+          {
+            "id": "File:reports/master/ISOCRAFT-CAMERA-BASELINE.md",
+            "name": "ISOCRAFT-CAMERA-BASELINE.md",
+            "filePath": "reports/master/ISOCRAFT-CAMERA-BASELINE.md"
+          }
+        ],
+        "timing": {
+          "vector": 5,
+          "bm25": 54.3,
+          "merge": 0.1,
+          "symbol_lookup": 11.1,
+          "ranking": 0,
+          "formatting": 0,
+          "wall": 66.9
+        }
+      }
+    },
+    {
+      "id": "mcpz-18",
+      "type": "impact",
+      "question": "What is impacted if McpzControlMap.ROTATE_LEFT key name is changed?",
+      "query_param": "ROTATE_LEFT",
+      "expected": {
+        "path": "src/client/java/net/mcpz/client/input/McpzControlMap.java",
+        "symbol": "ROTATE_LEFT",
+        "kind": "impact",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java",
+          "src/client/java/net/mcpz/client/input/McpzKeybindStore.java"
+        ],
+        "expected_count": 2,
+        "details": "ROTATE_LEFT is referenced in McpzClient for keybinding registration and McpzKeybindStore."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1191,
+      "rawOutput": {
+        "target": {
+          "id": "Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_LEFT",
+          "name": "ROTATE_LEFT",
+          "type": "",
+          "filePath": "src/client/java/net/mcpz/client/input/McpzControlMap.java"
+        },
+        "direction": "upstream",
+        "impactedCount": 0,
+        "risk": "LOW",
+        "summary": {
+          "direct": 0,
+          "processes_affected": 0,
+          "modules_affected": 0
+        },
+        "byDepthCounts": {},
+        "affected_processes": [],
+        "affected_modules": [],
+        "byDepth": {}
+      }
+    },
+    {
+      "id": "mcpz-19",
+      "type": "definition",
+      "question": "Where is the MinecraftItemRepresentationRegistry class defined?",
+      "query_param": "MinecraftItemRepresentationRegistry",
+      "expected": {
+        "path": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+        "symbol": "MinecraftItemRepresentationRegistry",
+        "kind": "symbol",
+        "details": "Class adapting Project Zomboid item concepts to vanilla Minecraft item registries."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1289.7,
+      "rawOutput": {
+        "processes": [
+          {
+            "id": "proc_0_oninitialize",
+            "summary": "OnInitialize → NanosToMillis",
+            "priority": 0.083,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          },
+          {
+            "id": "proc_1_oninitialize",
+            "summary": "OnInitialize → Percentile",
+            "priority": 0.083,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          },
+          {
+            "id": "proc_2_oninitialize",
+            "summary": "OnInitialize → UsedHeapBytes",
+            "priority": 0.083,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          },
+          {
+            "id": "proc_3_oninitialize",
+            "summary": "OnInitialize → Accepted",
+            "priority": 0.083,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          },
+          {
+            "id": "proc_4_oninitialize",
+            "summary": "OnInitialize → Save",
+            "priority": 0.083,
+            "symbol_count": 1,
+            "process_type": "cross_community",
+            "step_count": 8
+          }
+        ],
+        "process_symbols": [
+          {
+            "id": "Method:src/main/java/net/mcpz/McpzMod.java:McpzMod.onInitialize#0",
+            "name": "onInitialize",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java",
+            "startLine": 21,
+            "endLine": 63,
+            "module": "Config",
+            "process_id": "proc_0_oninitialize",
+            "step_index": 1
+          }
+        ],
+        "definitions": [
+          {
+            "id": "Method:src/test/java/net/mcpz/ItemTableConsistencyTest.java:ItemTableConsistencyTest.registryCountsMatchGeneratedAssets#0",
+            "name": "registryCountsMatchGeneratedAssets",
+            "filePath": "src/test/java/net/mcpz/ItemTableConsistencyTest.java",
+            "startLine": 73,
+            "endLine": 77,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Class:src/test/java/net/mcpz/ItemTableConsistencyTest.java:ItemTableConsistencyTest",
+            "name": "ItemTableConsistencyTest",
+            "filePath": "src/test/java/net/mcpz/ItemTableConsistencyTest.java",
+            "startLine": 25,
+            "endLine": 78
+          },
+          {
+            "id": "File:src/test/java/net/mcpz/ItemTableConsistencyTest.java",
+            "name": "ItemTableConsistencyTest.java",
+            "filePath": "src/test/java/net/mcpz/ItemTableConsistencyTest.java"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java:McpzInventoryScreen.drawNearbyPane#7",
+            "name": "drawNearbyPane",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java",
+            "startLine": 178,
+            "endLine": 199,
+            "module": "Mcpz"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java:McpzInventoryScreen.slotFor#1",
+            "name": "slotFor",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java",
+            "startLine": 238,
+            "endLine": 245,
+            "module": "Net"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java",
+            "name": "McpzInventoryScreen.java",
+            "filePath": "src/client/java/net/mcpz/client/screen/McpzInventoryScreen.java"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/ui/PzWeaponWheel.java:PzWeaponWheel.weaponsFrom#2",
+            "name": "weaponsFrom",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzWeaponWheel.java",
+            "startLine": 38,
+            "endLine": 60,
+            "module": "Net"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/ui/PzWeaponWheel.java:PzWeaponWheel",
+            "name": "PzWeaponWheel",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzWeaponWheel.java",
+            "startLine": 16,
+            "endLine": 99
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/ui/PzWeaponWheel.java",
+            "name": "PzWeaponWheel.java",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzWeaponWheel.java"
+          },
+          {
+            "id": "Method:src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java:MinecraftItemRepresentationRegistry.require#1",
+            "name": "require",
+            "filePath": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "startLine": 52,
+            "endLine": 59,
+            "module": "Mcpz"
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "name": "MinecraftItemRepresentationRegistry.java",
+            "filePath": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java"
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java:MinecraftItemRepresentationRegistry",
+            "name": "MinecraftItemRepresentationRegistry",
+            "filePath": "src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java",
+            "startLine": 26,
+            "endLine": 155,
+            "module": "Item"
+          },
+          {
+            "id": "Method:src/client/java/net/mcpz/client/ui/PzHotbarModel.java:PzHotbarModel.slot#2",
+            "name": "slot",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzHotbarModel.java",
+            "startLine": 86,
+            "endLine": 93,
+            "module": "Ui"
+          },
+          {
+            "id": "File:src/client/java/net/mcpz/client/ui/PzHotbarModel.java",
+            "name": "PzHotbarModel.java",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzHotbarModel.java"
+          },
+          {
+            "id": "Class:src/client/java/net/mcpz/client/ui/PzHotbarModel.java:PzHotbarModel",
+            "name": "PzHotbarModel",
+            "filePath": "src/client/java/net/mcpz/client/ui/PzHotbarModel.java",
+            "startLine": 23,
+            "endLine": 130
+          },
+          {
+            "id": "Class:src/main/java/net/mcpz/McpzMod.java:McpzMod",
+            "name": "McpzMod",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java",
+            "startLine": 18,
+            "endLine": 64
+          },
+          {
+            "id": "File:src/main/java/net/mcpz/McpzMod.java",
+            "name": "McpzMod.java",
+            "filePath": "src/main/java/net/mcpz/McpzMod.java"
+          },
+          {
+            "id": "File:reports/wave3/lane1/CLIENT_STATE_AUDIT.md",
+            "name": "CLIENT_STATE_AUDIT.md",
+            "filePath": "reports/wave3/lane1/CLIENT_STATE_AUDIT.md"
+          }
+        ],
+        "timing": {
+          "vector": 4.9,
+          "bm25": 60.1,
+          "merge": 0.1,
+          "symbol_lookup": 11.5,
+          "ranking": 0.1,
+          "formatting": 0.1,
+          "wall": 73.6
+        }
+      }
+    },
+    {
+      "id": "mcpz-20",
+      "type": "callers",
+      "question": "Where is McpzLog.get called to obtain subsystem loggers?",
+      "query_param": "McpzLog",
+      "expected": {
+        "path": "src/main/java/net/mcpz/log/McpzLog.java",
+        "symbol": "get",
+        "kind": "callers",
+        "expected_targets": [
+          "src/client/java/net/mcpz/client/McpzClient.java",
+          "src/client/java/net/mcpz/client/camera/McpzCameraController.java"
+        ],
+        "details": "McpzClient and McpzCameraController obtain scoped loggers via McpzLog.get()."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 1241.7,
+      "rawOutput": {
+        "error": "Symbol 'McpzLog' not found"
+      }
+    }
+  ]
+}

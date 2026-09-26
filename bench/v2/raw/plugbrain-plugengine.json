@@ -1,0 +1,3241 @@
+{
+  "tool": "plugbrain",
+  "repo": "plugengine",
+  "commit": "c6c5d98b57cbe2b2560ebc0acfbc3a9f7c80253f",
+  "indexTimeMs": 11302,
+  "indexSizeBytes": 1331162762,
+  "questionCount": 20,
+  "hitCount": 7,
+  "accuracy": 35,
+  "latencyP50Ms": 2472.2,
+  "latencyP95Ms": 15013.3,
+  "questions": [
+    {
+      "id": "plugengine-01",
+      "type": "definition",
+      "question": "Where is the CommandBus class implemented for undo/redo state management?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBus",
+        "kind": "symbol",
+        "details": "CommandBus manages undoStack, redoStack, dispatch, transactions, and listeners."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2622,
+      "rawOutput": {
+        "query": "CommandBus",
+        "symbols": [
+          {
+            "id": 554895,
+            "name": "CommandBus",
+            "kind": "class",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 40,
+            "endLine": 122,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554885,
+            "name": "CommandBusOptions",
+            "kind": "interface",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 3,
+            "endLine": 6,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554887,
+            "name": "CommandBusListener",
+            "kind": "type_alias",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 8,
+            "endLine": 8,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554902,
+            "name": "undo",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 70,
+            "endLine": 76,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554904,
+            "name": "redo",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 78,
+            "endLine": 84,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554910,
+            "name": "record",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 113,
+            "endLine": 117,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554911,
+            "name": "notify",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 119,
+            "endLine": 121,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554901,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 60,
+            "endLine": 68,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554909,
+            "name": "subscribe",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 105,
+            "endLine": 110,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554906,
+            "name": "transaction",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 86,
+            "endLine": 103,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 562343,
+            "name": "6. Undo/redo architecture (the real CommandBus)",
+            "kind": "property",
+            "file": "docs/CREATOR_EDITOR_SPEC.md",
+            "line": 340,
+            "endLine": 340,
+            "exported": false,
+            "container": "PlugEngine Creator Editor — Product Spec + Backlog",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554886,
+            "name": "limit",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 5,
+            "endLine": 5,
+            "exported": false,
+            "container": "CommandBusOptions",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554899,
+            "name": "limit",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 44,
+            "endLine": 44,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554896,
+            "name": "undoStack",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554897,
+            "name": "redoStack",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 42,
+            "endLine": 42,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554898,
+            "name": "listeners",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 43,
+            "endLine": 43,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554900,
+            "name": "collecting",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 46,
+            "endLine": 46,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "CommandBus -> max",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "CommandBus",
+                "file": "packages/plugengine-core/src/command/bus.ts",
+                "kind": "class"
+              },
+              {
+                "step": 2,
+                "symbolName": "max",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 18,
+        "timingMs": 2190.6
+      }
+    },
+    {
+      "id": "plugengine-02",
+      "type": "definition",
+      "question": "Where is DEFAULT_LIMIT defined for command bus undo depth?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "symbol",
+        "details": "const DEFAULT_LIMIT = 200 in packages/plugengine-core/src/command/bus.ts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15012.6,
+      "rawOutput": ""
+    },
+    {
+      "id": "plugengine-03",
+      "type": "callers",
+      "question": "Where is CommandBus.dispatch called in tests or consumers?",
+      "query_param": "dispatch",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "bus.test.ts executes dispatches against CommandBus instances."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 426.6,
+      "rawOutput": {
+        "status": "ambiguous",
+        "candidates": [
+          {
+            "id": 1749,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "tools/d1/gate-channels.mjs",
+            "line": 147,
+            "endLine": 155,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 2277,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "services/runtime/src/commands.ts",
+            "line": 14,
+            "endLine": 37,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 8544,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/packages/plugbot/plugbot/router_bridge.py",
+            "line": 418,
+            "endLine": 418,
+            "exported": true,
+            "container": "RouterBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 8588,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/packages/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 11575,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "plugos-x3/apps/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12024,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/apps/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12030,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/apps/shorts-factory/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12035,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/apps/shorts-factory/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12041,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-x3/apps/shorts-factory/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16269,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/packages/plugbot/plugbot/router_bridge.py",
+            "line": 420,
+            "endLine": 420,
+            "exported": true,
+            "container": "RouterBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16315,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/packages/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 20845,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "plugos-showcase/apps/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21294,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/apps/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21300,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/apps/shorts-factory/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21305,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/apps/shorts-factory/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21311,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-showcase/apps/shorts-factory/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 25780,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/tests/test_swarm_never_self_pass_and_logs_events.py",
+            "line": 42,
+            "endLine": 42,
+            "exported": true,
+            "container": "FakeBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 25791,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/tests/test_swarm_orchestrator_fans_tasks_across_lanes.py",
+            "line": 40,
+            "endLine": 40,
+            "exported": true,
+            "container": "FakeBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 25797,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/tests/test_swarm_orchestrator_fans_tasks_across_lanes.py",
+            "line": 119,
+            "endLine": 119,
+            "exported": true,
+            "container": "DegradedBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 25803,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/tests/test_swarm_orchestrator_fans_tasks_across_lanes.py",
+            "line": 184,
+            "endLine": 184,
+            "exported": true,
+            "container": "DegradedBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 26618,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/plugbot/router_bridge.py",
+            "line": 418,
+            "endLine": 418,
+            "exported": true,
+            "container": "RouterBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 26677,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/packages/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 29697,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "plugos-s3/apps/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 30146,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/apps/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 30152,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/apps/shorts-factory/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 30157,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/apps/shorts-factory/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 30163,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-s3/apps/shorts-factory/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 34000,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/packages/plugbot/plugbot/router_bridge.py",
+            "line": 418,
+            "endLine": 418,
+            "exported": true,
+            "container": "RouterBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 34044,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/packages/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37210,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "plugos-fix/apps/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37659,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/apps/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37665,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/apps/shorts-factory/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37670,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/apps/shorts-factory/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37676,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-fix/apps/shorts-factory/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 42002,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/packages/plugbot/plugbot/router_bridge.py",
+            "line": 420,
+            "endLine": 420,
+            "exported": true,
+            "container": "RouterBridge",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 42048,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/packages/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 45235,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "plugos-ecospace/apps/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 45684,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 45690,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/shorts-factory/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 45695,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/shorts-factory/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 45701,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/shorts-factory/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 49170,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/plugmcp/deploy/_v4_ref/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 52755,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "plugos-ecospace/apps/plugmcp/deploy/_shell_ref/plugbrain ui/unpacked_source/plugbot/plugbot/tui.py",
+            "line": 294,
+            "endLine": 294,
+            "exported": true,
+            "container": "PlugBotSession",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 69276,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 69725,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 69731,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/providers/render/github_actions.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "GitHubActionsRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 69736,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/providers/render/local_mock.py",
+            "line": 27,
+            "endLine": 27,
+            "exported": true,
+            "container": "LocalMockRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 69742,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortfabrik/shorts-terminal-v2/backend/providers/render/local_real.py",
+            "line": 24,
+            "endLine": 24,
+            "exported": true,
+            "container": "LocalStaticRenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 72186,
+            "name": "dispatch",
+            "kind": "function",
+            "file": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/services/github.py",
+            "line": 17,
+            "endLine": 17,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 72635,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "ECOSPACE/05_PLUGMEDIA/code/shorts-factory/backend/providers/render/base.py",
+            "line": 12,
+            "endLine": 12,
+            "exported": true,
+            "container": "RenderProvider",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "symbol": null,
+        "incoming": {
+          "calls": [],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [],
+          "references": []
+        },
+        "processes": []
+      }
+    },
+    {
+      "id": "plugengine-04",
+      "type": "definition",
+      "question": "Where is the PLUG_PACKAGE_KINDS array defined in engine contracts?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "symbol",
+        "details": "PLUG_PACKAGE_KINDS lists 'plugproject', 'plugaddon', 'plugbuild', 'plugtemplate', 'plugproof'."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 11117.5,
+      "rawOutput": {
+        "query": "PLUG_PACKAGE_KINDS",
+        "symbols": [
+          {
+            "id": 556808,
+            "name": "PLUG_PACKAGE_KINDS",
+            "kind": "constant",
+            "file": "packages/contracts/src/addon.ts",
+            "line": 37,
+            "endLine": 43,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 1,
+        "timingMs": 10673.3
+      }
+    },
+    {
+      "id": "plugengine-05",
+      "type": "definition",
+      "question": "Where is the isPlugPackageKind type guard defined?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "symbol",
+        "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2138.7,
+      "rawOutput": {
+        "query": "isPlugPackageKind",
+        "symbols": [
+          {
+            "id": 556809,
+            "name": "isPlugPackageKind",
+            "kind": "function",
+            "file": "packages/contracts/src/addon.ts",
+            "line": 45,
+            "endLine": 47,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "isPlugPackageKind -> includes",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "isPlugPackageKind",
+                "file": "packages/contracts/src/addon.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "includes",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 2,
+        "timingMs": 1690.7
+      }
+    },
+    {
+      "id": "plugengine-06",
+      "type": "callers",
+      "question": "Where is isPlugPackageKind tested or called?",
+      "query_param": "isPlugPackageKind",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "isPlugPackageKind",
+        "kind": "callers",
+        "expected_targets": [
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "details": "packages/contracts/src/addon.test.ts validates the isPlugPackageKind type guard."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 443.3,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 556809,
+          "name": "isPlugPackageKind",
+          "kind": "function",
+          "file": "packages/contracts/src/addon.ts",
+          "line": 45,
+          "endLine": 47,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [
+            {
+              "id": null,
+              "name": "includes",
+              "kind": "call",
+              "file": "",
+              "line": 46,
+              "rawTarget": "includes"
+            }
+          ],
+          "references": []
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "isPlugPackageKind -> includes",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "isPlugPackageKind",
+                "file": "packages/contracts/src/addon.ts",
+                "kind": "function"
+              },
+              {
+                "step": 2,
+                "symbolName": "includes",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-07",
+      "type": "impact",
+      "question": "What is impacted if DEFAULT_LIMIT in CommandBus is altered?",
+      "query_param": "DEFAULT_LIMIT",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "DEFAULT_LIMIT",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts",
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "Limits default undo history buffer size in CommandBus constructor."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 423.3,
+      "rawOutput": {
+        "target": {
+          "name": "DEFAULT_LIMIT",
+          "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/scripts/consult.js",
+          "id": 231916
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "plugengine-08",
+      "type": "impact",
+      "question": "What is impacted if a new package kind is added to PLUG_PACKAGE_KINDS?",
+      "query_param": "PLUG_PACKAGE_KINDS",
+      "expected": {
+        "path": "packages/contracts/src/addon.ts",
+        "symbol": "PLUG_PACKAGE_KINDS",
+        "kind": "impact",
+        "expected_targets": [
+          "packages/contracts/src/addon.ts",
+          "packages/contracts/src/addon.test.ts"
+        ],
+        "expected_count": 2,
+        "details": "PlugPackageKind union and package kind validation in addon contracts."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 435,
+      "rawOutput": {
+        "target": {
+          "name": "PLUG_PACKAGE_KINDS",
+          "file": "packages/contracts/src/addon.ts",
+          "id": 556808
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "plugengine-09",
+      "type": "dataflow",
+      "question": "How does a command dispatched to CommandBus update undo history and listeners?",
+      "query_param": "CommandBus",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "dispatch",
+        "kind": "dataflow",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.ts"
+        ],
+        "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 3169.4,
+      "rawOutput": {
+        "query": "CommandBus",
+        "symbols": [
+          {
+            "id": 554895,
+            "name": "CommandBus",
+            "kind": "class",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 40,
+            "endLine": 122,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554885,
+            "name": "CommandBusOptions",
+            "kind": "interface",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 3,
+            "endLine": 6,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554887,
+            "name": "CommandBusListener",
+            "kind": "type_alias",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 8,
+            "endLine": 8,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554902,
+            "name": "undo",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 70,
+            "endLine": 76,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554904,
+            "name": "redo",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 78,
+            "endLine": 84,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554910,
+            "name": "record",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 113,
+            "endLine": 117,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554911,
+            "name": "notify",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 119,
+            "endLine": 121,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554901,
+            "name": "dispatch",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 60,
+            "endLine": 68,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554909,
+            "name": "subscribe",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 105,
+            "endLine": 110,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554906,
+            "name": "transaction",
+            "kind": "method",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 86,
+            "endLine": 103,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 562343,
+            "name": "6. Undo/redo architecture (the real CommandBus)",
+            "kind": "property",
+            "file": "docs/CREATOR_EDITOR_SPEC.md",
+            "line": 340,
+            "endLine": 340,
+            "exported": false,
+            "container": "PlugEngine Creator Editor — Product Spec + Backlog",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554886,
+            "name": "limit",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 5,
+            "endLine": 5,
+            "exported": false,
+            "container": "CommandBusOptions",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554899,
+            "name": "limit",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 44,
+            "endLine": 44,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554896,
+            "name": "undoStack",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 41,
+            "endLine": 41,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554897,
+            "name": "redoStack",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 42,
+            "endLine": 42,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554898,
+            "name": "listeners",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 43,
+            "endLine": 43,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554900,
+            "name": "collecting",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 46,
+            "endLine": 46,
+            "exported": false,
+            "container": "CommandBus",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "CommandBus -> max",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "CommandBus",
+                "file": "packages/plugengine-core/src/command/bus.ts",
+                "kind": "class"
+              },
+              {
+                "step": 2,
+                "symbolName": "max",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 18,
+        "timingMs": 2706.7
+      }
+    },
+    {
+      "id": "plugengine-10",
+      "type": "config",
+      "question": "Where is the CommandBusOptions interface defined for configuring history limit?",
+      "query_param": "CommandBusOptions",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "CommandBusOptions",
+        "kind": "config",
+        "details": "export interface CommandBusOptions { limit?: number; }."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2335.3,
+      "rawOutput": {
+        "query": "CommandBusOptions",
+        "symbols": [
+          {
+            "id": 554885,
+            "name": "CommandBusOptions",
+            "kind": "interface",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 3,
+            "endLine": 6,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 554886,
+            "name": "limit",
+            "kind": "property",
+            "file": "packages/plugengine-core/src/command/bus.ts",
+            "line": 5,
+            "endLine": 5,
+            "exported": false,
+            "container": "CommandBusOptions",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [],
+        "total": 2,
+        "timingMs": 1844.1
+      }
+    },
+    {
+      "id": "plugengine-11",
+      "type": "config",
+      "question": "Where are npm workspaces declared for the engine monorepo?",
+      "query_param": "workspaces",
+      "expected": {
+        "path": "package.json",
+        "symbol": "workspaces",
+        "kind": "config",
+        "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 5127.3,
+      "rawOutput": {
+        "query": "workspaces",
+        "symbols": [
+          {
+            "id": 73888,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "WorkspacesPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96908,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/WorkspacesPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "WorkspacesPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 437346,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "WorkspacesPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 459578,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "WorkspacesPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 4303,
+            "name": "workspaces",
+            "kind": "class",
+            "file": "migrations/0001_init.sql",
+            "line": 13,
+            "endLine": 13,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 432476,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/relink-workspaces.mjs",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 435547,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/installer/relink-workspaces.mjs",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 55049,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/_RELEASE/plugos-command-center/command-center/_seed/build_command_center.js",
+            "line": 51,
+            "endLine": 54,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73280,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/CommandWorkspace.tsx",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "CommandWorkspace",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73563,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/OverviewPage.tsx",
+            "line": 10,
+            "endLine": 10,
+            "exported": false,
+            "container": "OverviewPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73586,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/PermissionsPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "PermissionsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73820,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/SettingsPage.tsx",
+            "line": 8,
+            "endLine": 8,
+            "exported": false,
+            "container": "SettingsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73832,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/TasksPage.tsx",
+            "line": 27,
+            "endLine": 27,
+            "exported": false,
+            "container": "TasksPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 73840,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/ToolsPage.tsx",
+            "line": 11,
+            "endLine": 11,
+            "exported": false,
+            "container": "ToolsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96300,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/CommandWorkspace.tsx",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "CommandWorkspace",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96583,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/OverviewPage.tsx",
+            "line": 10,
+            "endLine": 10,
+            "exported": false,
+            "container": "OverviewPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96606,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/PermissionsPage.tsx",
+            "line": 7,
+            "endLine": 7,
+            "exported": false,
+            "container": "PermissionsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96840,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/SettingsPage.tsx",
+            "line": 8,
+            "endLine": 8,
+            "exported": false,
+            "container": "SettingsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96852,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/TasksPage.tsx",
+            "line": 27,
+            "endLine": 27,
+            "exported": false,
+            "container": "TasksPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 96860,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/ToolsPage.tsx",
+            "line": 11,
+            "endLine": 11,
+            "exported": false,
+            "container": "ToolsPage",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 113764,
+            "name": "Workspaces",
+            "kind": "property",
+            "file": "ECOSPACE/00_MASTER/WORKSPACE_AUDIT.md",
+            "line": 14,
+            "endLine": 14,
+            "exported": false,
+            "container": "WORKSPACE AUDIT — ECOSPACE (2026-06-12)",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 113784,
+            "name": "workspaces",
+            "kind": "variable",
+            "file": "ECOSPACE/00_MASTER/_seed/build_command_center.js",
+            "line": 42,
+            "endLine": 42,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 115986,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "04_WORKSPACE_SANDBOX/release_verify_new_zip_20260613_04/command-center/_seed/build_command_center.js",
+            "line": 51,
+            "endLine": 54,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 116412,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "04_WORKSPACE_SANDBOX/release_verify_final_zip_20260613_04/command-center/_seed/build_command_center.js",
+            "line": 51,
+            "endLine": 54,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 116838,
+            "name": "workspaces",
+            "kind": "constant",
+            "file": "04_WORKSPACE_SANDBOX/release_fix_plugos_command_center_20260613_04/command-center/_seed/build_command_center.js",
+            "line": 51,
+            "endLine": 54,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/api/src/routes/workspaces.ts",
+            "title": "workspaces.ts",
+            "snippet": "import { Router } from \"express\"; import { listWorkspaces, getWorkspace, saveWorkspace, validateWorkspace, checkPathAccess, checkCommandAccess, type WorkspaceConfig, } from \"../../../../packages/[workspaces]/src/index …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/api/src/routes/workspaces.ts",
+            "title": "workspaces.ts",
+            "snippet": "import { Router } from \"express\"; import { listWorkspaces, getWorkspace, saveWorkspace, validateWorkspace, checkPathAccess, checkCommandAccess, type WorkspaceConfig, } from \"../../../../packages/[workspaces]/src/index …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/api/src/routes/workspaces.ts",
+            "title": "workspaces.ts",
+            "snippet": "import { Router } from \"express\"; import { listWorkspaces, getWorkspace, saveWorkspace, validateWorkspace, checkPathAccess, checkCommandAccess, type WorkspaceConfig, } from \"../../../../packages/[workspaces]/src/index …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/knowledge-work-plugins/partner-built/zoom-plugin/skills/rest-api/references/rooms.md",
+            "title": "rooms",
+            "snippet": "… visitor | `checkinVisitor` | ### [Workspaces] | Method | Endpoint | Summary | Operation ID | |--------|----------|---------|-------------| | GET | `/[workspaces]` | List [workspaces] | `listWorkspaces` | | POST | `/[workspaces]` | Create a workspace …"
+          },
+          {
+            "path": "ECOSPACE/02_PLUGDESK/code/_nitro_desktop/dashboard/src/pages/WorkspacesPage.tsx",
+            "title": "WorkspacesPage.tsx",
+            "snippet": "… string[] } | null>(null); useEffect(() => { if (!selected && [workspaces].data?.length) setSelected([workspaces].data[0].id); }, [[workspaces].data, selected]); const …"
+          },
+          {
+            "path": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "title": "WorkspacesPage.tsx",
+            "snippet": "… string[] } | null>(null); useEffect(() => { if (!selected && [workspaces].data?.length) setSelected([workspaces].data[0].id); }, [[workspaces].data, selected]); const …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "title": "WorkspacesPage.tsx",
+            "snippet": "… string[] } | null>(null); useEffect(() => { if (!selected && [workspaces].data?.length) setSelected([workspaces].data[0].id); }, [[workspaces].data, selected]); const …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/apps/dashboard/src/pages/WorkspacesPage.tsx",
+            "title": "WorkspacesPage.tsx",
+            "snippet": "… string[] } | null>(null); useEffect(() => { if (!selected && [workspaces].data?.length) setSelected([workspaces].data[0].id); }, [[workspaces].data, selected]); const …"
+          },
+          {
+            "path": "ECOSPACE/03_PLUGBOT/_OG_REFERENCE/NITROO/apps/api/src/routes/aiworkspaces.ts",
+            "title": "aiworkspaces.ts",
+            "snippet": "/** AI [Workspaces] API (v0.7) — ChatGPT Project Cell + DeepSeek Chat Cell + Brain sync. */ import { Router } from \"express\"; import …"
+          },
+          {
+            "path": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/apps/api/src/routes/aiworkspaces.ts",
+            "title": "aiworkspaces.ts",
+            "snippet": "/** AI [Workspaces] API (v0.7) — ChatGPT Project Cell + DeepSeek Chat Cell + Brain sync. */ import { Router } from \"express\"; import …"
+          }
+        ],
+        "flows": [],
+        "total": 35,
+        "timingMs": 4704.4
+      }
+    },
+    {
+      "id": "plugengine-12",
+      "type": "entrypoint",
+      "question": "Where is the entrypoint barrel for plugengine-core?",
+      "query_param": "plugengine-core",
+      "expected": {
+        "path": "packages/plugengine-core/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15010.4,
+      "rawOutput": ""
+    },
+    {
+      "id": "plugengine-13",
+      "type": "entrypoint",
+      "question": "Where is the root contracts entrypoint barrel for plugengine?",
+      "query_param": "contracts",
+      "expected": {
+        "path": "packages/contracts/src/index.ts",
+        "symbol": "index.ts",
+        "kind": "entrypoint",
+        "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 7010.4,
+      "rawOutput": {
+        "query": "contracts",
+        "symbols": [
+          {
+            "id": 536348,
+            "name": "contracts",
+            "kind": "constant",
+            "file": "scripts/ai-builder-mock-proof.mjs",
+            "line": 94,
+            "endLine": 94,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 538005,
+            "name": "contracts",
+            "kind": "constant",
+            "file": "scripts/project-store-proof.mjs",
+            "line": 87,
+            "endLine": 87,
+            "exported": false,
+            "container": "main",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 538159,
+            "name": "contracts",
+            "kind": "constant",
+            "file": "scripts/publish-flow-proof.mjs",
+            "line": 129,
+            "endLine": 129,
+            "exported": false,
+            "container": "main",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 562857,
+            "name": "contracts-freeze — proof notes",
+            "kind": "property",
+            "file": "docs/proof/contracts-freeze/00-notes.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 536541,
+            "name": "CONTRACTS_FS_URL",
+            "kind": "constant",
+            "file": "scripts/asset-source-spine-proof.mjs",
+            "line": 29,
+            "endLine": 29,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16656,
+            "name": "The 10 contracts",
+            "kind": "property",
+            "file": "plugos-showcase/packages/contracts/README.md",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "PlugOS Contracts",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 34385,
+            "name": "The 10 contracts",
+            "kind": "property",
+            "file": "plugos-fix/packages/contracts/README.md",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "PlugOS Contracts",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 42389,
+            "name": "The 10 contracts",
+            "kind": "property",
+            "file": "plugos-ecospace/packages/contracts/README.md",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "PlugOS Contracts",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 113295,
+            "name": "The 10 contracts",
+            "kind": "property",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/contracts/README.md",
+            "line": 23,
+            "endLine": 23,
+            "exported": false,
+            "container": "PlugOS Contracts",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 562998,
+            "name": "— playable runtime + game-mode contracts",
+            "kind": "property",
+            "file": "docs/architecture/PLUGENGINE_KERNEL.md",
+            "line": 88,
+            "endLine": 88,
+            "exported": false,
+            "container": "Package responsibilities + key contracts",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 430280,
+            "name": "TOOL_CONTRACTS",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/packages/tool-policy/src/index.ts",
+            "line": 13,
+            "endLine": 27,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 433351,
+            "name": "TOOL_CONTRACTS",
+            "kind": "constant",
+            "file": "00_INPUT_PROJECTS/01_PLUGBOT_DESKTOP/NITROO/installer/staging/app/packages/tool-policy/src/index.ts",
+            "line": 13,
+            "endLine": 27,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16655,
+            "name": "PlugOS Contracts",
+            "kind": "property",
+            "file": "plugos-showcase/packages/contracts/README.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 34384,
+            "name": "PlugOS Contracts",
+            "kind": "property",
+            "file": "plugos-fix/packages/contracts/README.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 42388,
+            "name": "PlugOS Contracts",
+            "kind": "property",
+            "file": "plugos-ecospace/packages/contracts/README.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 113294,
+            "name": "PlugOS Contracts",
+            "kind": "property",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/contracts/README.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 1121,
+            "name": "Tier-A Asset Representation Contracts",
+            "kind": "property",
+            "file": "docs/assets/TIER_A_ASSET_CONTRACTS.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 16860,
+            "name": "STAGE X1 — Contracts Package — Report",
+            "kind": "property",
+            "file": "plugos-showcase/packages/contracts/reports/x1/STAGE_X1_REPORT.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 34589,
+            "name": "STAGE X1 — Contracts Package — Report",
+            "kind": "property",
+            "file": "plugos-fix/packages/contracts/reports/x1/STAGE_X1_REPORT.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 42593,
+            "name": "STAGE X1 — Contracts Package — Report",
+            "kind": "property",
+            "file": "plugos-ecospace/packages/contracts/reports/x1/STAGE_X1_REPORT.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 113499,
+            "name": "STAGE X1 — Contracts Package — Report",
+            "kind": "property",
+            "file": "ECOSPACE/01_MCP_BRAIN/code/contracts/reports/x1/STAGE_X1_REPORT.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 12343,
+            "name": "PlugMCP — Build Contracts (authoritative spec for builder agents)",
+            "kind": "property",
+            "file": "plugos-x3/apps/plugmcp/CONTRACTS.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 21613,
+            "name": "PlugMCP — Build Contracts (authoritative spec for builder agents)",
+            "kind": "property",
+            "file": "plugos-showcase/apps/plugmcp/CONTRACTS.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 30465,
+            "name": "PlugMCP — Build Contracts (authoritative spec for builder agents)",
+            "kind": "property",
+            "file": "plugos-s3/apps/plugmcp/CONTRACTS.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 37978,
+            "name": "PlugMCP — Build Contracts (authoritative spec for builder agents)",
+            "kind": "property",
+            "file": "plugos-fix/apps/plugmcp/CONTRACTS.md",
+            "line": 1,
+            "endLine": 1,
+            "exported": false,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/03e948031a4101e873b3c477ca79307952d31ef34a0c570b10a27093bd25c93a.json",
+            "title": "03e948031a4101e873b3c477ca79307952d31ef34a0c570b10a27093bd25c93a.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_python_plugos_[contracts]_models_py …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/77aaf340d55b74e2127257b95ca7aefb906ef281caee50d55bb8f477d88183d7.json",
+            "title": "77aaf340d55b74e2127257b95ca7aefb906ef281caee50d55bb8f477d88183d7.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_python_plugos_[contracts]_validation_py …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/0d16a4ead3de6e08556982cec13a2da5c62a11b8d51712f9f6bd30e7a5d0102c.json",
+            "title": "0d16a4ead3de6e08556982cec13a2da5c62a11b8d51712f9f6bd30e7a5d0102c.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_python_tests_[contracts]_testlib_py …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/9b04f65ff9618600d1dc640897d881f421f6cf26167431386f359036150344fb.json",
+            "title": "9b04f65ff9618600d1dc640897d881f421f6cf26167431386f359036150344fb.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_python_plugos_[contracts]_convert_py …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/92d62186b88ddccd9a3cb5a0878cdc8b831412ab1f7eea757114b989370a6870.json",
+            "title": "92d62186b88ddccd9a3cb5a0878cdc8b831412ab1f7eea757114b989370a6870.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_examples_manifest_json\", \"label\": \"examples …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/39596def8bb90c0dbddc5dec5b24ed0d2a1ce9e84c3ba1d27e4964fd29d0a29d.json",
+            "title": "39596def8bb90c0dbddc5dec5b24ed0d2a1ce9e84c3ba1d27e4964fd29d0a29d.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_apps_plugmcp_[contracts]_md\", \"label\": \"[CONTRACTS].md …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/bfebc4d6eb62992c6b90271abcb81ed9f1edbe8b257bd67071e0b7bc7d08aab5.json",
+            "title": "bfebc4d6eb62992c6b90271abcb81ed9f1edbe8b257bd67071e0b7bc7d08aab5.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_readme_md\", \"label\": \"README.md …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/b6f9a422168bb94967d14d7d0244dd35842f4080abfae3ae86002fdfcd55d1b3.json",
+            "title": "b6f9a422168bb94967d14d7d0244dd35842f4080abfae3ae86002fdfcd55d1b3.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_[contracts]_python_plugos_[contracts]_init_py …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/c1ab37384b46433f3aba7b9646b935821827c97ad69f0bd0ab1d0fd7b8bc6e21.json",
+            "title": "c1ab37384b46433f3aba7b9646b935821827c97ad69f0bd0ab1d0fd7b8bc6e21.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_packages_plugbrain_plugbrain_kernel_[contracts]_py\", \"label …"
+          },
+          {
+            "path": "plugos-ecospace/graphify-out/cache/ast/c5e61015c5e3c362bc5ce3cadedec6e5507066ad6223d093b04d2bf9c940c163.json",
+            "title": "c5e61015c5e3c362bc5ce3cadedec6e5507066ad6223d093b04d2bf9c940c163.json",
+            "snippet": "{\"nodes\": [{\"id\": \"c_users_mil_desktop_plugos_cowork_setup_plugos_ecospace_build_state_worker_tasks_x1_[contracts]_task …"
+          }
+        ],
+        "flows": [],
+        "total": 35,
+        "timingMs": 6489.5
+      }
+    },
+    {
+      "id": "plugengine-14",
+      "type": "docs_notes",
+      "question": "Which document maintains the technical debt register for the engine?",
+      "query_param": "TECH_DEBT_REGISTER.md",
+      "expected": {
+        "path": "docs/TECH_DEBT_REGISTER.md",
+        "symbol": "TECH_DEBT_REGISTER.md",
+        "kind": "docs_notes",
+        "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15018.1,
+      "rawOutput": ""
+    },
+    {
+      "id": "plugengine-15",
+      "type": "docs_notes",
+      "question": "Which document contains the specification for the creator editor?",
+      "query_param": "CREATOR_EDITOR_SPEC.md",
+      "expected": {
+        "path": "docs/CREATOR_EDITOR_SPEC.md",
+        "symbol": "CREATOR_EDITOR_SPEC.md",
+        "kind": "docs_notes",
+        "details": "docs/CREATOR_EDITOR_SPEC.md specifies creator UI layout, modes, and viewport."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15013.3,
+      "rawOutput": ""
+    },
+    {
+      "id": "plugengine-16",
+      "type": "rename_impact",
+      "question": "What breaks if canUndo getter is renamed on CommandBus?",
+      "query_param": "canUndo",
+      "expected": {
+        "path": "packages/plugengine-core/src/command/bus.ts",
+        "symbol": "canUndo",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-core/src/command/bus.test.ts"
+        ],
+        "details": "packages/plugengine-core/src/command/bus.test.ts asserts canUndo getter."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 556.2,
+      "rawOutput": {
+        "target": {
+          "name": "canUndo",
+          "file": "00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/AiToEarn/project/aitoearn-web/src/components/common/MediaPreview/BrushEditor/BrushToolbar.tsx",
+          "id": 315241
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 0,
+        "nodes": {
+          "1": []
+        },
+        "risk": "low"
+      }
+    },
+    {
+      "id": "plugengine-17",
+      "type": "rename_impact",
+      "question": "What breaks if impactToEdit is renamed in @plugengine/combat?",
+      "query_param": "impactToEdit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "impactToEdit",
+        "kind": "rename_impact",
+        "expected_targets": [
+          "packages/plugengine-combat/src/blockDestruction.ts"
+        ],
+        "details": "impactToEdit converts projectile block hits into voxel edits."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 540,
+      "rawOutput": {
+        "target": {
+          "name": "impactToEdit",
+          "file": "packages/plugengine-combat/src/blockDestruction.ts",
+          "id": 555168
+        },
+        "direction": "both",
+        "maxDepth": 3,
+        "totalImpacted": 8,
+        "nodes": {
+          "1": [
+            {
+              "depth": 1,
+              "id": 555428,
+              "name": "advance",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.9
+            }
+          ],
+          "2": [
+            {
+              "depth": 2,
+              "id": 555425,
+              "name": "step",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 555467,
+              "name": "addScaledInto",
+              "kind": "function",
+              "file": "packages/plugengine-combat/src/vec.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            },
+            {
+              "depth": 2,
+              "id": 555434,
+              "name": "resolveEnemyHit",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.77
+            }
+          ],
+          "3": [
+            {
+              "depth": 3,
+              "id": 555445,
+              "name": "release",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 555454,
+              "name": "canHit",
+              "kind": "function",
+              "file": "packages/plugengine-combat/src/teams.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 555459,
+              "name": "distSq",
+              "kind": "function",
+              "file": "packages/plugengine-combat/src/vec.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            },
+            {
+              "depth": 3,
+              "id": 555436,
+              "name": "retarget",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "repoId": null,
+              "checkoutId": null,
+              "relationType": "calls",
+              "confidence": 0.65
+            }
+          ]
+        },
+        "risk": "medium"
+      }
+    },
+    {
+      "id": "plugengine-18",
+      "type": "definition",
+      "question": "Where is COMBAT_PACKAGE package name constant defined?",
+      "query_param": "COMBAT_PACKAGE",
+      "expected": {
+        "path": "packages/plugengine-combat/src/index.ts",
+        "symbol": "COMBAT_PACKAGE",
+        "kind": "symbol",
+        "details": "export const COMBAT_PACKAGE = '@plugengine/combat'."
+      },
+      "hit": false,
+      "rank": -1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 15013,
+      "rawOutput": ""
+    },
+    {
+      "id": "plugengine-19",
+      "type": "callers",
+      "question": "Where is canHit defined and exported for faction combat checks?",
+      "query_param": "canHit",
+      "expected": {
+        "path": "packages/plugengine-combat/src/teams.ts",
+        "symbol": "canHit",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
+      },
+      "hit": true,
+      "rank": 1,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 496,
+      "rawOutput": {
+        "status": "found",
+        "symbol": {
+          "id": 555454,
+          "name": "canHit",
+          "kind": "function",
+          "file": "packages/plugengine-combat/src/teams.ts",
+          "line": 51,
+          "endLine": 66,
+          "exported": true,
+          "container": null,
+          "repoId": null,
+          "checkoutId": null,
+          "isVendor": false
+        },
+        "incoming": {
+          "calls": [
+            {
+              "id": 555434,
+              "name": "resolveEnemyHit",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "line": 226,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": 555436,
+              "name": "retarget",
+              "kind": "method",
+              "file": "packages/plugengine-combat/src/projectiles.ts",
+              "line": 254,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 6,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 10,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 11,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 15,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 19,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 20,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 24,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 25,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 26,
+              "rawTarget": "canHit"
+            },
+            {
+              "id": null,
+              "name": "teams.test.ts",
+              "kind": "file",
+              "file": "packages/plugengine-combat/src/teams.test.ts",
+              "line": 30,
+              "rawTarget": "canHit"
+            }
+          ],
+          "references": []
+        },
+        "outgoing": {
+          "calls": [],
+          "references": []
+        },
+        "processes": [
+          {
+            "id": "flow-1",
+            "label": "resolveEnemyHit -> canHit",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "resolveEnemyHit",
+                "file": "packages/plugengine-combat/src/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "canHit",
+                "file": "packages/plugengine-combat/src/teams.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "retarget -> canHit",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "retarget",
+                "file": "packages/plugengine-combat/src/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "canHit",
+                "file": "packages/plugengine-combat/src/teams.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "teams.test.ts -> canHit",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "teams.test.ts",
+                "file": "packages/plugengine-combat/src/teams.test.ts",
+                "kind": "file"
+              },
+              {
+                "step": 2,
+                "symbolName": "canHit",
+                "file": "packages/plugengine-combat/src/teams.ts",
+                "kind": "function"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plugengine-20",
+      "type": "definition",
+      "question": "Where is ProjectilePool implemented for ballistics physics?",
+      "query_param": "ProjectilePool",
+      "expected": {
+        "path": "packages/plugengine-combat/src/projectiles.ts",
+        "symbol": "ProjectilePool",
+        "kind": "symbol",
+        "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
+      },
+      "hit": true,
+      "rank": 2,
+      "recall": 0,
+      "precision": 0,
+      "latencyMs": 2472.2,
+      "rawOutput": {
+        "query": "ProjectilePool",
+        "symbols": [
+          {
+            "id": 542310,
+            "name": "ProjectilePool",
+            "kind": "class",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 45,
+            "endLine": 151,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555416,
+            "name": "ProjectilePool",
+            "kind": "class",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 120,
+            "endLine": 301,
+            "exported": true,
+            "container": null,
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542336,
+            "name": "kill",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 133,
+            "endLine": 137,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555425,
+            "name": "step",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 163,
+            "endLine": 177,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542316,
+            "name": "spawn",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 55,
+            "endLine": 61,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542338,
+            "name": "clear",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 140,
+            "endLine": 143,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555421,
+            "name": "spawn",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 140,
+            "endLine": 160,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555427,
+            "name": "clear",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 180,
+            "endLine": 184,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542319,
+            "name": "update",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 64,
+            "endLine": 110,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542339,
+            "name": "dispose",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 146,
+            "endLine": 150,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555428,
+            "name": "advance",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 190,
+            "endLine": 212,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555442,
+            "name": "acquire",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 274,
+            "endLine": 291,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555445,
+            "name": "release",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 294,
+            "endLine": 300,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542330,
+            "name": "retarget",
+            "kind": "method",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 113,
+            "endLine": 130,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555436,
+            "name": "retarget",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 247,
+            "endLine": 271,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555434,
+            "name": "resolveEnemyHit",
+            "kind": "method",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 219,
+            "endLine": 241,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555420,
+            "name": "n",
+            "kind": "variable",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 129,
+            "endLine": 129,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542312,
+            "name": "geo",
+            "kind": "property",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 47,
+            "endLine": 47,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542313,
+            "name": "mat",
+            "kind": "property",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 48,
+            "endLine": 48,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542314,
+            "name": "tmp",
+            "kind": "property",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 49,
+            "endLine": 49,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542315,
+            "name": "step",
+            "kind": "property",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 50,
+            "endLine": 50,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555418,
+            "name": "free",
+            "kind": "property",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 122,
+            "endLine": 122,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555419,
+            "name": "_dir",
+            "kind": "property",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 125,
+            "endLine": 125,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 542311,
+            "name": "projs",
+            "kind": "property",
+            "file": "reference/build-battle/src/plugmil/projectiles.ts",
+            "line": 46,
+            "endLine": 46,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          },
+          {
+            "id": 555417,
+            "name": "slots",
+            "kind": "property",
+            "file": "packages/plugengine-combat/src/projectiles.ts",
+            "line": 121,
+            "endLine": 121,
+            "exported": false,
+            "container": "ProjectilePool",
+            "repoId": null,
+            "checkoutId": null,
+            "isVendor": false
+          }
+        ],
+        "notes": [],
+        "flows": [
+          {
+            "id": "flow-1",
+            "label": "ProjectilePool -> v3",
+            "processType": "intra_community",
+            "stepCount": 2,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "ProjectilePool",
+                "file": "packages/plugengine-combat/src/projectiles.ts",
+                "kind": "class"
+              },
+              {
+                "step": 2,
+                "symbolName": "v3",
+                "file": "packages/plugengine-combat/src/vec.ts",
+                "kind": "function"
+              }
+            ]
+          },
+          {
+            "id": "flow-2",
+            "label": "update -> kill -> splice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "update",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "kill",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 3,
+                "symbolName": "splice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-3",
+            "label": "update -> kill -> remove",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "update",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "kill",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 3,
+                "symbolName": "remove",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          },
+          {
+            "id": "flow-4",
+            "label": "update -> kill -> splice",
+            "processType": "intra_community",
+            "stepCount": 3,
+            "steps": [
+              {
+                "step": 1,
+                "symbolName": "update",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 2,
+                "symbolName": "kill",
+                "file": "reference/build-battle/src/plugmil/projectiles.ts",
+                "kind": "method"
+              },
+              {
+                "step": 3,
+                "symbolName": "splice",
+                "file": "",
+                "kind": "call"
+              }
+            ]
+          }
+        ],
+        "total": 29,
+        "timingMs": 1977.6
+      }
+    }
+  ]
+}
