@@ -82,7 +82,16 @@ function resolveUiRoot(): string {
 }
 const DB_FILE = join(HOME, 'plugbrain.db')
 
-const db = openStore(DB_FILE)
+/**
+ * `init --dry-run` plans only: it opens the real store read-only when one
+ * exists (so "already known" stays honest) and an in-memory store when none
+ * does, so a dry run creates no database file at all.
+ */
+const DRY_RUN_INIT = process.argv[2] === 'init' && process.argv.includes('--dry-run')
+
+const db = DRY_RUN_INIT
+  ? (existsSync(DB_FILE) ? openStore(DB_FILE, { readOnly: true }) : openStore(':memory:'))
+  : openStore(DB_FILE)
 
 function register(path: string, name?: string): void {
   const root = resolve(path)
@@ -869,6 +878,8 @@ function printClientResults(results: ClientSetupResult[], home: string = homedir
     if (r.action === 'dry-run') console.log(renderEntryDiff(r.before, r.after))
     if (r.backupPath) console.log(`      backup: ${r.backupPath}`)
     if (r.restoredFrom) console.log(`      from:   ${r.restoredFrom}`)
+    if (r.counterBackupPath) console.log(`      kept:   ${r.counterBackupPath}`)
+    if (r.note) console.log(`      note:  ${r.note}`)
   }
   if (detected.length === 0) {
     console.log(`  no supported client found under ${home}`)
