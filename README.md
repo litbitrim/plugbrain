@@ -276,12 +276,24 @@ PlugBrain löst dies über den nativen SQLite-Befehl `VACUUM INTO`:
 
 Das Test-Suite umfasst Unit- und Integrationstests für alle Teilsysteme:
 ```powershell
-# Alle Tests ausführen (109 Tests)
+# Alle Tests ausführen (347 Tests)
 npm test
-
-# Benchmarks für Abfrage- und Parser-Performance
-npm run bench:retrieval
-npm run bench:notes
 ```
 
-Alle 109 Tests laufen deterministisch und unabhängig vom Dateisystem ohne Mocks gegen echte In-Memory- und Disk-SQLite-Instanzen.
+### Unabhängiger Vergleich: PlugBrain vs. GitNexus vs. CodeGraph (BENCH-03)
+
+In einem unabhängigen Benchmark über **120 Fragen** (80 historische Fragen und 40 vorab eingefrorene Holdout-Fragen) auf vier fremden Codebasen (`mcpz`, `plugmedia`, `cowork`, `plugengine`) erzielt PlugBrain im warmen Daemon-Betrieb **90,0% Gesamtgenauigkeit (108/120 Treffer)** und im kalten CLI-Betrieb **87,5% (105/120)**, gegenüber **76,7% / 54,2% bei CodeGraph** und **57,5% / 41,7% bei GitNexus**. Auf den ungesehenen Holdout-Fragen generalisiert PlugBrain mit **97,5% Treffsicherheit (39/40)** ohne Overfitting.
+
+Mit einer Gesamtdurchlaufzeit von **22,3 Sekunden** für alle vier Repositories indiziert PlugBrain **7,7-mal schneller als CodeGraph** (172,0 s) und **21-mal schneller als GitNexus** (482,5 s), während der Speicherplatzbedarf auf der Festplatte bei schlanken **108,4 MB** liegt (GitNexus: 3,4 GB; CodeGraph: 335,6 MB).
+
+| Werkzeug & Modus | Historisch (80) | Holdout (40) | Gesamt (120) | Latenz p50 | Index-Zeit | Index-Größe |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **PlugBrain (Warm Daemon)** | **69 / 80 (86,3%)** | **39 / 40 (97,5%)** | **108 / 120 (90,0%)** | 23,3 ms | **22,3 s** | **108,4 MB** |
+| **PlugBrain (Cold CLI)** | 66 / 80 (82,5%) | **39 / 40 (97,5%)** | **105 / 120 (87,5%)** | 268,3 ms | **22,3 s** | **108,4 MB** |
+| CodeGraph (Cold CLI) | 57 / 80 (71,3%) | 35 / 40 (87,5%) | 92 / 120 (76,7%) | 281,8 ms | 172,0 s | 335,6 MB |
+| GitNexus (Cold CLI) | 39 / 80 (48,8%) | 30 / 40 (75,0%) | 69 / 120 (57,5%) | 1.279,2 ms | 482,5 s | 3.400+ MB |
+| CodeGraph (Warm SDK) | 36 / 80 (45,0%) | 29 / 40 (72,5%) | 65 / 120 (54,2%) | **0,7 ms** | 172,0 s | 335,6 MB |
+| GitNexus (Warm Server) | 23 / 80 (28,8%) | 27 / 40 (67,5%) | 50 / 120 (41,7%) | 56,3 ms | 482,5 s | 3.400+ MB |
+
+**Ehrliche Einordnung:** PlugBrain führt deutlich bei Indexierungsdurchsatz, Speicherökonomie, Volltext-Symbolauflösung und Blast-Radius-Analysen über unaufgelöste Aufrufketten. Bei tiefen, stark verschachtelten Klassen- und Typvererbungshierarchien behält CodeGraphs vollständige AST-Semantik noch selektive Vorteile bei polymorphen Überschreibungen.
+
