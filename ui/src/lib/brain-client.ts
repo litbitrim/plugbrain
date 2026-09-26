@@ -3,7 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData } from '../types'
 
 export interface GalaxyPlanet {
   id: string
@@ -707,4 +707,36 @@ export async function fetchHygiene(workspaceId: string): Promise<HygieneData | {
     return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
   }
 }
+
+export async function fetchMachine(): Promise<MachineData | { unavailable: true; error?: string }> {
+  try {
+    const res = await fetch('/api/machine', { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { unavailable: true }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return { unavailable: true, error: err?.error ?? `HTTP ${res.status}` }
+    }
+    const data = await res.json()
+    return data as MachineData
+  } catch (cause) {
+    return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function fetchRepos(dirtyOnly = false): Promise<ReposData | { unavailable: true; error?: string }> {
+  try {
+    const query = dirtyOnly ? '?dirty=1&page=1' : '?page=1'
+    const res = await fetch(`/api/repos${query}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { unavailable: true }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return { unavailable: true, error: err?.error ?? `HTTP ${res.status}` }
+    }
+    const data = await res.json()
+    return data as ReposData
+  } catch (cause) {
+    return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
 

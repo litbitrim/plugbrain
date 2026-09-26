@@ -195,3 +195,58 @@ export type HygieneData = {
   unavailable?: string[]
 }
 
+export type MachineDrive = {
+  mount: string
+  freeGb: number
+  totalGb: number
+  level: 'ok' | 'attention' | 'risk'
+}
+
+export type MachineForecast = {
+  mount: string
+  fullInHours: number
+  trendGbPerHour: number
+  basis: string
+}
+
+export type MachineData = {
+  checkedAt: string
+  drives: MachineDrive[]
+  pagefile?: { sizeGb: number }
+  memory?: { freeGb: number; totalGb: number }
+  cpu?: { load: number }
+  forecast?: MachineForecast[]
+  findings?: Array<{ level: 'ok' | 'attention' | 'risk'; text: string; fix?: string }>
+  unavailable?: string[]
+}
+
+export type RepoInventory = {
+  path: string
+  registered: boolean
+  branch: string
+  dirtyFiles: number
+  untrackedFiles: number
+  unpushed: Array<{ branch: string; ahead: number; upstream: string | null }>
+  worktrees: number
+  orphanWorktrees: number
+  stashes: number
+  lastCommitDays: number
+  gitSizeMb: number
+  workTreeSizeMb: number
+}
+
+export type ReposData = {
+  scannedAt: string
+  roots: string[]
+  complete: boolean
+  repos: RepoInventory[]
+  totals: {
+    repos: number
+    dirty: number
+    unpushedBranches: number
+    orphanWorktrees: number
+  }
+  unavailable?: string[]
+}
+
+

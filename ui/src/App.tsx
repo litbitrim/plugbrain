@@ -18,6 +18,7 @@ import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
 import BriefingView from './views/BriefingView'
+import HygieneView from './views/HygieneView'
 import AskModal from './components/AskModal'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
@@ -31,6 +32,7 @@ const MAIN_VIEWS: { id: ViewId; label: string; testName?: string; hint: string }
   { id: 'atlas', label: 'Graph', testName: 'Atlas', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
   { id: 'search', label: 'Suche', hint: 'Code und Notizen durchsuchen' },
   { id: 'explorer', label: 'Dateien', testName: 'Explorer', hint: 'Quelldateien mit echtem Inhalt und Zeilennummern' },
+  { id: 'hygiene', label: 'Aufräumen', testName: 'Hygiene', hint: 'Checkouts, ungepushte Branches und ungesicherte Arbeit auf einen Blick' },
 ]
 
 const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
@@ -924,6 +926,13 @@ export default function App() {
                 <MeshView mesh={mesh} workspaceId={workspaceId} onSelectFile={handleOpenSource} focusAgentId={meshFocusAgent} />
                 {sourceOverlay}
               </div>
+            </div>
+          )}
+
+          {view === 'hygiene' && (
+            <div className="pb-view">
+              <HygieneView workspaceId={workspaceId} />
+              {sourceOverlay}
             </div>
           )}
 
