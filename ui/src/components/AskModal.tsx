@@ -23,7 +23,8 @@ export default function AskModal({
   const [query, setQuery] = useState(initialQuestion)
   const [busy, setBusy] = useState(false)
   const [response, setResponse] = useState<AskResponse | null>(null)
-  const [unavailable, setUnavailable] = useState(false)
+  const [routeMissing, setRouteMissing] = useState(false)
+  const [unreachable, setUnreachable] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -31,7 +32,8 @@ export default function AskModal({
     if (isOpen) {
       setQuery(initialQuestion)
       setResponse(null)
-      setUnavailable(false)
+      setRouteMissing(false)
+      setUnreachable(false)
       setError(null)
       setTimeout(() => inputRef.current?.focus(), 50)
     }
@@ -45,12 +47,19 @@ export default function AskModal({
 
     setBusy(true)
     setError(null)
-    setUnavailable(false)
+    setRouteMissing(false)
+    setUnreachable(false)
 
     try {
       const res = await askQuestion(workspaceId, q)
-      if ('routeMissing' in res && res.routeMissing) {
-        setUnavailable(true)
+      if ('routeMissing' in res) {
+        setRouteMissing(true)
+        setResponse(null)
+      } else if ('unreachable' in res) {
+        setUnreachable(true)
+        setResponse(null)
+      } else if ('serverError' in res) {
+        setError(`Fehler ${res.status}: ${res.error}`)
         setResponse(null)
       } else {
         setResponse(res as AskResponse)
@@ -133,7 +142,7 @@ export default function AskModal({
             </div>
           )}
 
-          {unavailable && !busy && (
+          {routeMissing && !busy && (
             <div className="ask-modal__state ask-modal__state--unavailable" role="status">
               <div className="ask-modal__state-icon">
                 <Icon path={ICON.info} />
@@ -149,9 +158,16 @@ export default function AskModal({
                   onClick={handleFallbackSearch}
                   style={{ marginTop: '12px' }}
                 >
-                  <Icon path={ICON.search} /> Suche nach „{query}“ öffnen
+                  <Icon path={ICON.search} /> Suche nach „{query}" öffnen
                 </button>
               )}
+            </div>
+          )}
+
+          {unreachable && !busy && (
+            <div className="ask-modal__state ask-modal__state--error" role="alert">
+              <h4>Brain nicht erreichbar</h4>
+              <p>Keine Verbindung zum Brain-Server — läuft <code>plugbrain serve</code>?</p>
             </div>
           )}
 
@@ -162,7 +178,7 @@ export default function AskModal({
             </div>
           )}
 
-          {!busy && !unavailable && !error && !response && (
+          {!busy && !routeMissing && !unreachable && !error && !response && (
             <div className="ask-modal__empty">
               <p className="ask-modal__hint">Typische Fragen an den Brain:</p>
               <div className="ask-modal__suggestions">

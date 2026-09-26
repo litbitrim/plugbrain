@@ -108,3 +108,87 @@ describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
     }
   })
 })
+
+describe('API error classes: unreachable vs server errors (UX-04)', () => {
+  const originalFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  it('HTTP 500 returns { serverError: true, status, error } and NOT routeMissing', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Internal Server Error' }),
+    } as unknown as Response)
+
+    const briefingRes = await fetchBriefing('ws-test')
+    expect('routeMissing' in briefingRes).toBe(false)
+    expect('unreachable' in briefingRes).toBe(false)
+    expect('serverError' in briefingRes).toBe(true)
+    if ('serverError' in briefingRes) {
+      expect(briefingRes.status).toBe(500)
+      expect(briefingRes.error).toBe('Internal Server Error')
+    }
+
+    for (const res of [
+      await askQuestion('ws-test', 'Where is main?'),
+      await fetchHygiene('ws-test'),
+      await fetchMachine(),
+      await fetchRepos(),
+    ]) {
+      expect('routeMissing' in res).toBe(false)
+      expect('unreachable' in res).toBe(false)
+      expect('serverError' in res).toBe(true)
+    }
+  })
+
+  it('network failure (fetch throws) returns { unreachable: true, error } and NOT routeMissing', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('fetch failed: ECONNREFUSED'))
+
+    const briefingRes = await fetchBriefing('ws-test')
+    expect('routeMissing' in briefingRes).toBe(false)
+    expect('serverError' in briefingRes).toBe(false)
+    expect('unreachable' in briefingRes).toBe(true)
+    if ('unreachable' in briefingRes) {
+      expect(briefingRes.unreachable).toBe(true)
+      expect(briefingRes.error).toBe('fetch failed: ECONNREFUSED')
+    }
+
+    for (const res of [
+      await askQuestion('ws-test', 'Where is main?'),
+      await fetchHygiene('ws-test'),
+      await fetchMachine(),
+      await fetchRepos(),
+    ]) {
+      expect('routeMissing' in res).toBe(false)
+      expect('serverError' in res).toBe(false)
+      expect('unreachable' in res).toBe(true)
+    }
+  })
+
+  it('404 and 501 results never carry unreachable or serverError', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not Found' }),
+    } as unknown as Response)
+
+    const res404 = await fetchBriefing('ws-test')
+    expect('routeMissing' in res404).toBe(true)
+    expect('unreachable' in res404).toBe(false)
+    expect('serverError' in res404).toBe(false)
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 501,
+      json: async () => ({ error: 'Not Implemented' }),
+    } as unknown as Response)
+
+    const res501 = await fetchBriefing('ws-test')
+    expect('routeMissing' in res501).toBe(true)
+    expect('unreachable' in res501).toBe(false)
+    expect('serverError' in res501).toBe(false)
+  })
+})

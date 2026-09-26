@@ -20,26 +20,27 @@ export default function BriefingView({
 }: BriefingViewProps) {
   const [data, setData] = useState<BriefingData | null>(initialData ?? null)
   const [loading, setLoading] = useState(!initialData)
-  const [unavailable, setUnavailable] = useState(false)
+  const [routeMissing, setRouteMissing] = useState(false)
+  const [unreachable, setUnreachable] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (initialData) {
-      setData(initialData)
-      setLoading(false)
-      setUnavailable(false)
-      return
-    }
-
-    let active = true
+  const load = () => {
+    if (initialData) return
     setLoading(true)
+    setRouteMissing(false)
+    setUnreachable(false)
     setError(null)
 
+    let active = true
     fetchBriefing(workspaceId).then(res => {
       if (!active) return
       setLoading(false)
-      if ('routeMissing' in res && res.routeMissing) {
-        setUnavailable(true)
+      if ('routeMissing' in res) {
+        setRouteMissing(true)
+      } else if ('unreachable' in res) {
+        setUnreachable(true)
+      } else if ('serverError' in res) {
+        setError(`Fehler ${res.status}: ${res.error}`)
       } else {
         setData(res as BriefingData)
       }
@@ -48,8 +49,20 @@ export default function BriefingView({
       setLoading(false)
       setError(err instanceof Error ? err.message : String(err))
     })
-
     return () => { active = false }
+  }
+
+  useEffect(() => {
+    if (initialData) {
+      setData(initialData)
+      setLoading(false)
+      setRouteMissing(false)
+      setUnreachable(false)
+      return
+    }
+    const cleanup = load()
+    return cleanup
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, initialData])
 
   return (
@@ -66,7 +79,7 @@ export default function BriefingView({
           </div>
         )}
 
-        {unavailable && !loading && (
+        {routeMissing && !loading && (
           <div className="briefing-card briefing-card--unavailable" role="status">
             <div className="briefing-unavailable-icon">
               <Icon path={ICON.info} />
@@ -80,10 +93,19 @@ export default function BriefingView({
           </div>
         )}
 
+        {unreachable && !loading && (
+          <div className="briefing-card briefing-card--error" role="alert">
+            <h3>Brain nicht erreichbar</h3>
+            <p>Keine Verbindung zum Brain-Server — läuft <code>plugbrain serve</code>?</p>
+            <button type="button" className="btn btn-secondary" onClick={load}>Erneut versuchen</button>
+          </div>
+        )}
+
         {error && !loading && (
           <div className="briefing-card briefing-card--error" role="alert">
             <h3>Fehler beim Laden des Briefings</h3>
             <p>{error}</p>
+            <button type="button" className="btn btn-secondary" onClick={load}>Erneut versuchen</button>
           </div>
         )}
 

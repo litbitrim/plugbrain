@@ -7,7 +7,7 @@ interface HygieneViewProps {
 }
 
 type HygieneTab = 'workspace' | 'machine' | 'repos'
-type LoadState = 'loading' | 'unavailable' | 'error' | 'ready'
+type LoadState = 'loading' | 'unavailable' | 'unreachable' | 'error' | 'ready'
 
 function levelClass(level: 'ok' | 'attention' | 'risk'): string {
   if (level === 'risk') return 'hygiene-risk'
@@ -178,8 +178,14 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
     }
     setHygieneState('loading')
     fetchHygiene(workspaceId).then(result => {
-      if ('routeMissing' in result && result.routeMissing) {
+      if ('routeMissing' in result) {
         setHygieneState('unavailable')
+      } else if ('unreachable' in result) {
+        setHygieneError('Brain nicht erreichbar — läuft plugbrain serve?')
+        setHygieneState('unreachable')
+      } else if ('serverError' in result) {
+        setHygieneError(`Fehler ${result.status}: ${result.error}`)
+        setHygieneState('error')
       } else {
         setHygieneData(result as HygieneData)
         setHygieneState('ready')
@@ -193,28 +199,36 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
   const loadMachine = useCallback(() => {
     setMachineState('loading')
     fetchMachine().then(result => {
-      if ('routeMissing' in result && result.routeMissing) {
+      if ('routeMissing' in result) {
         setMachineState('unavailable')
+      } else if ('unreachable' in result) {
+        setMachineState('unreachable')
+      } else if ('serverError' in result) {
+        setMachineState('error')
       } else {
         setMachineData(result as MachineData)
         setMachineState('ready')
       }
     }).catch(() => {
-      setMachineState('unavailable')
+      setMachineState('unreachable')
     })
   }, [])
 
   const loadRepos = useCallback(() => {
     setReposState('loading')
     fetchRepos().then(result => {
-      if ('routeMissing' in result && result.routeMissing) {
+      if ('routeMissing' in result) {
         setReposState('unavailable')
+      } else if ('unreachable' in result) {
+        setReposState('unreachable')
+      } else if ('serverError' in result) {
+        setReposState('error')
       } else {
         setReposData(result as ReposData)
         setReposState('ready')
       }
     }).catch(() => {
-      setReposState('unavailable')
+      setReposState('unreachable')
     })
   }, [])
 
@@ -335,12 +349,20 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
               <p className="hygiene-status-title">Hygiene-Daten nicht verfügbar</p>
               <p className="hygiene-status-text">
                 {workspaceId
-                  ? 'Der Brain-Server liefert keine Hygiene-Daten — ist die Route /api/hygiene implementiert?'
+                  ? 'Die Route /api/hygiene ist auf diesem Kern noch nicht aktiv (Lane HYG-01).'
                   : 'Kein Workspace ausgewählt. Öffne zunächst einen Vault.'}
               </p>
               {workspaceId && (
                 <button type="button" className="btn btn-secondary" onClick={loadHygiene}>Erneut versuchen</button>
               )}
+            </div>
+          )}
+
+          {hygieneState === 'unreachable' && (
+            <div className="hygiene-status-box hygiene-error">
+              <p className="hygiene-status-title">Brain nicht erreichbar</p>
+              <p className="hygiene-status-text">Keine Verbindung zum Brain-Server — läuft <code>plugbrain serve</code>?</p>
+              <button type="button" className="btn btn-secondary" onClick={loadHygiene}>Erneut versuchen</button>
             </div>
           )}
 
@@ -415,6 +437,22 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
               <p className="hygiene-status-text">
                 Die Schnittstelle <code>/api/machine</code> ist in dieser Version des Kerns noch nicht aktiv (Lane HYG-02).
               </p>
+            </div>
+          )}
+
+          {machineState === 'unreachable' && (
+            <div className="hygiene-status-box hygiene-error">
+              <p className="hygiene-status-title">Brain nicht erreichbar</p>
+              <p className="hygiene-status-text">Keine Verbindung zum Brain-Server — läuft <code>plugbrain serve</code>?</p>
+              <button type="button" className="btn btn-secondary" onClick={loadMachine}>Erneut versuchen</button>
+            </div>
+          )}
+
+          {machineState === 'error' && (
+            <div className="hygiene-status-box hygiene-error">
+              <p className="hygiene-status-title">Fehler beim Laden</p>
+              <p className="hygiene-status-text">System-Daten konnten nicht geladen werden.</p>
+              <button type="button" className="btn btn-secondary" onClick={loadMachine}>Erneut versuchen</button>
             </div>
           )}
 
@@ -499,6 +537,22 @@ export default function HygieneView({ workspaceId }: HygieneViewProps) {
               <p className="hygiene-status-text">
                 Die Schnittstelle <code>/api/repos</code> ist in dieser Version des Kerns noch nicht aktiv (Lane HYG-02).
               </p>
+            </div>
+          )}
+
+          {reposState === 'unreachable' && (
+            <div className="hygiene-status-box hygiene-error">
+              <p className="hygiene-status-title">Brain nicht erreichbar</p>
+              <p className="hygiene-status-text">Keine Verbindung zum Brain-Server — läuft <code>plugbrain serve</code>?</p>
+              <button type="button" className="btn btn-secondary" onClick={loadRepos}>Erneut versuchen</button>
+            </div>
+          )}
+
+          {reposState === 'error' && (
+            <div className="hygiene-status-box hygiene-error">
+              <p className="hygiene-status-title">Fehler beim Laden</p>
+              <p className="hygiene-status-text">Globale Git-Inventur konnte nicht geladen werden.</p>
+              <button type="button" className="btn btn-secondary" onClick={loadRepos}>Erneut versuchen</button>
             </div>
           )}
 

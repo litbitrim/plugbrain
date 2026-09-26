@@ -249,7 +249,23 @@ export type ReposData = {
   unavailable?: string[]
 }
 
+/** Route not mounted: HTTP 404 or 501 only. */
 export type RouteMissing = {
   routeMissing: true
-  error?: string
 }
+
+/** Network-level failure (fetch threw — server unreachable, DNS, timeout). */
+export type ApiNetworkError = {
+  unreachable: true
+  error: string
+}
+
+/** Server replied with a non-OK status that is not 404/501 (e.g. 500, 503). */
+export type ApiServerError = {
+  serverError: true
+  status: number
+  error: string
+}
+
+/** Union of all client-side error results from the five API wrappers. */
+export type ApiError = RouteMissing | ApiNetworkError | ApiServerError
