@@ -4,8 +4,8 @@
  */
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -117,5 +117,27 @@ test('workers claim the paths they write, and a second writer is refused until r
     assert.deepEqual(board.agents.find(agent => agent.id === 'o2-lanes')?.leases.map(lease => lease.paths).flat(), ['packages/plug/swarm/src/client-lane-executor.ts'])
     assert.match(b.run('swarm', 'release', 'o2-lanes', '--task', 'dog-run-2', '--workspace', b.ws).out, /freigegeben: 1/)
     assert.equal(b.run('swarm', 'claim', 'o4-mission', 'packages/plug/swarm/src/client-lane-executor.ts', '--workspace', b.ws).code, 0)
+  } finally { b.cleanup() }
+})
+
+test('swarm reap defaults to a read-only plan and persists the automatic setting', () => {
+  const b = brain()
+  try {
+    const repo = join(b.home, 'reap-repo')
+    mkdirSync(repo)
+    execFileSync('git', ['init', '-b', 'main', repo])
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'cli-reaper@test.invalid'])
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'CLI Reaper Test'])
+    writeFileSync(join(repo, 'base.txt'), 'base\n')
+    execFileSync('git', ['-C', repo, 'add', '.'])
+    execFileSync('git', ['-C', repo, 'commit', '-m', 'base'])
+    const preview = b.run('swarm', 'reap', '--repo', repo, '--workspace', b.ws, '--json')
+    assert.equal(preview.code, 0, preview.err)
+    const result = JSON.parse(preview.out) as { dryRun: boolean; removed: unknown[]; candidates: Array<{ reason: string }> }
+    assert.equal(result.dryRun, true)
+    assert.equal(result.removed.length, 0)
+    assert.match(result.candidates[0]?.reason ?? '', /primary checkout/)
+    assert.match(b.run('swarm', 'reap', '--auto', 'on', '--workspace', b.ws).out, /reap.auto on/)
+    assert.match(b.run('swarm', 'reap', '--auto', 'off', '--workspace', b.ws).out, /reap.auto off/)
   } finally { b.cleanup() }
 })

@@ -525,6 +525,17 @@ plugbrain swarm <subcommand> [args] [--workspace <id>]
 
 Without `--workspace` the single registered workspace is used.
 
+**Subcommands:**
+- `swarm register <agentId> [name]`: Register a new agent worker.
+- `swarm turn <agentId> <start|end>`: Check in at a turn boundary.
+- `swarm claim <agentId> <path> --task <taskId>`: Acquire mutual exclusion lease on a path.
+- `swarm release <agentId> <leaseId>`: Release held lease.
+- `swarm board`: View active fleet status, unread messages, and worktrees.
+- `swarm reap [--repo <path>] [--target <branch>] [--apply]`: Preview or safely remove merged, clean linked worktrees; defaults to a read-only dry run.
+- `swarm reap --auto on|off`: Enable or disable automatic cleanup for this workspace.
+- `swarm send <fromAgent> <toAgent> --body <text>`: Send peer message.
+- `swarm resources`: Display host CPU, RAM, disk quotas, and admission decisions.
+- `swarm admit <test|build|install>`: Check admission gate for hardware-intensive actions.
 **Agents**
 - `swarm register <agent> --surface <s> --account <label> [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
   register an agent. Surfaces: `claude-code`, `codex-app`, `freebuff`, `agy`, `native`, `other`.

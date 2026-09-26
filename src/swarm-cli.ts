@@ -14,6 +14,8 @@
  *   plugbrain swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]   write lease, shown on the board
  *   plugbrain swarm release <agent> [<path>...] [--task <id>]
  *   plugbrain swarm board [--git] [--json]
+ *   plugbrain swarm reap [--dry-run] [--repo <path>] [--target <branch>] [--apply]
+ *   plugbrain swarm reap --auto on|off
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
@@ -31,6 +33,7 @@ import { PLAN_REF, setPlanRef } from './plan.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
   recordTurn, releaseLease,
+  reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, sendMessage,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type SwarmBoard, type TurnEndState, type TurnPing, type WorkKind, type WorkerSurface,
@@ -72,6 +75,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 const VALUED = [
   '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
+  '--repo', '--target', '--auto',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -218,9 +222,42 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'board': {
+      const missing = synchronizeMissingWorktrees(db, workspaceId)
+      const reaper = reapWorktrees(db, workspaceId)
+      reaper.missing = missing
       const board = agentsBoard(db, workspaceId, { gitStatus: rest.includes('--git') })
-      if (asJson) console.log(JSON.stringify(board, null, 2))
-      else printBoard(board)
+      const summary = { eligible: reaper.candidates.filter(row => row.eligible).length,
+        retained: reaper.candidates.filter(row => !row.eligible).length,
+        reasons: reaper.candidates.filter(row => !row.eligible).map(row => ({ path: row.path, reason: row.reason })),
+        missing: reaper.missing }
+      if (asJson) console.log(JSON.stringify({ ...board, reaper: summary }, null, 2))
+      else { printBoard(board); console.log(`Reaper: ${summary.eligible} reapable, ${summary.retained} retained`)
+        for (const row of summary.reasons) console.log(`  retained ${row.path}: ${row.reason}`)
+        for (const row of reaper.missing) console.log(`  missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`) }
+      return 0
+    }
+    case 'reap': {
+      const auto = flag(rest, '--auto')
+      if (auto !== null) {
+        if (auto !== 'on' && auto !== 'off') throw new AccessDenied('usage: plugbrain swarm reap --auto on|off')
+        setReapAuto(db, workspaceId, auto === 'on')
+        console.log(`reap.auto ${auto}`)
+        return 0
+      }
+      const result = reapWorktrees(db, workspaceId, {
+        repo: flag(rest, '--repo') ?? undefined, target: flag(rest, '--target') ?? undefined,
+        apply: rest.includes('--apply'),
+      })
+      if (asJson) console.log(JSON.stringify(result, null, 2))
+      else {
+        for (const row of result.candidates) console.log(`${row.eligible ? 'reapable' : 'retained'} ${row.path}: ${row.reason}`)
+        for (const row of result.removed) console.log(`removed ${row.path}; restore with: ${row.restoreCommand}`)
+        for (const row of result.missing) console.log(`missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`)
+        if (result.pruneCommand) {
+          console.log(`prune dry run only: ${result.pruneCommand}`)
+          for (const line of result.pruneReport) console.log(`  ${line}`)
+        }
+      }
       return 0
     }
     case 'send': {
@@ -300,6 +337,6 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return admission.allowed ? 0 : 5
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|send|enqueue|approve|resources|quota|admit> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|send|enqueue|approve|resources|quota|admit> …')
   }
 }
