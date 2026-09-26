@@ -1,12 +1,19 @@
 # PlugBrain MCP Tools Reference
 
-PlugBrain exposes 27 tools over the Model Context Protocol (MCP) JSON-RPC 2.0 stdio transport (`plugbrain mcp`).
+PlugBrain exposes 28 tools over the Model Context Protocol (MCP) JSON-RPC 2.0 stdio transport (`plugbrain mcp`).
 
 When invoked via `plugbrain mcp` without `--workspace`, the server automatically resolves the workspace from the current working directory. Tool parameters accept an explicit `workspaceId` when multiple workspaces exist or to override the binding.
 
 All tool executions return JSON objects conforming to `{ ok: boolean, ... }`. On error, `{ ok: false, error: string }` is returned.
 
 ---
+
+## Worktree maintenance
+
+### `reap`
+Preview safe cleanup of merged, clean Git worktrees. Set `apply` to `true` to remove eligible linked worktrees without force; branches are kept and recovery commands are recorded. `auto` enables or disables the workspace setting.
+
+**Parameters:** `workspaceId` (optional), `repo` (optional), `target` (optional), `apply` (optional, defaults to false), `auto` (optional boolean).
 
 ## Code Intelligence and Search
 

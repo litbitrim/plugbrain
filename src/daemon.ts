@@ -26,6 +26,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { indexPlanetWorkspace } from './planet.ts'
 import { IndexRunBusy, IndexRunStartFailed, startIndexRun } from './index/runner.ts'
 import { isNeverIndexedDir } from './indexer/scan.ts'
+import { runAutoReap } from './coord/reaper.ts'
 import {
   appraiseRun, readPendingReindex, removePendingReindex, storeHome, writePendingReindex,
 } from './index/runs.ts'
@@ -38,6 +39,7 @@ const MIN_INTERVAL_MS = 20_000
 const SWEEP_MS = 5 * 60_000
 /** How often to look for workspaces registered while this daemon was running. */
 const DISCOVERY_MS = 15_000
+const REAP_INTERVAL_MS = 10 * 60_000
 /** When another run holds the lock, perform one deferred recheck. */
 const BUSY_RETRY_MS = 10_000
 /** Poll a retained dirty request without repeatedly probing SQLite's writer lock. */
@@ -423,6 +425,13 @@ export function startDaemon(db: DatabaseSync, options: DaemonOptions = {}): Daem
   refresh()
   const sweepTimer = options.timers === false ? null : setInterval(sweep, SWEEP_MS)
   const discoverTimer = options.timers === false ? null : setInterval(refresh, DISCOVERY_MS)
+  const reapTimer = options.timers === false ? null : setInterval(() => {
+    for (const ws of workspaces()) {
+      try { runAutoReap(db, ws.id) }
+      catch (error) { log(`[daemon] ${ws.name}: automatic worktree reap failed — ${error instanceof Error ? error.message : String(error)}`) }
+    }
+  }, REAP_INTERVAL_MS)
+  reapTimer?.unref?.()
   const handle: DaemonHandle = {
     refresh,
     watching: () => list()
@@ -432,6 +441,7 @@ export function startDaemon(db: DatabaseSync, options: DaemonOptions = {}): Daem
       stopped = true
       if (sweepTimer !== null) clearInterval(sweepTimer)
       if (discoverTimer !== null) clearInterval(discoverTimer)
+      if (reapTimer !== null) clearInterval(reapTimer)
       for (const timer of timers.values()) clearTimeout(timer)
       timers.clear()
       for (const timer of busyMonitors.values()) clearTimeout(timer)

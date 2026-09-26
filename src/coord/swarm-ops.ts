@@ -24,6 +24,7 @@ import { claimNextTask, ensureQueueSchema } from '../queue.ts'
 import { coordEvents } from './events.ts'
 import { ensureInboxSchema, sendMessage } from './inbox.ts'
 import { listActiveLeases } from './leases.ts'
+import { runAutoReap } from './reaper.ts'
 import { ensureCoordSchema, getAgentPresence } from './registry.ts'
 import type { InboxMessage, PresenceState } from './types.ts'
 import {
@@ -320,6 +321,7 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
   }
   coordEvents.emitLive('agent.turn', { agentId: input.agentId, phase: input.phase, state, at: now })
+  if (input.phase === 'end') runAutoReap(db, input.workspaceId)
   return ping
 }
 
@@ -346,6 +348,7 @@ export function approveCommit(
   const now = new Date().toISOString()
   db.prepare(`UPDATE agents SET turn_state = 'commit-approved', turn_state_at = ? WHERE id = ?`).run(now, input.agentId)
   coordEvents.emitLive('agent.commit.approved', { agentId: input.agentId, by: input.by, at: now })
+  runAutoReap(db, input.workspaceId)
   return message
 }
 
