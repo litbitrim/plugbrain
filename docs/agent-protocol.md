@@ -6,7 +6,9 @@ agent follows on every turn. Paste the block below into your project's
 (Claude Code), and give every agent its own id.
 
 Commands are the `plugbrain swarm` CLI, so any agent that can run a shell
-command can take part. See [cli.md](cli.md#swarm) for every option.
+command can take part. See [cli.md](cli.md#swarm) for every option, and
+[agents/](agents/README.md) for teaching a client to reach PlugBrain in the
+first place.
 
 ## Before the first turn
 
