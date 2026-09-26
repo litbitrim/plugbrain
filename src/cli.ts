@@ -27,7 +27,7 @@
  *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
  *   plugbrain notes backlinks <path>          who points at this note
  *
- *   plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap> …
+ *   plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …
  *                                             the fleet's check-in desk (see src/swarm-cli.ts)
  *
  *   plugbrain hygiene [--workspace <id>] [--json]   what git work sits on exactly one disk
@@ -1387,7 +1387,8 @@ switch (command) {
       '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot] [--repo <path>]\n' +
       '       plugbrain machine [--json]\n' +
       '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
-      '       plugbrain swarm <register|turn|ack|board|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool> …\n' +
+      '       plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …\n' +
+      '       plugbrain swarm runner set|show <agent> …  ·  plugbrain swarm run <agent> [--status|--stop]   start and watch a CLI worker\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
       '       plugbrain backup [target_path]\n' +
       '       plugbrain restore <backup_path>')

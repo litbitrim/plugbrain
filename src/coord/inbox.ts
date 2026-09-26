@@ -82,6 +82,17 @@ export interface SendMessageInput {
   body: string
 }
 
+/**
+ * A message needs both ends to exist, and the integrator is the recipient of
+ * every report a running fleet sends — including the first one. An unregistered
+ * integrator would turn a delivered report into "unknown agent" at the worst
+ * possible moment, so the row is created on demand.
+ */
+export function ensureIntegrator(db: DatabaseSync, workspaceId: string, id = 'integrator'): void {
+  registerAgent(db, id, id === 'integrator' ? 'Integrator' : id)
+  db.prepare('UPDATE agents SET workspace_id = COALESCE(workspace_id, ?) WHERE id = ?').run(workspaceId, id)
+}
+
 export function sendMessage(db: DatabaseSync, input: SendMessageInput): InboxMessage {
   ensureInboxSchema(db)
   requireWorkspace(db, input.workspaceId)

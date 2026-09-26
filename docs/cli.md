@@ -601,6 +601,42 @@ Without `--workspace` the single registered workspace is used.
 - `swarm admit <edit|test|index|build|install|worktree>`: exit 0 means there is
   room on this machine for that kind of work, exit 5 means there is not.
 
+**Starting a worker: `swarm run`**
+
+A CLI worker (a Codex tab, any other command-line agent) can be started and
+watched by the Brain itself, so a lane needs no handwork at its turn boundary.
+- `swarm runner set <agent> --cmd <exe> [--model <m>] [--effort <e>]
+  [--sandbox bypass|workspace-write|read-only|danger-full-access] [--search]
+  [--args "<template>"] [--cwd <dir>]`: store how this worker is started. No key
+  is stored — Codex brings its own login. `--cmd codex` builds the
+  `codex exec` command line (`-m`, `-c model_reasoning_effort=`, `--sandbox`,
+  `-c tools.web_search=`, `--json`, `-o`); any other program is built from
+  `--args`, whose `{prompt}`, `{promptFile}`, `{log}`, `{last}`, `{cwd}`,
+  `{model}`, `{effort}` and `{sandbox}` are filled in per run. A token that
+  resolves to nothing is dropped.
+- `swarm runner show <agent>`: the stored profile.
+- `swarm run <agent>`: start the process **detached** with an empty stdin and a
+  JSONL log at `<PLUGBRAIN_HOME>/runs/workers/<agent>-<stamp>.jsonl` (stderr
+  beside it, the last message at `…-last.md`, the rendered prompt at
+  `…-prompt.md`). The prompt comes from a template in the source and names the
+  protocol documents the registered workspace actually has — protocol, newest
+  lane rules and the Brain's own wrapper under `<workspace>/koordination` — so
+  nothing owner-specific is baked in. The run row is written before the process
+  starts, and the working directory defaults to the workspace root.
+- `swarm run <agent> --status`: pid, start time, log path, last log event and
+  the worker's turn state, plus the tail of the log.
+- `swarm run <agent> --stop`: stop the process (on Windows the whole process
+  tree of a `.cmd` shim) and set the worker's turn to `paused` — unless it had
+  already ended its turn, which is kept.
+- `swarm board` shows `runner: pid … running since …` and the last log event per
+  worker. Looking at the board is also what settles a run whose process is gone:
+  a worker that died **without ending its turn** is booked `blocked` with the
+  last log lines as its summary, and the integrator gets a message. A worker
+  that ended its turn first is left alone. Liveness is only ever
+  `process.kill(pid, 0)`; a quiet log never means dead.
+- Nothing is committed and no approval is bypassed: a started worker still claims
+  its paths, admits its tests and ends its turn with a state like any other.
+
 **Example: one task through one agent**
 ```bash
 plugbrain swarm enqueue "Fix the flaky login test" --body "Repro in issue #12" --to codex-1
@@ -610,8 +646,22 @@ plugbrain swarm admit test && npm test
 plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass" --deliver closeout/login.md
 plugbrain swarm release codex-1 --task <task-id>
 plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
+```
+
+**Watching coordination**
+```bash
 plugbrain swarm turn agent-1 start
 plugbrain swarm board
-plugbrain swarm watch --for agent-1 --dirs ./review --timeout 20m --json```
+plugbrain swarm watch --for agent-1 --dirs ./review --timeout 20m --json
+```
 
 `swarm watch` streams coordination events from the local Brain live-event endpoint, batches events for five seconds, and checks watched Markdown directories and resource admission every 30 seconds. It exits with `0` on an event, `3` on timeout, and `1` if the live-event stream fails. Set `PLUGBRAIN_URL` when the local Brain is served on a non-default URL.
+
+**Example: let the Brain start the agent**
+```bash
+plugbrain swarm runner set cx01 --cmd codex --model gpt-6-luna --effort high --sandbox bypass
+plugbrain swarm run cx01
+plugbrain swarm run cx01 --status     # pid, last log event, turn state
+plugbrain swarm board                 # runner column, and settles dead runs
+plugbrain swarm run cx01 --stop       # stops it, turn becomes paused
+```
