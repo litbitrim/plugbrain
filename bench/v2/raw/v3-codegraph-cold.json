@@ -1,35 +1,39 @@
 {
   "benchmark": "codegraph-cold",
-  "timestamp": "2026-09-26T03:46:46.345Z",
-  "grandOldHits": 57,
+  "timestamp": "2026-09-26T04:01:08.555Z",
+  "grandOldHits": 38,
   "grandOldTotal": 80,
-  "grandOldAccuracy": 71.3,
-  "grandHoldoutHits": 35,
+  "grandOldAccuracy": 47.5,
+  "grandHoldoutHits": 32,
   "grandHoldoutTotal": 40,
-  "grandHoldoutAccuracy": 87.5,
-  "grandTotalHits": 92,
+  "grandHoldoutAccuracy": 80,
+  "grandTotalHits": 70,
   "grandTotal": 120,
-  "grandTotalAccuracy": 76.7,
-  "latencyP50": 281.8,
-  "latencyP95": 334,
+  "grandTotalAccuracy": 58.3,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 276,
+  "latencyP95": 320.5,
   "repos": [
     {
       "repo": "mcpz",
-      "oldHits": 15,
+      "oldHits": 10,
       "oldTotal": 20,
-      "oldAccuracy": 75,
-      "holdoutHits": 9,
+      "oldAccuracy": 50,
+      "holdoutHits": 8,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 90,
-      "totalHits": 24,
+      "holdoutAccuracy": 80,
+      "totalHits": 18,
       "totalCount": 30,
-      "totalAccuracy": 80,
-      "latencyOldP50": 288.7,
-      "latencyOldP95": 316.8,
-      "latencyHoldoutP50": 280.9,
-      "latencyHoldoutP95": 307.2,
-      "latencyAllP50": 285.8,
-      "latencyAllP95": 316.8,
+      "totalAccuracy": 60,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 279.9,
+      "latencyOldP95": 303.3,
+      "latencyHoldoutP50": 281.3,
+      "latencyHoldoutP95": 296.3,
+      "latencyAllP50": 281.3,
+      "latencyAllP95": 303.3,
       "questions": [
         {
           "id": "mcpz-01",
@@ -45,7 +49,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 2515.8
+          "latencyMs": 305.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"field:bdcec673ba4490b017e68ecf45e1dcd5\",\n      \"kind\": \"field\",\n      \"name\": \"MOD_ID\",\n      \"qualifiedName\": \"net.mcpz::McpzConstants::MOD_ID\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"language\": \"java\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColumn\": 31,\n      \"endColumn\": 46,\n      \"signature\": \"String MOD_ID\",\n      "
         },
         {
           "id": "mcpz-02",
@@ -61,7 +67,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 281.9
+          "latencyMs": 289.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"kind\": \"file\",\n      \"name\": \"CameraConfig.java\",\n      \"qualifiedName\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"language\": \"java\",\n      \"startLine\": 1,\n      \"endLine\": 60,\n      \"startColumn\": 0,\n      \"endColumn\": "
         },
         {
           "id": "mcpz-03",
@@ -80,7 +88,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 288.9
+          "latencyMs": 284.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"init\",\n  \"callers\": [\n    {\n      \"name\": \"onInitialize\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"startLine\": 39\n    },\n    {\n      \"name\": \"onInitializeClient\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 50\n    }\n  ]\n}\n"
         },
         {
           "id": "mcpz-04",
@@ -99,7 +109,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 307.4
+          "latencyMs": 290.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"registerKeybindings\",\n  \"callers\": [\n    {\n      \"name\": \"onInitializeClient\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 50\n    }\n  ]\n}\n"
         },
         {
           "id": "mcpz-05",
@@ -120,7 +132,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 306.1
+          "latencyMs": 284.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"FLOOR_HEIGHT_BLOCKS\",\n  \"depth\": 2,\n  \"nodeCount\": 33,\n  \"edgeCount\": 32,\n  \"affected\": [\n    {\n      \"name\": \"FLOOR_HEIGHT_BLOCKS\",\n      \"kind\": \"field\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"startLine\": 22\n    },\n    {\n      \"name\": \"McpzConstants\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"startLi"
         },
         {
           "id": "mcpz-06",
@@ -140,9 +154,11 @@
             "expected_count": 3,
             "details": "CameraConfig is passed from McpzClient into McpzRuntime and McpzCameraController."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 304.1
+          "latencyMs": 279.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"CameraConfig\",\n  \"depth\": 2,\n  \"nodeCount\": 18,\n  \"edgeCount\": 12,\n  \"affected\": [\n    {\n      \"name\": \"net.mcpz.camera.CameraConfig\",\n      \"kind\": \"import\",\n      \"filePath\": \"src/client/java/net/mcpz/client/camera/McpzCameraController.java\",\n      \"startLine\": 4\n    },\n    {\n      \"name\": \"net.mcpz.client.camera\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"src/client/java/net/"
         },
         {
           "id": "mcpz-07",
@@ -164,7 +180,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 282.7
+          "latencyMs": 269.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"kind\": \"file\",\n      \"name\": \"CameraConfig.java\",\n      \"qualifiedName\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"language\": \"java\",\n      \"startLine\": 1,\n      \"endLine\": 60,\n      \"startColumn\": 0,\n      \"endColumn\": "
         },
         {
           "id": "mcpz-08",
@@ -180,7 +198,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 285.6
+          "latencyMs": 278.1,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "mcpz-09",
@@ -196,7 +216,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 281.7
+          "latencyMs": 279.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:0b947e08e529f31a736a189d52c54bf4\",\n      \"kind\": \"class\",\n      \"name\": \"McpzMod\",\n      \"qualifiedName\": \"net.mcpz::McpzMod\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"language\": \"java\",\n      \"startLine\": 19,\n      \"endLine\": 65,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"MCPZ main entrypoint (Fabric \\\"main\\\"). R"
         },
         {
           "id": "mcpz-10",
@@ -212,7 +234,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 285.8
+          "latencyMs": 279.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:03b0f567e74ad7c01883e1344cec28cd\",\n      \"kind\": \"class\",\n      \"name\": \"McpzClient\",\n      \"qualifiedName\": \"net.mcpz.client::McpzClient\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"language\": \"java\",\n      \"startLine\": 45,\n      \"endLine\": 352,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"MCPZ client ent"
         },
         {
           "id": "mcpz-11",
@@ -228,7 +252,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 286.4
+          "latencyMs": 292.2,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "mcpz-12",
@@ -244,7 +270,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 280.5
+          "latencyMs": 290.8,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "mcpz-13",
@@ -262,9 +290,11 @@
             ],
             "details": "McpzClient and CameraMixin call rt.camera()."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 316.8
+          "latencyMs": 303.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"camera\",\n  \"depth\": 2,\n  \"nodeCount\": 199,\n  \"edgeCount\": 191,\n  \"affected\": [\n    {\n      \"name\": \"camera\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n      \"startLine\": 77\n    },\n    {\n      \"name\": \"McpzRuntime\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n      \"startLine\": 29\n   "
         },
         {
           "id": "mcpz-14",
@@ -281,9 +311,11 @@
             ],
             "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 292.2
+          "latencyMs": 273.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"derive_evidence_class\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 7,\n  \"affected\": [\n    {\n      \"name\": \"derive_evidence_class\",\n      \"kind\": \"function\",\n      \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"startLine\": 43\n    },\n    {\n      \"name\": \"test_os_input_with_vision_reaches_vlm\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \""
         },
         {
           "id": "mcpz-15",
@@ -299,7 +331,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 282
+          "latencyMs": 277.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:4e54bcce09c453d47869492eec579ba6\",\n      \"kind\": \"function\",\n      \"name\": \"derive_evidence_class\",\n      \"qualifiedName\": \"derive_evidence_class\",\n      \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"language\": \"python\",\n      \"startLine\": 43,\n      \"endLine\": 47,\n      \"startColumn\": 0,\n      \"endColumn\": 40,\n      \"signature\": \"(input_source: s"
         },
         {
           "id": "mcpz-16",
@@ -316,9 +350,11 @@
             ],
             "details": "cli.py calls validate_manifest when checking run manifests."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 281.8
+          "latencyMs": 286.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"validate_manifest\",\n  \"callers\": [\n    {\n      \"name\": \"test_honest_manifest_passes\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \"startLine\": 33\n    },\n    {\n      \"name\": \"test_synthetic_cannot_claim_vlm\",\n      \"kind\": \"method\",\n      \"filePath\": \"tests/vlm/test_evidence.py\",\n      \"startLine\": 36\n    },\n    {\n      \"name\": \"test_missing_fields_r"
         },
         {
           "id": "mcpz-17",
@@ -334,7 +370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 288.7
+          "latencyMs": 274.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:39d66c941c9d014551573f609764e891\",\n      \"kind\": \"class\",\n      \"name\": \"McpzAtmosphereController\",\n      \"qualifiedName\": \"net.mcpz.client.atmosphere::McpzAtmosphereController\",\n      \"filePath\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"language\": \"java\",\n      \"startLine\": 14,\n      \"endLine\": 93,\n      \"startColumn"
         },
         {
           "id": "mcpz-18",
@@ -353,9 +391,11 @@
             "expected_count": 2,
             "details": "ROTATE_LEFT is referenced in McpzClient for keybinding registration and McpzKeybindStore."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 297.9
+          "latencyMs": 275.5,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"ROTATE_LEFT\",\n  \"depth\": 2,\n  \"nodeCount\": 54,\n  \"edgeCount\": 52,\n  \"affected\": [\n    {\n      \"name\": \"ROTATE_LEFT\",\n      \"kind\": \"field\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\n      \"startLine\": 34\n    },\n    {\n      \"name\": \"McpzControlMap\",\n      \"kind\": \"class\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java"
         },
         {
           "id": "mcpz-19",
@@ -371,7 +411,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 292
+          "latencyMs": 279.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:d96c9c7140684f37e889a9c952419178\",\n      \"kind\": \"method\",\n      \"name\": \"MinecraftItemRepresentationRegistry\",\n      \"qualifiedName\": \"net.mcpz.item::MinecraftItemRepresentationRegistry::MinecraftItemRepresentationRegistry\",\n      \"filePath\": \"src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java\",\n      \"language\": \"java\",\n      \"startLine\":"
         },
         {
           "id": "mcpz-20",
@@ -391,7 +433,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 299
+          "latencyMs": 281.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"McpzLog\",\n  \"callers\": [\n    {\n      \"name\": \"com.mcpz.server\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"northstar-server/src/main/java/com/mcpz/server/Lane2GameplayRuntimeAdapter.java\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"net.mcpz.client\",\n      \"kind\": \"namespace\",\n      \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"startLine\": 1\n    },\n  "
         },
         {
           "id": "mcpz-holdout-01",
@@ -407,7 +451,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 280.9
+          "latencyMs": 276.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:706d565c3517d37aa1dce0432b0218ab\",\n      \"kind\": \"function\",\n      \"name\": \"PzTrait\",\n      \"qualifiedName\": \"net.mcpz.character::PzTrait\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"language\": \"java\",\n      \"startLine\": 25,\n      \"endLine\": 27,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"signature\": \"(String id, Str"
         },
         {
           "id": "mcpz-holdout-02",
@@ -423,7 +469,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 281
+          "latencyMs": 273.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:bb359a37e51c58df6148be19d6412886\",\n      \"kind\": \"function\",\n      \"name\": \"costLabel\",\n      \"qualifiedName\": \"net.mcpz.character::costLabel\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"language\": \"java\",\n      \"startLine\": 30,\n      \"endLine\": 32,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"docstring\": \"Trait cost "
         },
         {
           "id": "mcpz-holdout-03",
@@ -439,7 +487,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 280.8
+          "latencyMs": 274.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:27ccfedcbf82700a9e07d247c011e3d7\",\n      \"kind\": \"function\",\n      \"name\": \"PzProfession\",\n      \"qualifiedName\": \"net.mcpz.character::PzProfession\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzProfession.java\",\n      \"language\": \"java\",\n      \"startLine\": 20,\n      \"endLine\": 22,\n      \"startColumn\": 4,\n      \"endColumn\": 5,\n      \"signature\": \""
         },
         {
           "id": "mcpz-holdout-04",
@@ -455,7 +505,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 282
+          "latencyMs": 281.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:8e66fd4cca6d15ab76ca8ba1059d5a34\",\n      \"kind\": \"method\",\n      \"name\": \"ModuleRegistry\",\n      \"qualifiedName\": \"net.mcpz.module::ModuleRegistry::ModuleRegistry\",\n      \"filePath\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n      \"language\": \"java\",\n      \"startLine\": 21,\n      \"endLine\": 21,\n      \"startColumn\": 4,\n      \"endColumn\": 31,\n      \""
         },
         {
           "id": "mcpz-holdout-05",
@@ -474,7 +526,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 278.9
+          "latencyMs": 282.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"initializeAll\",\n  \"callers\": [\n    {\n      \"name\": \"onInitialize\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"startLine\": 22\n    }\n  ]\n}\n"
         },
         {
           "id": "mcpz-holdout-06",
@@ -490,7 +544,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 279.6
+          "latencyMs": 286.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:7fad3482e8380f2942a1af96ce483e64\",\n      \"kind\": \"method\",\n      \"name\": \"SaveSchema\",\n      \"qualifiedName\": \"net.mcpz.save::SaveSchema::SaveSchema\",\n      \"filePath\": \"src/main/java/net/mcpz/save/SaveSchema.java\",\n      \"language\": \"java\",\n      \"startLine\": 10,\n      \"endLine\": 10,\n      \"startColumn\": 4,\n      \"endColumn\": 27,\n      \"signature\": \"()\",\n  "
         },
         {
           "id": "mcpz-holdout-07",
@@ -506,7 +562,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 285.9
+          "latencyMs": 289.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:64e70574a0dc8f7b8965b4c1c8d4a846\",\n      \"kind\": \"import\",\n      \"name\": \"net.mcpz.target.AimTargetSnapshot\",\n      \"qualifiedName\": \"net.mcpz.client.input::net.mcpz.target.AimTargetSnapshot\",\n      \"filePath\": \"src/client/java/net/mcpz/client/input/McpzAimController.java\",\n      \"language\": \"java\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColum"
         },
         {
           "id": "mcpz-holdout-08",
@@ -522,7 +580,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 277.9
+          "latencyMs": 275.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"method:ef0c813a88815516eecb772896f4dae0\",\n      \"kind\": \"method\",\n      \"name\": \"clampBrightness\",\n      \"qualifiedName\": \"net.mcpz.client.atmosphere::McpzAtmosphereController::clampBrightness\",\n      \"filePath\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"language\": \"java\",\n      \"startLine\": 76,\n      \"endLine\": 81,\n      \"s"
         },
         {
           "id": "mcpz-holdout-09",
@@ -538,7 +598,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 286.1
+          "latencyMs": 287.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"field:baaa0d305303bf0056f8fb86d5c62e12\",\n      \"kind\": \"field\",\n      \"name\": \"HALF_HEIGHT_FACTOR\",\n      \"qualifiedName\": \"net.mcpz.camera::CameraProjection::HALF_HEIGHT_FACTOR\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"language\": \"java\",\n      \"startLine\": 14,\n      \"endLine\": 14,\n      \"startColumn\": 31,\n      \"endColumn\": "
         },
         {
           "id": "mcpz-holdout-10",
@@ -556,29 +618,33 @@
             ],
             "details": "CameraMathTest and RaycastTest rely on CameraProjection.orthographic for projection math."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 307.2
+          "latencyMs": 296.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"orthographic\",\n  \"depth\": 2,\n  \"nodeCount\": 14,\n  \"edgeCount\": 13,\n  \"affected\": [\n    {\n      \"name\": \"orthographic\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"startLine\": 18\n    },\n    {\n      \"name\": \"projectionIsFiniteOrtho\",\n      \"kind\": \"method\",\n      \"filePath\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n     "
         }
       ]
     },
     {
       "repo": "plugmedia",
-      "oldHits": 17,
+      "oldHits": 12,
       "oldTotal": 20,
-      "oldAccuracy": 85,
-      "holdoutHits": 10,
+      "oldAccuracy": 60,
+      "holdoutHits": 9,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 100,
-      "totalHits": 27,
+      "holdoutAccuracy": 90,
+      "totalHits": 21,
       "totalCount": 30,
-      "totalAccuracy": 90,
-      "latencyOldP50": 247.6,
-      "latencyOldP95": 267,
-      "latencyHoldoutP50": 240.7,
-      "latencyHoldoutP95": 255.3,
-      "latencyAllP50": 245.2,
-      "latencyAllP95": 267,
+      "totalAccuracy": 70,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 237.6,
+      "latencyOldP95": 249.1,
+      "latencyHoldoutP50": 237.9,
+      "latencyHoldoutP95": 253.8,
+      "latencyAllP50": 237.9,
+      "latencyAllP95": 253.8,
       "questions": [
         {
           "id": "plugmedia-01",
@@ -594,7 +660,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 542.3
+          "latencyMs": 249.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:2593ae4703e0bd1df1a32d17936ecca0\",\n      \"kind\": \"constant\",\n      \"name\": \"SCHEMA_VERSION\",\n      \"qualifiedName\": \"SCHEMA_VERSION\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 5,\n      \"endLine\": 5,\n      \"startColumn\": 13,\n      \"endColumn\": 41,\n      \"signature\": \"= '1.0.0-vs0'\",\n      \"visibi"
         },
         {
           "id": "plugmedia-02",
@@ -610,7 +678,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 259.6
+          "latencyMs": 234.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:966427b5e7da446a7172253b39a338c5\",\n      \"kind\": \"constant\",\n      \"name\": \"QA_AXES\",\n      \"qualifiedName\": \"QA_AXES\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 16,\n      \"endLine\": 16,\n      \"startColumn\": 13,\n      \"endColumn\": 90,\n      \"signature\": \"= ['TECHNICAL_QA', 'NARRATIVE_QA', 'VISUA"
         },
         {
           "id": "plugmedia-03",
@@ -629,7 +699,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 267
+          "latencyMs": 235.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"topoSort\",\n  \"callers\": []\n}\n"
         },
         {
           "id": "plugmedia-04",
@@ -645,7 +717,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 258.8
+          "latencyMs": 238.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:705aa20b384d6635f19cb248926391a8\",\n      \"kind\": \"class\",\n      \"name\": \"CycleError\",\n      \"qualifiedName\": \"CycleError\",\n      \"filePath\": \"packages/graph/src/compute/topo.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 2,\n      \"endLine\": 5,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true,\n      \"isA"
         },
         {
           "id": "plugmedia-05",
@@ -661,7 +735,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 255
+          "latencyMs": 237.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:9cbb1a340833b9d8fff8237364b356c2\",\n      \"kind\": \"function\",\n      \"name\": \"casPath\",\n      \"qualifiedName\": \"casPath\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 30,\n      \"endLine\": 32,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(digest: string): string\",\n      \"visibility\": "
         },
         {
           "id": "plugmedia-06",
@@ -680,7 +756,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 247
+          "latencyMs": 238.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"storeContent\",\n  \"callers\": [\n    {\n      \"name\": \"commitArtifact\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/domain/media.ts\",\n      \"startLine\": 64\n    }\n  ]\n}\n"
         },
         {
           "id": "plugmedia-07",
@@ -699,9 +777,11 @@
             "expected_count": 2,
             "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 250.9
+          "latencyMs": 237.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"PGCONFIG\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 7,\n  \"affected\": [\n    {\n      \"name\": \"PGCONFIG\",\n      \"kind\": \"constant\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 13\n    },\n    {\n      \"name\": \"db.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"ops.ts\",\n      \"kind\": \"f"
         },
         {
           "id": "plugmedia-08",
@@ -721,7 +801,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 254.4
+          "latencyMs": 247.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"SCHEMA_VERSION\",\n  \"depth\": 2,\n  \"nodeCount\": 2,\n  \"edgeCount\": 1,\n  \"affected\": [\n    {\n      \"name\": \"SCHEMA_VERSION\",\n      \"kind\": \"constant\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"startLine\": 5\n    },\n    {\n      \"name\": \"index.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"packages/contracts/src/index.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
         },
         {
           "id": "plugmedia-09",
@@ -740,7 +822,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 245.9
+          "latencyMs": 254.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5c262a6dfbabe655e9b10ef4623887f9\",\n      \"kind\": \"function\",\n      \"name\": \"storeContent\",\n      \"qualifiedName\": \"storeContent\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 48,\n      \"endLine\": 83,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(sourcePath: string, digest: string, "
         },
         {
           "id": "plugmedia-10",
@@ -756,7 +840,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 241.5
+          "latencyMs": 239.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:72a9cfc8ebdb3acf95acb75d4fc00bba\",\n      \"kind\": \"constant\",\n      \"name\": \"PORT\",\n      \"qualifiedName\": \"PORT\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 36,\n      \"endLine\": 36,\n      \"startColumn\": 6,\n      \"endColumn\": 55,\n      \"signature\": \"= Number(process.env.PLUGMEDIA_PORT ?? 8620)\",\n   "
         },
         {
           "id": "plugmedia-11",
@@ -772,7 +858,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 241
+          "latencyMs": 235.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:85c68fa8ebbc5bebf1ad14b8cefcbac1\",\n      \"kind\": \"constant\",\n      \"name\": \"PGCONFIG\",\n      \"qualifiedName\": \"PGCONFIG\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 13,\n      \"endLine\": 20,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= {\\r\\n  host: process.env.PGHOST ?? '127.0.0"
         },
         {
           "id": "plugmedia-12",
@@ -788,7 +876,9 @@
           },
           "hit": true,
           "rank": 3,
-          "latencyMs": 243.1
+          "latencyMs": 236,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:376aa1c7a379ae23fd0b23c2861fa0c2\",\n      \"kind\": \"import\",\n      \"name\": \"fastify\",\n      \"qualifiedName\": \"fastify\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 15,\n      \"endLine\": 15,\n      \"startColumn\": 0,\n      \"endColumn\": 30,\n      \"signature\": \"import Fastify from 'fastify';\",\n      \"visibili"
         },
         {
           "id": "plugmedia-13",
@@ -804,7 +894,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 242.1
+          "latencyMs": 238.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:ea041d52e0a3c83db3e1307bd0734844\",\n      \"kind\": \"function\",\n      \"name\": \"main\",\n      \"qualifiedName\": \"main\",\n      \"filePath\": \"tools/d1/gate-surfaces.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 130,\n      \"endLine\": 180,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"()\",\n      \"visibility\": null,\n      \"isExported\": f"
         },
         {
           "id": "plugmedia-14",
@@ -818,9 +910,11 @@
             "kind": "docs_notes",
             "details": "VS0_FINAL_REPORT.md documents test passes, performance benchmarks, and architecture."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 245.2
+          "latencyMs": 236.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:217db26b0d14f011a39839a50567e54c\",\n      \"kind\": \"constant\",\n      \"name\": \"INCLUDE_FILES\",\n      \"qualifiedName\": \"INCLUDE_FILES\",\n      \"filePath\": \"tools/d1/make-archive.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 47,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'ARCHIVE_MANIFEST.md', 'VS0_"
         },
         {
           "id": "plugmedia-15",
@@ -834,9 +928,11 @@
             "kind": "docs_notes",
             "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 244.2
+          "latencyMs": 240.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:217db26b0d14f011a39839a50567e54c\",\n      \"kind\": \"constant\",\n      \"name\": \"INCLUDE_FILES\",\n      \"qualifiedName\": \"INCLUDE_FILES\",\n      \"filePath\": \"tools/d1/make-archive.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 47,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'ARCHIVE_MANIFEST.md', 'VS0_"
         },
         {
           "id": "plugmedia-16",
@@ -853,9 +949,11 @@
             ],
             "details": "ensureCas is called inside storeContent and registerContent."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 247.6
+          "latencyMs": 237,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"ensureCas\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 3,\n  \"affected\": [\n    {\n      \"name\": \"ensureCas\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"startLine\": 25\n    },\n    {\n      \"name\": \"storeContent\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/cas.ts\",\n      \"startLine\": 48\n    },\n    {\n      \"name\": \"commitArt"
         },
         {
           "id": "plugmedia-17",
@@ -872,9 +970,11 @@
             ],
             "details": "applyMigrations executes database schema migrations."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 251.1
+          "latencyMs": 239.8,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"applyMigrations\",\n  \"depth\": 2,\n  \"nodeCount\": 12,\n  \"edgeCount\": 11,\n  \"affected\": [\n    {\n      \"name\": \"applyMigrations\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/db.ts\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"restore\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/domain/ops.ts\",\n      \"startLine\": 189\n    },\n    {\n      \"n"
         },
         {
           "id": "plugmedia-18",
@@ -890,7 +990,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 250.1
+          "latencyMs": 238.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:b4b2375bbe18f810c8d7ea309d1a8e85\",\n      \"kind\": \"function\",\n      \"name\": \"schedulerTick\",\n      \"qualifiedName\": \"schedulerTick\",\n      \"filePath\": \"services/runtime/src/engine/scheduler.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 215,\n      \"endLine\": 235,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(\\r\\n  db: pg.Pool,\\"
         },
         {
           "id": "plugmedia-19",
@@ -909,7 +1011,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 266.3
+          "latencyMs": 235.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"register\",\n  \"callers\": [\n    {\n      \"name\": \"index.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
         },
         {
           "id": "plugmedia-20",
@@ -925,7 +1029,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 245.9
+          "latencyMs": 233.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:5c823d2abffcd44bc9a0d7a3a074f422\",\n      \"kind\": \"constant\",\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"qualifiedName\": \"ALLOWED_ORIGINS\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 24,\n      \"endLine\": 28,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'http://127.0.0.1:51"
         },
         {
           "id": "plugmedia-holdout-01",
@@ -941,7 +1047,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 236.1
+          "latencyMs": 232.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:5c823d2abffcd44bc9a0d7a3a074f422\",\n      \"kind\": \"constant\",\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"qualifiedName\": \"ALLOWED_ORIGINS\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 24,\n      \"endLine\": 28,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'http://127.0.0.1:51"
         },
         {
           "id": "plugmedia-holdout-02",
@@ -957,7 +1065,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 239
+          "latencyMs": 236.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:976aa4db0dcfa44eba381814acb6e7ee\",\n      \"kind\": \"function\",\n      \"name\": \"issueCapability\",\n      \"qualifiedName\": \"issueCapability\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 48,\n      \"endLine\": 55,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(artifactId: string, principal"
         },
         {
           "id": "plugmedia-holdout-03",
@@ -973,7 +1083,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 240.1
+          "latencyMs": 243.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:1a50478d02451b4cfcc6624b947f771a\",\n      \"kind\": \"function\",\n      \"name\": \"verifyCapability\",\n      \"qualifiedName\": \"verifyCapability\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 57,\n      \"endLine\": 67,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(cap: string, artifactId: st"
         },
         {
           "id": "plugmedia-holdout-04",
@@ -989,7 +1101,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 240.7
+          "latencyMs": 239.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:04bf33911ffb6d47db9e16a39c8dec2b\",\n      \"kind\": \"function\",\n      \"name\": \"csrfGuard\",\n      \"qualifiedName\": \"csrfGuard\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 124,\n      \"endLine\": 128,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(clientHeader: string | undefined): { ok"
         },
         {
           "id": "plugmedia-holdout-05",
@@ -1005,7 +1119,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 242.6
+          "latencyMs": 253.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:39d14769aef4e86da97859bae05f432c\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"qualifiedName\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"filePath\": \"services/runtime/src/engine/scheduler.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 46,\n      \"endLine\": 46,\n      \"startColumn\": 13,\n      \"endColumn\": 46,\n      \"sig"
         },
         {
           "id": "plugmedia-holdout-06",
@@ -1021,7 +1137,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 240
+          "latencyMs": 251.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:0e7363b74e80f800672cfdc934116951\",\n      \"kind\": \"function\",\n      \"name\": \"computeNodeCacheKey\",\n      \"qualifiedName\": \"computeNodeCacheKey\",\n      \"filePath\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 27,\n      \"endLine\": 33,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(i: CacheKey"
         },
         {
           "id": "plugmedia-holdout-07",
@@ -1037,7 +1155,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 255.3
+          "latencyMs": 237.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:b19e6f64d8aa544eb613f954180ba079\",\n      \"kind\": \"constant\",\n      \"name\": \"NODE_VERSIONS\",\n      \"qualifiedName\": \"NODE_VERSIONS\",\n      \"filePath\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 13,\n      \"endLine\": 26,\n      \"startColumn\": 13,\n      \"endColumn\": 10,\n      \"signature\": \"= {\\r\\n  'media.im"
         },
         {
           "id": "plugmedia-holdout-08",
@@ -1053,7 +1173,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 241.2
+          "latencyMs": 237.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:8f2faeabdcf5f656ee7707245c2175e1\",\n      \"kind\": \"function\",\n      \"name\": \"implementationDigest\",\n      \"qualifiedName\": \"implementationDigest\",\n      \"filePath\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 28,\n      \"endLine\": 30,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(nodes"
         },
         {
           "id": "plugmedia-holdout-09",
@@ -1072,7 +1194,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 241.4
+          "latencyMs": 237.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"schedulerTick\",\n  \"callers\": [\n    {\n      \"name\": \"schedulerLoop\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/index.ts\",\n      \"startLine\": 367\n    }\n  ]\n}\n"
         },
         {
           "id": "plugmedia-holdout-10",
@@ -1089,29 +1213,33 @@
             ],
             "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 241.3
+          "latencyMs": 241.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"computeNodeCacheKey\",\n  \"depth\": 2,\n  \"nodeCount\": 6,\n  \"edgeCount\": 5,\n  \"affected\": [\n    {\n      \"name\": \"computeNodeCacheKey\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"startLine\": 27\n    },\n    {\n      \"name\": \"processJob\",\n      \"kind\": \"function\",\n      \"filePath\": \"services/runtime/src/engine/worker.ts\",\n      \"startLine\": 4"
         }
       ]
     },
     {
       "repo": "cowork",
-      "oldHits": 14,
+      "oldHits": 9,
       "oldTotal": 20,
-      "oldAccuracy": 70,
-      "holdoutHits": 9,
+      "oldAccuracy": 45,
+      "holdoutHits": 8,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 90,
-      "totalHits": 23,
+      "holdoutAccuracy": 80,
+      "totalHits": 17,
       "totalCount": 30,
-      "totalAccuracy": 76.7,
-      "latencyOldP50": 312.4,
-      "latencyOldP95": 356.3,
-      "latencyHoldoutP50": 311.1,
-      "latencyHoldoutP95": 329.1,
-      "latencyAllP50": 312.4,
-      "latencyAllP95": 356.3,
+      "totalAccuracy": 56.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 310.4,
+      "latencyOldP95": 335,
+      "latencyHoldoutP50": 301.5,
+      "latencyHoldoutP95": 319,
+      "latencyAllP50": 310.1,
+      "latencyAllP95": 335,
       "questions": [
         {
           "id": "cowork-01",
@@ -1127,7 +1255,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 323.7
+          "latencyMs": 298.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"variable:fb0ea3d45591f60f6e5a6561f3f72aca\",\n      \"kind\": \"variable\",\n      \"name\": \"DEFAULT_LANES\",\n      \"qualifiedName\": \"DEFAULT_LANES\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 43,\n      \"endLine\": 50,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\n    {\\\"id\\\": \\\"groq-1\\\",       \\\""
         },
         {
           "id": "cowork-02",
@@ -1143,7 +1273,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 308.2
+          "latencyMs": 293.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:2cd043ab27f44ee191f4ce7c042563f6\",\n      \"kind\": \"function\",\n      \"name\": \"scrub\",\n      \"qualifiedName\": \"scrub\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 59,\n      \"endLine\": 64,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(text: str) -> str\",\n      \"visibility\": null,\n      "
         },
         {
           "id": "cowork-03",
@@ -1162,7 +1294,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 316.2
+          "latencyMs": 301.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"post_event\",\n  \"callers\": [\n    {\n      \"name\": \"fleet_patch\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 70\n    },\n    {\n      \"name\": \"run_codex\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 116\n    },\n    {\n      \"name\": \"_pump\",\n      \"kind\": \"function\",\n      \"filePath\": \"ru"
         },
         {
           "id": "cowork-04",
@@ -1181,7 +1315,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 315.3
+          "latencyMs": 305.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"codegraph_context\",\n  \"callers\": [\n    {\n      \"name\": \"run_part_as_worker\",\n      \"kind\": \"function\",\n      \"filePath\": \"ruflo-workers/tools/worker.py\",\n      \"startLine\": 226\n    }\n  ]\n}\n"
         },
         {
           "id": "cowork-05",
@@ -1200,9 +1336,11 @@
             "expected_count": 2,
             "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 382.1
+          "latencyMs": 308.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"CONFIG\",\n  \"depth\": 2,\n  \"nodeCount\": 10,\n  \"edgeCount\": 5,\n  \"affected\": [\n    {\n      \"name\": \"CONFIG\",\n      \"kind\": \"constant\",\n      \"filePath\": \".claude/helpers/learning-service.mjs\",\n      \"startLine\": 43\n    },\n    {\n      \"name\": \"learning-service.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \".claude/helpers/learning-service.mjs\",\n      \"startLine\": 1\n    },\n    {\n      \"n"
         },
         {
           "id": "cowork-06",
@@ -1220,9 +1358,11 @@
             "expected_count": 1,
             "details": "RATE determines cost calculation for different AI model providers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 316.9
+          "latencyMs": 311.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"RATE\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"RATE\",\n      \"kind\": \"constant\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 33\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"RATE\",\n      \"kind\": \"cons"
         },
         {
           "id": "cowork-07",
@@ -1242,7 +1382,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 303
+          "latencyMs": 314.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5475522953b3e6517f6aec41ef08d958\",\n      \"kind\": \"function\",\n      \"name\": \"writeConfig\",\n      \"qualifiedName\": \"writeConfig\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 44,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(cfg)\",\n      \"visibility\": null,\n     "
         },
         {
           "id": "cowork-08",
@@ -1258,7 +1400,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 296.3
+          "latencyMs": 309.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:d115f0f3ee46b28d6b38c520f8f6d2a1\",\n      \"kind\": \"constant\",\n      \"name\": \"PORT\",\n      \"qualifiedName\": \"PORT\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 35,\n      \"endLine\": 35,\n      \"startColumn\": 6,\n      \"endColumn\": 80,\n      \"signature\": \"= Number(process.env.PLUGOS_COCKPIT_PORT || process."
         },
         {
           "id": "cowork-09",
@@ -1274,7 +1418,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 302
+          "latencyMs": 330.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:7678def96e179a3e1c6a1243868d8416\",\n      \"kind\": \"function\",\n      \"name\": \"listLanes\",\n      \"qualifiedName\": \"listLanes\",\n      \"filePath\": \"ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/cowork-host.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 235,\n      \"endLine\": 281,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"docstring\": \"--"
         },
         {
           "id": "cowork-10",
@@ -1290,7 +1436,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 302
+          "latencyMs": 330.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:98ca1271538e274b7e4117ffee175e6f\",\n      \"kind\": \"class\",\n      \"name\": \"Fleet\",\n      \"qualifiedName\": \"Fleet\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"language\": \"python\",\n      \"startLine\": 208,\n      \"endLine\": 321,\n      \"startColumn\": 0,\n      \"endColumn\": 75,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsync\": false,\n"
         },
         {
           "id": "cowork-11",
@@ -1306,7 +1454,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 310.1
+          "latencyMs": 325.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:cockpit/server.cjs\",\n      \"kind\": \"file\",\n      \"name\": \"server.cjs\",\n      \"qualifiedName\": \"cockpit/server.cjs\",\n      \"filePath\": \"cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 1,\n      \"endLine\": 674,\n      \"startColumn\": 0,\n      \"endColumn\": 0,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsync\": false,\n      \""
         },
         {
           "id": "cowork-12",
@@ -1322,7 +1472,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 312.4
+          "latencyMs": 320.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5f23111b483f266d492955ac74161033\",\n      \"kind\": \"function\",\n      \"name\": \"produce_one\",\n      \"qualifiedName\": \"produce_one\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"language\": \"python\",\n      \"startLine\": 13,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(row"
         },
         {
           "id": "cowork-13",
@@ -1338,7 +1490,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 356.3
+          "latencyMs": 335,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "cowork-14",
@@ -1354,7 +1508,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 334
+          "latencyMs": 337.1,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "cowork-15",
@@ -1371,9 +1527,11 @@
             ],
             "details": "produce_one is called in main loop of run.py."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 311
+          "latencyMs": 299.7,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"produce_one\",\n  \"depth\": 2,\n  \"nodeCount\": 6,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"startLine\": 13\n    },\n    {\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipel"
         },
         {
           "id": "cowork-16",
@@ -1390,9 +1548,11 @@
             ],
             "details": "writeConfig is called by lane and runner mutation handlers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 339.3
+          "latencyMs": 322.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"writeConfig\",\n  \"depth\": 2,\n  \"nodeCount\": 22,\n  \"edgeCount\": 17,\n  \"affected\": [\n    {\n      \"name\": \"writeConfig\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"upsertLane\",\n      \"kind\": \"function\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 131\n    },\n    {\n      \"name\": \"serv"
         },
         {
           "id": "cowork-17",
@@ -1408,7 +1568,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 324.6
+          "latencyMs": 309.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5f23111b483f266d492955ac74161033\",\n      \"kind\": \"function\",\n      \"name\": \"produce_one\",\n      \"qualifiedName\": \"produce_one\",\n      \"filePath\": \"ECOSPACE/05_PLUGMEDIA/_OG_REFERENCE/shortsfactory/pipeline/run.py\",\n      \"language\": \"python\",\n      \"startLine\": 13,\n      \"endLine\": 49,\n      \"startColumn\": 0,\n      \"endColumn\": 15,\n      \"signature\": \"(row"
         },
         {
           "id": "cowork-18",
@@ -1427,7 +1589,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 312.6
+          "latencyMs": 310.4,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"synth_voiceover\",\n  \"callers\": []\n}\n"
         },
         {
           "id": "cowork-19",
@@ -1443,7 +1607,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 305.7
+          "latencyMs": 316.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:a82a9863f01fd5e55fa0c646205188b6\",\n      \"kind\": \"constant\",\n      \"name\": \"ROLES\",\n      \"qualifiedName\": \"ROLES\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 38,\n      \"endLine\": 38,\n      \"startColumn\": 6,\n      \"endColumn\": 53,\n      \"signature\": \"= [\\\"cheap\\\", \\\"reviewer\\\", \\\"auditor\\\", \\\"off\\\"]\""
         },
         {
           "id": "cowork-20",
@@ -1461,9 +1627,11 @@
             "expected_count": 1,
             "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 303.8
+          "latencyMs": 310.1,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"KEY_ALIAS\",\n  \"depth\": 2,\n  \"nodeCount\": 8,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"KEY_ALIAS\",\n      \"kind\": \"constant\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 58\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"ECOSPACE/cockpit/server.cjs\",\n      \"startLine\": 1\n    },\n    {\n      \"name\": \"KEY_ALIAS\",\n    "
         },
         {
           "id": "cowork-holdout-01",
@@ -1479,7 +1647,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 302.9
+          "latencyMs": 310.8,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:fb3fe9a7badd57fb28467d0b7b139673\",\n      \"kind\": \"function\",\n      \"name\": \"readLedger\",\n      \"qualifiedName\": \"readLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 44,\n      \"endLine\": 54,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"()\",\n      \"visibility\": null,\n      \"isExported\":"
         },
         {
           "id": "cowork-holdout-02",
@@ -1495,7 +1665,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 307.4
+          "latencyMs": 307.3,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:28029d2ca2a76803fe590ad703ec27c7\",\n      \"kind\": \"function\",\n      \"name\": \"writeLedger\",\n      \"qualifiedName\": \"writeLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 55,\n      \"endLine\": 58,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(rows)\",\n      \"visibility\": null,\n      \"isExpo"
         },
         {
           "id": "cowork-holdout-03",
@@ -1511,7 +1683,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 329.1
+          "latencyMs": 291.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:a1b7ce6c4aa445b3c233612b6d5cd02f\",\n      \"kind\": \"function\",\n      \"name\": \"missionOf\",\n      \"qualifiedName\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 33,\n      \"endLine\": 39,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(p)\",\n      \"visibility\": null,\n      \"isExported\": "
         },
         {
           "id": "cowork-holdout-04",
@@ -1527,7 +1701,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 316.4
+          "latencyMs": 301.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:0b66084241fb0e64ed5949dfa4e0d249\",\n      \"kind\": \"constant\",\n      \"name\": \"FLEET_PARALLELISM\",\n      \"qualifiedName\": \"FLEET_PARALLELISM\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 31,\n      \"endLine\": 31,\n      \"startColumn\": 6,\n      \"endColumn\": 75,\n      \"signature\": \"= Number(process.env.PLUGOS_FLEET_P"
         },
         {
           "id": "cowork-holdout-05",
@@ -1543,7 +1719,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 317.2
+          "latencyMs": 296.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"file:tools/decompose_room.py\",\n      \"kind\": \"file\",\n      \"name\": \"decompose_room.py\",\n      \"qualifiedName\": \"tools/decompose_room.py\",\n      \"filePath\": \"tools/decompose_room.py\",\n      \"language\": \"python\",\n      \"startLine\": 1,\n      \"endLine\": 108,\n      \"startColumn\": 0,\n      \"endColumn\": 0,\n      \"visibility\": null,\n      \"isExported\": false,\n      \"isAsyn"
         },
         {
           "id": "cowork-holdout-06",
@@ -1559,7 +1737,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 318.8
+          "latencyMs": 300.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5540c34bb4e11f006efe32af1921798a\",\n      \"kind\": \"function\",\n      \"name\": \"verdictOf\",\n      \"qualifiedName\": \"verdictOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 59,\n      \"endLine\": 64,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(id)\",\n      \"visibility\": null,\n      \"isExported\":"
         },
         {
           "id": "cowork-holdout-07",
@@ -1578,7 +1758,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 297.6
+          "latencyMs": 315,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"writeLedger\",\n  \"callers\": [\n    {\n      \"name\": \"movePrio\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 105\n    }\n  ]\n}\n"
         },
         {
           "id": "cowork-holdout-08",
@@ -1594,7 +1776,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 307.2
+          "latencyMs": 319,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:a1e3eb161cbc09180997f8ce67458648\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_EFFORT\",\n      \"qualifiedName\": \"DEFAULT_EFFORT\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 30,\n      \"endLine\": 30,\n      \"startColumn\": 6,\n      \"endColumn\": 24,\n      \"signature\": \"= 3\",\n      \"visibility\": null,\n      \"is"
         },
         {
           "id": "cowork-holdout-09",
@@ -1611,9 +1795,11 @@
             ],
             "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 321.2
+          "latencyMs": 313.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"readLedger\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 3,\n  \"affected\": [\n    {\n      \"name\": \"readLedger\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 44\n    },\n    {\n      \"name\": \"buildProgress\",\n      \"kind\": \"function\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 66\n    },\n    {\n      \"name\": \"server.cjs\",\n      \"kind"
         },
         {
           "id": "cowork-holdout-10",
@@ -1629,27 +1815,31 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 311.1
+          "latencyMs": 295.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:1e23078c715fff6946b51bf5e7262f1b\",\n      \"kind\": \"function\",\n      \"name\": \"effortOf\",\n      \"qualifiedName\": \"effortOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 40,\n      \"endLine\": 42,\n      \"startColumn\": 0,\n      \"endColumn\": 1,\n      \"signature\": \"(p)\",\n      \"visibility\": null,\n      \"isExported\": fa"
         }
       ]
     },
     {
       "repo": "plugengine",
-      "oldHits": 11,
+      "oldHits": 7,
       "oldTotal": 20,
-      "oldAccuracy": 55,
+      "oldAccuracy": 35,
       "holdoutHits": 7,
       "holdoutTotal": 10,
       "holdoutAccuracy": 70,
-      "totalHits": 18,
+      "totalHits": 14,
       "totalCount": 30,
-      "totalAccuracy": 60,
-      "latencyOldP50": 281.2,
-      "latencyOldP95": 295.6,
-      "latencyHoldoutP50": 266.2,
-      "latencyHoldoutP95": 272.1,
-      "latencyAllP50": 275.7,
-      "latencyAllP95": 295.6,
+      "totalAccuracy": 46.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 267.6,
+      "latencyOldP95": 286.9,
+      "latencyHoldoutP50": 270.9,
+      "latencyHoldoutP95": 281.6,
+      "latencyAllP50": 268.3,
+      "latencyAllP95": 286.9,
       "questions": [
         {
           "id": "plugengine-01",
@@ -1665,7 +1855,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1985.1
+          "latencyMs": 278.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:efdf648ddedc36b73dbe88105e8a834b\",\n      \"kind\": \"class\",\n      \"name\": \"CommandBus\",\n      \"qualifiedName\": \"CommandBus\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 40,\n      \"endLine\": 122,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
         },
         {
           "id": "plugengine-02",
@@ -1681,7 +1873,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 267.2
+          "latencyMs": 265.5,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:af39b6158cc480d27be5ec2a42bfa454\",\n      \"kind\": \"constant\",\n      \"name\": \"DEFAULT_LIMIT\",\n      \"qualifiedName\": \"DEFAULT_LIMIT\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 50,\n      \"endLine\": 50,\n      \"startColumn\": 6,\n      \"endColumn\": 26,\n      \"signature\": \"= 2000\",\n      \"visibi"
         },
         {
           "id": "plugengine-03",
@@ -1700,7 +1894,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 271.7
+          "latencyMs": 268.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"dispatch\",\n  \"callers\": [\n    {\n      \"name\": \"startComposer\",\n      \"kind\": \"function\",\n      \"filePath\": \"apps/engine-lab/src/composerMode.ts\",\n      \"startLine\": 83\n    },\n    {\n      \"name\": \"placeEntry\",\n      \"kind\": \"function\",\n      \"filePath\": \"apps/engine-lab/src/composerMode.ts\",\n      \"startLine\": 278\n    },\n    {\n      \"name\": \"commitMove\",\n      \"kind\": \"function\",\n   "
         },
         {
           "id": "plugengine-04",
@@ -1716,7 +1912,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 285.2
+          "latencyMs": 262.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:7cb6f2a02e504cb175edc808134e776e\",\n      \"kind\": \"constant\",\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"qualifiedName\": \"PLUG_PACKAGE_KINDS\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 37,\n      \"endLine\": 43,\n      \"startColumn\": 13,\n      \"endColumn\": 1,\n      \"signature\": \"= [\\r\\n  'plugprojec"
         },
         {
           "id": "plugengine-05",
@@ -1732,7 +1930,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 288.5
+          "latencyMs": 277.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:2d4f9fabb1e31bd5755fabbe0b0d8a40\",\n      \"kind\": \"function\",\n      \"name\": \"isPlugPackageKind\",\n      \"qualifiedName\": \"isPlugPackageKind\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 45,\n      \"endLine\": 47,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(value: unknown): value"
         },
         {
           "id": "plugengine-06",
@@ -1751,7 +1951,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 275.2
+          "latencyMs": 267.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"isPlugPackageKind\",\n  \"callers\": []\n}\n"
         },
         {
           "id": "plugengine-07",
@@ -1770,9 +1972,11 @@
             "expected_count": 2,
             "details": "Limits default undo history buffer size in CommandBus constructor."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 291.9
+          "latencyMs": 266.9,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"DEFAULT_LIMIT\",\n  \"depth\": 2,\n  \"nodeCount\": 4,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"DEFAULT_LIMIT\",\n      \"kind\": \"constant\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"startLine\": 50\n    },\n    {\n      \"name\": \"agentTrace.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"apps/engine-lab/src/agent/agentTrace.ts\",\n      \"startLine\": 1\n    },\n  "
         },
         {
           "id": "plugengine-08",
@@ -1791,9 +1995,11 @@
             "expected_count": 2,
             "details": "PlugPackageKind union and package kind validation in addon contracts."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 289.6
+          "latencyMs": 270.3,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"PLUG_PACKAGE_KINDS\",\n  \"depth\": 2,\n  \"nodeCount\": 2,\n  \"edgeCount\": 1,\n  \"affected\": [\n    {\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"kind\": \"constant\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"startLine\": 37\n    },\n    {\n      \"name\": \"addon.ts\",\n      \"kind\": \"file\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
         },
         {
           "id": "plugengine-09",
@@ -1812,7 +2018,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 279
+          "latencyMs": 259.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:efdf648ddedc36b73dbe88105e8a834b\",\n      \"kind\": \"class\",\n      \"name\": \"CommandBus\",\n      \"qualifiedName\": \"CommandBus\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 40,\n      \"endLine\": 122,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
         },
         {
           "id": "plugengine-10",
@@ -1828,7 +2036,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 279.9
+          "latencyMs": 270.6,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:6d3ff82f7ad87056a981a57381bfbb6c\",\n      \"kind\": \"interface\",\n      \"name\": \"CommandBusOptions\",\n      \"qualifiedName\": \"CommandBusOptions\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 3,\n      \"endLine\": 6,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n     "
         },
         {
           "id": "plugengine-11",
@@ -1844,7 +2054,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 295.6
+          "latencyMs": 286.9,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "plugengine-12",
@@ -1860,7 +2072,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 281.3
+          "latencyMs": 267.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"import:a56654b0f33331fa2071ac95eb543bd2\",\n      \"kind\": \"import\",\n      \"name\": \"@plugengine/core\",\n      \"qualifiedName\": \"@plugengine/core\",\n      \"filePath\": \"apps/engine-lab/src/agent/coreEditorAddon.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 14,\n      \"endLine\": 14,\n      \"startColumn\": 0,\n      \"endColumn\": 57,\n      \"signature\": \"import { comman"
         },
         {
           "id": "plugengine-13",
@@ -1874,9 +2088,11 @@
             "kind": "entrypoint",
             "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 277.5
+          "latencyMs": 267,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:297ebfcb40073e75ea9c3afdae2ed11a\",\n      \"kind\": \"constant\",\n      \"name\": \"contracts\",\n      \"qualifiedName\": \"contracts\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"language\": \"javascript\",\n      \"startLine\": 94,\n      \"endLine\": 94,\n      \"startColumn\": 8,\n      \"endColumn\": 78,\n      \"signature\": \"= await runner.executeId('/packages/"
         },
         {
           "id": "plugengine-14",
@@ -1892,7 +2108,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 282.2
+          "latencyMs": 285.2,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "plugengine-15",
@@ -1908,7 +2126,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 278.7
+          "latencyMs": 288,
+          "error": null,
+          "rawAnswer": "[]\n"
         },
         {
           "id": "plugengine-16",
@@ -1927,7 +2147,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 281.6
+          "latencyMs": 286.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"canUndo\",\n  \"depth\": 2,\n  \"nodeCount\": 97,\n  \"edgeCount\": 96,\n  \"affected\": [\n    {\n      \"name\": \"canUndo\",\n      \"kind\": \"method\",\n      \"filePath\": \"apps/engine-lab/src/studio/character/characterPanelModel.ts\",\n      \"startLine\": 159\n    },\n    {\n      \"name\": \"CharacterPanelModel\",\n      \"kind\": \"class\",\n      \"filePath\": \"apps/engine-lab/src/studio/character/characterPanelModel"
         },
         {
           "id": "plugengine-17",
@@ -1944,9 +2166,11 @@
             ],
             "details": "impactToEdit converts projectile block hits into voxel edits."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 275.7
+          "latencyMs": 267.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"impactToEdit\",\n  \"depth\": 2,\n  \"nodeCount\": 5,\n  \"edgeCount\": 4,\n  \"affected\": [\n    {\n      \"name\": \"impactToEdit\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/plugengine-combat/src/blockDestruction.ts\",\n      \"startLine\": 46\n    },\n    {\n      \"name\": \"advance\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": "
         },
         {
           "id": "plugengine-18",
@@ -1962,7 +2186,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 281.2
+          "latencyMs": 261.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"constant:19ff2342023d32e266b78fdb2e1622c1\",\n      \"kind\": \"constant\",\n      \"name\": \"COMBAT_PACKAGE\",\n      \"qualifiedName\": \"COMBAT_PACKAGE\",\n      \"filePath\": \"packages/plugengine-combat/src/index.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 11,\n      \"endLine\": 11,\n      \"startColumn\": 13,\n      \"endColumn\": 50,\n      \"signature\": \"= '@plugengine/comb"
         },
         {
           "id": "plugengine-19",
@@ -1978,7 +2204,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 287.3
+          "latencyMs": 265.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"canHit\",\n  \"callers\": [\n    {\n      \"name\": \"resolveEnemyHit\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": 219\n    },\n    {\n      \"name\": \"retarget\",\n      \"kind\": \"method\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"startLine\": 247\n    }\n  ]\n}\n"
         },
         {
           "id": "plugengine-20",
@@ -1994,7 +2222,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 272.6
+          "latencyMs": 263.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"class:3a39f3ba74516d77f9ff891da3584cd8\",\n      \"kind\": \"class\",\n      \"name\": \"ProjectilePool\",\n      \"qualifiedName\": \"ProjectilePool\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 120,\n      \"endLine\": 301,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExpo"
         },
         {
           "id": "plugengine-holdout-01",
@@ -2010,7 +2240,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 270.7
+          "latencyMs": 270.7,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:3af45fa30324f1312d86d82ba743b127\",\n      \"kind\": \"function\",\n      \"name\": \"createKeyVault\",\n      \"qualifiedName\": \"createKeyVault\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 22,\n      \"endLine\": 44,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(): KeyVaultHandle\",\n "
         },
         {
           "id": "plugengine-holdout-02",
@@ -2026,7 +2258,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 265.5
+          "latencyMs": 273.4,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:c59c90e8d341ab09c8e10c6d5995fc32\",\n      \"kind\": \"interface\",\n      \"name\": \"KeyVaultHandle\",\n      \"qualifiedName\": \"KeyVaultHandle\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 11,\n      \"endLine\": 20,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExpor"
         },
         {
           "id": "plugengine-holdout-03",
@@ -2046,7 +2280,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 267.5
+          "latencyMs": 274,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"createKeyVault\",\n  \"callers\": [\n    {\n      \"name\": \"ai-builder-mock-proof.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"startLine\": 1\n    }\n  ]\n}\n"
         },
         {
           "id": "plugengine-holdout-04",
@@ -2062,7 +2298,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 262.8
+          "latencyMs": 276,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:5659e1928247e369503109bb69c2bf3b\",\n      \"kind\": \"function\",\n      \"name\": \"generate\",\n      \"qualifiedName\": \"generate\",\n      \"filePath\": \"packages/plugengine-ai/src/aiBuilder.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 26,\n      \"endLine\": 37,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(prompt: string, options: Generat"
         },
         {
           "id": "plugengine-holdout-05",
@@ -2078,7 +2316,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 272.1
+          "latencyMs": 262.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:ac3ec1ea41f09f2ddaf60f73560a58a6\",\n      \"kind\": \"interface\",\n      \"name\": \"ArtProfile\",\n      \"qualifiedName\": \"ArtProfile\",\n      \"filePath\": \"packages/contracts/src/artProfile.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 58,\n      \"endLine\": 66,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true"
         },
         {
           "id": "plugengine-holdout-06",
@@ -2094,7 +2334,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 268.3
+          "latencyMs": 263.2,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:4c0f770ca1dfcc94977935867892e101\",\n      \"kind\": \"interface\",\n      \"name\": \"StagingDiff\",\n      \"qualifiedName\": \"StagingDiff\",\n      \"filePath\": \"packages/plugengine-ai/src/stagingDiff.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 10,\n      \"endLine\": 14,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported"
         },
         {
           "id": "plugengine-holdout-07",
@@ -2110,7 +2352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 268.7
+          "latencyMs": 260.1,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"interface:bb0c41394407556bd9f9a0c2bc3698d2\",\n      \"kind\": \"interface\",\n      \"name\": \"BuildJob\",\n      \"qualifiedName\": \"BuildJob\",\n      \"filePath\": \"packages/plugengine-ai/src/buildJob.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 14,\n      \"endLine\": 19,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"visibility\": null,\n      \"isExported\": true,\n"
         },
         {
           "id": "plugengine-holdout-08",
@@ -2126,7 +2370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 263.5
+          "latencyMs": 270.9,
+          "error": null,
+          "rawAnswer": "[\n  {\n    \"node\": {\n      \"id\": \"function:b0f0cc5c6f77c64d3338bccf98c0e0b5\",\n      \"kind\": \"function\",\n      \"name\": \"generateMockPlan\",\n      \"qualifiedName\": \"generateMockPlan\",\n      \"filePath\": \"packages/plugengine-ai/src/mockProvider.ts\",\n      \"language\": \"typescript\",\n      \"startLine\": 110,\n      \"endLine\": 130,\n      \"startColumn\": 7,\n      \"endColumn\": 1,\n      \"signature\": \"(job: BuildJ"
         },
         {
           "id": "plugengine-holdout-09",
@@ -2146,7 +2392,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 266.2
+          "latencyMs": 281.6,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"generateMockPlan\",\n  \"callers\": []\n}\n"
         },
         {
           "id": "plugengine-holdout-10",
@@ -2167,7 +2415,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 264.6
+          "latencyMs": 275.2,
+          "error": null,
+          "rawAnswer": "{\n  \"symbol\": \"createKeyVault\",\n  \"depth\": 2,\n  \"nodeCount\": 3,\n  \"edgeCount\": 2,\n  \"affected\": [\n    {\n      \"name\": \"createKeyVault\",\n      \"kind\": \"function\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"startLine\": 22\n    },\n    {\n      \"name\": \"ai-builder-mock-proof.mjs\",\n      \"kind\": \"file\",\n      \"filePath\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"startLine\": 1\n  "
         }
       ]
     }

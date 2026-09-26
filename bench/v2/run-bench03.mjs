@@ -1,16 +1,15 @@
 /**
- * BENCH-03 Unified Benchmark Suite
+ * BENCH-04 / BENCH-03 Unified Benchmark Suite
  *
- * Runs 120 questions (80 old + 40 holdout) across PlugBrain, GitNexus, and CodeGraph
- * under both COLD (CLI start) and WARM (daemon / resident memory) conditions.
+ * Runs 120 questions (80 historical + 40 frozen holdout) across PlugBrain, GitNexus, and CodeGraph.
+ * PlugBrain is evaluated under both WARM (in-memory daemon HTTP) and COLD (standalone CLI disk start).
+ * Competitors (GitNexus, CodeGraph) are evaluated via their official COLD CLI interfaces.
+ *
+ * Every question records latency, hit, rank, error status, and first 400 chars of rawAnswer.
  */
-import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, statSync, existsSync, readdirSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const { CodeGraph } = require('C:/Users/mil/AppData/Roaming/npm/node_modules/@colbymchenry/codegraph/npm-sdk.js');
 
 const WORKTREE = 'C:/PLUG/plugpt/Code/PlugBrain-Core--bench';
 const BENCH_DIR = 'C:/PLUG/bench';
@@ -23,7 +22,6 @@ const GITNEXUS_BIN = 'C:/Users/mil/AppData/Roaming/npm/gitnexus.cmd';
 const CODEGRAPH_BIN = 'C:/Users/mil/AppData/Roaming/npm/codegraph.cmd';
 
 const PLUGBRAIN_PORT = 4392;
-const GITNEXUS_PORT = 4848;
 
 function percentile(arr, p) {
   if (!arr.length) return 0;
@@ -135,8 +133,8 @@ function evaluateResult(q, parsed, rawText) {
     }
   }
 
-  // Text-based fallback (for GitNexus text output)
-  if (!hit && rawText) {
+  // Text-based fallback only when structured parsing was not available (e.g. GitNexus plain text table)
+  if (!hit && !parsed && rawText) {
     const textLower = rawText.toLowerCase();
     if (q.type === 'impact' || q.type === 'rename_impact') {
       const targets = (q.expected.expected_targets || []).map(normalizePath);
@@ -166,7 +164,7 @@ async function queryPlugBrainCold(repo, q) {
   if (q.type === 'callers') {
     cliArgs = [DIST_CLI, 'context', q.query_param, '--workspace', wsId, '--json'];
   } else if (q.type === 'impact' || q.type === 'rename_impact') {
-    cliArgs = [DIST_CLI, 'impact', q.query_param, '--json'];
+    cliArgs = [DIST_CLI, 'impact', q.query_param, '--workspace', wsId, '--json'];
   } else {
     cliArgs = [DIST_CLI, 'query', q.query_param, '--workspace', wsId, '--json'];
   }
@@ -179,87 +177,47 @@ async function queryPlugBrainCold(repo, q) {
   });
   const latency = Math.round((performance.now() - t0) * 10) / 10;
   let parsed = null;
-  try { parsed = JSON.parse(res.stdout); } catch {}
-  return { latency, parsed, raw: res.stdout || '' };
+  let error = null;
+  if (res.error) error = res.error.message;
+  else if (res.status !== 0) error = `exit code ${res.status}: ${(res.stderr || res.stdout || '').slice(0, 100)}`;
+  try {
+    parsed = JSON.parse(res.stdout);
+  } catch (e) {
+    if (!error) error = `json parse error: ${e.message}`;
+  }
+  return { latency, parsed, raw: res.stdout || res.stderr || '', error };
 }
 
 async function queryPlugBrainWarm(repo, q) {
   const wsId = WS_IDS[repo.name];
   let url = '';
   if (q.type === 'callers') {
-    url = `http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/context?name=${encodeURIComponent(q.query_param)}`;
+    url = `http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/context?name=${encodeURIComponent(q.query_param)}&workspace=${wsId}`;
   } else if (q.type === 'impact' || q.type === 'rename_impact') {
-    url = `http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/impact?target=${encodeURIComponent(q.query_param)}`;
+    url = `http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/impact?target=${encodeURIComponent(q.query_param)}&workspace=${wsId}`;
   } else {
     url = `http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/query?q=${encodeURIComponent(q.query_param)}&workspace=${wsId}`;
   }
   const t0 = performance.now();
   let parsed = null;
   let raw = '';
+  let error = null;
   try {
     const res = await fetch(url);
-    const json = await res.json();
-    parsed = json.result || json;
-    raw = JSON.stringify(json);
+    if (!res.ok) {
+      error = `http ${res.status}: ${res.statusText}`;
+      raw = await res.text();
+    } else {
+      const json = await res.json();
+      parsed = json.result || json;
+      raw = JSON.stringify(json);
+    }
   } catch (e) {
+    error = e.message;
     raw = String(e);
   }
   const latency = Math.round((performance.now() - t0) * 10) / 10;
-  return { latency, parsed, raw };
-}
-
-async function queryGitNexusCold(repo, q) {
-  let args = [];
-  if (q.type === 'callers') {
-    args = ['context', q.query_param, '-r', repo.path];
-  } else if (q.type === 'impact' || q.type === 'rename_impact') {
-    args = ['impact', q.query_param, '-r', repo.path];
-  } else {
-    args = ['query', q.query_param, '-r', repo.path];
-  }
-  const t0 = performance.now();
-  const res = spawnSync(GITNEXUS_BIN, args, {
-    cwd: repo.path,
-    encoding: 'utf8',
-    shell: true,
-    timeout: 15000
-  });
-  const latency = Math.round((performance.now() - t0) * 10) / 10;
-  let parsed = null;
-  const raw = res.stdout || '';
-  try { parsed = JSON.parse(raw); } catch {}
-  return { latency, parsed, raw };
-}
-
-async function queryGitNexusWarm(repo, q) {
-  let endpoint = '';
-  let body = {};
-  if (q.type === 'callers') {
-    endpoint = '/tool/context';
-    body = { name: q.query_param, repo: repo.path };
-  } else if (q.type === 'impact' || q.type === 'rename_impact') {
-    endpoint = '/tool/impact';
-    body = { target: q.query_param, repo: repo.path };
-  } else {
-    endpoint = '/tool/query';
-    body = { query: q.query_param, repo: repo.path };
-  }
-  const t0 = performance.now();
-  let raw = '';
-  let parsed = null;
-  try {
-    const res = await fetch(`http://127.0.0.1:${GITNEXUS_PORT}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    raw = await res.text();
-    try { parsed = JSON.parse(raw); } catch {}
-  } catch (e) {
-    raw = String(e);
-  }
-  const latency = Math.round((performance.now() - t0) * 10) / 10;
-  return { latency, parsed, raw };
+  return { latency, parsed, raw, error };
 }
 
 async function queryCodeGraphCold(repo, q) {
@@ -280,7 +238,10 @@ async function queryCodeGraphCold(repo, q) {
   });
   const latency = Math.round((performance.now() - t0) * 10) / 10;
   let parsed = null;
+  let error = null;
   const raw = res.stdout || '';
+  if (res.error) error = res.error.message;
+  else if (res.status !== 0) error = `exit code ${res.status}: ${(res.stderr || res.stdout || '').slice(0, 100)}`;
   try {
     parsed = JSON.parse(raw);
   } catch {
@@ -288,40 +249,38 @@ async function queryCodeGraphCold(repo, q) {
     const jsonArrStart = raw.indexOf('[');
     const start = jsonStart >= 0 && jsonArrStart >= 0 ? Math.min(jsonStart, jsonArrStart) : Math.max(jsonStart, jsonArrStart);
     if (start >= 0) {
-      try { parsed = JSON.parse(raw.slice(start)); } catch {}
-    }
-  }
-  return { latency, parsed, raw };
-}
-
-const warmCodeGraphs = {};
-function getWarmCodeGraph(repoPath) {
-  if (!warmCodeGraphs[repoPath]) {
-    warmCodeGraphs[repoPath] = CodeGraph.openSync(repoPath);
-  }
-  return warmCodeGraphs[repoPath];
-}
-
-async function queryCodeGraphWarm(repo, q) {
-  const cg = getWarmCodeGraph(repo.path);
-  const t0 = performance.now();
-  let parsed = null;
-  let raw = '';
-  try {
-    if (q.type === 'callers') {
-      parsed = cg.getCallers(q.query_param);
-    } else if (q.type === 'impact' || q.type === 'rename_impact') {
-      const imp = cg.getImpactRadius(q.query_param);
-      parsed = imp?.nodes ? Array.from(imp.nodes.values()) : [];
+      try { parsed = JSON.parse(raw.slice(start)); } catch (e) { if (!error) error = `json parse error: ${e.message}`; }
     } else {
-      parsed = cg.searchNodes(q.query_param);
+      if (!error) error = 'no json output';
     }
-    raw = JSON.stringify(parsed);
-  } catch (e) {
-    raw = String(e);
   }
+  return { latency, parsed, raw: raw || res.stderr || '', error };
+}
+
+async function queryGitNexusCold(repo, q) {
+  let args = [];
+  if (q.type === 'callers') {
+    args = ['context', q.query_param, '-r', repo.path];
+  } else if (q.type === 'impact' || q.type === 'rename_impact') {
+    args = ['impact', q.query_param, '-r', repo.path];
+  } else {
+    args = ['query', q.query_param, '-r', repo.path];
+  }
+  const t0 = performance.now();
+  const res = spawnSync(GITNEXUS_BIN, args, {
+    cwd: repo.path,
+    encoding: 'utf8',
+    shell: true,
+    timeout: 15000
+  });
   const latency = Math.round((performance.now() - t0) * 10) / 10;
-  return { latency, parsed, raw };
+  let parsed = null;
+  let error = null;
+  const raw = res.stdout || '';
+  if (res.error) error = res.error.message;
+  else if (res.status !== 0) error = `exit code ${res.status}: ${(res.stderr || res.stdout || '').slice(0, 100)}`;
+  try { parsed = JSON.parse(raw); } catch {}
+  return { latency, parsed, raw: raw || res.stderr || '', error };
 }
 
 // -------------------------------------------------------------
@@ -345,12 +304,14 @@ async function runBenchmark(name, runnerFn) {
     const latenciesAll = [];
 
     for (const q of questions) {
-      const { latency, parsed, raw } = await runnerFn(repo, q);
+      const { latency, parsed, raw, error } = await runnerFn(repo, q);
       const evalRes = evaluateResult(q, parsed, raw);
 
       latenciesAll.push(latency);
       if (q.isHoldout) latenciesHoldout.push(latency);
       else latenciesOld.push(latency);
+
+      const rawStr = typeof raw === 'string' ? raw : JSON.stringify(raw);
 
       questionResults.push({
         id: q.id,
@@ -361,7 +322,9 @@ async function runBenchmark(name, runnerFn) {
         expected: q.expected,
         hit: evalRes.hit,
         rank: evalRes.rank,
-        latencyMs: latency
+        latencyMs: latency,
+        error: error || null,
+        rawAnswer: rawStr.slice(0, 400)
       });
     }
 
@@ -371,6 +334,8 @@ async function runBenchmark(name, runnerFn) {
     const holdoutTotal = questionResults.filter(q => q.isHoldout).length;
     const totalHits = questionResults.filter(q => q.hit).length;
     const totalCount = questionResults.length;
+    const errorCount = questionResults.filter(q => q.error !== null).length;
+    const errorRate = Math.round((errorCount / totalCount) * 1000) / 10;
 
     repoResults.push({
       repo: repo.name,
@@ -383,6 +348,8 @@ async function runBenchmark(name, runnerFn) {
       totalHits,
       totalCount,
       totalAccuracy: Math.round((totalHits / totalCount) * 1000) / 10,
+      errorCount,
+      errorRate,
       latencyOldP50: percentile(latenciesOld, 50),
       latencyOldP95: percentile(latenciesOld, 95),
       latencyHoldoutP50: percentile(latenciesHoldout, 50),
@@ -392,7 +359,7 @@ async function runBenchmark(name, runnerFn) {
       questions: questionResults
     });
 
-    console.log(`    ${repo.name}: Old ${oldHits}/${oldTotal} (${repoResults[repoResults.length-1].oldAccuracy}%), Holdout ${holdoutHits}/${holdoutTotal} (${repoResults[repoResults.length-1].holdoutAccuracy}%), Total ${totalHits}/${totalCount} (${repoResults[repoResults.length-1].totalAccuracy}%), p50: ${percentile(latenciesAll, 50)}ms`);
+    console.log(`    ${repo.name}: Old ${oldHits}/${oldTotal} (${repoResults[repoResults.length-1].oldAccuracy}%), Holdout ${holdoutHits}/${holdoutTotal} (${repoResults[repoResults.length-1].holdoutAccuracy}%), Total ${totalHits}/${totalCount} (${repoResults[repoResults.length-1].totalAccuracy}%), errors ${errorCount}, p50: ${percentile(latenciesAll, 50)}ms`);
   }
 
   const grandOldHits = repoResults.reduce((a, r) => a + r.oldHits, 0);
@@ -401,6 +368,8 @@ async function runBenchmark(name, runnerFn) {
   const grandHoldoutTotal = repoResults.reduce((a, r) => a + r.holdoutTotal, 0);
   const grandTotalHits = repoResults.reduce((a, r) => a + r.totalHits, 0);
   const grandTotal = repoResults.reduce((a, r) => a + r.totalCount, 0);
+  const grandErrorCount = repoResults.reduce((a, r) => a + r.errorCount, 0);
+  const grandErrorRate = Math.round((grandErrorCount / grandTotal) * 1000) / 10;
 
   const allLatencies = repoResults.flatMap(r => r.questions.map(q => q.latencyMs));
 
@@ -416,6 +385,8 @@ async function runBenchmark(name, runnerFn) {
     grandTotalHits,
     grandTotal,
     grandTotalAccuracy: Math.round((grandTotalHits / grandTotal) * 1000) / 10,
+    grandErrorCount,
+    grandErrorRate,
     latencyP50: percentile(allLatencies, 50),
     latencyP95: percentile(allLatencies, 95),
     repos: repoResults
@@ -426,48 +397,67 @@ async function runBenchmark(name, runnerFn) {
 }
 
 async function main() {
-  console.log('Starting BENCH-03 full benchmark suite (120 questions across 3 tools, Cold & Warm)...');
+  console.log('Starting BENCH-04 full benchmark suite (120 questions across 4 modes)...');
 
   const suite = {};
 
-  // 1. PlugBrain Warm
-  suite['plugbrain-warm'] = await runBenchmark('plugbrain-warm', queryPlugBrainWarm);
+  // Start PlugBrain warm daemon on PLUGBRAIN_PORT
+  console.log(`Starting isolated PlugBrain daemon on port ${PLUGBRAIN_PORT}...`);
+  const daemonProc = spawn('node', [DIST_CLI, 'serve', '--port', String(PLUGBRAIN_PORT)], {
+    cwd: WORKTREE,
+    env: { ...process.env, PLUGBRAIN_HOME: TEMP_HOME, PLUGBRAIN_NO_DAEMON: '1' },
+    stdio: 'ignore'
+  });
 
-  // 2. PlugBrain Cold
-  suite['plugbrain-cold'] = await runBenchmark('plugbrain-cold', queryPlugBrainCold);
+  // Wait for daemon to be ready
+  let ready = false;
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 200));
+    try {
+      const res = await fetch(`http://127.0.0.1:${PLUGBRAIN_PORT}/api/intel/query?q=health&workspace=ws-b130556e3a03`);
+      if (res.ok) { ready = true; break; }
+    } catch {}
+  }
+  if (!ready) {
+    console.error('Failed to start PlugBrain warm daemon on port ' + PLUGBRAIN_PORT);
+    daemonProc.kill();
+    process.exit(1);
+  }
+  console.log('PlugBrain warm daemon ready.');
 
-  // 3. GitNexus Warm
-  suite['gitnexus-warm'] = await runBenchmark('gitnexus-warm', queryGitNexusWarm);
+  try {
+    // 1. PlugBrain Warm (Daemon HTTP)
+    suite['plugbrain-warm'] = await runBenchmark('plugbrain-warm', queryPlugBrainWarm);
 
-  // 4. GitNexus Cold
-  suite['gitnexus-cold'] = await runBenchmark('gitnexus-cold', queryGitNexusCold);
+    // 2. PlugBrain Cold (CLI)
+    suite['plugbrain-cold'] = await runBenchmark('plugbrain-cold', queryPlugBrainCold);
 
-  // 5. CodeGraph Warm
-  suite['codegraph-warm'] = await runBenchmark('codegraph-warm', queryCodeGraphWarm);
+    // 3. CodeGraph Cold (CLI)
+    suite['codegraph-cold'] = await runBenchmark('codegraph-cold', queryCodeGraphCold);
 
-  // 6. CodeGraph Cold
-  suite['codegraph-cold'] = await runBenchmark('codegraph-cold', queryCodeGraphCold);
-
-  // Close warm code graphs
-  for (const cg of Object.values(warmCodeGraphs)) {
-    try { cg.close(); } catch {}
+    // 4. GitNexus Cold (CLI)
+    suite['gitnexus-cold'] = await runBenchmark('gitnexus-cold', queryGitNexusCold);
+  } finally {
+    daemonProc.kill();
+    console.log('Terminated PlugBrain warm daemon.');
   }
 
   writeFileSync(join(RAW_DIR, 'v3-all-summary.json'), JSON.stringify(suite, null, 2));
 
   console.log('\n======================================================');
-  console.log('FINAL BENCH-03 SUMMARY');
+  console.log('FINAL BENCH-04 SUMMARY');
   console.log('======================================================');
-  console.log('Tool                 | Old (80)     | Holdout (40) | Total (120)  | Latency p50 | Latency p95');
-  console.log('---------------------+--------------+--------------+--------------+-------------+------------');
+  console.log('Tool                 | Old (80)     | Holdout (40) | Total (120)  | Errors | Latency p50 | Latency p95');
+  console.log('---------------------+--------------+--------------+--------------+--------+-------------+------------');
   for (const [key, s] of Object.entries(suite)) {
     const name = key.padEnd(20);
     const oldStr = `${s.grandOldHits}/${s.grandOldTotal} (${s.grandOldAccuracy}%)`.padEnd(12);
     const holdoutStr = `${s.grandHoldoutHits}/${s.grandHoldoutTotal} (${s.grandHoldoutAccuracy}%)`.padEnd(12);
     const totStr = `${s.grandTotalHits}/${s.grandTotal} (${s.grandTotalAccuracy}%)`.padEnd(12);
+    const errStr = `${s.grandErrorCount} (${s.grandErrorRate}%)`.padEnd(6);
     const p50 = `${s.latencyP50} ms`.padEnd(11);
     const p95 = `${s.latencyP95} ms`;
-    console.log(`${name} | ${oldStr} | ${holdoutStr} | ${totStr} | ${p50} | ${p95}`);
+    console.log(`${name} | ${oldStr} | ${holdoutStr} | ${totStr} | ${errStr} | ${p50} | ${p95}`);
   }
 }
 

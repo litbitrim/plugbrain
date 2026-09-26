@@ -1,17 +1,19 @@
 {
   "benchmark": "plugbrain-warm",
-  "timestamp": "2026-09-26T03:41:26.306Z",
-  "grandOldHits": 69,
+  "timestamp": "2026-09-26T03:59:59.978Z",
+  "grandOldHits": 66,
   "grandOldTotal": 80,
-  "grandOldAccuracy": 86.3,
+  "grandOldAccuracy": 82.5,
   "grandHoldoutHits": 39,
   "grandHoldoutTotal": 40,
   "grandHoldoutAccuracy": 97.5,
-  "grandTotalHits": 108,
+  "grandTotalHits": 105,
   "grandTotal": 120,
-  "grandTotalAccuracy": 90,
-  "latencyP50": 23.3,
-  "latencyP95": 256.7,
+  "grandTotalAccuracy": 87.5,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 34,
+  "latencyP95": 255.1,
   "repos": [
     {
       "repo": "mcpz",
@@ -24,12 +26,14 @@
       "totalHits": 25,
       "totalCount": 30,
       "totalAccuracy": 83.3,
-      "latencyOldP50": 53.1,
-      "latencyOldP95": 306.4,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 50.1,
+      "latencyOldP95": 312.7,
       "latencyHoldoutP50": 51.9,
-      "latencyHoldoutP95": 168.3,
-      "latencyAllP50": 52.9,
-      "latencyAllP95": 306.4,
+      "latencyHoldoutP95": 170.1,
+      "latencyAllP50": 51.4,
+      "latencyAllP95": 312.7,
       "questions": [
         {
           "id": "mcpz-01",
@@ -45,7 +49,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 739.2
+          "latencyMs": 717.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MOD_ID\",\"symbols\":[{\"id\":1114,\"name\":\"MOD_ID\",\"kind\":\"constant\",\"file\":\"src/main/java/net/mcpz/McpzConstants.java\",\"line\":5,\"endLine\":5,\"exported\":tru"
         },
         {
           "id": "mcpz-02",
@@ -61,7 +67,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 53.8
+          "latencyMs": 51.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CameraConfig\",\"symbols\":[{\"id\":1821,\"name\":\"CameraConfig\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"line\":9,\"endLine\":9"
         },
         {
           "id": "mcpz-03",
@@ -80,7 +88,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1.5
+          "latencyMs": 1.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"ambiguous\",\"candidates\":[{\"id\":1623,\"name\":\"init\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/save/McpzSaveData.java\",\"line\":48,\"endLine\":48,\"exported\":true,\"container\":\"McpzSaveData\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},{\"id\":1912,\"name\":\"init\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/McpzRuntime.java\",\"line\":68,\"endLine\":68,\"exported\""
         },
         {
           "id": "mcpz-04",
@@ -99,7 +109,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1.4
+          "latencyMs": 1.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1900,\"name\":\"registerKeybindings\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"line\":87,\"endLine\":87,\"exported\":false,\"container\":\"McpzClient\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\""
         },
         {
           "id": "mcpz-05",
@@ -120,7 +132,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 17.6
+          "latencyMs": 8.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"FLOOR_HEIGHT_BLOCKS\",\"file\":\"src/main/java/net/mcpz/McpzConstants.java\",\"id\":1121},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
         },
         {
           "id": "mcpz-06",
@@ -142,7 +156,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 18.1
+          "latencyMs": 33,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"CameraConfig\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"id\":1821},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":258,\"nodes\":{\"1\":[{\"depth\":1,\"id\":-136,\"name\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"kind\":\"file\",\"file\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.72"
         },
         {
           "id": "mcpz-07",
@@ -164,7 +180,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 53.1
+          "latencyMs": 50.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CameraConfig\",\"symbols\":[{\"id\":1821,\"name\":\"CameraConfig\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"line\":9,\"endLine\":9"
         },
         {
           "id": "mcpz-08",
@@ -180,7 +198,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 53.2
+          "latencyMs": 51.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"cameraYawDefaultDegrees\",\"symbols\":[],\"notes\":[{\"path\":\"src/main/java/net/mcpz/camera/CameraConfig.java\",\"title\":\"CameraConfig.java\",\"snippet\":\"… cfg)"
         },
         {
           "id": "mcpz-09",
@@ -196,7 +216,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 54.2
+          "latencyMs": 50.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzMod\",\"symbols\":[{\"id\":1124,\"name\":\"McpzMod\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/McpzMod.java\",\"line\":19,\"endLine\":19,\"exported\":true,\"co"
         },
         {
           "id": "mcpz-10",
@@ -212,7 +234,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 58.4
+          "latencyMs": 54.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzClient\",\"symbols\":[{\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"line\":45,\"endLine\":45,\""
         },
         {
           "id": "mcpz-11",
@@ -228,7 +252,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 210.5
+          "latencyMs": 209.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MASTER_NORTHSTAR.md\",\"symbols\":[{\"id\":-11,\"name\":\"MASTER_NORTHSTAR.md\",\"kind\":\"file\",\"file\":\"MASTER_NORTHSTAR.md\",\"line\":1,\"endLine\":1,\"exported\":true"
         },
         {
           "id": "mcpz-12",
@@ -244,7 +270,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 264.4
+          "latencyMs": 255.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MASTER_CAMERA_PLAN.md\",\"symbols\":[{\"id\":-6,\"name\":\"MASTER_CAMERA_PLAN.md\",\"kind\":\"file\",\"file\":\"MASTER_CAMERA_PLAN.md\",\"line\":1,\"endLine\":1,\"exported\""
         },
         {
           "id": "mcpz-13",
@@ -264,7 +292,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 19.7
+          "latencyMs": 34,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"camera\",\"file\":\"src/client/java/net/mcpz/client/McpzRuntime.java\",\"id\":1914},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":235,\"nodes\":{\"1\":[{\"depth\":1,\"id\":1897,\"name\":\"McpzClient\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/McpzClient.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":2141,\"name\":\"Mc"
         },
         {
           "id": "mcpz-14",
@@ -283,7 +313,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 16.2
+          "latencyMs": 30.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"derive_evidence_class\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"id\":280},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":10,\"nodes\":{\"1\":[{\"depth\":1,\"id\":282,\"name\":\"write_manifest\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":442,\"name\":\"test_os_input_"
         },
         {
           "id": "mcpz-15",
@@ -299,7 +331,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 306.4
+          "latencyMs": 312.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"derive_evidence_class\",\"symbols\":[{\"id\":280,\"name\":\"derive_evidence_class\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"line\":43,\"end"
         },
         {
           "id": "mcpz-16",
@@ -318,7 +352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1.4
+          "latencyMs": 1.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":281,\"name\":\"validate_manifest\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/evidence.py\",\"line\":50,\"endLine\":50,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":274,\"name\":\"_cmd_check\",\"kind\":\"function\",\"file\":\"tools/vlm-qa/mcpz_vlm/cli.py\",\"line\":94,\"rawTarget\":\"validate_manifest\"}"
         },
         {
           "id": "mcpz-17",
@@ -334,7 +370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 55.5
+          "latencyMs": 55.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"McpzAtmosphereController\",\"symbols\":[{\"id\":2846,\"name\":\"McpzAtmosphereController\",\"kind\":\"class\",\"file\":\"src/client/java/net/mcpz/client/atmosphere/Mc"
         },
         {
           "id": "mcpz-18",
@@ -355,7 +393,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 16.2
+          "latencyMs": 8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"ROTATE_LEFT\",\"file\":\"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\"id\":2648},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
         },
         {
           "id": "mcpz-19",
@@ -371,7 +411,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 56.6
+          "latencyMs": 58,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"MinecraftItemRepresentationRegistry\",\"symbols\":[{\"id\":1693,\"name\":\"MinecraftItemRepresentationRegistry\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/"
         },
         {
           "id": "mcpz-20",
@@ -391,7 +433,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.9
+          "latencyMs": 0.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1690,\"name\":\"McpzLog\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/log/McpzLog.java\",\"line\":10,\"endLine\":10,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":1690,\"name\":\"McpzLog\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/log/McpzLog.java\",\"line\":11,\"rawTarget\":\"McpzLog\"}],\"referen"
         },
         {
           "id": "mcpz-holdout-01",
@@ -407,7 +451,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 53.2
+          "latencyMs": 53.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PzTrait\",\"symbols\":[{\"id\":1804,\"name\":\"PzTrait\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/character/PzTrait.java\",\"line\":14,\"endLine\":14,\"exported"
         },
         {
           "id": "mcpz-holdout-02",
@@ -423,7 +469,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 49.2
+          "latencyMs": 57.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"costLabel\",\"symbols\":[{\"id\":1782,\"name\":\"costLabel\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/character/PzStep2Layout.java\",\"line\":170,\"endLine\":"
         },
         {
           "id": "mcpz-holdout-03",
@@ -439,7 +487,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 53.8
+          "latencyMs": 51.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PzProfession\",\"symbols\":[{\"id\":1754,\"name\":\"PzProfession\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/character/PzProfession.java\",\"line\":11,\"endLin"
         },
         {
           "id": "mcpz-holdout-04",
@@ -455,7 +505,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 52.9
+          "latencyMs": 54.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ModuleRegistry\",\"symbols\":[{\"id\":1682,\"name\":\"ModuleRegistry\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/module/ModuleRegistry.java\",\"line\":16,\"end"
         },
         {
           "id": "mcpz-holdout-05",
@@ -474,7 +526,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.7
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":1685,\"name\":\"initializeAll\",\"kind\":\"method\",\"file\":\"src/main/java/net/mcpz/module/ModuleRegistry.java\",\"line\":34,\"endLine\":34,\"exported\":true,\"container\":\"ModuleRegistry\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[],\"references\":[]},\"processes\":[]}}"
         },
         {
           "id": "mcpz-holdout-06",
@@ -490,7 +544,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 51.9
+          "latencyMs": 50.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"SaveSchema\",\"symbols\":[{\"id\":1630,\"name\":\"SaveSchema\",\"kind\":\"class\",\"file\":\"src/main/java/net/mcpz/save/SaveSchema.java\",\"line\":6,\"endLine\":6,\"export"
         },
         {
           "id": "mcpz-holdout-07",
@@ -506,7 +562,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 55.1
+          "latencyMs": 59,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"AimTargetSnapshot\",\"symbols\":[],\"notes\":[{\"path\":\"src/test/java/net/mcpz/McpzPlacementAssistTest.java\",\"title\":\"McpzPlacementAssistTest.java\",\"snippet"
         },
         {
           "id": "mcpz-holdout-08",
@@ -522,7 +580,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 50
+          "latencyMs": 51.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"clampBrightness\",\"symbols\":[{\"id\":2858,\"name\":\"clampBrightness\",\"kind\":\"method\",\"file\":\"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereContr"
         },
         {
           "id": "mcpz-holdout-09",
@@ -538,7 +598,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 168.3
+          "latencyMs": 170.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:24.281Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"HALF_HEIGHT_FACTOR\",\"symbols\":[{\"id\":1838,\"name\":\"HALF_HEIGHT_FACTOR\",\"kind\":\"constant\",\"file\":\"src/main/java/net/mcpz/camera/CameraProjection.java\",\""
         },
         {
           "id": "mcpz-holdout-10",
@@ -558,7 +620,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 17.7
+          "latencyMs": 31.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"orthographic\",\"file\":\"src/main/java/net/mcpz/camera/CameraProjection.java\",\"id\":1839},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":43,\"nodes\":{\"1\":[{\"depth\":1,\"id\":528,\"name\":\"CameraMathTest\",\"kind\":\"class\",\"file\":\"src/test/java/net/mcpz/CameraMathTest.java\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":927,\"name"
         }
       ]
     },
@@ -573,12 +637,14 @@
       "totalHits": 28,
       "totalCount": 30,
       "totalAccuracy": 93.3,
-      "latencyOldP50": 15.6,
-      "latencyOldP95": 42.4,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 12.6,
+      "latencyOldP95": 42,
       "latencyHoldoutP50": 13.6,
-      "latencyHoldoutP95": 31.8,
-      "latencyAllP50": 14.8,
-      "latencyAllP95": 42.4,
+      "latencyHoldoutP95": 37.6,
+      "latencyAllP50": 13.6,
+      "latencyAllP95": 42,
       "questions": [
         {
           "id": "plugmedia-01",
@@ -594,7 +660,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 44.1
+          "latencyMs": 40.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"SCHEMA_VERSION\",\"symbols\":[{\"id\":9216,\"name\":\"SCHEMA_VERSION\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/index.ts\",\"line\":5,\"endLine\":5,\"exporte"
         },
         {
           "id": "plugmedia-02",
@@ -610,7 +678,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 20.7
+          "latencyMs": 20.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"QA_AXES\",\"symbols\":[{\"id\":9218,\"name\":\"QA_AXES\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/index.ts\",\"line\":16,\"endLine\":16,\"exported\":true,\"con"
         },
         {
           "id": "plugmedia-03",
@@ -629,7 +699,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1
+          "latencyMs": 1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":9207,\"name\":\"topoSort\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/topo.ts\",\"line\":7,\"endLine\":25,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"graph.test.ts\",\"kind\":\"file\",\"file\":\"tests/graph.test.ts\",\"line\":27,\"rawTarget\":\"topoSort\"},{\"id\":null,\"name\":\"graph."
         },
         {
           "id": "plugmedia-04",
@@ -645,7 +717,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 12.9
+          "latencyMs": 11.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CycleError\",\"symbols\":[{\"id\":9205,\"name\":\"CycleError\",\"kind\":\"class\",\"file\":\"packages/graph/src/compute/topo.ts\",\"line\":2,\"endLine\":5,\"exported\":true,"
         },
         {
           "id": "plugmedia-05",
@@ -661,7 +735,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 13.6
+          "latencyMs": 11.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"casPath\",\"symbols\":[{\"id\":7270,\"name\":\"casPath\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":30,\"endLine\":32,\"exported\":true,\"contain"
         },
         {
           "id": "plugmedia-06",
@@ -680,7 +756,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.9
+          "latencyMs": 0.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":48,\"endLine\":83,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":8253,\"name\":\"commitArtifact\",\"kind\":\"function\",\"file\":\"services/runtime/src/domain/media.ts\",\"line\":69,\"rawTarget\":\"storeContent\"}],"
         },
         {
           "id": "plugmedia-07",
@@ -699,9 +777,11 @@
             "expected_count": 2,
             "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 16.1
+          "latencyMs": 2.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"PGCONFIG\",\"file\":\"services/runtime/src/db.ts\",\"id\":7307},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
         },
         {
           "id": "plugmedia-08",
@@ -721,7 +801,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.9
+          "latencyMs": 6.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"SCHEMA_VERSION\",\"file\":\"packages/contracts/src/index.ts\",\"id\":9216},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":79,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7297,\"name\":\"Handler\",\"kind\":\"type_alias\",\"file\":\"services/runtime/src/commands.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":7299,\"name\":\"register\""
         },
         {
           "id": "plugmedia-09",
@@ -740,7 +822,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 14.8
+          "latencyMs": 14.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"storeContent\",\"symbols\":[{\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"line\":48,\"endLine\":83,\"exported\":tru"
         },
         {
           "id": "plugmedia-10",
@@ -756,7 +840,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 32
+          "latencyMs": 39.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUGMEDIA_PORT\",\"symbols\":[{\"id\":7362,\"name\":\"PLUGMEDIA_PORT\",\"kind\":\"constant\",\"file\":\"services/runtime/src/index.ts\",\"line\":36,\"endLine\":36,\"exporte"
         },
         {
           "id": "plugmedia-11",
@@ -772,7 +858,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 11.7
+          "latencyMs": 12.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PGPORT\",\"symbols\":[{\"id\":7309,\"name\":\"PGPORT\",\"kind\":\"constant\",\"file\":\"services/runtime/src/db.ts\",\"line\":15,\"endLine\":15,\"exported\":true,\"container\""
         },
         {
           "id": "plugmedia-12",
@@ -788,7 +876,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 14.4
+          "latencyMs": 16.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"Fastify\",\"symbols\":[],\"notes\":[{\"path\":\"package.json\",\"title\":\"package.json\",\"snippet\":\"… 3\\\", \\\"vite\\\": \\\"^8.3.0\\\" }, \\\"dependencies\\\": { \\\"@[fastify"
         },
         {
           "id": "plugmedia-13",
@@ -804,7 +894,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 25.9
+          "latencyMs": 29.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"main\",\"symbols\":[{\"id\":6377,\"name\":\"main\",\"kind\":\"function\",\"file\":\"workers/media/d1_characters.py\",\"line\":430,\"endLine\":430,\"exported\":true,\"containe"
         },
         {
           "id": "plugmedia-14",
@@ -820,7 +912,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 42.4
+          "latencyMs": 44.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"VS0_FINAL_REPORT.md\",\"symbols\":[{\"id\":-922,\"name\":\"VS0_FINAL_REPORT.md\",\"kind\":\"file\",\"file\":\"VS0_FINAL_REPORT.md\",\"line\":1,\"endLine\":1,\"exported\":tru"
         },
         {
           "id": "plugmedia-15",
@@ -836,7 +930,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 37.2
+          "latencyMs": 42,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ARCHIVE_MANIFEST.md\",\"symbols\":[{\"id\":-918,\"name\":\"ARCHIVE_MANIFEST.md\",\"kind\":\"file\",\"file\":\"ARCHIVE_MANIFEST.md\",\"line\":1,\"endLine\":1,\"exported\":tru"
         },
         {
           "id": "plugmedia-16",
@@ -855,7 +951,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.8
+          "latencyMs": 4.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"ensureCas\",\"file\":\"services/runtime/src/cas.ts\",\"id\":7269},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":12,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7276,\"name\":\"storeContent\",\"kind\":\"function\",\"file\":\"services/runtime/src/cas.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9}],\"2\":[{\"depth\":2,\"id\":8253,\"name\":\"commitArtifact\",\"kind\":\"functio"
         },
         {
           "id": "plugmedia-17",
@@ -874,7 +972,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.6
+          "latencyMs": 5.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"applyMigrations\",\"file\":\"services/runtime/src/db.ts\",\"id\":7322},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":27,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7151,\"name\":\"migrate\",\"kind\":\"function\",\"file\":\"tools/admin/plug-admin.mjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":8553,\"name\":\"restore\",\"kind\":\"function\",\"file\":\"ser"
         },
         {
           "id": "plugmedia-18",
@@ -890,7 +990,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 13.9
+          "latencyMs": 15.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"schedulerTick\",\"symbols\":[{\"id\":7631,\"name\":\"schedulerTick\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/scheduler.ts\",\"line\":215,\"endLine\":2"
         },
         {
           "id": "plugmedia-19",
@@ -907,9 +1009,11 @@
             ],
             "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 0.9
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7299,\"name\":\"register\",\"kind\":\"function\",\"file\":\"services/runtime/src/commands.ts\",\"line\":12,\"endLine\":12,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"index.ts\",\"kind\":\"file\",\"file\":\"services/runtime/src/index.ts\",\"line\":52,\"rawTarget\":\"register\"},{\"id\":null,\"name\":\"in"
         },
         {
           "id": "plugmedia-20",
@@ -925,7 +1029,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 18
+          "latencyMs": 21.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ALLOWED_ORIGINS\",\"symbols\":[{\"id\":7225,\"name\":\"ALLOWED_ORIGINS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/auth.ts\",\"line\":24,\"endLine\":28,\"export"
         },
         {
           "id": "plugmedia-holdout-01",
@@ -941,7 +1047,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 17.6
+          "latencyMs": 18.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ALLOWED_ORIGINS\",\"symbols\":[{\"id\":7225,\"name\":\"ALLOWED_ORIGINS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/auth.ts\",\"line\":24,\"endLine\":28,\"export"
         },
         {
           "id": "plugmedia-holdout-02",
@@ -957,7 +1065,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 12.8
+          "latencyMs": 13.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"issueCapability\",\"symbols\":[{\"id\":7234,\"name\":\"issueCapability\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":48,\"endLine\":55,\"export"
         },
         {
           "id": "plugmedia-holdout-03",
@@ -973,7 +1083,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 12.4
+          "latencyMs": 12.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"verifyCapability\",\"symbols\":[{\"id\":7240,\"name\":\"verifyCapability\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":57,\"endLine\":67,\"expo"
         },
         {
           "id": "plugmedia-holdout-04",
@@ -989,7 +1101,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 11.6
+          "latencyMs": 13.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"csrfGuard\",\"symbols\":[{\"id\":7263,\"name\":\"csrfGuard\",\"kind\":\"function\",\"file\":\"services/runtime/src/auth.ts\",\"line\":124,\"endLine\":128,\"exported\":true,\""
         },
         {
           "id": "plugmedia-holdout-05",
@@ -1005,7 +1119,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 31.8
+          "latencyMs": 37.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_CATCHUP_WINDOW_HOURS\",\"symbols\":[{\"id\":7597,\"name\":\"DEFAULT_CATCHUP_WINDOW_HOURS\",\"kind\":\"constant\",\"file\":\"services/runtime/src/engine/schedu"
         },
         {
           "id": "plugmedia-holdout-06",
@@ -1021,7 +1137,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 13.6
+          "latencyMs": 15.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"computeNodeCacheKey\",\"symbols\":[{\"id\":9201,\"name\":\"computeNodeCacheKey\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/cacheKey.ts\",\"line\":27,\"e"
         },
         {
           "id": "plugmedia-holdout-07",
@@ -1037,7 +1155,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 23.3
+          "latencyMs": 26.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"NODE_VERSIONS\",\"symbols\":[{\"id\":9203,\"name\":\"NODE_VERSIONS\",\"kind\":\"constant\",\"file\":\"packages/graph/src/compute/nodeVersions.ts\",\"line\":13,\"endLine\":"
         },
         {
           "id": "plugmedia-holdout-08",
@@ -1053,7 +1173,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 13.6
+          "latencyMs": 15.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:28.345Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"implementationDigest\",\"symbols\":[{\"id\":9204,\"name\":\"implementationDigest\",\"kind\":\"function\",\"file\":\"packages/graph/src/compute/nodeVersions.ts\",\"line\""
         },
         {
           "id": "plugmedia-holdout-09",
@@ -1072,7 +1194,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.8
+          "latencyMs": 0.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":7631,\"name\":\"schedulerTick\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/scheduler.ts\",\"line\":215,\"endLine\":235,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":7421,\"name\":\"schedulerLoop\",\"kind\":\"function\",\"file\":\"services/runtime/src/index.ts\",\"line\":373,\"rawTarget\":\"schedul"
         },
         {
           "id": "plugmedia-holdout-10",
@@ -1091,27 +1215,31 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 16.6
+          "latencyMs": 6.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"computeNodeCacheKey\",\"file\":\"packages/graph/src/compute/cacheKey.ts\",\"id\":9201},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":44,\"nodes\":{\"1\":[{\"depth\":1,\"id\":7760,\"name\":\"processJob\",\"kind\":\"function\",\"file\":\"services/runtime/src/engine/worker.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":-954,\"name\":\"tests/gr"
         }
       ]
     },
     {
       "repo": "cowork",
-      "oldHits": 18,
+      "oldHits": 16,
       "oldTotal": 20,
-      "oldAccuracy": 90,
+      "oldAccuracy": 80,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 28,
+      "totalHits": 26,
       "totalCount": 30,
-      "totalAccuracy": 93.3,
-      "latencyOldP50": 26.1,
-      "latencyOldP95": 103.9,
-      "latencyHoldoutP50": 21.1,
-      "latencyHoldoutP95": 59.9,
-      "latencyAllP50": 22.1,
-      "latencyAllP95": 103.9,
+      "totalAccuracy": 86.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 26.8,
+      "latencyOldP95": 103.6,
+      "latencyHoldoutP50": 21.9,
+      "latencyHoldoutP95": 66.1,
+      "latencyAllP50": 22,
+      "latencyAllP95": 103.6,
       "questions": [
         {
           "id": "cowork-01",
@@ -1127,7 +1255,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 45.8
+          "latencyMs": 51.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_LANES\",\"symbols\":[{\"id\":10840,\"name\":\"DEFAULT_LANES\",\"kind\":\"constant\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":43,\"endLine\":43,\"exported\""
         },
         {
           "id": "cowork-02",
@@ -1143,7 +1273,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 26.6
+          "latencyMs": 26.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"scrub\",\"symbols\":[{\"id\":10842,\"name\":\"scrub\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":59,\"endLine\":59,\"exported\":true,\"container"
         },
         {
           "id": "cowork-03",
@@ -1162,7 +1294,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.8
+          "latencyMs": 1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10970,\"name\":\"post_event\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":42,\"endLine\":42,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10972,\"name\":\"fleet_patch\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":71,\"rawTarget\":\"post_event\"},{\"id\":10972"
         },
         {
           "id": "cowork-04",
@@ -1181,7 +1315,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.7
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10971,\"name\":\"codegraph_context\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":54,\"endLine\":54,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10980,\"name\":\"run_part_as_worker\",\"kind\":\"function\",\"file\":\"ruflo-workers/tools/worker.py\",\"line\":235,\"rawTarget\":\"codegraph"
         },
         {
           "id": "cowork-05",
@@ -1202,7 +1338,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.7
+          "latencyMs": 4.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"CONFIG\",\"file\":\"ruflo-workers/tools/fleet.py\",\"id\":10839},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":54,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10911,\"name\":\"HERE\",\"kind\":\"constant\",\"file\":\"ruflo-workers/tools/planner.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":10912,\"name\":\"ROOT\",\"kind\":\"constant\","
         },
         {
           "id": "cowork-06",
@@ -1220,9 +1358,11 @@
             "expected_count": 1,
             "details": "RATE determines cost calculation for different AI model providers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 14.1
+          "latencyMs": 1.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"RATE\",\"file\":\"cockpit/server.cjs\",\"id\":11346},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
         },
         {
           "id": "cowork-07",
@@ -1242,7 +1382,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 21.2
+          "latencyMs": 21,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"writeConfig\",\"symbols\":[{\"id\":11355,\"name\":\"writeConfig\",\"kind\":\"function\",\"file\":\"cockpit/server.cjs\",\"line\":44,\"endLine\":49,\"exported\":false,\"contai"
         },
         {
           "id": "cowork-08",
@@ -1258,7 +1400,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 80.5
+          "latencyMs": 85.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUGOS_COCKPIT_PORT\",\"symbols\":[{\"id\":11349,\"name\":\"PLUGOS_COCKPIT_PORT\",\"kind\":\"constant\",\"file\":\"cockpit/server.cjs\",\"line\":35,\"endLine\":35,\"exporte"
         },
         {
           "id": "cowork-09",
@@ -1274,7 +1418,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 112.1
+          "latencyMs": 136.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"swarm-chain.config.json\",\"symbols\":[{\"id\":-1143,\"name\":\"ruflo-workers/swarm-chain.config.json\",\"kind\":\"file\",\"file\":\"ruflo-workers/swarm-chain.config."
         },
         {
           "id": "cowork-10",
@@ -1288,9 +1434,11 @@
             "kind": "entrypoint",
             "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 27.2
+          "latencyMs": 29.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"fleet\",\"symbols\":[{\"id\":10852,\"name\":\"Fleet\",\"kind\":\"class\",\"file\":\"ruflo-workers/tools/fleet.py\",\"line\":208,\"endLine\":208,\"exported\":true,\"container\""
         },
         {
           "id": "cowork-11",
@@ -1306,7 +1454,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 40.2
+          "latencyMs": 41.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"server.cjs\",\"symbols\":[{\"id\":-1095,\"name\":\"station/server.cjs\",\"kind\":\"file\",\"file\":\"station/server.cjs\",\"line\":1,\"endLine\":1,\"exported\":true,\"contain"
         },
         {
           "id": "cowork-12",
@@ -1322,7 +1472,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 88.1
+          "latencyMs": 90.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"produce_one\",\"symbols\":[{\"id\":10587,\"name\":\"produce_one\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"line\":13,\"endLine\":13,\"exported\":tr"
         },
         {
           "id": "cowork-13",
@@ -1338,7 +1490,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 62.7
+          "latencyMs": 62.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CANON.md\",\"symbols\":[{\"id\":-1057,\"name\":\"CANON.md\",\"kind\":\"file\",\"file\":\"CANON.md\",\"line\":1,\"endLine\":1,\"exported\":true,\"container\":null,\"repoId\":null"
         },
         {
           "id": "cowork-14",
@@ -1354,7 +1508,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 103.9
+          "latencyMs": 103.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CONTENT_STYLE_GUIDE.md\",\"symbols\":[{\"id\":-1062,\"name\":\"CONTENT_STYLE_GUIDE.md\",\"kind\":\"file\",\"file\":\"CONTENT_STYLE_GUIDE.md\",\"line\":1,\"endLine\":1,\"exp"
         },
         {
           "id": "cowork-15",
@@ -1373,7 +1529,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 16.6
+          "latencyMs": 3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"produce_one\",\"file\":\"shortsfactory/pipeline/run.py\",\"id\":10587},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":2,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10588,\"name\":\"main\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":10586,\"name\":\"_has\",\"kind\":\"function\",\"file\":\"short"
         },
         {
           "id": "cowork-16",
@@ -1392,7 +1550,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.1
+          "latencyMs": 3.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"writeConfig\",\"file\":\"cockpit/server.cjs\",\"id\":11355},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":22,\"nodes\":{\"1\":[{\"depth\":1,\"id\":11381,\"name\":\"upsertLane\",\"kind\":\"function\",\"file\":\"cockpit/server.cjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":11384,\"name\":\"setRunner\",\"kind\":\"function\",\"file\":\"cockpit/server."
         },
         {
           "id": "cowork-17",
@@ -1408,7 +1568,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 88
+          "latencyMs": 91.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"produce_one\",\"symbols\":[{\"id\":10587,\"name\":\"produce_one\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/run.py\",\"line\":13,\"endLine\":13,\"exported\":tr"
         },
         {
           "id": "cowork-18",
@@ -1427,7 +1589,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 0.7
+          "latencyMs": 0.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10597,\"name\":\"synth_voiceover\",\"kind\":\"function\",\"file\":\"shortsfactory/pipeline/tts.py\",\"line\":53,\"endLine\":53,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"makedirs\",\"kind\":\"call\",\"file\":\"\",\"line\":54,\"rawTarget\":\"makedirs\"},{\"id\""
         },
         {
           "id": "cowork-19",
@@ -1443,7 +1607,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 26.1
+          "latencyMs": 27.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ROLES\",\"symbols\":[{\"id\":11352,\"name\":\"ROLES\",\"kind\":\"constant\",\"file\":\"cockpit/server.cjs\",\"line\":38,\"endLine\":38,\"exported\":false,\"container\":null,\"r"
         },
         {
           "id": "cowork-20",
@@ -1463,7 +1629,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 14.8
+          "latencyMs": 1.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"KEY_ALIAS\",\"file\":\"cockpit/fleet-direct.cjs\",\"id\":11271},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":0,\"nodes\":{\"1\":[]},\"risk\":\"low\"}}"
         },
         {
           "id": "cowork-holdout-01",
@@ -1479,7 +1647,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 22.1
+          "latencyMs": 22,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"readLedger\",\"symbols\":[{\"id\":10316,\"name\":\"readLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":44,\"endLine\":54,\"exported\":false,\"containe"
         },
         {
           "id": "cowork-holdout-02",
@@ -1495,7 +1665,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 20.1
+          "latencyMs": 21.6,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"writeLedger\",\"symbols\":[{\"id\":10320,\"name\":\"writeLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":55,\"endLine\":58,\"exported\":false,\"contai"
         },
         {
           "id": "cowork-holdout-03",
@@ -1511,7 +1683,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 20.9
+          "latencyMs": 21.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"missionOf\",\"symbols\":[{\"id\":10313,\"name\":\"missionOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":33,\"endLine\":39,\"exported\":false,\"container\""
         },
         {
           "id": "cowork-holdout-04",
@@ -1527,7 +1701,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 33.9
+          "latencyMs": 36.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"FLEET_PARALLELISM\",\"symbols\":[{\"id\":10311,\"name\":\"FLEET_PARALLELISM\",\"kind\":\"constant\",\"file\":\"station/server.cjs\",\"line\":31,\"endLine\":31,\"exported\":f"
         },
         {
           "id": "cowork-holdout-05",
@@ -1543,7 +1719,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 59.9
+          "latencyMs": 66.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"decompose_room\",\"symbols\":[{\"id\":10296,\"name\":\"main\",\"kind\":\"function\",\"file\":\"tools/decompose_room.py\",\"line\":27,\"endLine\":27,\"exported\":true,\"contai"
         },
         {
           "id": "cowork-holdout-06",
@@ -1559,7 +1737,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 23.8
+          "latencyMs": 22.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"verdictOf\",\"symbols\":[{\"id\":10322,\"name\":\"verdictOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":59,\"endLine\":64,\"exported\":false,\"container\""
         },
         {
           "id": "cowork-holdout-07",
@@ -1578,7 +1758,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.7
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":10320,\"name\":\"writeLedger\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":55,\"endLine\":58,\"exported\":false,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":10336,\"name\":\"movePrio\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":112,\"rawTarget\":\"writeLedger\"}],\"references\":[]},\"outgoing\":{\"c"
         },
         {
           "id": "cowork-holdout-08",
@@ -1594,7 +1776,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 41.4
+          "latencyMs": 43.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_EFFORT\",\"symbols\":[{\"id\":10310,\"name\":\"DEFAULT_EFFORT\",\"kind\":\"constant\",\"file\":\"station/server.cjs\",\"line\":30,\"endLine\":30,\"exported\":false,\""
         },
         {
           "id": "cowork-holdout-09",
@@ -1613,7 +1797,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 15.8
+          "latencyMs": 4.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"readLedger\",\"file\":\"station/server.cjs\",\"id\":10316},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":6,\"nodes\":{\"1\":[{\"depth\":1,\"id\":10324,\"name\":\"buildProgress\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":10336,\"name\":\"movePrio\",\"kind\":\"function\",\"file\":\"station/server."
         },
         {
           "id": "cowork-holdout-10",
@@ -1629,27 +1815,31 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 21.1
+          "latencyMs": 21.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:33.043Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"effortOf\",\"symbols\":[{\"id\":10315,\"name\":\"effortOf\",\"kind\":\"function\",\"file\":\"station/server.cjs\",\"line\":40,\"endLine\":42,\"exported\":false,\"container\":n"
         }
       ]
     },
     {
       "repo": "plugengine",
-      "oldHits": 17,
+      "oldHits": 16,
       "oldTotal": 20,
-      "oldAccuracy": 85,
+      "oldAccuracy": 80,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 27,
+      "totalHits": 26,
       "totalCount": 30,
-      "totalAccuracy": 90,
-      "latencyOldP50": 72.2,
-      "latencyOldP95": 326.7,
-      "latencyHoldoutP50": 66.2,
-      "latencyHoldoutP95": 175.3,
-      "latencyAllP50": 70.5,
-      "latencyAllP95": 326.7,
+      "totalAccuracy": 86.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 74.9,
+      "latencyOldP95": 337,
+      "latencyHoldoutP50": 71,
+      "latencyHoldoutP95": 163.3,
+      "latencyAllP50": 73.7,
+      "latencyAllP95": 337,
       "questions": [
         {
           "id": "plugengine-01",
@@ -1665,7 +1855,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 82.9
+          "latencyMs": 84.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBus\",\"symbols\":[{\"id\":31909,\"name\":\"CommandBus\",\"kind\":\"class\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":40,\"endLine\":122,\"ex"
         },
         {
           "id": "plugengine-02",
@@ -1681,7 +1873,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 175.2
+          "latencyMs": 180,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"DEFAULT_LIMIT\",\"symbols\":[{\"id\":31902,\"name\":\"DEFAULT_LIMIT\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":10,\"endLine"
         },
         {
           "id": "plugengine-03",
@@ -1698,9 +1892,11 @@
             ],
             "details": "bus.test.ts executes dispatches against CommandBus instances."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 0.8
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":31915,\"name\":\"dispatch\",\"kind\":\"method\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":60,\"endLine\":68,\"exported\":false,\"container\":\"CommandBus\",\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"do\",\"kind\":\"call\",\"file\":\"\",\"line\":61,\"rawTarget\":\"do\"},{\"i"
         },
         {
           "id": "plugengine-04",
@@ -1716,7 +1912,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 208.1
+          "latencyMs": 212.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"PLUG_PACKAGE_KINDS\",\"symbols\":[{\"id\":33883,\"name\":\"PLUG_PACKAGE_KINDS\",\"kind\":\"constant\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":37,\"endLine\":"
         },
         {
           "id": "plugengine-05",
@@ -1732,7 +1930,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 75.1
+          "latencyMs": 67.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"isPlugPackageKind\",\"symbols\":[{\"id\":33884,\"name\":\"isPlugPackageKind\",\"kind\":\"function\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":45,\"endLine\":47"
         },
         {
           "id": "plugengine-06",
@@ -1751,7 +1951,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.7
+          "latencyMs": 0.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33884,\"name\":\"isPlugPackageKind\",\"kind\":\"function\",\"file\":\"packages/contracts/src/addon.ts\",\"line\":45,\"endLine\":47,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[],\"references\":[]},\"outgoing\":{\"calls\":[{\"id\":null,\"name\":\"includes\",\"kind\":\"call\",\"file\":\"\",\"line\":46,\"rawTarget\":\"includes\"}],"
         },
         {
           "id": "plugengine-07",
@@ -1772,7 +1974,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 16.7
+          "latencyMs": 42.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"DEFAULT_LIMIT\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"id\":31902},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":2,\"nodes\":{\"1\":[{\"depth\":1,\"id\":31404,\"name\":\"ENGINE_VERSION\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/index.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"depth\":1,\"id\":"
         },
         {
           "id": "plugengine-08",
@@ -1793,7 +1997,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 19.3
+          "latencyMs": 74.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"PLUG_PACKAGE_KINDS\",\"file\":\"packages/contracts/src/addon.ts\",\"id\":33883},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":263,\"nodes\":{\"1\":[{\"depth\":1,\"id\":-1962,\"name\":\"packages/contracts/src/addon.test.ts\",\"kind\":\"file\",\"file\":\"packages/contracts/src/addon.test.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"imports\",\"confidence\":0.7200000000000001},{\"de"
         },
         {
           "id": "plugengine-09",
@@ -1812,7 +2018,9 @@
           },
           "hit": true,
           "rank": 3,
-          "latencyMs": 84.1
+          "latencyMs": 88.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBus\",\"symbols\":[{\"id\":31909,\"name\":\"CommandBus\",\"kind\":\"class\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":40,\"endLine\":122,\"ex"
         },
         {
           "id": "plugengine-10",
@@ -1828,7 +2036,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 66.1
+          "latencyMs": 65.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CommandBusOptions\",\"symbols\":[{\"id\":31899,\"name\":\"CommandBusOptions\",\"kind\":\"interface\",\"file\":\"packages/plugengine-core/src/command/bus.ts\",\"line\":3,"
         },
         {
           "id": "plugengine-11",
@@ -1844,7 +2054,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 71.1
+          "latencyMs": 71.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"workspaces\",\"symbols\":[{\"id\":12843,\"name\":\"workspaces\",\"kind\":\"property\",\"file\":\"package.json\",\"line\":7,\"endLine\":7,\"exported\":true,\"container\":null,\""
         },
         {
           "id": "plugengine-12",
@@ -1858,9 +2070,11 @@
             "kind": "entrypoint",
             "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 256.7
+          "latencyMs": 267,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"plugengine-core\",\"symbols\":[{\"id\":31404,\"name\":\"ENGINE_VERSION\",\"kind\":\"constant\",\"file\":\"packages/plugengine-core/src/index.ts\",\"line\":10,\"endLine\":1"
         },
         {
           "id": "plugengine-13",
@@ -1876,7 +2090,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 107.3
+          "latencyMs": 110.2,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"contracts\",\"symbols\":[{\"id\":13154,\"name\":\"contracts\",\"kind\":\"constant\",\"file\":\"scripts/ai-builder-mock-proof.mjs\",\"line\":94,\"endLine\":94,\"exported\":fa"
         },
         {
           "id": "plugengine-14",
@@ -1892,7 +2108,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 326.7
+          "latencyMs": 337,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"TECH_DEBT_REGISTER.md\",\"symbols\":[{\"id\":-2145,\"name\":\"docs/TECH_DEBT_REGISTER.md\",\"kind\":\"file\",\"file\":\"docs/TECH_DEBT_REGISTER.md\",\"line\":1,\"endLine\""
         },
         {
           "id": "plugengine-15",
@@ -1908,7 +2126,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 345.1
+          "latencyMs": 347,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"CREATOR_EDITOR_SPEC.md\",\"symbols\":[{\"id\":-2125,\"name\":\"docs/CREATOR_EDITOR_SPEC.md\",\"kind\":\"file\",\"file\":\"docs/CREATOR_EDITOR_SPEC.md\",\"line\":1,\"endLi"
         },
         {
           "id": "plugengine-16",
@@ -1927,7 +2147,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 16.6
+          "latencyMs": 73.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"canUndo\",\"file\":\"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts\",\"id\":45649},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":32,\"nodes\":{\"1\":[{\"depth\":1,\"id\":45585,\"name\":\"render\",\"kind\":\"function\",\"file\":\"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"dept"
         },
         {
           "id": "plugengine-17",
@@ -1944,9 +2166,11 @@
             ],
             "details": "impactToEdit converts projectile block hits into voxel edits."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 15.9
+          "latencyMs": 75.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"impactToEdit\",\"file\":\"packages/plugengine-combat/src/blockDestruction.ts\",\"id\":32200},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":19,\"nodes\":{\"1\":[{\"depth\":1,\"id\":32460,\"name\":\"advance\",\"kind\":\"method\",\"file\":\"packages/plugengine-combat/src/projectiles.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.9},{\"depth\":1,\"id\":-1890,\"name"
         },
         {
           "id": "plugengine-18",
@@ -1962,7 +2186,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 273.9
+          "latencyMs": 283.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"COMBAT_PACKAGE\",\"symbols\":[{\"id\":32390,\"name\":\"COMBAT_PACKAGE\",\"kind\":\"constant\",\"file\":\"packages/plugengine-combat/src/index.ts\",\"line\":11,\"endLine\":"
         },
         {
           "id": "plugengine-19",
@@ -1977,8 +2203,10 @@
             "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 0.6
+          "rank": 1,
+          "latencyMs": 0.9,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":32486,\"name\":\"canHit\",\"kind\":\"function\",\"file\":\"packages/plugengine-combat/src/teams.ts\",\"line\":51,\"endLine\":66,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":32466,\"name\":\"resolveEnemyHit\",\"kind\":\"method\",\"file\":\"packages/plugengine-combat/src/projectiles.ts\",\"line\":226,\"rawTarget\":"
         },
         {
           "id": "plugengine-20",
@@ -1994,7 +2222,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 72.2
+          "latencyMs": 73.7,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ProjectilePool\",\"symbols\":[{\"id\":19161,\"name\":\"ProjectilePool\",\"kind\":\"class\",\"file\":\"reference/build-battle/src/plugmil/projectiles.ts\",\"line\":45,\"en"
         },
         {
           "id": "plugengine-holdout-01",
@@ -2010,7 +2240,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 66.2
+          "latencyMs": 71.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"createKeyVault\",\"symbols\":[{\"id\":33742,\"name\":\"createKeyVault\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":22,\"endLine\":4"
         },
         {
           "id": "plugengine-holdout-02",
@@ -2026,7 +2258,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 64.8
+          "latencyMs": 71,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"KeyVaultHandle\",\"symbols\":[{\"id\":33735,\"name\":\"KeyVaultHandle\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":11,\"endLine\":"
         },
         {
           "id": "plugengine-holdout-03",
@@ -2046,7 +2280,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 0.9
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33742,\"name\":\"createKeyVault\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"line\":22,\"endLine\":44,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"ai-builder-mock-proof.mjs\",\"kind\":\"file\",\"file\":\"scripts/ai-builder-mock-proof.mjs\",\"line\":154,\"rawTarget"
         },
         {
           "id": "plugengine-holdout-04",
@@ -2062,7 +2298,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 175.3
+          "latencyMs": 163.3,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"generate\",\"symbols\":[{\"id\":33642,\"name\":\"generate\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/aiBuilder.ts\",\"line\":26,\"endLine\":37,\"exported"
         },
         {
           "id": "plugengine-holdout-05",
@@ -2078,7 +2316,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 86.8
+          "latencyMs": 82.1,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"ArtProfile\",\"symbols\":[{\"id\":34017,\"name\":\"ArtProfile\",\"kind\":\"interface\",\"file\":\"packages/contracts/src/artProfile.ts\",\"line\":58,\"endLine\":66,\"export"
         },
         {
           "id": "plugengine-holdout-06",
@@ -2094,7 +2334,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 76.3
+          "latencyMs": 74.4,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"StagingDiff\",\"symbols\":[{\"id\":33802,\"name\":\"StagingDiff\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/stagingDiff.ts\",\"line\":10,\"endLine\":14,"
         },
         {
           "id": "plugengine-holdout-07",
@@ -2110,7 +2352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 70.5
+          "latencyMs": 67.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"BuildJob\",\"symbols\":[{\"id\":33650,\"name\":\"BuildJob\",\"kind\":\"interface\",\"file\":\"packages/plugengine-ai/src/buildJob.ts\",\"line\":14,\"endLine\":19,\"exported"
         },
         {
           "id": "plugengine-holdout-08",
@@ -2126,7 +2370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 68.7
+          "latencyMs": 68.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"indexGeneration\":1,\"indexLastSuccessAt\":\"2026-09-26T03:37:37.277Z\",\"indexFailure\":null,\"indexState\":\"ready\",\"indexReason\":\"a complete generation is published and no change is waiting to be indexed\",\"indexProgress\":null,\"result\":{\"query\":\"generateMockPlan\",\"symbols\":[{\"id\":33782,\"name\":\"generateMockPlan\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/mockProvider.ts\",\"line\":110,\"e"
         },
         {
           "id": "plugengine-holdout-09",
@@ -2146,7 +2392,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 0.9
+          "latencyMs": 0.8,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"status\":\"found\",\"symbol\":{\"id\":33782,\"name\":\"generateMockPlan\",\"kind\":\"function\",\"file\":\"packages/plugengine-ai/src/mockProvider.ts\",\"line\":110,\"endLine\":130,\"exported\":true,\"container\":null,\"repoId\":null,\"checkoutId\":null,\"isVendor\":false},\"incoming\":{\"calls\":[{\"id\":null,\"name\":\"aiBuild.test.ts\",\"kind\":\"file\",\"file\":\"packages/plugengine-ai/src/aiBuild.test.ts\",\"line\":56,\"raw"
         },
         {
           "id": "plugengine-holdout-10",
@@ -2167,7 +2415,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 17.5
+          "latencyMs": 73.5,
+          "error": null,
+          "rawAnswer": "{\"ok\":true,\"result\":{\"target\":{\"name\":\"createKeyVault\",\"file\":\"packages/plugengine-ai/src/keyVault.ts\",\"id\":33742},\"direction\":\"both\",\"maxDepth\":3,\"totalImpacted\":108,\"nodes\":{\"1\":[{\"depth\":1,\"id\":49521,\"name\":\"AiBuilderModel\",\"kind\":\"class\",\"file\":\"apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts\",\"repoId\":null,\"checkoutId\":null,\"relationType\":\"calls\",\"confidence\":0.81},{\"depth\":1,\"id\":-194"
         }
       ]
     }

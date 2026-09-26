@@ -1,6 +1,6 @@
 {
   "benchmark": "plugbrain-cold",
-  "timestamp": "2026-09-26T03:41:59.766Z",
+  "timestamp": "2026-09-26T04:00:35.368Z",
   "grandOldHits": 66,
   "grandOldTotal": 80,
   "grandOldAccuracy": 82.5,
@@ -10,26 +10,30 @@
   "grandTotalHits": 105,
   "grandTotal": 120,
   "grandTotalAccuracy": 87.5,
-  "latencyP50": 268.3,
-  "latencyP95": 338,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 267.7,
+  "latencyP95": 488.5,
   "repos": [
     {
       "repo": "mcpz",
-      "oldHits": 15,
+      "oldHits": 16,
       "oldTotal": 20,
-      "oldAccuracy": 75,
+      "oldAccuracy": 80,
       "holdoutHits": 9,
       "holdoutTotal": 10,
       "holdoutAccuracy": 90,
-      "totalHits": 24,
+      "totalHits": 25,
       "totalCount": 30,
-      "totalAccuracy": 80,
-      "latencyOldP50": 267.4,
-      "latencyOldP95": 364.2,
-      "latencyHoldoutP50": 290.2,
-      "latencyHoldoutP95": 331.6,
-      "latencyAllP50": 275,
-      "latencyAllP95": 364.2,
+      "totalAccuracy": 83.3,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 278.3,
+      "latencyOldP95": 525.6,
+      "latencyHoldoutP50": 278.7,
+      "latencyHoldoutP95": 388.6,
+      "latencyAllP50": 278.7,
+      "latencyAllP95": 525.6,
       "questions": [
         {
           "id": "mcpz-01",
@@ -45,7 +49,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 535.7
+          "latencyMs": 959.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"MOD_ID\",\n  \"symbols\": [\n    {\n      \"id\": 1114,\n      \"name\": \"MOD_ID\",\n      \"kind\": \"constant\",\n      \"file\": \"src/main/java/net/mcpz/McpzConstants.java\",\n      \"line\": 5,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": \"McpzConstants\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"src/main/java/n"
         },
         {
           "id": "mcpz-02",
@@ -61,7 +67,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 269.7
+          "latencyMs": 282,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CameraConfig\",\n  \"symbols\": [\n    {\n      \"id\": 1821,\n      \"name\": \"CameraConfig\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"line\": 9,\n      \"endLine\": 9,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1822,\n      \"name\": \"from\",\n   "
         },
         {
           "id": "mcpz-03",
@@ -80,7 +88,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 231.9
+          "latencyMs": 230.9,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"candidates\": [\n    {\n      \"id\": 1623,\n      \"name\": \"init\",\n      \"kind\": \"method\",\n      \"file\": \"src/main/java/net/mcpz/save/McpzSaveData.java\",\n      \"line\": 48,\n      \"endLine\": 48,\n      \"exported\": true,\n      \"container\": \"McpzSaveData\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1912,\n      \"name\": \"init\","
         },
         {
           "id": "mcpz-04",
@@ -99,7 +109,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 242.6
+          "latencyMs": 237.7,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1900,\n    \"name\": \"registerKeybindings\",\n    \"kind\": \"method\",\n    \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n    \"line\": 87,\n    \"endLine\": 87,\n    \"exported\": false,\n    \"container\": \"McpzClient\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 1897,\n        "
         },
         {
           "id": "mcpz-05",
@@ -120,7 +132,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 249.6
+          "latencyMs": 236.8,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"FLOOR_HEIGHT_BLOCKS\",\n    \"file\": \"src/main/java/net/mcpz/McpzConstants.java\",\n    \"id\": 1121\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
         {
           "id": "mcpz-06",
@@ -142,7 +156,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 263.9
+          "latencyMs": 278.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"CameraConfig\",\n    \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n    \"id\": 1821\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 258,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": -136,\n        \"name\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n        \"kind\": \"file\",\n        \"file\": \"src/test/java/net/mcpz/CameraMathT"
         },
         {
           "id": "mcpz-07",
@@ -164,7 +180,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 278.2
+          "latencyMs": 303.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CameraConfig\",\n  \"symbols\": [\n    {\n      \"id\": 1821,\n      \"name\": \"CameraConfig\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"line\": 9,\n      \"endLine\": 9,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1822,\n      \"name\": \"from\",\n   "
         },
         {
           "id": "mcpz-08",
@@ -178,9 +196,11 @@
             "kind": "config",
             "details": "CameraConfig reads cfg.getDouble(\"cameraYawDefaultDegrees\")."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 301.7
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 289.9,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"cameraYawDefaultDegrees\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"src/main/java/net/mcpz/camera/CameraConfig.java\",\n      \"title\": \"CameraConfig.java\",\n      \"snippet\": \"… cfg) { return new CameraConfig( CameraMode.ISOMETRIC, cfg.getDouble(\\\"[cameraYawDefaultDegrees]\\\"), cfg.getDouble(\\\"cameraPitchDefaultDegrees\\\"), cfg.getDouble(\\\"cameraPitchMinDegrees\\\"), cfg.getDouble(\\"
         },
         {
           "id": "mcpz-09",
@@ -196,7 +216,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 287.4
+          "latencyMs": 299.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"McpzMod\",\n  \"symbols\": [\n    {\n      \"id\": 1124,\n      \"name\": \"McpzMod\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/McpzMod.java\",\n      \"line\": 19,\n      \"endLine\": 19,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1126,\n      \"name\": \"onInitialize\",\n      \"kind\": \""
         },
         {
           "id": "mcpz-10",
@@ -212,7 +234,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 292.7
+          "latencyMs": 301.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"McpzClient\",\n  \"symbols\": [\n    {\n      \"id\": 1897,\n      \"name\": \"McpzClient\",\n      \"kind\": \"class\",\n      \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n      \"line\": 45,\n      \"endLine\": 45,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 2567,\n      \"name\": \"McpzClientRe"
         },
         {
           "id": "mcpz-11",
@@ -228,7 +252,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 332.1
+          "latencyMs": 443.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"MASTER_NORTHSTAR.md\",\n  \"symbols\": [\n    {\n      \"id\": -11,\n      \"name\": \"MASTER_NORTHSTAR.md\",\n      \"kind\": \"file\",\n      \"file\": \"MASTER_NORTHSTAR.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 54,\n      \"name\": \"Commands\",\n      \"kind\": \"pr"
         },
         {
           "id": "mcpz-12",
@@ -244,7 +270,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 338.5
+          "latencyMs": 488.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"MASTER_CAMERA_PLAN.md\",\n  \"symbols\": [\n    {\n      \"id\": -6,\n      \"name\": \"MASTER_CAMERA_PLAN.md\",\n      \"kind\": \"file\",\n      \"file\": \"MASTER_CAMERA_PLAN.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 26,\n      \"name\": \"Docs\",\n      \"kind\": \"p"
         },
         {
           "id": "mcpz-13",
@@ -264,7 +292,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 245.1
+          "latencyMs": 265.5,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"camera\",\n    \"file\": \"src/client/java/net/mcpz/client/McpzRuntime.java\",\n    \"id\": 1914\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 235,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 1897,\n        \"name\": \"McpzClient\",\n        \"kind\": \"class\",\n        \"file\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n        \"repoId\": nu"
         },
         {
           "id": "mcpz-14",
@@ -283,7 +313,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 253.2
+          "latencyMs": 249.1,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"derive_evidence_class\",\n    \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n    \"id\": 280\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 10,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 282,\n        \"name\": \"write_manifest\",\n        \"kind\": \"function\",\n        \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n        \"repoId\": null,\n      "
         },
         {
           "id": "mcpz-15",
@@ -299,7 +331,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 364.2
+          "latencyMs": 525.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"derive_evidence_class\",\n  \"symbols\": [\n    {\n      \"id\": 280,\n      \"name\": \"derive_evidence_class\",\n      \"kind\": \"function\",\n      \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n      \"line\": 43,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tes"
         },
         {
           "id": "mcpz-16",
@@ -318,7 +352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 249.6
+          "latencyMs": 226.6,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 281,\n    \"name\": \"validate_manifest\",\n    \"kind\": \"function\",\n    \"file\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n    \"line\": 50,\n    \"endLine\": 50,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 274,\n        \"name\": \"_cmd_check\",\n   "
         },
         {
           "id": "mcpz-17",
@@ -334,7 +370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 269.9
+          "latencyMs": 274.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"McpzAtmosphereController\",\n  \"symbols\": [\n    {\n      \"id\": 2846,\n      \"name\": \"McpzAtmosphereController\",\n      \"kind\": \"class\",\n      \"file\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }"
         },
         {
           "id": "mcpz-18",
@@ -355,7 +393,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 259
+          "latencyMs": 236,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"ROTATE_LEFT\",\n    \"file\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java\",\n    \"id\": 2648\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
         {
           "id": "mcpz-19",
@@ -371,7 +411,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 267.4
+          "latencyMs": 282.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"MinecraftItemRepresentationRegistry\",\n  \"symbols\": [\n    {\n      \"id\": 1693,\n      \"name\": \"MinecraftItemRepresentationRegistry\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/item/MinecraftItemRepresentationRegistry.java\",\n      \"line\": 27,\n      \"endLine\": 27,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVe"
         },
         {
           "id": "mcpz-20",
@@ -391,7 +433,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 247.9
+          "latencyMs": 236.2,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1690,\n    \"name\": \"McpzLog\",\n    \"kind\": \"class\",\n    \"file\": \"src/main/java/net/mcpz/log/McpzLog.java\",\n    \"line\": 10,\n    \"endLine\": 10,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 1690,\n        \"name\": \"McpzLog\",\n        \"ki"
         },
         {
           "id": "mcpz-holdout-01",
@@ -407,7 +451,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 299.7
+          "latencyMs": 290.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PzTrait\",\n  \"symbols\": [\n    {\n      \"id\": 1804,\n      \"name\": \"PzTrait\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1805,\n      \"name\": \"Kind\",\n      \"kind\":"
         },
         {
           "id": "mcpz-holdout-02",
@@ -423,7 +469,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 298.8
+          "latencyMs": 304.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"costLabel\",\n  \"symbols\": [\n    {\n      \"id\": 1782,\n      \"name\": \"costLabel\",\n      \"kind\": \"method\",\n      \"file\": \"src/main/java/net/mcpz/character/PzStep2Layout.java\",\n      \"line\": 170,\n      \"endLine\": 170,\n      \"exported\": true,\n      \"container\": \"PzStep2Layout\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1806,\n      \"name"
         },
         {
           "id": "mcpz-holdout-03",
@@ -439,7 +487,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 308.7
+          "latencyMs": 287,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PzProfession\",\n  \"symbols\": [\n    {\n      \"id\": 1754,\n      \"name\": \"PzProfession\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/character/PzProfession.java\",\n      \"line\": 11,\n      \"endLine\": 11,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"src/ma"
         },
         {
           "id": "mcpz-holdout-04",
@@ -455,7 +505,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 290.2
+          "latencyMs": 276.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ModuleRegistry\",\n  \"symbols\": [\n    {\n      \"id\": 1682,\n      \"name\": \"ModuleRegistry\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n      \"line\": 16,\n      \"endLine\": 16,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1688,\n      \"name\": \"al"
         },
         {
           "id": "mcpz-holdout-05",
@@ -474,7 +526,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 242.8
+          "latencyMs": 229.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 1685,\n    \"name\": \"initializeAll\",\n    \"kind\": \"method\",\n    \"file\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n    \"line\": 34,\n    \"endLine\": 34,\n    \"exported\": true,\n    \"container\": \"ModuleRegistry\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoi"
         },
         {
           "id": "mcpz-holdout-06",
@@ -490,7 +544,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 283.6
+          "latencyMs": 278.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"SaveSchema\",\n  \"symbols\": [\n    {\n      \"id\": 1630,\n      \"name\": \"SaveSchema\",\n      \"kind\": \"class\",\n      \"file\": \"src/main/java/net/mcpz/save/SaveSchema.java\",\n      \"line\": 6,\n      \"endLine\": 6,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 1633,\n      \"name\": \"isSupported\",\n    "
         },
         {
           "id": "mcpz-holdout-07",
@@ -506,7 +562,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 331.6
+          "latencyMs": 303.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"AimTargetSnapshot\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"src/test/java/net/mcpz/McpzPlacementAssistTest.java\",\n      \"title\": \"McpzPlacementAssistTest.java\",\n      \"snippet\": \"… McpzPlacementAssist.cellFor(null)); [AimTargetSnapshot] none = new [AimTargetSnapshot]([AimTargetSnapshot].TargetKind.NONE, 0, 0, 0, [AimTargetSnapshot].Face.NONE, CameraVec3.ZERO …\"\n    },\n    "
         },
         {
           "id": "mcpz-holdout-08",
@@ -522,7 +580,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 275
+          "latencyMs": 271.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"clampBrightness\",\n  \"symbols\": [\n    {\n      \"id\": 2858,\n      \"name\": \"clampBrightness\",\n      \"kind\": \"method\",\n      \"file\": \"src/client/java/net/mcpz/client/atmosphere/McpzAtmosphereController.java\",\n      \"line\": 76,\n      \"endLine\": 76,\n      \"exported\": true,\n      \"container\": \"McpzAtmosphereController\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n"
         },
         {
           "id": "mcpz-holdout-09",
@@ -538,7 +598,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 300
+          "latencyMs": 388.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"HALF_HEIGHT_FACTOR\",\n  \"symbols\": [\n    {\n      \"id\": 1838,\n      \"name\": \"HALF_HEIGHT_FACTOR\",\n      \"kind\": \"constant\",\n      \"file\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n      \"line\": 14,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": \"CameraProjection\",\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"i"
         },
         {
           "id": "mcpz-holdout-10",
@@ -558,27 +620,31 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 262
+          "latencyMs": 264,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"orthographic\",\n    \"file\": \"src/main/java/net/mcpz/camera/CameraProjection.java\",\n    \"id\": 1839\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 43,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 528,\n        \"name\": \"CameraMathTest\",\n        \"kind\": \"class\",\n        \"file\": \"src/test/java/net/mcpz/CameraMathTest.java\",\n        \"repoI"
         }
       ]
     },
     {
       "repo": "plugmedia",
-      "oldHits": 16,
+      "oldHits": 18,
       "oldTotal": 20,
-      "oldAccuracy": 80,
+      "oldAccuracy": 90,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 26,
+      "totalHits": 28,
       "totalCount": 30,
-      "totalAccuracy": 86.7,
-      "latencyOldP50": 263.9,
-      "latencyOldP95": 325.3,
-      "latencyHoldoutP50": 266.6,
-      "latencyHoldoutP95": 304.1,
-      "latencyAllP50": 264,
-      "latencyAllP95": 325.3,
+      "totalAccuracy": 93.3,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 256.2,
+      "latencyOldP95": 278.2,
+      "latencyHoldoutP50": 240,
+      "latencyHoldoutP95": 261.8,
+      "latencyAllP50": 250.7,
+      "latencyAllP95": 278.2,
       "questions": [
         {
           "id": "plugmedia-01",
@@ -594,7 +660,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 322.8
+          "latencyMs": 287.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"SCHEMA_VERSION\",\n  \"symbols\": [\n    {\n      \"id\": 9216,\n      \"name\": \"SCHEMA_VERSION\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/index.ts\",\n      \"line\": 5,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6301,\n      \"name\": \"schema_version\",\n  "
         },
         {
           "id": "plugmedia-02",
@@ -610,7 +678,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 293.8
+          "latencyMs": 260.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"QA_AXES\",\n  \"symbols\": [\n    {\n      \"id\": 9218,\n      \"name\": \"QA_AXES\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/index.ts\",\n      \"line\": 16,\n      \"endLine\": 16,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/contracts/src/index.ts\""
         },
         {
           "id": "plugmedia-03",
@@ -629,7 +699,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 244.6
+          "latencyMs": 248.9,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 9207,\n    \"name\": \"topoSort\",\n    \"kind\": \"function\",\n    \"file\": \"packages/graph/src/compute/topo.ts\",\n    \"line\": 7,\n    \"endLine\": 25,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"graph.test.ts\",\n       "
         },
         {
           "id": "plugmedia-04",
@@ -645,7 +717,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 263.9
+          "latencyMs": 268.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CycleError\",\n  \"symbols\": [\n    {\n      \"id\": 9205,\n      \"name\": \"CycleError\",\n      \"kind\": \"class\",\n      \"file\": \"packages/graph/src/compute/topo.ts\",\n      \"line\": 2,\n      \"endLine\": 5,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/graph/src/compute/t"
         },
         {
           "id": "plugmedia-05",
@@ -661,7 +735,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 263.1
+          "latencyMs": 251.8,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"casPath\",\n  \"symbols\": [\n    {\n      \"id\": 7270,\n      \"name\": \"casPath\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/cas.ts\",\n      \"line\": 30,\n      \"endLine\": 32,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/cas.ts\",\n      "
         },
         {
           "id": "plugmedia-06",
@@ -680,7 +756,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 245
+          "latencyMs": 278.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7276,\n    \"name\": \"storeContent\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/cas.ts\",\n    \"line\": 48,\n    \"endLine\": 83,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 8253,\n        \"name\": \"commitArtifact\",\n        "
         },
         {
           "id": "plugmedia-07",
@@ -699,9 +777,11 @@
             "expected_count": 2,
             "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 253.8
+          "latencyMs": 250.7,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"PGCONFIG\",\n    \"file\": \"services/runtime/src/db.ts\",\n    \"id\": 7307\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
         {
           "id": "plugmedia-08",
@@ -721,7 +801,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 264.2
+          "latencyMs": 256.2,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"SCHEMA_VERSION\",\n    \"file\": \"packages/contracts/src/index.ts\",\n    \"id\": 9216\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 79,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7297,\n        \"name\": \"Handler\",\n        \"kind\": \"type_alias\",\n        \"file\": \"services/runtime/src/commands.ts\",\n        \"repoId\": null,\n        \"checkoutId"
         },
         {
           "id": "plugmedia-09",
@@ -740,7 +822,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 264
+          "latencyMs": 250.9,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"storeContent\",\n  \"symbols\": [\n    {\n      \"id\": 7276,\n      \"name\": \"storeContent\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/cas.ts\",\n      \"line\": 48,\n      \"endLine\": 83,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/cas.t"
         },
         {
           "id": "plugmedia-10",
@@ -756,7 +840,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 306.7
+          "latencyMs": 278.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PLUGMEDIA_PORT\",\n  \"symbols\": [\n    {\n      \"id\": 7362,\n      \"name\": \"PLUGMEDIA_PORT\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/index.ts\",\n      \"line\": 36,\n      \"endLine\": 36,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src"
         },
         {
           "id": "plugmedia-11",
@@ -770,9 +856,11 @@
             "kind": "config",
             "details": "PGCONFIG reads process.env.PGPORT ?? 55432."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 255.8
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 262.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PGPORT\",\n  \"symbols\": [\n    {\n      \"id\": 7309,\n      \"name\": \"PGPORT\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/db.ts\",\n      \"line\": 15,\n      \"endLine\": 15,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/db.ts\",\n      \"tit"
         },
         {
           "id": "plugmedia-12",
@@ -786,9 +874,11 @@
             "kind": "entrypoint",
             "details": "services/runtime/src/index.ts creates Fastify instance and registers routes."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 286
+          "hit": true,
+          "rank": 2,
+          "latencyMs": 264.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"Fastify\",\n  \"symbols\": [],\n  \"notes\": [\n    {\n      \"path\": \"package.json\",\n      \"title\": \"package.json\",\n      \"snippet\": \"… 3\\\", \\\"vite\\\": \\\"^8.3.0\\\" }, \\\"dependencies\\\": { \\\"@[fastify]/cors\\\": \\\"^11.3.0\\\", \\\"[fastify]\\\": \\\"^5.12.4\\\", \\\"pg\\\": \\\"^8.23 …\"\n    },\n    {\n      \"path\": \"services/runtime/src/index.ts\",\n      \"title\": \"index.ts\",\n      \"snippet\": \"… does not match (A06). "
         },
         {
           "id": "plugmedia-13",
@@ -804,7 +894,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 297.3
+          "latencyMs": 273.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"main\",\n  \"symbols\": [\n    {\n      \"id\": 6377,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"file\": \"workers/media/d1_characters.py\",\n      \"line\": 430,\n      \"endLine\": 430,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6392,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n   "
         },
         {
           "id": "plugmedia-14",
@@ -820,7 +912,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 325.3
+          "latencyMs": 270.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"VS0_FINAL_REPORT.md\",\n  \"symbols\": [\n    {\n      \"id\": -922,\n      \"name\": \"VS0_FINAL_REPORT.md\",\n      \"kind\": \"file\",\n      \"file\": \"VS0_FINAL_REPORT.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6290,\n      \"name\": \"2. Gates\",\n      \"kind\": "
         },
         {
           "id": "plugmedia-15",
@@ -836,7 +930,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 328.4
+          "latencyMs": 262.9,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ARCHIVE_MANIFEST.md\",\n  \"symbols\": [\n    {\n      \"id\": -918,\n      \"name\": \"ARCHIVE_MANIFEST.md\",\n      \"kind\": \"file\",\n      \"file\": \"ARCHIVE_MANIFEST.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 6264,\n      \"name\": \"Enthalten\",\n      \"kind\":"
         },
         {
           "id": "plugmedia-16",
@@ -855,7 +951,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 263.5
+          "latencyMs": 229.8,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"ensureCas\",\n    \"file\": \"services/runtime/src/cas.ts\",\n    \"id\": 7269\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 12,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7276,\n        \"name\": \"storeContent\",\n        \"kind\": \"function\",\n        \"file\": \"services/runtime/src/cas.ts\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n  "
         },
         {
           "id": "plugmedia-17",
@@ -874,7 +972,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 243.8
+          "latencyMs": 236.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"applyMigrations\",\n    \"file\": \"services/runtime/src/db.ts\",\n    \"id\": 7322\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 27,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7151,\n        \"name\": \"migrate\",\n        \"kind\": \"function\",\n        \"file\": \"tools/admin/plug-admin.mjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n   "
         },
         {
           "id": "plugmedia-18",
@@ -890,7 +990,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 259.2
+          "latencyMs": 236.9,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"schedulerTick\",\n  \"symbols\": [\n    {\n      \"id\": 7631,\n      \"name\": \"schedulerTick\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/engine/scheduler.ts\",\n      \"line\": 215,\n      \"endLine\": 235,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/"
         },
         {
           "id": "plugmedia-19",
@@ -907,9 +1009,11 @@
             ],
             "details": "index.ts registers 'media.import', 'media.plan', 'media.render', etc."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 231.9
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 228.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7299,\n    \"name\": \"register\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/commands.ts\",\n    \"line\": 12,\n    \"endLine\": 12,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"index.ts\",\n        \"kind"
         },
         {
           "id": "plugmedia-20",
@@ -925,7 +1029,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 280.1
+          "latencyMs": 250.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ALLOWED_ORIGINS\",\n  \"symbols\": [\n    {\n      \"id\": 7225,\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 24,\n      \"endLine\": 28,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
         {
           "id": "plugmedia-holdout-01",
@@ -941,7 +1047,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 290.6
+          "latencyMs": 250.8,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ALLOWED_ORIGINS\",\n  \"symbols\": [\n    {\n      \"id\": 7225,\n      \"name\": \"ALLOWED_ORIGINS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 24,\n      \"endLine\": 28,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
         {
           "id": "plugmedia-holdout-02",
@@ -957,7 +1065,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 275.2
+          "latencyMs": 250.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"issueCapability\",\n  \"symbols\": [\n    {\n      \"id\": 7234,\n      \"name\": \"issueCapability\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 48,\n      \"endLine\": 55,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/sr"
         },
         {
           "id": "plugmedia-holdout-03",
@@ -973,7 +1083,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 279.9
+          "latencyMs": 238.8,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"verifyCapability\",\n  \"symbols\": [\n    {\n      \"id\": 7240,\n      \"name\": \"verifyCapability\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 57,\n      \"endLine\": 67,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/"
         },
         {
           "id": "plugmedia-holdout-04",
@@ -989,7 +1101,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 262.4
+          "latencyMs": 237.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"csrfGuard\",\n  \"symbols\": [\n    {\n      \"id\": 7263,\n      \"name\": \"csrfGuard\",\n      \"kind\": \"function\",\n      \"file\": \"services/runtime/src/auth.ts\",\n      \"line\": 124,\n      \"endLine\": 128,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"services/runtime/src/auth.ts\""
         },
         {
           "id": "plugmedia-holdout-05",
@@ -1005,7 +1119,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 304.1
+          "latencyMs": 261.8,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n  \"symbols\": [\n    {\n      \"id\": 7597,\n      \"name\": \"DEFAULT_CATCHUP_WINDOW_HOURS\",\n      \"kind\": \"constant\",\n      \"file\": \"services/runtime/src/engine/scheduler.ts\",\n      \"line\": 46,\n      \"endLine\": 46,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n  "
         },
         {
           "id": "plugmedia-holdout-06",
@@ -1021,7 +1137,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 257.8
+          "latencyMs": 243.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"computeNodeCacheKey\",\n  \"symbols\": [\n    {\n      \"id\": 9201,\n      \"name\": \"computeNodeCacheKey\",\n      \"kind\": \"function\",\n      \"file\": \"packages/graph/src/compute/cacheKey.ts\",\n      \"line\": 27,\n      \"endLine\": 33,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"t"
         },
         {
           "id": "plugmedia-holdout-07",
@@ -1037,7 +1155,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 286.2
+          "latencyMs": 246.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"NODE_VERSIONS\",\n  \"symbols\": [\n    {\n      \"id\": 9203,\n      \"name\": \"NODE_VERSIONS\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"line\": 13,\n      \"endLine\": 26,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
         {
           "id": "plugmedia-holdout-08",
@@ -1053,7 +1173,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 266.6
+          "latencyMs": 240,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"implementationDigest\",\n  \"symbols\": [\n    {\n      \"id\": 9204,\n      \"name\": \"implementationDigest\",\n      \"kind\": \"function\",\n      \"file\": \"packages/graph/src/compute/nodeVersions.ts\",\n      \"line\": 28,\n      \"endLine\": 30,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"pat"
         },
         {
           "id": "plugmedia-holdout-09",
@@ -1072,7 +1194,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 242.9
+          "latencyMs": 229.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 7631,\n    \"name\": \"schedulerTick\",\n    \"kind\": \"function\",\n    \"file\": \"services/runtime/src/engine/scheduler.ts\",\n    \"line\": 215,\n    \"endLine\": 235,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 7421,\n        \"name\": \"scheduler"
         },
         {
           "id": "plugmedia-holdout-10",
@@ -1091,27 +1215,31 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 249.9
+          "latencyMs": 233.5,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"computeNodeCacheKey\",\n    \"file\": \"packages/graph/src/compute/cacheKey.ts\",\n    \"id\": 9201\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 44,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 7760,\n        \"name\": \"processJob\",\n        \"kind\": \"function\",\n        \"file\": \"services/runtime/src/engine/worker.ts\",\n        \"repoId\": null,\n "
         }
       ]
     },
     {
       "repo": "cowork",
-      "oldHits": 18,
+      "oldHits": 16,
       "oldTotal": 20,
-      "oldAccuracy": 90,
+      "oldAccuracy": 80,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 28,
+      "totalHits": 26,
       "totalCount": 30,
-      "totalAccuracy": 93.3,
-      "latencyOldP50": 275.7,
-      "latencyOldP95": 341.4,
-      "latencyHoldoutP50": 264.4,
-      "latencyHoldoutP95": 302.2,
-      "latencyAllP50": 270.2,
-      "latencyAllP95": 341.4,
+      "totalAccuracy": 86.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 256.7,
+      "latencyOldP95": 333.3,
+      "latencyHoldoutP50": 252.4,
+      "latencyHoldoutP95": 289.7,
+      "latencyAllP50": 256.7,
+      "latencyAllP95": 333.3,
       "questions": [
         {
           "id": "cowork-01",
@@ -1127,7 +1255,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 282.4
+          "latencyMs": 267.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"DEFAULT_LANES\",\n  \"symbols\": [\n    {\n      \"id\": 10840,\n      \"name\": \"DEFAULT_LANES\",\n      \"kind\": \"constant\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 43,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"ruflo-workers/tools/fl"
         },
         {
           "id": "cowork-02",
@@ -1143,7 +1273,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 261.2
+          "latencyMs": 259.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"scrub\",\n  \"symbols\": [\n    {\n      \"id\": 10842,\n      \"name\": \"scrub\",\n      \"kind\": \"function\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 59,\n      \"endLine\": 59,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10963,\n      \"name\": \"scrub\",\n      \"kind\": \"function\",\n  "
         },
         {
           "id": "cowork-03",
@@ -1162,7 +1294,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 235.2
+          "latencyMs": 229.4,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10970,\n    \"name\": \"post_event\",\n    \"kind\": \"function\",\n    \"file\": \"ruflo-workers/tools/worker.py\",\n    \"line\": 42,\n    \"endLine\": 42,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10972,\n        \"name\": \"fleet_patch\",\n        \""
         },
         {
           "id": "cowork-04",
@@ -1181,7 +1315,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 229.2
+          "latencyMs": 247.8,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10971,\n    \"name\": \"codegraph_context\",\n    \"kind\": \"function\",\n    \"file\": \"ruflo-workers/tools/worker.py\",\n    \"line\": 54,\n    \"endLine\": 54,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10980,\n        \"name\": \"run_part_as_work"
         },
         {
           "id": "cowork-05",
@@ -1202,7 +1338,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 261
+          "latencyMs": 249.1,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"CONFIG\",\n    \"file\": \"ruflo-workers/tools/fleet.py\",\n    \"id\": 10839\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 54,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10911,\n        \"name\": \"HERE\",\n        \"kind\": \"constant\",\n        \"file\": \"ruflo-workers/tools/planner.py\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n       "
         },
         {
           "id": "cowork-06",
@@ -1220,9 +1358,11 @@
             "expected_count": 1,
             "details": "RATE determines cost calculation for different AI model providers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 265.7
+          "latencyMs": 243.6,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"RATE\",\n    \"file\": \"cockpit/server.cjs\",\n    \"id\": 11346\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
         {
           "id": "cowork-07",
@@ -1242,7 +1382,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 284.2
+          "latencyMs": 254.9,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"writeConfig\",\n  \"symbols\": [\n    {\n      \"id\": 11355,\n      \"name\": \"writeConfig\",\n      \"kind\": \"function\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 44,\n      \"endLine\": 49,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"cockpit/server.cjs\",\n      \"title\":"
         },
         {
           "id": "cowork-08",
@@ -1258,7 +1400,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 339.8
+          "latencyMs": 325.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PLUGOS_COCKPIT_PORT\",\n  \"symbols\": [\n    {\n      \"id\": 11349,\n      \"name\": \"PLUGOS_COCKPIT_PORT\",\n      \"kind\": \"constant\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 35,\n      \"endLine\": 35,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"cockpit/server.cjs\","
         },
         {
           "id": "cowork-09",
@@ -1274,7 +1418,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 354
+          "latencyMs": 337.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"swarm-chain.config.json\",\n  \"symbols\": [\n    {\n      \"id\": -1143,\n      \"name\": \"ruflo-workers/swarm-chain.config.json\",\n      \"kind\": \"file\",\n      \"file\": \"ruflo-workers/swarm-chain.config.json\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10770"
         },
         {
           "id": "cowork-10",
@@ -1288,9 +1434,11 @@
             "kind": "entrypoint",
             "details": "fleet.py contains CLI parser for --list, --selftest, and lane dispatch."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 275.7
+          "latencyMs": 256.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"fleet\",\n  \"symbols\": [\n    {\n      \"id\": 10852,\n      \"name\": \"Fleet\",\n      \"kind\": \"class\",\n      \"file\": \"ruflo-workers/tools/fleet.py\",\n      \"line\": 208,\n      \"endLine\": 208,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10784,\n      \"name\": \"fleet\",\n      \"kind\": \"property\",\n   "
         },
         {
           "id": "cowork-11",
@@ -1306,7 +1454,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 276
+          "latencyMs": 271.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"server.cjs\",\n  \"symbols\": [\n    {\n      \"id\": -1095,\n      \"name\": \"station/server.cjs\",\n      \"kind\": \"file\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": -1207,\n      \"name\": \"cockpit/server.cjs\",\n      \"kind\":"
         },
         {
           "id": "cowork-12",
@@ -1322,7 +1472,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 331.7
+          "latencyMs": 319.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"produce_one\",\n  \"symbols\": [\n    {\n      \"id\": 10587,\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"file\": \"shortsfactory/pipeline/run.py\",\n      \"line\": 13,\n      \"endLine\": 13,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"shortsfactory/pipeline/ru"
         },
         {
           "id": "cowork-13",
@@ -1338,7 +1490,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 298.3
+          "latencyMs": 285.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CANON.md\",\n  \"symbols\": [\n    {\n      \"id\": -1057,\n      \"name\": \"CANON.md\",\n      \"kind\": \"file\",\n      \"file\": \"CANON.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 9958,\n      \"name\": \"The one rule\",\n      \"kind\": \"property\",\n      \"file\": \"C"
         },
         {
           "id": "cowork-14",
@@ -1354,7 +1508,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 341.4
+          "latencyMs": 333.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CONTENT_STYLE_GUIDE.md\",\n  \"symbols\": [\n    {\n      \"id\": -1062,\n      \"name\": \"CONTENT_STYLE_GUIDE.md\",\n      \"kind\": \"file\",\n      \"file\": \"CONTENT_STYLE_GUIDE.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10019,\n      \"name\": \"7. Cadence & R"
         },
         {
           "id": "cowork-15",
@@ -1373,7 +1529,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 248.7
+          "latencyMs": 243.7,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"produce_one\",\n    \"file\": \"shortsfactory/pipeline/run.py\",\n    \"id\": 10587\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 2,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10588,\n        \"name\": \"main\",\n        \"kind\": \"function\",\n        \"file\": \"shortsfactory/pipeline/run.py\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n   "
         },
         {
           "id": "cowork-16",
@@ -1392,7 +1550,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 242.5
+          "latencyMs": 233.5,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"writeConfig\",\n    \"file\": \"cockpit/server.cjs\",\n    \"id\": 11355\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 22,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 11381,\n        \"name\": \"upsertLane\",\n        \"kind\": \"function\",\n        \"file\": \"cockpit/server.cjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n        \"relationT"
         },
         {
           "id": "cowork-17",
@@ -1408,7 +1568,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 328.5
+          "latencyMs": 312.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"produce_one\",\n  \"symbols\": [\n    {\n      \"id\": 10587,\n      \"name\": \"produce_one\",\n      \"kind\": \"function\",\n      \"file\": \"shortsfactory/pipeline/run.py\",\n      \"line\": 13,\n      \"endLine\": 13,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"shortsfactory/pipeline/ru"
         },
         {
           "id": "cowork-18",
@@ -1427,7 +1589,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 240.7
+          "latencyMs": 233.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10597,\n    \"name\": \"synth_voiceover\",\n    \"kind\": \"function\",\n    \"file\": \"shortsfactory/pipeline/tts.py\",\n    \"line\": 53,\n    \"endLine\": 53,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"calls\": [\n     "
         },
         {
           "id": "cowork-19",
@@ -1443,7 +1607,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 290.5
+          "latencyMs": 260.8,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ROLES\",\n  \"symbols\": [\n    {\n      \"id\": 11352,\n      \"name\": \"ROLES\",\n      \"kind\": \"constant\",\n      \"file\": \"cockpit/server.cjs\",\n      \"line\": 38,\n      \"endLine\": 38,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10728,\n      \"name\": \"ROLES\",\n      \"kind\": \"constant\",\n      \"file"
         },
         {
           "id": "cowork-20",
@@ -1463,7 +1629,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 267.8
+          "latencyMs": 239.1,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"KEY_ALIAS\",\n    \"file\": \"cockpit/fleet-direct.cjs\",\n    \"id\": 11271\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 0,\n  \"nodes\": {\n    \"1\": []\n  },\n  \"risk\": \"low\"\n}\n"
         },
         {
           "id": "cowork-holdout-01",
@@ -1479,7 +1647,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 290.3
+          "latencyMs": 264.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"readLedger\",\n  \"symbols\": [\n    {\n      \"id\": 10316,\n      \"name\": \"readLedger\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 44,\n      \"endLine\": 54,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\": \""
         },
         {
           "id": "cowork-holdout-02",
@@ -1495,7 +1665,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 270.2
+          "latencyMs": 261.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"writeLedger\",\n  \"symbols\": [\n    {\n      \"id\": 10320,\n      \"name\": \"writeLedger\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 55,\n      \"endLine\": 58,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\":"
         },
         {
           "id": "cowork-holdout-03",
@@ -1511,7 +1683,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 255.8
+          "latencyMs": 247.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"missionOf\",\n  \"symbols\": [\n    {\n      \"id\": 10313,\n      \"name\": \"missionOf\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 33,\n      \"endLine\": 39,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\": \"se"
         },
         {
           "id": "cowork-holdout-04",
@@ -1527,7 +1701,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 271.7
+          "latencyMs": 261.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"FLEET_PARALLELISM\",\n  \"symbols\": [\n    {\n      \"id\": 10311,\n      \"name\": \"FLEET_PARALLELISM\",\n      \"kind\": \"constant\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 31,\n      \"endLine\": 31,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 10312,\n      \"name\": \"PLUGOS_FLEET_PARALLEL"
         },
         {
           "id": "cowork-holdout-05",
@@ -1543,7 +1719,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 302.2
+          "latencyMs": 289.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"decompose_room\",\n  \"symbols\": [\n    {\n      \"id\": 10296,\n      \"name\": \"main\",\n      \"kind\": \"function\",\n      \"file\": \"tools/decompose_room.py\",\n      \"line\": 27,\n      \"endLine\": 27,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tools/decompose_room.py\",\n      \"ti"
         },
         {
           "id": "cowork-holdout-06",
@@ -1559,7 +1737,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 264.4
+          "latencyMs": 245.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"verdictOf\",\n  \"symbols\": [\n    {\n      \"id\": 10322,\n      \"name\": \"verdictOf\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 59,\n      \"endLine\": 64,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 11386,\n      \"name\": \"verdictOf\",\n      \"kind\": \"function\","
         },
         {
           "id": "cowork-holdout-07",
@@ -1578,7 +1758,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 238.8
+          "latencyMs": 229.6,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 10320,\n    \"name\": \"writeLedger\",\n    \"kind\": \"function\",\n    \"file\": \"station/server.cjs\",\n    \"line\": 55,\n    \"endLine\": 58,\n    \"exported\": false,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 10336,\n        \"name\": \"movePrio\",\n        \"kind\": \"func"
         },
         {
           "id": "cowork-holdout-08",
@@ -1594,7 +1776,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 284.3
+          "latencyMs": 273.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"DEFAULT_EFFORT\",\n  \"symbols\": [\n    {\n      \"id\": 10310,\n      \"name\": \"DEFAULT_EFFORT\",\n      \"kind\": \"constant\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 30,\n      \"endLine\": 30,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"t"
         },
         {
           "id": "cowork-holdout-09",
@@ -1613,7 +1797,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 243.3
+          "latencyMs": 225.1,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"readLedger\",\n    \"file\": \"station/server.cjs\",\n    \"id\": 10316\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 6,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 10324,\n        \"name\": \"buildProgress\",\n        \"kind\": \"function\",\n        \"file\": \"station/server.cjs\",\n        \"repoId\": null,\n        \"checkoutId\": null,\n        \"relation"
         },
         {
           "id": "cowork-holdout-10",
@@ -1629,27 +1815,31 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 261.4
+          "latencyMs": 252.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"effortOf\",\n  \"symbols\": [\n    {\n      \"id\": 10315,\n      \"name\": \"effortOf\",\n      \"kind\": \"function\",\n      \"file\": \"station/server.cjs\",\n      \"line\": 40,\n      \"endLine\": 42,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"station/server.cjs\",\n      \"title\": \"serv"
         }
       ]
     },
     {
       "repo": "plugengine",
-      "oldHits": 17,
+      "oldHits": 16,
       "oldTotal": 20,
-      "oldAccuracy": 85,
+      "oldAccuracy": 80,
       "holdoutHits": 10,
       "holdoutTotal": 10,
       "holdoutAccuracy": 100,
-      "totalHits": 27,
+      "totalHits": 26,
       "totalCount": 30,
-      "totalAccuracy": 90,
-      "latencyOldP50": 268.4,
-      "latencyOldP95": 335,
-      "latencyHoldoutP50": 258.2,
-      "latencyHoldoutP95": 287.7,
-      "latencyAllP50": 266.3,
-      "latencyAllP95": 335,
+      "totalAccuracy": 86.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 306.3,
+      "latencyOldP95": 579.4,
+      "latencyHoldoutP50": 313.2,
+      "latencyHoldoutP95": 390.7,
+      "latencyAllP50": 307.4,
+      "latencyAllP95": 579.4,
       "questions": [
         {
           "id": "plugengine-01",
@@ -1665,7 +1855,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 262
+          "latencyMs": 307.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CommandBus\",\n  \"symbols\": [\n    {\n      \"id\": 31909,\n      \"name\": \"CommandBus\",\n      \"kind\": \"class\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 40,\n      \"endLine\": 122,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOpt"
         },
         {
           "id": "plugengine-02",
@@ -1681,7 +1873,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 295.7
+          "latencyMs": 405.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"DEFAULT_LIMIT\",\n  \"symbols\": [\n    {\n      \"id\": 31902,\n      \"name\": \"DEFAULT_LIMIT\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 10,\n      \"endLine\": 10,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 50252,\n      \"name\": \"DEFA"
         },
         {
           "id": "plugengine-03",
@@ -1698,9 +1892,11 @@
             ],
             "details": "bus.test.ts executes dispatches against CommandBus instances."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 225.3
+          "hit": true,
+          "rank": 1,
+          "latencyMs": 233.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 31915,\n    \"name\": \"dispatch\",\n    \"kind\": \"method\",\n    \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n    \"line\": 60,\n    \"endLine\": 68,\n    \"exported\": false,\n    \"container\": \"CommandBus\",\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"c"
         },
         {
           "id": "plugengine-04",
@@ -1716,7 +1912,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 323
+          "latencyMs": 457.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"PLUG_PACKAGE_KINDS\",\n  \"symbols\": [\n    {\n      \"id\": 33883,\n      \"name\": \"PLUG_PACKAGE_KINDS\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/contracts/src/addon.ts\",\n      \"line\": 37,\n      \"endLine\": 43,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
         {
           "id": "plugengine-05",
@@ -1732,7 +1930,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 281.4
+          "latencyMs": 298.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"isPlugPackageKind\",\n  \"symbols\": [\n    {\n      \"id\": 33884,\n      \"name\": \"isPlugPackageKind\",\n      \"kind\": \"function\",\n      \"file\": \"packages/contracts/src/addon.ts\",\n      \"line\": 45,\n      \"endLine\": 47,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/co"
         },
         {
           "id": "plugengine-06",
@@ -1751,7 +1951,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 258.6
+          "latencyMs": 240.2,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33884,\n    \"name\": \"isPlugPackageKind\",\n    \"kind\": \"function\",\n    \"file\": \"packages/contracts/src/addon.ts\",\n    \"line\": 45,\n    \"endLine\": 47,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [],\n    \"references\": []\n  },\n  \"outgoing\": {\n    \"calls\": [\n "
         },
         {
           "id": "plugengine-07",
@@ -1772,7 +1974,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 268.3
+          "latencyMs": 268.4,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"DEFAULT_LIMIT\",\n    \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n    \"id\": 31902\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 2,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 31404,\n        \"name\": \"ENGINE_VERSION\",\n        \"kind\": \"constant\",\n        \"file\": \"packages/plugengine-core/src/index.ts\",\n        \"repoId\": nul"
         },
         {
           "id": "plugengine-08",
@@ -1793,7 +1997,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 261.7
+          "latencyMs": 300.4,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"PLUG_PACKAGE_KINDS\",\n    \"file\": \"packages/contracts/src/addon.ts\",\n    \"id\": 33883\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 263,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": -1962,\n        \"name\": \"packages/contracts/src/addon.test.ts\",\n        \"kind\": \"file\",\n        \"file\": \"packages/contracts/src/addon.test.ts\",\n        \""
         },
         {
           "id": "plugengine-09",
@@ -1810,9 +2016,11 @@
             ],
             "details": "dispatch runs command.do(), pushes to undoStack, clears redoStack, prunes limit, notifies listeners."
           },
-          "hit": false,
-          "rank": -1,
-          "latencyMs": 269.9
+          "hit": true,
+          "rank": 3,
+          "latencyMs": 306.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CommandBus\",\n  \"symbols\": [\n    {\n      \"id\": 31909,\n      \"name\": \"CommandBus\",\n      \"kind\": \"class\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 40,\n      \"endLine\": 122,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOpt"
         },
         {
           "id": "plugengine-10",
@@ -1828,7 +2036,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 268.4
+          "latencyMs": 294,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CommandBusOptions\",\n  \"symbols\": [\n    {\n      \"id\": 31899,\n      \"name\": \"CommandBusOptions\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-core/src/command/bus.ts\",\n      \"line\": 3,\n      \"endLine\": 6,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \""
         },
         {
           "id": "plugengine-11",
@@ -1843,8 +2053,10 @@
             "details": "package.json workspaces declares [\"packages/*\", \"apps/*\", \"tools/*\"]."
           },
           "hit": true,
-          "rank": 2,
-          "latencyMs": 266.4
+          "rank": 1,
+          "latencyMs": 299.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"workspaces\",\n  \"symbols\": [\n    {\n      \"id\": 12843,\n      \"name\": \"workspaces\",\n      \"kind\": \"property\",\n      \"file\": \"package.json\",\n      \"line\": 7,\n      \"endLine\": 7,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"package.json\",\n      \"title\": \"package.json\",\n"
         },
         {
           "id": "plugengine-12",
@@ -1858,9 +2070,11 @@
             "kind": "entrypoint",
             "details": "packages/plugengine-core/src/index.ts exports command bus, selection, validation."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 326.2
+          "latencyMs": 500.1,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"plugengine-core\",\n  \"symbols\": [\n    {\n      \"id\": 31404,\n      \"name\": \"ENGINE_VERSION\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-core/src/index.ts\",\n      \"line\": 10,\n      \"endLine\": 10,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 31446,\n      \"name\": \"Problems"
         },
         {
           "id": "plugengine-13",
@@ -1874,9 +2088,11 @@
             "kind": "entrypoint",
             "details": "packages/contracts/src/index.ts re-exports addon, scene, assets, and projectApi."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 284
+          "latencyMs": 339,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"contracts\",\n  \"symbols\": [\n    {\n      \"id\": 13154,\n      \"name\": \"contracts\",\n      \"kind\": \"constant\",\n      \"file\": \"scripts/ai-builder-mock-proof.mjs\",\n      \"line\": 94,\n      \"endLine\": 94,\n      \"exported\": false,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 14827,\n      \"name\": \"contracts\",\n      \"kin"
         },
         {
           "id": "plugengine-14",
@@ -1892,7 +2108,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 335
+          "latencyMs": 579.4,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"TECH_DEBT_REGISTER.md\",\n  \"symbols\": [\n    {\n      \"id\": -2145,\n      \"name\": \"docs/TECH_DEBT_REGISTER.md\",\n      \"kind\": \"file\",\n      \"file\": \"docs/TECH_DEBT_REGISTER.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 39784,\n      \"name\": \"Product"
         },
         {
           "id": "plugengine-15",
@@ -1908,7 +2126,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 338
+          "latencyMs": 689.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"CREATOR_EDITOR_SPEC.md\",\n  \"symbols\": [\n    {\n      \"id\": -2125,\n      \"name\": \"docs/CREATOR_EDITOR_SPEC.md\",\n      \"kind\": \"file\",\n      \"file\": \"docs/CREATOR_EDITOR_SPEC.md\",\n      \"line\": 1,\n      \"endLine\": 1,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 39494,\n      \"name\": \"5. U"
         },
         {
           "id": "plugengine-16",
@@ -1927,7 +2147,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 251
+          "latencyMs": 345.1,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"canUndo\",\n    \"file\": \"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderState.ts\",\n    \"id\": 45649\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 32,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 45585,\n        \"name\": \"render\",\n        \"kind\": \"function\",\n        \"file\": \"apps/engine-lab/src/studio/voxelBuilder/voxelBuilderPanel"
         },
         {
           "id": "plugengine-17",
@@ -1944,9 +2166,11 @@
             ],
             "details": "impactToEdit converts projectile block hits into voxel edits."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 247
+          "latencyMs": 335.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"impactToEdit\",\n    \"file\": \"packages/plugengine-combat/src/blockDestruction.ts\",\n    \"id\": 32200\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 19,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 32460,\n        \"name\": \"advance\",\n        \"kind\": \"method\",\n        \"file\": \"packages/plugengine-combat/src/projectiles.ts\",\n        \"repoId"
         },
         {
           "id": "plugengine-18",
@@ -1962,7 +2186,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 329.8
+          "latencyMs": 522.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"COMBAT_PACKAGE\",\n  \"symbols\": [\n    {\n      \"id\": 32390,\n      \"name\": \"COMBAT_PACKAGE\",\n      \"kind\": \"constant\",\n      \"file\": \"packages/plugengine-combat/src/index.ts\",\n      \"line\": 11,\n      \"endLine\": 11,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"tsconfig."
         },
         {
           "id": "plugengine-19",
@@ -1977,8 +2203,10 @@
             "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
           },
           "hit": true,
-          "rank": -1,
-          "latencyMs": 253.7
+          "rank": 1,
+          "latencyMs": 227.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 32486,\n    \"name\": \"canHit\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-combat/src/teams.ts\",\n    \"line\": 51,\n    \"endLine\": 66,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": 32466,\n        \"name\": \"resolveEnemyHit\","
         },
         {
           "id": "plugengine-20",
@@ -1994,7 +2222,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 276.6
+          "latencyMs": 296.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ProjectilePool\",\n  \"symbols\": [\n    {\n      \"id\": 19161,\n      \"name\": \"ProjectilePool\",\n      \"kind\": \"class\",\n      \"file\": \"reference/build-battle/src/plugmil/projectiles.ts\",\n      \"line\": 45,\n      \"endLine\": 151,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 32448,\n      \"name\": "
         },
         {
           "id": "plugengine-holdout-01",
@@ -2010,7 +2240,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 273.4
+          "latencyMs": 295.6,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"createKeyVault\",\n  \"symbols\": [\n    {\n      \"id\": 33742,\n      \"name\": \"createKeyVault\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"line\": 22,\n      \"endLine\": 44,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/p"
         },
         {
           "id": "plugengine-holdout-02",
@@ -2026,7 +2258,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 258.5
+          "latencyMs": 293.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"KeyVaultHandle\",\n  \"symbols\": [\n    {\n      \"id\": 33735,\n      \"name\": \"KeyVaultHandle\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"line\": 11,\n      \"endLine\": 20,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \"packages/"
         },
         {
           "id": "plugengine-holdout-03",
@@ -2046,7 +2280,9 @@
           },
           "hit": true,
           "rank": 2,
-          "latencyMs": 231.1
+          "latencyMs": 229.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33742,\n    \"name\": \"createKeyVault\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n    \"line\": 22,\n    \"endLine\": 44,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"ai-builder-"
         },
         {
           "id": "plugengine-holdout-04",
@@ -2061,8 +2297,10 @@
             "details": "generate orchestrates buildJob + providerProfiles + stagingDiff + buildRecipeFactory."
           },
           "hit": true,
-          "rank": 3,
-          "latencyMs": 287.7
+          "rank": 1,
+          "latencyMs": 390.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"generate\",\n  \"symbols\": [\n    {\n      \"id\": 33642,\n      \"name\": \"generate\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/aiBuilder.ts\",\n      \"line\": 26,\n      \"endLine\": 37,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 49537,\n      \"name\": \"generate\",\n      \"k"
         },
         {
           "id": "plugengine-holdout-05",
@@ -2078,7 +2316,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 256
+          "latencyMs": 313.7,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"ArtProfile\",\n  \"symbols\": [\n    {\n      \"id\": 34017,\n      \"name\": \"ArtProfile\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/contracts/src/artProfile.ts\",\n      \"line\": 58,\n      \"endLine\": 66,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 34041,\n      \"name\": \"artProfileById\",\n"
         },
         {
           "id": "plugengine-holdout-06",
@@ -2094,7 +2334,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 251.4
+          "latencyMs": 317.5,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"StagingDiff\",\n  \"symbols\": [\n    {\n      \"id\": 33802,\n      \"name\": \"StagingDiff\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/stagingDiff.ts\",\n      \"line\": 10,\n      \"endLine\": 14,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 40558,\n      \"name\": \"stagingDif"
         },
         {
           "id": "plugengine-holdout-07",
@@ -2110,7 +2352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 255.5
+          "latencyMs": 313.2,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"BuildJob\",\n  \"symbols\": [\n    {\n      \"id\": 33650,\n      \"name\": \"BuildJob\",\n      \"kind\": \"interface\",\n      \"file\": \"packages/plugengine-ai/src/buildJob.ts\",\n      \"line\": 14,\n      \"endLine\": 19,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    },\n    {\n      \"id\": 33660,\n      \"name\": \"createBuildJob\",\n  "
         },
         {
           "id": "plugengine-holdout-08",
@@ -2126,7 +2370,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 266.3
+          "latencyMs": 333.3,
+          "error": null,
+          "rawAnswer": "{\n  \"query\": \"generateMockPlan\",\n  \"symbols\": [\n    {\n      \"id\": 33782,\n      \"name\": \"generateMockPlan\",\n      \"kind\": \"function\",\n      \"file\": \"packages/plugengine-ai/src/mockProvider.ts\",\n      \"line\": 110,\n      \"endLine\": 130,\n      \"exported\": true,\n      \"container\": null,\n      \"repoId\": null,\n      \"checkoutId\": null,\n      \"isVendor\": false\n    }\n  ],\n  \"notes\": [\n    {\n      \"path\": \""
         },
         {
           "id": "plugengine-holdout-09",
@@ -2146,7 +2392,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 258.2
+          "latencyMs": 253.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"id\": 33782,\n    \"name\": \"generateMockPlan\",\n    \"kind\": \"function\",\n    \"file\": \"packages/plugengine-ai/src/mockProvider.ts\",\n    \"line\": 110,\n    \"endLine\": 130,\n    \"exported\": true,\n    \"container\": null,\n    \"repoId\": null,\n    \"checkoutId\": null,\n    \"isVendor\": false\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"id\": null,\n        \"name\": \"aiB"
         },
         {
           "id": "plugengine-holdout-10",
@@ -2167,7 +2415,9 @@
           },
           "hit": true,
           "rank": -1,
-          "latencyMs": 263.2
+          "latencyMs": 313.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"name\": \"createKeyVault\",\n    \"file\": \"packages/plugengine-ai/src/keyVault.ts\",\n    \"id\": 33742\n  },\n  \"direction\": \"both\",\n  \"maxDepth\": 3,\n  \"totalImpacted\": 108,\n  \"nodes\": {\n    \"1\": [\n      {\n        \"depth\": 1,\n        \"id\": 49521,\n        \"name\": \"AiBuilderModel\",\n        \"kind\": \"class\",\n        \"file\": \"apps/engine-lab/src/studio/aiBuilder/aiBuilderModel.ts\",\n        \""
         }
       ]
     }

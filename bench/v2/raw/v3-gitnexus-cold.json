@@ -1,35 +1,39 @@
 {
   "benchmark": "gitnexus-cold",
-  "timestamp": "2026-09-26T03:46:06.561Z",
-  "grandOldHits": 39,
+  "timestamp": "2026-09-26T04:04:07.069Z",
+  "grandOldHits": 7,
   "grandOldTotal": 80,
-  "grandOldAccuracy": 48.8,
-  "grandHoldoutHits": 30,
+  "grandOldAccuracy": 8.8,
+  "grandHoldoutHits": 5,
   "grandHoldoutTotal": 40,
-  "grandHoldoutAccuracy": 75,
-  "grandTotalHits": 69,
+  "grandHoldoutAccuracy": 12.5,
+  "grandTotalHits": 12,
   "grandTotal": 120,
-  "grandTotalAccuracy": 57.5,
-  "latencyP50": 1279.2,
-  "latencyP95": 3836.7,
+  "grandTotalAccuracy": 10,
+  "grandErrorCount": 0,
+  "grandErrorRate": 0,
+  "latencyP50": 1176.9,
+  "latencyP95": 3707.5,
   "repos": [
     {
       "repo": "mcpz",
-      "oldHits": 10,
+      "oldHits": 2,
       "oldTotal": 20,
-      "oldAccuracy": 50,
-      "holdoutHits": 7,
+      "oldAccuracy": 10,
+      "holdoutHits": 1,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 70,
-      "totalHits": 17,
+      "holdoutAccuracy": 10,
+      "totalHits": 3,
       "totalCount": 30,
-      "totalAccuracy": 56.7,
-      "latencyOldP50": 1163.9,
-      "latencyOldP95": 1313.8,
-      "latencyHoldoutP50": 1149,
-      "latencyHoldoutP95": 1320.4,
-      "latencyAllP50": 1156.8,
-      "latencyAllP95": 1320.4,
+      "totalAccuracy": 10,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 1130,
+      "latencyOldP95": 1265.2,
+      "latencyHoldoutP50": 1154.6,
+      "latencyHoldoutP95": 1234.8,
+      "latencyAllP50": 1138.2,
+      "latencyAllP95": 1265.2,
       "questions": [
         {
           "id": "mcpz-01",
@@ -45,7 +49,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1343.4
+          "latencyMs": 1262.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_57_oninitialize\",\n      \"summary\": \"OnInitialize → ProtocolLine\",\n      \"priority\": 0.109,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_121_oninitialize\",\n      \"summary\": \"OnInitialize → Defaults\",\n      \"priority\": 0.108,\n      \"symbol_count\": 3,\n      \"process_type\": \"cross_commu"
         },
         {
           "id": "mcpz-02",
@@ -59,9 +65,11 @@
             "kind": "symbol",
             "details": "CameraConfig record defining defaults() and from(McpzConfig cfg)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1169.9
+          "latencyMs": 1155.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_215_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Parse\",\n      \"priority\": 0.11,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_47_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Reset\",\n      \"priority\": 0.083,\n      \"symbol_count\": 2,\n      \"process_type\":"
         },
         {
           "id": "mcpz-03",
@@ -80,7 +88,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1087.2
+          "latencyMs": 1091.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 10 symbols matching 'init'. Use uid, file_path, or kind to disambiguate.\",\n  \"candidates\": [\n    {\n      \"uid\": \"Method:src/main/java/net/mcpz/save/McpzSaveData.java:McpzSaveData.init#0\",\n      \"name\": \"init\",\n      \"kind\": \"Method\",\n      \"filePath\": \"src/main/java/net/mcpz/save/McpzSaveData.java\",\n      \"line\": 47,\n      \"score\": 0.54\n    },\n    {\n "
         },
         {
           "id": "mcpz-04",
@@ -99,7 +109,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1129.5
+          "latencyMs": 1132.7,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Method:src/client/java/net/mcpz/client/McpzClient.java:McpzClient.registerKeybindings#1\",\n    \"name\": \"registerKeybindings\",\n    \"kind\": \"Method\",\n    \"filePath\": \"src/client/java/net/mcpz/client/McpzClient.java\",\n    \"startLine\": 86,\n    \"endLine\": 116\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Method:src/client/java/net/mcpz/clien"
         },
         {
           "id": "mcpz-05",
@@ -120,7 +132,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1206
+          "latencyMs": 1089,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Property:src/main/java/net/mcpz/McpzConstants.java:McpzConstants.FLOOR_HEIGHT_BLOCKS\",\n    \"name\": \"FLOOR_HEIGHT_BLOCKS\",\n    \"type\": \"\",\n    \"filePath\": \"src/main/java/net/mcpz/McpzConstants.java\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCo"
         },
         {
           "id": "mcpz-06",
@@ -142,7 +156,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1085
+          "latencyMs": 1093.9,
+          "error": null,
+          "rawAnswer": "{\n  \"error\": \"Target 'CameraConfig' not found\",\n  \"target\": {\n    \"name\": \"CameraConfig\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\"\n}\n"
         },
         {
           "id": "mcpz-07",
@@ -162,9 +178,11 @@
             ],
             "details": "McpzConfig.load -> CameraConfig.from -> McpzRuntime.init -> new McpzCameraController(cfg)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1163.9
+          "latencyMs": 1127.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_215_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Parse\",\n      \"priority\": 0.11,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_47_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Reset\",\n      \"priority\": 0.083,\n      \"symbol_count\": 2,\n      \"process_type\":"
         },
         {
           "id": "mcpz-08",
@@ -180,7 +198,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1210.6
+          "latencyMs": 1096.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_107_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Defaults\",\n      \"priority\": 0.114,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_121_oninitialize\",\n      \"summary\": \"OnInitialize → Defaults\",\n      \"priority\": 0.114,\n      \"symbol_count\": 2,\n      \"process_type\": \"cr"
         },
         {
           "id": "mcpz-09",
@@ -194,9 +214,11 @@
             "kind": "entrypoint",
             "details": "McpzMod implements ModInitializer with onInitialize()."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1246.2
+          "latencyMs": 1214.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:src/main/java/net/mcpz/server/McpzServer.java:McpzServer.onInitializeServer#0\",\n      \"name\": \"onInitializeServer\",\n      \"filePath\": \"src/main/java/net/mcpz/server/McpzServer.java\",\n      \"startLine\": 12,\n      \"endLine\": 18,\n      \"module\": \"Server\"\n    },\n    {\n      \"id\": \"File:src/main/java/net/mcpz/ser"
         },
         {
           "id": "mcpz-10",
@@ -210,9 +232,11 @@
             "kind": "entrypoint",
             "details": "McpzClient implements ClientModInitializer with onInitializeClient()."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1219.2
+          "latencyMs": 1214.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_107_oninitializeclient\",\n      \"summary\": \"OnInitializeClient → Defaults\",\n      \"priority\": 0.115,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_121_oninitialize\",\n      \"summary\": \"OnInitialize → Defaults\",\n      \"priority\": 0.115,\n      \"symbol_count\": 2,\n      \"process_type\": \"cr"
         },
         {
           "id": "mcpz-11",
@@ -228,7 +252,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1304.6
+          "latencyMs": 1314.8,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_157_main\",\n      \"summary\": \"Main → Run\",\n      \"priority\": 0.109,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_158_main\",\n      \"summary\": \"Main → Parse_json_list\",\n      \"priority\": 0.109,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    "
         },
         {
           "id": "mcpz-12",
@@ -244,7 +270,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1298
+          "latencyMs": 1259.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_153_register\",\n      \"summary\": \"Register → Camera\",\n      \"priority\": 0.128,\n      \"symbol_count\": 4,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_32_register\",\n      \"summary\": \"Register → Get\",\n      \"priority\": 0.116,\n      \"symbol_count\": 3,\n      \"process_type\": \"cross_community\",\n      \"step_count\": "
         },
         {
           "id": "mcpz-13",
@@ -264,7 +292,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1080.6
+          "latencyMs": 1058,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 8 symbols matching 'camera'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"camera\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.camera#0\",\n      \"name\": \"camera\",\n      \"kind\": \"Meth"
         },
         {
           "id": "mcpz-14",
@@ -281,9 +311,11 @@
             ],
             "details": "derive_evidence_class is part of the VLM QA harness evidence tiering."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1174.7
+          "latencyMs": 1130,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:tools/vlm-qa/mcpz_vlm/evidence.py:derive_evidence_class\",\n    \"name\": \"derive_evidence_class\",\n    \"type\": \"Function\",\n    \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 1,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 1,\n    \"processes_affected\": 0,\n    \"modules_affected\": 1\n  },\n  \"byDepthCounts\": {\n    \"1\": "
         },
         {
           "id": "mcpz-15",
@@ -297,9 +329,11 @@
             "kind": "symbol",
             "details": "evidence.py defines derive_evidence_class(input_source, vision_assessed)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1313.8
+          "latencyMs": 1265.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_211_neededfornextlevel\",\n      \"summary\": \"NeededForNextLevel → XpToNext\",\n      \"priority\": 0.096,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_216_create\",\n      \"summary\": \"Create → MoodleCatalog\",\n      \"priority\": 0.09,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_comm"
         },
         {
           "id": "mcpz-16",
@@ -318,7 +352,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1116
+          "latencyMs": 1138.2,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:tools/vlm-qa/mcpz_vlm/evidence.py:validate_manifest\",\n    \"name\": \"validate_manifest\",\n    \"kind\": \"Function\",\n    \"filePath\": \"tools/vlm-qa/mcpz_vlm/evidence.py\",\n    \"startLine\": 49,\n    \"endLine\": 75\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:tools/vlm-qa/mcpz_vlm/cli.py:_cmd_check\",\n        \"name\": \"_cmd_check\""
         },
         {
           "id": "mcpz-17",
@@ -332,9 +368,11 @@
             "kind": "symbol",
             "details": "Atmosphere controller managing weather, fog, and lighting overrides."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1155.9
+          "latencyMs": 1104.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:src/test/java/net/mcpz/AtmosphereFogTest.java:AtmosphereFogTest.fogColorScalesWithBrightnessAndClamps#0\",\n      \"name\": \"fogColorScalesWithBrightnessAndClamps\",\n      \"filePath\": \"src/test/java/net/mcpz/AtmosphereFogTest.java\",\n      \"startLine\": 16,\n      \"endLine\": 28,\n      \"module\": \"Atmosphere\"\n    },\n "
         },
         {
           "id": "mcpz-18",
@@ -355,7 +393,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1156.8
+          "latencyMs": 1074.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Property:src/client/java/net/mcpz/client/input/McpzControlMap.java:McpzControlMap.ROTATE_LEFT\",\n    \"name\": \"ROTATE_LEFT\",\n    \"type\": \"\",\n    \"filePath\": \"src/client/java/net/mcpz/client/input/McpzControlMap.java\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n"
         },
         {
           "id": "mcpz-19",
@@ -369,9 +409,11 @@
             "kind": "symbol",
             "details": "Class adapting Project Zomboid item concepts to vanilla Minecraft item registries."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1148.7
+          "latencyMs": 1147.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_0_oninitialize\",\n      \"summary\": \"OnInitialize → NanosToMillis\",\n      \"priority\": 0.083,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 8\n    },\n    {\n      \"id\": \"proc_1_oninitialize\",\n      \"summary\": \"OnInitialize → Percentile\",\n      \"priority\": 0.083,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_commu"
         },
         {
           "id": "mcpz-20",
@@ -391,7 +433,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1080
+          "latencyMs": 1066.2,
+          "error": null,
+          "rawAnswer": "{\n  \"error\": \"Symbol 'McpzLog' not found\"\n}\n"
         },
         {
           "id": "mcpz-holdout-01",
@@ -405,9 +449,11 @@
             "kind": "symbol",
             "details": "PzTrait record defining character trait properties: id, displayName, cost, kind, description, exclusiveWith."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1166.2
+          "latencyMs": 1194.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_80_clicktraitrow\",\n      \"summary\": \"ClickTraitRow → Traits\",\n      \"priority\": 0.09,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_88_mousescrolled\",\n      \"summary\": \"MouseScrolled → Traits\",\n      \"priority\": 0.09,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n"
         },
         {
           "id": "mcpz-holdout-02",
@@ -421,9 +467,11 @@
             "kind": "symbol",
             "details": "costLabel returns +cost for negatives and -cost for positives."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1151.3
+          "latencyMs": 1107.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:src/main/java/net/mcpz/character/PzTrait.java:PzTrait.costLabel#0\",\n      \"name\": \"costLabel\",\n      \"filePath\": \"src/main/java/net/mcpz/character/PzTrait.java\",\n      \"startLine\": 29,\n      \"endLine\": 31\n    },\n    {\n      \"id\": \"File:src/main/java/net/mcpz/character/PzTrait.java\",\n      \"name\": \"PzTrait.ja"
         },
         {
           "id": "mcpz-holdout-03",
@@ -437,9 +485,11 @@
             "kind": "symbol",
             "details": "PzProfession record defining id, displayName, startingPoints, freeTraitIds, description."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1142.2
+          "latencyMs": 1154.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_156_clicktraitrow\",\n      \"summary\": \"ClickTraitRow → Profession\",\n      \"priority\": 0.091,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_175_mousescrolled\",\n      \"summary\": \"MouseScrolled → Profession\",\n      \"priority\": 0.091,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_"
         },
         {
           "id": "mcpz-holdout-04",
@@ -453,9 +503,11 @@
             "kind": "symbol",
             "details": "ModuleRegistry registers and initializes MCPZ modules in deterministic order."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1149
+          "latencyMs": 1141.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_122_oninitialize\",\n      \"summary\": \"OnInitialize → Id\",\n      \"priority\": 0.099,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    }\n  ],\n  \"process_symbols\": [\n    {\n      \"id\": \"Method:src/main/java/net/mcpz/module/ModuleRegistry.java:ModuleRegistry.register#1\",\n      \"name\": \"register\",\n      \"filePath\": \"src/"
         },
         {
           "id": "mcpz-holdout-05",
@@ -474,7 +526,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1145.3
+          "latencyMs": 1094.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Method:src/main/java/net/mcpz/module/ModuleRegistry.java:ModuleRegistry.initializeAll#0\",\n    \"name\": \"initializeAll\",\n    \"kind\": \"Method\",\n    \"filePath\": \"src/main/java/net/mcpz/module/ModuleRegistry.java\",\n    \"startLine\": 33,\n    \"endLine\": 44\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Method:src/main/java/net/mcpz/McpzMod.java"
         },
         {
           "id": "mcpz-holdout-06",
@@ -488,9 +542,11 @@
             "kind": "symbol",
             "details": "SaveSchema defines CURRENT version and DATA_ID helper."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1134.5
+          "latencyMs": 1184.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:src/main/java/net/mcpz/save/SaveSchema.java:SaveSchema.isSupported#1\",\n      \"name\": \"isSupported\",\n      \"filePath\": \"src/main/java/net/mcpz/save/SaveSchema.java\",\n      \"startLine\": 11,\n      \"endLine\": 13\n    },\n    {\n      \"id\": \"Class:src/main/java/net/mcpz/save/SaveSchema.java:SaveSchema\",\n      \"name\""
         },
         {
           "id": "mcpz-holdout-07",
@@ -506,7 +562,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1175.5
+          "latencyMs": 1183,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_271_handleinterfacekeys\",\n      \"summary\": \"HandleInterfaceKeys → LastAim\",\n      \"priority\": 0.09,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    }\n  ],\n  \"process_symbols\": [\n    {\n      \"id\": \"Method:src/client/java/net/mcpz/client/McpzRuntime.java:McpzRuntime.lastAim#0\",\n      \"name\": \"lastAim\",\n      \"file"
         },
         {
           "id": "mcpz-holdout-08",
@@ -520,9 +578,11 @@
             "kind": "symbol",
             "details": "clampBrightness clamps exposure multiplier between 0.1 and 3.0."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1186.7
+          "latencyMs": 1171,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:src/test/java/net/mcpz/AtmosphereFogTest.java:AtmosphereFogTest.brightnessRejectsNaNAndExtremes#0\",\n      \"name\": \"brightnessRejectsNaNAndExtremes\",\n      \"filePath\": \"src/test/java/net/mcpz/AtmosphereFogTest.java\",\n      \"startLine\": 43,\n      \"endLine\": 49,\n      \"module\": \"Atmosphere\"\n    },\n    {\n      \""
         },
         {
           "id": "mcpz-holdout-09",
@@ -538,7 +598,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1320.4
+          "latencyMs": 1234.8,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_65_of\",\n      \"summary\": \"Of → Quantity\",\n      \"priority\": 0.105,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_66_of\",\n      \"summary\": \"Of → EmbeddedContainer\",\n      \"priority\": 0.105,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 5\n    },\n"
         },
         {
           "id": "mcpz-holdout-10",
@@ -558,27 +620,31 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1103.7
+          "latencyMs": 1084.4,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Method:src/main/java/net/mcpz/camera/CameraProjection.java:CameraProjection.orthographic#2\",\n    \"name\": \"orthographic\",\n    \"type\": \"Method\",\n    \"filePath\": \"src/main/java/net/mcpz/camera/CameraProjection.java\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  "
         }
       ]
     },
     {
       "repo": "plugmedia",
-      "oldHits": 11,
+      "oldHits": 3,
       "oldTotal": 20,
-      "oldAccuracy": 55,
-      "holdoutHits": 7,
+      "oldAccuracy": 15,
+      "holdoutHits": 1,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 70,
-      "totalHits": 18,
+      "holdoutAccuracy": 10,
+      "totalHits": 4,
       "totalCount": 30,
-      "totalAccuracy": 60,
-      "latencyOldP50": 1152.7,
-      "latencyOldP95": 1252.8,
-      "latencyHoldoutP50": 1129.8,
-      "latencyHoldoutP95": 1264.5,
-      "latencyAllP50": 1148.6,
-      "latencyAllP95": 1261.9,
+      "totalAccuracy": 13.3,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 1109.8,
+      "latencyOldP95": 1254.2,
+      "latencyHoldoutP50": 1094.2,
+      "latencyHoldoutP95": 1212,
+      "latencyAllP50": 1106.5,
+      "latencyAllP95": 1254.2,
       "questions": [
         {
           "id": "plugmedia-01",
@@ -594,7 +660,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1227.9
+          "latencyMs": 1231.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_76_cmd_info\",\n      \"summary\": \"Cmd_info → Snapshot_dir\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_77_cmd_info\",\n      \"summary\": \"Cmd_info → Sha256_file\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \""
         },
         {
           "id": "plugmedia-02",
@@ -610,7 +678,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1201.1
+          "latencyMs": 1176.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_79_qareview\",\n      \"summary\": \"QaReview → LatestArtifacts\",\n      \"priority\": 0.125,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_28_body\",\n      \"summary\": \"Body → Command\",\n      \"priority\": 0.116,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_coun"
         },
         {
           "id": "plugmedia-03",
@@ -629,7 +699,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1132.1
+          "latencyMs": 1108.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:packages/graph/src/compute/topo.ts:topoSort\",\n    \"name\": \"topoSort\",\n    \"kind\": \"Function\",\n    \"filePath\": \"packages/graph/src/compute/topo.ts\",\n    \"startLine\": 6,\n    \"endLine\": 24\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:tests/graph.test.ts\",\n        \"name\": \"graph.test.ts\",\n        \"filePath\": \"tests/graph.tes"
         },
         {
           "id": "plugmedia-04",
@@ -643,9 +715,11 @@
             "kind": "symbol",
             "details": "CycleError extends Error thrown when a compute DAG contains cycles."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1144.1
+          "latencyMs": 1068.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/graph/src/compute/topo.ts\",\n      \"name\": \"topo.ts\",\n      \"filePath\": \"packages/graph/src/compute/topo.ts\"\n    },\n    {\n      \"id\": \"Method:packages/graph/src/compute/topo.ts:CycleError.constructor#1\",\n      \"name\": \"constructor\",\n      \"filePath\": \"packages/graph/src/compute/topo.ts\",\n      \"startLi"
         },
         {
           "id": "plugmedia-05",
@@ -659,9 +733,11 @@
             "kind": "symbol",
             "details": "casPath(digest) returns join(CAS_ROOT, digest.slice(0, 2), digest)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1148.6
+          "latencyMs": 1083.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_5_plancontent\",\n      \"summary\": \"PlanContent → CasPath\",\n      \"priority\": 0.09,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_11_derivedistributionse\",\n      \"summary\": \"DeriveDistributionSet → CasPath\",\n      \"priority\": 0.09,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_"
         },
         {
           "id": "plugmedia-06",
@@ -680,7 +756,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1096
+          "latencyMs": 1083.9,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:services/runtime/src/cas.ts:storeContent\",\n    \"name\": \"storeContent\",\n    \"kind\": \"Function\",\n    \"filePath\": \"services/runtime/src/cas.ts\",\n    \"startLine\": 47,\n    \"endLine\": 82\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:services/runtime/src/domain/media.ts:commitArtifact\",\n        \"name\": \"commitArtifact\",\n    "
         },
         {
           "id": "plugmedia-07",
@@ -699,9 +777,11 @@
             "expected_count": 2,
             "details": "PGCONFIG defines default PostgreSQL connection parameters used by openDb."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1092
+          "latencyMs": 1089,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Const:services/runtime/src/db.ts:PGCONFIG\",\n    \"name\": \"PGCONFIG\",\n    \"type\": \"\",\n    \"filePath\": \"services/runtime/src/db.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCounts\": {},\n  \"affected_processes\": [],\n  \"affected_modules\": [],\n  \"b"
         },
         {
           "id": "plugmedia-08",
@@ -721,7 +801,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1100.7
+          "latencyMs": 1119.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Const:packages/contracts/src/index.ts:SCHEMA_VERSION\",\n    \"name\": \"SCHEMA_VERSION\",\n    \"type\": \"\",\n    \"filePath\": \"packages/contracts/src/index.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCounts\": {},\n  \"affected_processes\": [],\n  \"affec"
         },
         {
           "id": "plugmedia-09",
@@ -738,9 +820,11 @@
             ],
             "details": "storeContent verifies target exists or streams into CAS_TMP then renames to casPath(digest)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1224.5
+          "latencyMs": 1084.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_4_plancontent\",\n      \"summary\": \"PlanContent → EnsureCas\",\n      \"priority\": 0.089,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_5_plancontent\",\n      \"summary\": \"PlanContent → CasPath\",\n      \"priority\": 0.089,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n    "
         },
         {
           "id": "plugmedia-10",
@@ -756,7 +840,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1240.9
+          "latencyMs": 1245,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_18_createwindow\",\n      \"summary\": \"CreateWindow → LocalToken\",\n      \"priority\": 0.138,\n      \"symbol_count\": 3,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_94_main\",\n      \"summary\": \"Main → Psql\",\n      \"priority\": 0.128,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_coun"
         },
         {
           "id": "plugmedia-11",
@@ -772,7 +858,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1102.1
+          "latencyMs": 1066.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:services/runtime/src/db.ts\",\n      \"name\": \"db.ts\",\n      \"filePath\": \"services/runtime/src/db.ts\"\n    }\n  ],\n  \"timing\": {\n    \"vector\": 4.9,\n    \"bm25\": 32.6,\n    \"merge\": 0,\n    \"symbol_lookup\": 9,\n    \"ranking\": 0,\n    \"formatting\": 0,\n    \"wall\": 43.2\n  }\n}\n"
         },
         {
           "id": "plugmedia-12",
@@ -788,7 +876,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1153.8
+          "latencyMs": 1119.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:package.json\",\n      \"name\": \"package.json\",\n      \"filePath\": \"package.json\"\n    },\n    {\n      \"id\": \"File:services/runtime/src/index.ts\",\n      \"name\": \"index.ts\",\n      \"filePath\": \"services/runtime/src/index.ts\"\n    },\n    {\n      \"id\": \"File:docs/REUSE_LICENSE_REGISTER.md\",\n      \"name\": \"REUSE_LICENSE_R"
         },
         {
           "id": "plugmedia-13",
@@ -804,7 +894,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1153.3
+          "latencyMs": 1148.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_94_main\",\n      \"summary\": \"Main → Psql\",\n      \"priority\": 0.149,\n      \"symbol_count\": 3,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_52_main\",\n      \"summary\": \"Main → Send\",\n      \"priority\": 0.119,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n   "
         },
         {
           "id": "plugmedia-14",
@@ -820,7 +912,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1220.9
+          "latencyMs": 1254.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_100_integrity\",\n      \"summary\": \"Integrity → Sha256File\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_70_body\",\n      \"summary\": \"Body → UseAsync\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count"
         },
         {
           "id": "plugmedia-15",
@@ -834,9 +928,11 @@
             "kind": "docs_notes",
             "details": "ARCHIVE_MANIFEST.md details quarantined files and historical assets."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1258.8
+          "latencyMs": 1260.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_97_main\",\n      \"summary\": \"Main → _lerp_track\",\n      \"priority\": 0.13,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_13_main\",\n      \"summary\": \"Main → _ellipse\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 5\n    },"
         },
         {
           "id": "plugmedia-16",
@@ -853,9 +949,11 @@
             ],
             "details": "ensureCas is called inside storeContent and registerContent."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1142.5
+          "latencyMs": 1106.5,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:services/runtime/src/cas.ts:ensureCas\",\n    \"name\": \"ensureCas\",\n    \"type\": \"Function\",\n    \"filePath\": \"services/runtime/src/cas.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 6,\n  \"risk\": \"HIGH\",\n  \"summary\": {\n    \"direct\": 1,\n    \"processes_affected\": 4,\n    \"modules_affected\": 2\n  },\n  \"byDepthCounts\": {\n    \"1\": 1,\n    \"2\": 1,\n    \"3\": 4\n  },\n  \"a"
         },
         {
           "id": "plugmedia-17",
@@ -872,9 +970,11 @@
             ],
             "details": "applyMigrations executes database schema migrations."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1152.7
+          "latencyMs": 1113.6,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:services/runtime/src/db.ts:applyMigrations\",\n    \"name\": \"applyMigrations\",\n    \"type\": \"Function\",\n    \"filePath\": \"services/runtime/src/db.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 2,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 2,\n    \"processes_affected\": 2,\n    \"modules_affected\": 1\n  },\n  \"byDepthCounts\": {\n    \"1\": 2\n  },\n  \"affected_process"
         },
         {
           "id": "plugmedia-18",
@@ -888,9 +988,11 @@
             "kind": "symbol",
             "details": "scheduler.ts implements schedulerTick for polling and dispatching tasks."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1157.6
+          "latencyMs": 1095.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_55_schedulerloop\",\n      \"summary\": \"SchedulerLoop → ReclaimExpiredLeases\",\n      \"priority\": 0.135,\n      \"symbol_count\": 3,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_56_schedulerloop\",\n      \"summary\": \"SchedulerLoop → MaintainPublication\",\n      \"priority\": 0.118,\n      \"symbol_count\": 2,\n      \"proce"
         },
         {
           "id": "plugmedia-19",
@@ -909,7 +1011,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1131.4
+          "latencyMs": 1109.8,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:services/runtime/src/commands.ts:register\",\n    \"name\": \"register\",\n    \"kind\": \"Function\",\n    \"filePath\": \"services/runtime/src/commands.ts\",\n    \"startLine\": 11,\n    \"endLine\": 11\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:services/runtime/src/index.ts\",\n        \"name\": \"index.ts\",\n        \"filePath\": \"services/runt"
         },
         {
           "id": "plugmedia-20",
@@ -925,7 +1029,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1252.8
+          "latencyMs": 1189.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_87_sync\",\n      \"summary\": \"Sync → Fail\",\n      \"priority\": 0.097,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_92_diff\",\n      \"summary\": \"Diff → Fail\",\n      \"priority\": 0.096,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n   "
         },
         {
           "id": "plugmedia-holdout-01",
@@ -941,7 +1047,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1261.9
+          "latencyMs": 1187.8,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_87_sync\",\n      \"summary\": \"Sync → Fail\",\n      \"priority\": 0.097,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_92_diff\",\n      \"summary\": \"Diff → Fail\",\n      \"priority\": 0.096,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 3\n    },\n    {\n   "
         },
         {
           "id": "plugmedia-holdout-02",
@@ -955,9 +1063,11 @@
             "kind": "symbol",
             "details": "issueCapability generates signed HMAC capabilities for artifact reads."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1175.3
+          "latencyMs": 1102.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_37_playbacksnapshot\",\n      \"summary\": \"PlaybackSnapshot → RuntimeKey\",\n      \"priority\": 0.14,\n      \"symbol_count\": 3,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_99_artifactcapability\",\n      \"summary\": \"ArtifactCapability → RuntimeKey\",\n      \"priority\": 0.12,\n      \"symbol_count\": 2,\n      \"process_ty"
         },
         {
           "id": "plugmedia-holdout-03",
@@ -971,9 +1081,11 @@
             "kind": "symbol",
             "details": "verifyCapability validates signed HMAC capabilities against expiry and artifact ID."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1103.8
+          "latencyMs": 1085.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_37_playbacksnapshot\",\n      \"summary\": \"PlaybackSnapshot → RuntimeKey\",\n      \"priority\": 0.105,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_99_artifactcapability\",\n      \"summary\": \"ArtifactCapability → RuntimeKey\",\n      \"priority\": 0.105,\n      \"symbol_count\": 1,\n      \"process_"
         },
         {
           "id": "plugmedia-holdout-04",
@@ -987,9 +1099,11 @@
             "kind": "symbol",
             "details": "csrfGuard checks for presence of 'plugmedia-client/1' on mutating requests."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1107.9
+          "latencyMs": 1097.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:services/runtime/src/auth.ts\",\n      \"name\": \"auth.ts\",\n      \"filePath\": \"services/runtime/src/auth.ts\"\n    },\n    {\n      \"id\": \"Function:services/runtime/src/auth.ts:originGuard\",\n      \"name\": \"originGuard\",\n      \"filePath\": \"services/runtime/src/auth.ts\",\n      \"startLine\": 117,\n      \"endLine\": 121\n    "
         },
         {
           "id": "plugmedia-holdout-05",
@@ -1005,7 +1119,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1264.5
+          "latencyMs": 1184,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_28_body\",\n      \"summary\": \"Body → Command\",\n      \"priority\": 0.114,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_101_contentarea\",\n      \"summary\": \"ContentArea → Command\",\n      \"priority\": 0.114,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count"
         },
         {
           "id": "plugmedia-holdout-06",
@@ -1019,9 +1135,11 @@
             "kind": "symbol",
             "details": "computeNodeCacheKey computes canonical sha256 hash of node execution inputs."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1113.2
+          "latencyMs": 1094.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_15_loop\",\n      \"summary\": \"Loop → Stable\",\n      \"priority\": 0.127,\n      \"symbol_count\": 3,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_16_loop\",\n      \"summary\": \"Loop → Sha256\",\n      \"priority\": 0.095,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {"
         },
         {
           "id": "plugmedia-holdout-07",
@@ -1037,7 +1155,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1225.6
+          "latencyMs": 1212,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_76_cmd_info\",\n      \"summary\": \"Cmd_info → Snapshot_dir\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 3\n    },\n    {\n      \"id\": \"proc_77_cmd_info\",\n      \"summary\": \"Cmd_info → Sha256_file\",\n      \"priority\": 0.115,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \""
         },
         {
           "id": "plugmedia-holdout-08",
@@ -1051,9 +1171,11 @@
             "kind": "symbol",
             "details": "implementationDigest creates sha256 prefix from sorted node version tuples."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1129.8
+          "latencyMs": 1089.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_54_loop\",\n      \"summary\": \"Loop → ImplementationDigest\",\n      \"priority\": 0.11,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_15_loop\",\n      \"summary\": \"Loop → Stable\",\n      \"priority\": 0.094,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5"
         },
         {
           "id": "plugmedia-holdout-09",
@@ -1072,7 +1194,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1143.8
+          "latencyMs": 1078.9,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:services/runtime/src/engine/scheduler.ts:schedulerTick\",\n    \"name\": \"schedulerTick\",\n    \"kind\": \"Function\",\n    \"filePath\": \"services/runtime/src/engine/scheduler.ts\",\n    \"startLine\": 214,\n    \"endLine\": 234\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:services/runtime/src/index.ts:schedulerLoop\",\n        \"name\": "
         },
         {
           "id": "plugmedia-holdout-10",
@@ -1089,29 +1213,33 @@
             ],
             "details": "All downstream node caching and DAG re-execution invalidation depends on computeNodeCacheKey."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1080.8
+          "latencyMs": 1054,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:packages/graph/src/compute/cacheKey.ts:computeNodeCacheKey\",\n    \"name\": \"computeNodeCacheKey\",\n    \"type\": \"Function\",\n    \"filePath\": \"packages/graph/src/compute/cacheKey.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCounts\": {},\n "
         }
       ]
     },
     {
       "repo": "cowork",
-      "oldHits": 8,
+      "oldHits": 1,
       "oldTotal": 20,
-      "oldAccuracy": 40,
-      "holdoutHits": 7,
+      "oldAccuracy": 5,
+      "holdoutHits": 1,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 70,
-      "totalHits": 15,
+      "holdoutAccuracy": 10,
+      "totalHits": 2,
       "totalCount": 30,
-      "totalAccuracy": 50,
-      "latencyOldP50": 3560,
-      "latencyOldP95": 3904.4,
-      "latencyHoldoutP50": 1967.7,
-      "latencyHoldoutP95": 5718.5,
-      "latencyAllP50": 2152,
-      "latencyAllP95": 5532.6,
+      "totalAccuracy": 6.7,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 3602.5,
+      "latencyOldP95": 3846.1,
+      "latencyHoldoutP50": 1405.4,
+      "latencyHoldoutP95": 3754.5,
+      "latencyAllP50": 1495.6,
+      "latencyAllP95": 3846.1,
       "questions": [
         {
           "id": "cowork-01",
@@ -1127,7 +1255,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3904.4
+          "latencyMs": 3707.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:ruflo-workers/tools/fleet.py:load_lanes\",\n      \"name\": \"load_lanes\",\n      \"filePath\": \"ruflo-workers/tools/fleet.py\",\n      \"startLine\": 106,\n      \"endLine\": 120,\n      \"module\": \"Tools\"\n    },\n    {\n      \"id\": \"Function:ruflo-workers/tools/fleet.py:main\",\n      \"name\": \"main\",\n      \"filePath\": \"ruflo"
         },
         {
           "id": "cowork-02",
@@ -1143,7 +1273,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3713.3
+          "latencyMs": 3602.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:plugos-showcase/tools/security/tests/test_audit_hardening.py:TestLeakHardening.test_scrub_masks_embedded_shape#0\",\n      \"name\": \"test_scrub_masks_embedded_shape\",\n      \"filePath\": \"plugos-showcase/tools/security/tests/test_audit_hardening.py\",\n      \"startLine\": 18,\n      \"endLine\": 23\n    },\n    {\n      \""
         },
         {
           "id": "cowork-03",
@@ -1160,9 +1292,11 @@
             ],
             "details": "worker.py calls post_event during worker lifecycle transitions."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1424.1
+          "latencyMs": 1361.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:ruflo-workers/tools/worker.py:post_event\",\n    \"name\": \"post_event\",\n    \"kind\": \"Function\",\n    \"filePath\": \"ruflo-workers/tools/worker.py\",\n    \"startLine\": 41,\n    \"endLine\": 50\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:ruflo-workers/station_runner.py:run_loop\",\n        \"name\": \"run_loop\",\n        \"filePath\": \""
         },
         {
           "id": "cowork-04",
@@ -1181,7 +1315,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1436.8
+          "latencyMs": 1355,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:ruflo-workers/tools/worker.py:codegraph_context\",\n    \"name\": \"codegraph_context\",\n    \"kind\": \"Function\",\n    \"filePath\": \"ruflo-workers/tools/worker.py\",\n    \"startLine\": 53,\n    \"endLine\": 66\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:ruflo-workers/tools/worker.py:run_part_as_worker\",\n        \"name\": \"run_part_a"
         },
         {
           "id": "cowork-05",
@@ -1200,9 +1336,11 @@
             "expected_count": 2,
             "details": "swarm-chain.config.json is shared between fleet.py and cockpit/server.cjs."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1339.1
+          "latencyMs": 1308.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 4 symbols matching 'CONFIG'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"CONFIG\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Const:cockpit/server.cjs:CONFIG\",\n      \"name\": \"CONFIG\",\n      \"kind\": \"\",\n      \"filePath\": \"cockpit/server.cjs\",\n      "
         },
         {
           "id": "cowork-06",
@@ -1220,9 +1358,11 @@
             "expected_count": 1,
             "details": "RATE determines cost calculation for different AI model providers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1293.9
+          "latencyMs": 1289.6,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 2 symbols matching 'RATE'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"RATE\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Const:cockpit/server.cjs:RATE\",\n      \"name\": \"RATE\",\n      \"kind\": \"\",\n      \"filePath\": \"cockpit/server.cjs\",\n      \"line\": "
         },
         {
           "id": "cowork-07",
@@ -1240,9 +1380,11 @@
             ],
             "details": "POST /api/swarm/lane -> writeConfig writes swarm-chain.config.json atomically -> read by fleet.py."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1748.6
+          "latencyMs": 1681.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js:cleanupTempDir\",\n      \"name\": \"cleanupTempDir\",\n      \"filePath\": \"00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/ECC/tests/hooks/mcp-health-check.test.js"
         },
         {
           "id": "cowork-08",
@@ -1258,7 +1400,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3836.7
+          "latencyMs": 3857.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs:controlInfo\",\n      \"name\": \"controlInfo\",\n      \"filePath\": \"ECOSPACE/03_PLUGBOT/code/plugbot-desktop-shell/src/preload.cjs\",\n      \"startLine\": 12,\n      \"endLine\": 12\n    },\n    {\n      \"id\": \"Function:ECOSPACE/03_PLUGBOT/code/plugbot-deskto"
         },
         {
           "id": "cowork-09",
@@ -1274,7 +1418,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3798
+          "latencyMs": 3846.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py:cmd_swarm_status\",\n      \"name\": \"cmd_swarm_status\",\n      \"filePath\": \"ECOSPACE/01_MCP_BRAIN/code/_deploy_ready/deploy/_v4_ref/plugbot/plugbot/swarm_manager.py\",\n      \"startLine\": 182,\n      \"endLine\": 197,\n      \"mo"
         },
         {
           "id": "cowork-10",
@@ -1290,7 +1436,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3560
+          "latencyMs": 3615.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/deploying-osquery-for-endpoint-monitoring/scripts/agent.py:check_fleet_status\",\n      \"name\": \"check_fleet_status\",\n      \"filePath\": \"00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_01"
         },
         {
           "id": "cowork-11",
@@ -1306,7 +1454,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3796.7
+          "latencyMs": 3683,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent-infra/mcp-client/src/index.ts:MCPClient.load#1\",\n      \"name\": \"load\",\n      \"filePath\": \"00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/UI-TARS-desktop/packages/agent"
         },
         {
           "id": "cowork-12",
@@ -1322,7 +1472,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3772.8
+          "latencyMs": 3678.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.initialize_storyboard#1\",\n      \"name\": \"initialize_storyboard\",\n      \"filePath\": \"00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools"
         },
         {
           "id": "cowork-13",
@@ -1338,7 +1490,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3916
+          "latencyMs": 3733.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py:TestCanonicalizeRef.test_T1_canonical_value#0\",\n      \"name\": \"test_T1_canonical_value\",\n      \"filePath\": \"ECOSPACE/01_MCP_BRAIN/code/plugbrain/tests/test_fusion_cross_lane_ref_normalize.py\",\n      \"startLine\": 80,\n      \"end"
         },
         {
           "id": "cowork-14",
@@ -1354,7 +1508,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3839
+          "latencyMs": 3724.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts:IUILayer.button#2\",\n      \"name\": \"button\",\n      \"filePath\": \"ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts\",\n      \"startLine\": 346,\n      \"endLine\": 346\n    },\n    {\n      \"id\": \"Method:ECOSPACE/06_PLUGWORLD/code/src/platform/types.ts:IUILayer.label#2\",\n"
         },
         {
           "id": "cowork-15",
@@ -1371,9 +1527,11 @@
             ],
             "details": "produce_one is called in main loop of run.py."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1394.8
+          "latencyMs": 1343.4,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 2 symbols matching 'produce_one'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"produce_one\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Function:shortsfactory/pipeline/run.py:produce_one\",\n      \"name\": \"produce_one\",\n      \"kind\": \"Function\",\n    "
         },
         {
           "id": "cowork-16",
@@ -1390,9 +1548,11 @@
             ],
             "details": "writeConfig is called by lane and runner mutation handlers."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1338.9
+          "latencyMs": 1338.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 7 symbols matching 'writeConfig'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"writeConfig\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Function:cockpit/server.cjs:writeConfig\",\n      \"name\": \"writeConfig\",\n      \"kind\": \"Function\",\n      \"filePath"
         },
         {
           "id": "cowork-17",
@@ -1408,7 +1568,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3757.8
+          "latencyMs": 3711.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Pixelle-Video/pixelle_video/pipelines/linear.py:LinearVideoPipeline.initialize_storyboard#1\",\n      \"name\": \"initialize_storyboard\",\n      \"filePath\": \"00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools"
         },
         {
           "id": "cowork-18",
@@ -1427,7 +1589,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1321.3
+          "latencyMs": 1310.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 2 symbols matching 'synth_voiceover'. Use uid, file_path, or kind to disambiguate.\",\n  \"candidates\": [\n    {\n      \"uid\": \"Function:shortsfactory/pipeline/tts.py:synth_voiceover\",\n      \"name\": \"synth_voiceover\",\n      \"kind\": \"Function\",\n      \"filePath\": \"shortsfactory/pipeline/tts.py\",\n      \"line\": 52,\n      \"score\": 0.56\n    },\n    {\n      \"uid\":"
         },
         {
           "id": "cowork-19",
@@ -1443,7 +1607,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 3718.6
+          "latencyMs": 3695.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:00_INPUT_PROJECTS/02_SWARMDESK/swarm_backup_20260608_011906/swarm/hermes-tools/Anthropic-Cybersecurity-Skills/skills/implementing-aws-iam-permission-boundaries/scripts/process.py:PermissionBoundaryAuditor.list_roles_without_boundary#0\",\n      \"name\": \"list_roles_without_boundary\",\n      \"filePath\": \"00_INPUT"
         },
         {
           "id": "cowork-20",
@@ -1461,9 +1627,11 @@
             "expected_count": 1,
             "details": "KEY_ALIAS maps PLUGMCP_KEY numbers to provider environment variable names."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1315.7
+          "latencyMs": 1280.5,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 4 symbols matching 'KEY_ALIAS'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"KEY_ALIAS\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Const:cockpit/server.cjs:KEY_ALIAS\",\n      \"name\": \"KEY_ALIAS\",\n      \"kind\": \"\",\n      \"filePath\": \"cockpit/server."
         },
         {
           "id": "cowork-holdout-01",
@@ -1477,9 +1645,11 @@
             "kind": "symbol",
             "details": "readLedger reads and parses line-delimited roadmap.jsonl into objects."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1394.6
+          "latencyMs": 1365.8,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:effortOf\",\n      \"name\": \"effortOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 39,\n      \"endLine\": 41\n    },\n    {\n      \"id\": \"Function:station/server.cjs:readLedger\",\n      \"name\": \"readLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 43,\n      \"end"
         },
         {
           "id": "cowork-holdout-02",
@@ -1493,9 +1663,11 @@
             "kind": "symbol",
             "details": "writeLedger serializes array of parts back to roadmap.jsonl."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 2152
+          "latencyMs": 1378.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:readLedger\",\n      \"name\": \"readLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 43,\n      \"endLine\": 53,\n      \"module\": \"Station\"\n    },\n    {\n      \"id\": \"Function:station/server.cjs:writeLedger\",\n      \"name\": \"writeLedger\",\n      \"filePath\": \"station/server.cjs\",\n"
         },
         {
           "id": "cowork-holdout-03",
@@ -1509,9 +1681,11 @@
             "kind": "symbol",
             "details": "missionOf maps part product identifiers to human-readable mission titles."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 2401
+          "latencyMs": 1336.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:missionOf\",\n      \"name\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 32,\n      \"endLine\": 38\n    },\n    {\n      \"id\": \"Function:station/server.cjs:buildProgress\",\n      \"name\": \"buildProgress\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 65,\n  "
         },
         {
           "id": "cowork-holdout-04",
@@ -1527,7 +1701,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 5718.5
+          "latencyMs": 3705.8,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:missionOf\",\n      \"name\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 32,\n      \"endLine\": 38\n    },\n    {\n      \"id\": \"Function:station/server.cjs:buildProgress\",\n      \"name\": \"buildProgress\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 65,\n  "
         },
         {
           "id": "cowork-holdout-05",
@@ -1543,7 +1719,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 5532.6
+          "latencyMs": 3698.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:plugos-showcase/apps/showcase/src/components/MeetTheLanes.tsx:MeetTheLanes\",\n      \"name\": \"MeetTheLanes\",\n      \"filePath\": \"plugos-showcase/apps/showcase/src/components/MeetTheLanes.tsx\",\n      \"startLine\": 415,\n      \"endLine\": 446,\n      \"module\": \"Components\"\n    },\n    {\n      \"id\": \"Interface:plugos"
         },
         {
           "id": "cowork-holdout-06",
@@ -1557,9 +1735,11 @@
             "kind": "symbol",
             "details": "verdictOf inspects reports/<id>/verify.json to retrieve verification outcome."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1494.9
+          "latencyMs": 1486.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:writeLedger\",\n      \"name\": \"writeLedger\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 54,\n      \"endLine\": 57\n    },\n    {\n      \"id\": \"Function:station/server.cjs:verdictOf\",\n      \"name\": \"verdictOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 58,\n      "
         },
         {
           "id": "cowork-holdout-07",
@@ -1578,7 +1758,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1967.7
+          "latencyMs": 1405.4,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:station/server.cjs:writeLedger\",\n    \"name\": \"writeLedger\",\n    \"kind\": \"Function\",\n    \"filePath\": \"station/server.cjs\",\n    \"startLine\": 54,\n    \"endLine\": 57\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Function:station/server.cjs:movePrio\",\n        \"name\": \"movePrio\",\n        \"filePath\": \"station/server.cjs\"\n      }\n    ]"
         },
         {
           "id": "cowork-holdout-08",
@@ -1594,7 +1776,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 5443.8
+          "latencyMs": 3754.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:missionOf\",\n      \"name\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 32,\n      \"endLine\": 38\n    },\n    {\n      \"id\": \"Function:station/server.cjs:effortOf\",\n      \"name\": \"effortOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 39,\n      \"endLi"
         },
         {
           "id": "cowork-holdout-09",
@@ -1611,9 +1795,11 @@
             ],
             "details": "API endpoints /api/progress, /api/roadmap, and /api/prio depend on readLedger."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1956.2
+          "latencyMs": 1495.6,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:station/server.cjs:readLedger\",\n    \"name\": \"readLedger\",\n    \"type\": \"Function\",\n    \"filePath\": \"station/server.cjs\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 3,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 3,\n    \"processes_affected\": 0,\n    \"modules_affected\": 1\n  },\n  \"byDepthCounts\": {\n    \"1\": 3\n  },\n  \"affected_processes\": [],\n  \"affected_modul"
         },
         {
           "id": "cowork-holdout-10",
@@ -1627,29 +1813,33 @@
             "kind": "symbol",
             "details": "effortOf returns estimate_hours or maps severity through EFFORT table."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1471.7
+          "latencyMs": 1346.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:station/server.cjs:missionOf\",\n      \"name\": \"missionOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 32,\n      \"endLine\": 38\n    },\n    {\n      \"id\": \"Function:station/server.cjs:effortOf\",\n      \"name\": \"effortOf\",\n      \"filePath\": \"station/server.cjs\",\n      \"startLine\": 39,\n      \"endLi"
         }
       ]
     },
     {
       "repo": "plugengine",
-      "oldHits": 10,
+      "oldHits": 1,
       "oldTotal": 20,
-      "oldAccuracy": 50,
-      "holdoutHits": 9,
+      "oldAccuracy": 5,
+      "holdoutHits": 2,
       "holdoutTotal": 10,
-      "holdoutAccuracy": 90,
-      "totalHits": 19,
+      "holdoutAccuracy": 20,
+      "totalHits": 3,
       "totalCount": 30,
-      "totalAccuracy": 63.3,
-      "latencyOldP50": 1650.1,
-      "latencyOldP95": 2540,
-      "latencyHoldoutP50": 1318.2,
-      "latencyHoldoutP95": 1489.6,
-      "latencyAllP50": 1462.5,
-      "latencyAllP95": 2540,
+      "totalAccuracy": 10,
+      "errorCount": 0,
+      "errorRate": 0,
+      "latencyOldP50": 1170,
+      "latencyOldP95": 1345.7,
+      "latencyHoldoutP50": 1135.3,
+      "latencyHoldoutP95": 1300.2,
+      "latencyAllP50": 1149.1,
+      "latencyAllP95": 1345.7,
       "questions": [
         {
           "id": "plugengine-01",
@@ -1665,7 +1855,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1650.1
+          "latencyMs": 1298.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_96_startsandbox\",\n      \"summary\": \"StartSandbox → Mesh\",\n      \"priority\": 0.045,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_97_startsandbox\",\n      \"summary\": \"StartSandbox → Dispose\",\n      \"priority\": 0.045,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n   "
         },
         {
           "id": "plugengine-02",
@@ -1681,7 +1873,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1824
+          "latencyMs": 1345.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_156_stepplay\",\n      \"summary\": \"StepPlay → WrapAngle\",\n      \"priority\": 0.092,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_157_stepplay\",\n      \"summary\": \"StepPlay → Clamp\",\n      \"priority\": 0.092,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_co"
         },
         {
           "id": "plugengine-03",
@@ -1698,9 +1892,11 @@
             ],
             "details": "bus.test.ts executes dispatches against CommandBus instances."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1462.7
+          "latencyMs": 1149.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Method:packages/plugengine-core/src/command/bus.ts:CommandBus.dispatch#1\",\n    \"name\": \"dispatch\",\n    \"kind\": \"Method\",\n    \"filePath\": \"packages/plugengine-core/src/command/bus.ts\",\n    \"startLine\": 59,\n    \"endLine\": 67\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:packages/plugengine-editor/src/universeCommands.test.ts\",\n     "
         },
         {
           "id": "plugengine-04",
@@ -1716,7 +1912,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1472.2
+          "latencyMs": 1381.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_5_main\",\n      \"summary\": \"Main → RunLifecycleError\",\n      \"priority\": 0.076,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 6\n    },\n    {\n      \"id\": \"proc_114_main\",\n      \"summary\": \"Main → StepIdFor\",\n      \"priority\": 0.076,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": "
         },
         {
           "id": "plugengine-05",
@@ -1730,9 +1928,11 @@
             "kind": "symbol",
             "details": "Type guard verifying if value is one of PLUG_PACKAGE_KINDS."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1202.7
+          "latencyMs": 1135.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/contracts/src/addon.ts\",\n      \"name\": \"addon.ts\",\n      \"filePath\": \"packages/contracts/src/addon.ts\"\n    },\n    {\n      \"id\": \"Function:packages/contracts/src/addon.ts:isPlugPackageKind\",\n      \"name\": \"isPlugPackageKind\",\n      \"filePath\": \"packages/contracts/src/addon.ts\",\n      \"startLine\": 44,\n "
         },
         {
           "id": "plugengine-06",
@@ -1751,7 +1951,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 2069.4
+          "latencyMs": 1101.6,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:packages/contracts/src/addon.ts:isPlugPackageKind\",\n    \"name\": \"isPlugPackageKind\",\n    \"kind\": \"Function\",\n    \"filePath\": \"packages/contracts/src/addon.ts\",\n    \"startLine\": 44,\n    \"endLine\": 46\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:packages/contracts/src/addon.test.ts\",\n        \"name\": \"addon.test.ts\",\n      "
         },
         {
           "id": "plugengine-07",
@@ -1770,9 +1972,11 @@
             "expected_count": 2,
             "details": "Limits default undo history buffer size in CommandBus constructor."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1421.1
+          "latencyMs": 1082.9,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 2 symbols matching 'DEFAULT_LIMIT'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"DEFAULT_LIMIT\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Const:apps/engine-lab/src/agent/agentTrace.ts:DEFAULT_LIMIT\",\n      \"name\": \"DEFAULT_LIMIT\",\n      \"kind\": \""
         },
         {
           "id": "plugengine-08",
@@ -1791,9 +1995,11 @@
             "expected_count": 2,
             "details": "PlugPackageKind union and package kind validation in addon contracts."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1992.8
+          "latencyMs": 1121.3,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Const:packages/contracts/src/addon.ts:PLUG_PACKAGE_KINDS\",\n    \"name\": \"PLUG_PACKAGE_KINDS\",\n    \"type\": \"\",\n    \"filePath\": \"packages/contracts/src/addon.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCounts\": {},\n  \"affected_processes\": [],\n"
         },
         {
           "id": "plugengine-09",
@@ -1812,7 +2018,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 2345.7
+          "latencyMs": 1342.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_96_startsandbox\",\n      \"summary\": \"StartSandbox → Mesh\",\n      \"priority\": 0.045,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_97_startsandbox\",\n      \"summary\": \"StartSandbox → Dispose\",\n      \"priority\": 0.045,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n   "
         },
         {
           "id": "plugengine-10",
@@ -1826,9 +2034,11 @@
             "kind": "config",
             "details": "export interface CommandBusOptions { limit?: number; }."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1796.5
+          "latencyMs": 1145.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/plugengine-core/src/command/bus.ts\",\n      \"name\": \"bus.ts\",\n      \"filePath\": \"packages/plugengine-core/src/command/bus.ts\"\n    },\n    {\n      \"id\": \"Method:packages/plugengine-core/src/command/bus.ts:CommandBus.constructor#1\",\n      \"name\": \"constructor\",\n      \"filePath\": \"packages/plugengine-core/"
         },
         {
           "id": "plugengine-11",
@@ -1844,7 +2054,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1837.4
+          "latencyMs": 1285.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_34_main\",\n      \"summary\": \"Main → Sink\",\n      \"priority\": 0.094,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },\n    {\n      \"id\": \"proc_35_main\",\n      \"summary\": \"Main → ApplyLifecycle\",\n      \"priority\": 0.094,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 5\n    },"
         },
         {
           "id": "plugengine-12",
@@ -1860,7 +2072,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 2595.6
+          "latencyMs": 1313.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_138_main\",\n      \"summary\": \"Main → ProviderAccessError\",\n      \"priority\": 0.095,\n      \"symbol_count\": 2,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_189_constructor\",\n      \"summary\": \"Constructor → _allocateRenderbuffer\",\n      \"priority\": 0.092,\n      \"symbol_count\": 2,\n      \"process_type\": \"cross_co"
         },
         {
           "id": "plugengine-13",
@@ -1876,7 +2090,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 2540
+          "latencyMs": 1311.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_184_fetch\",\n      \"summary\": \"Fetch → JsonResponse\",\n      \"priority\": 0.112,\n      \"symbol_count\": 1,\n      \"process_type\": \"intra_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_205_handleprojectrequest\",\n      \"summary\": \"HandleProjectRequest → JsonResponse\",\n      \"priority\": 0.112,\n      \"symbol_count\": 1,\n      \"process_type\": \"intr"
         },
         {
           "id": "plugengine-14",
@@ -1890,9 +2106,11 @@
             "kind": "docs_notes",
             "details": "docs/TECH_DEBT_REGISTER.md registers architectural rules and outstanding refactors."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 2442.9
+          "latencyMs": 1279.5,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:packages/plugengine-extension/src/addonContext.ts:createAddonContext\",\n      \"name\": \"createAddonContext\",\n      \"filePath\": \"packages/plugengine-extension/src/addonContext.ts\",\n      \"startLine\": 116,\n      \"endLine\": 141,\n      \"module\": \"Studio\"\n    },\n    {\n      \"id\": \"Function:packages/plugengine-ext"
         },
         {
           "id": "plugengine-15",
@@ -1908,7 +2126,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1505.5
+          "latencyMs": 1280.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:reference/build-battle/src/editor/worldedit/placementStore.ts:normalizeAngle\",\n      \"name\": \"normalizeAngle\",\n      \"filePath\": \"reference/build-battle/src/editor/worldedit/placementStore.ts\",\n      \"startLine\": 231,\n      \"endLine\": 237,\n      \"module\": \"Worldedit\"\n    },\n    {\n      \"id\": \"Function:refe"
         },
         {
           "id": "plugengine-16",
@@ -1927,7 +2147,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1442.1
+          "latencyMs": 1087,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"ambiguous\",\n  \"message\": \"Found 4 symbols matching 'canUndo'. Use target_uid, file_path, or kind to disambiguate.\",\n  \"target\": {\n    \"name\": \"canUndo\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"UNKNOWN\",\n  \"candidates\": [\n    {\n      \"uid\": \"Function:apps/engine-lab/src/composerMode.ts:canUndo\",\n      \"name\": \"canUndo\",\n      \"kind\": \"Function\",\n      \"filePat"
         },
         {
           "id": "plugengine-17",
@@ -1944,9 +2166,11 @@
             ],
             "details": "impactToEdit converts projectile block hits into voxel edits."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1660.4
+          "latencyMs": 1101.6,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:packages/plugengine-combat/src/blockDestruction.ts:impactToEdit\",\n    \"name\": \"impactToEdit\",\n    \"type\": \"Function\",\n    \"filePath\": \"packages/plugengine-combat/src/blockDestruction.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCoun"
         },
         {
           "id": "plugengine-18",
@@ -1962,7 +2186,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1462.5
+          "latencyMs": 1301.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:scripts/beginner-proof.mjs:tree\",\n      \"name\": \"tree\",\n      \"filePath\": \"scripts/beginner-proof.mjs\",\n      \"startLine\": 77,\n      \"endLine\": 77,\n      \"module\": \"Scripts\"\n    },\n    {\n      \"id\": \"Function:scripts/beginner-proof.mjs:byName\",\n      \"name\": \"byName\",\n      \"filePath\": \"scripts/beginner-pr"
         },
         {
           "id": "plugengine-19",
@@ -1976,9 +2202,11 @@
             "kind": "symbol",
             "details": "packages/plugengine-combat/src/teams.ts defines canHit(attackerTeam, victimTeam)."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1279.2
+          "latencyMs": 1099.2,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:packages/plugengine-combat/src/teams.ts:canHit\",\n    \"name\": \"canHit\",\n    \"kind\": \"Function\",\n    \"filePath\": \"packages/plugengine-combat/src/teams.ts\",\n    \"startLine\": 50,\n    \"endLine\": 65\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"Method:packages/plugengine-combat/src/projectiles.ts:ProjectilePool.resolveEnemyHit#3\",\n "
         },
         {
           "id": "plugengine-20",
@@ -1992,9 +2220,11 @@
             "kind": "symbol",
             "details": "packages/plugengine-combat/src/projectiles.ts implements projectile pool with substeps."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1461.3
+          "latencyMs": 1170,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/plugengine-combat/src/projectiles.test.ts\",\n      \"name\": \"projectiles.test.ts\",\n      \"filePath\": \"packages/plugengine-combat/src/projectiles.test.ts\"\n    },\n    {\n      \"id\": \"Function:packages/plugengine-combat/src/projectiles.test.ts:enemy\",\n      \"name\": \"enemy\",\n      \"filePath\": \"packages/pluge"
         },
         {
           "id": "plugengine-holdout-01",
@@ -2008,9 +2238,11 @@
             "kind": "symbol",
             "details": "createKeyVault instantiates in-memory KeyVaultHandle with closure-isolated Map."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1345
+          "latencyMs": 1137.7,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/plugengine-ai/src/keyVault.ts\",\n      \"name\": \"keyVault.ts\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\"\n    },\n    {\n      \"id\": \"Function:packages/plugengine-ai/src/keyVault.ts:createKeyVault\",\n      \"name\": \"createKeyVault\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\","
         },
         {
           "id": "plugengine-holdout-02",
@@ -2024,9 +2256,11 @@
             "kind": "symbol",
             "details": "KeyVaultHandle exposes set, get, has, delete, size, and dispose."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1489.6
+          "latencyMs": 1129.6,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:packages/plugengine-ai/src/keyVault.ts:KeyVaultHandle.set#2\",\n      \"name\": \"set\",\n      \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n      \"startLine\": 11,\n      \"endLine\": 11,\n      \"module\": \"AiBuilder\"\n    },\n    {\n      \"id\": \"Interface:packages/plugengine-ai/src/keyVault.ts:KeyVaultHandle\",\n  "
         },
         {
           "id": "plugengine-holdout-03",
@@ -2046,7 +2280,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1318.2
+          "latencyMs": 1125.1,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:packages/plugengine-ai/src/keyVault.ts:createKeyVault\",\n    \"name\": \"createKeyVault\",\n    \"kind\": \"Function\",\n    \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\",\n    \"startLine\": 21,\n    \"endLine\": 43\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:packages/plugengine-ai/src/aiBuild.test.ts\",\n        \"name\": \"aiBuild."
         },
         {
           "id": "plugengine-holdout-04",
@@ -2060,9 +2296,11 @@
             "kind": "symbol",
             "details": "generate orchestrates buildJob + providerProfiles + stagingDiff + buildRecipeFactory."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1416.7
+          "latencyMs": 1300.2,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [\n    {\n      \"id\": \"proc_91_ondown\",\n      \"summary\": \"OnDown → MultiplyMatrices\",\n      \"priority\": 0.08,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_community\",\n      \"step_count\": 4\n    },\n    {\n      \"id\": \"proc_172_onpointerdown\",\n      \"summary\": \"OnPointerDown → MultiplyMatrices\",\n      \"priority\": 0.08,\n      \"symbol_count\": 1,\n      \"process_type\": \"cross_commu"
         },
         {
           "id": "plugengine-holdout-05",
@@ -2076,9 +2314,11 @@
             "kind": "symbol",
             "details": "ArtProfile defines palette, resolution, tile dimensions, and shading properties."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1429.7
+          "latencyMs": 1153.4,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:packages/contracts/src/artProfile.ts:artProfileById\",\n      \"name\": \"artProfileById\",\n      \"filePath\": \"packages/contracts/src/artProfile.ts\",\n      \"startLine\": 184,\n      \"endLine\": 187\n    },\n    {\n      \"id\": \"File:packages/contracts/src/artProfile.ts\",\n      \"name\": \"artProfile.ts\",\n      \"filePath\":"
         },
         {
           "id": "plugengine-holdout-06",
@@ -2092,9 +2332,11 @@
             "kind": "symbol",
             "details": "StagingDiff holds added, modified, removed template objects and change summaries."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1402.8
+          "latencyMs": 1190.1,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"File:packages/plugengine-ai/src/stagingDiff.ts\",\n      \"name\": \"stagingDiff.ts\",\n      \"filePath\": \"packages/plugengine-ai/src/stagingDiff.ts\"\n    },\n    {\n      \"id\": \"Function:packages/plugengine-ai/src/stagingDiff.ts:computeStagingDiff\",\n      \"name\": \"computeStagingDiff\",\n      \"filePath\": \"packages/plugengine-"
         },
         {
           "id": "plugengine-holdout-07",
@@ -2108,9 +2350,11 @@
             "kind": "symbol",
             "details": "BuildJob defines prompt, seed, provider, clock timestamp, and metadata."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1307.9
+          "latencyMs": 1153.3,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Function:packages/plugengine-ai/src/buildJob.ts:createBuildJob\",\n      \"name\": \"createBuildJob\",\n      \"filePath\": \"packages/plugengine-ai/src/buildJob.ts\",\n      \"startLine\": 28,\n      \"endLine\": 35,\n      \"module\": \"Cluster_611\"\n    },\n    {\n      \"id\": \"Interface:packages/plugengine-ai/src/buildJob.ts:BuildJob\","
         },
         {
           "id": "plugengine-holdout-08",
@@ -2124,9 +2368,11 @@
             "kind": "symbol",
             "details": "generateMockPlan uses mulberry32 PRNG and keyword detection to build mock templates."
           },
-          "hit": true,
+          "hit": false,
           "rank": -1,
-          "latencyMs": 1266.3
+          "latencyMs": 1127.9,
+          "error": null,
+          "rawAnswer": "{\n  \"processes\": [],\n  \"process_symbols\": [],\n  \"definitions\": [\n    {\n      \"id\": \"Method:packages/plugengine-ai/src/providerProfiles.ts:generatePlan#2\",\n      \"name\": \"generatePlan\",\n      \"filePath\": \"packages/plugengine-ai/src/providerProfiles.ts\",\n      \"startLine\": 28,\n      \"endLine\": 30,\n      \"module\": \"Cluster_617\"\n    },\n    {\n      \"id\": \"File:packages/plugengine-ai/src/providerProfile"
         },
         {
           "id": "plugengine-holdout-09",
@@ -2146,7 +2392,9 @@
           },
           "hit": true,
           "rank": 1,
-          "latencyMs": 1225.2
+          "latencyMs": 1135.3,
+          "error": null,
+          "rawAnswer": "{\n  \"status\": \"found\",\n  \"symbol\": {\n    \"uid\": \"Function:packages/plugengine-ai/src/mockProvider.ts:generateMockPlan\",\n    \"name\": \"generateMockPlan\",\n    \"kind\": \"Function\",\n    \"filePath\": \"packages/plugengine-ai/src/mockProvider.ts\",\n    \"startLine\": 109,\n    \"endLine\": 129\n  },\n  \"incoming\": {\n    \"calls\": [\n      {\n        \"uid\": \"File:packages/plugengine-ai/src/aiBuild.test.ts\",\n        \"na"
         },
         {
           "id": "plugengine-holdout-10",
@@ -2167,7 +2415,9 @@
           },
           "hit": false,
           "rank": -1,
-          "latencyMs": 1149.6
+          "latencyMs": 1088.5,
+          "error": null,
+          "rawAnswer": "{\n  \"target\": {\n    \"id\": \"Function:packages/plugengine-ai/src/keyVault.ts:createKeyVault\",\n    \"name\": \"createKeyVault\",\n    \"type\": \"Function\",\n    \"filePath\": \"packages/plugengine-ai/src/keyVault.ts\"\n  },\n  \"direction\": \"upstream\",\n  \"impactedCount\": 0,\n  \"risk\": \"LOW\",\n  \"summary\": {\n    \"direct\": 0,\n    \"processes_affected\": 0,\n    \"modules_affected\": 0\n  },\n  \"byDepthCounts\": {},\n  \"affected"
         }
       ]
     }
