@@ -11,6 +11,7 @@ import * as intel from '../intel/index.ts'
 import { createAwarenessPort } from '../projections/awareness.ts'
 import { mcpProvenance } from './provenance.ts'
 import { backlinksOf, queryNotes, readNote, searchNotesWithLines } from '../notes/vault.ts'
+import { hygieneReport } from '../hygiene/index.ts'
 import { planTask, planView } from '../plan.ts'
 
 export interface McpServerOptions {
@@ -342,6 +343,16 @@ export const MCP_TOOLS = [
         workspaceId: { type: 'string', description: 'Workspace ID' },
       },
       required: ['path'],
+    },
+  },
+  {
+    name: 'hygiene',
+    description: 'Git chaos guard: unsaved work, stashes, unpushed branches, orphaned worktrees, size and free disk per checkout',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
     },
   },
 ] as const
@@ -756,6 +767,11 @@ export class McpServer {
         case 'notes_backlinks': {
           const ws = this.getWorkspaceId(args)
           return { ok: true, backlinks: backlinksOf(this.db, ws, String(args.path ?? '')) }
+        }
+
+        case 'hygiene': {
+          const ws = this.getWorkspaceId(args)
+          return { ok: true, ...hygieneReport(this.db, ws) }
         }
 
         default:

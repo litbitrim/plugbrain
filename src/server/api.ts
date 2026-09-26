@@ -20,6 +20,7 @@ import {
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
+import { hygieneReport } from '../hygiene/index.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 
@@ -1092,6 +1093,17 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         ...indexStateOf(db, ws),
         ...graphOf(db, ws, Number(q.get('limit') ?? 1200)),
       })
+    }
+
+    // ── Hygiene: is work sitting on exactly one disk? ────────────────────
+    //
+    // Read-only and intentionally not cached: a checkout can go dirty a second
+    // after the last tick, and a stale "all clean" is worse than a slow answer.
+    // The same projection is what the MCP tool and `plugbrain hygiene` print, so
+    // a human and an agent always argue about the same numbers.
+    if (p === '/api/hygiene') {
+      const w = access.requireWorkspace(db, ws)
+      return json(res, { ok: true, ...hygieneReport(db, w.id) })
     }
 
     if (p === '/api/agents') {

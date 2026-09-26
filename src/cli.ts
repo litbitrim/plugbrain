@@ -28,6 +28,9 @@
  *
  *   plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …
  *                                             the fleet's check-in desk (see src/swarm-cli.ts)
+ *
+ *   plugbrain hygiene [--workspace <id>] [--json]   what git work sits on exactly one disk
+ *   plugbrain hygiene --wip-snapshot [--json]       save uncommitted work into refs/wip/<date>/<name>
  */
 import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
@@ -53,6 +56,9 @@ import type { IndexProgress } from './indexer/index.ts'
 import type { IndexResult } from './indexer/scan.ts'
 import { startMcpServer } from './mcp/server.ts'
 import { backupStore, restoreStore } from './store/backup.ts'
+import {
+  createWipSnapshots, hygieneReport, type HygieneReport, type WipSnapshotResult,
+} from './hygiene/index.ts'
 import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
@@ -461,6 +467,91 @@ function jsonOut(value: unknown): void {
   console.log(JSON.stringify(value, null, 2))
 }
 
+/* ── hygiene: what git work sits on exactly one disk ────────────────────── */
+
+const HYGIENE_MARK: Record<HygieneReport['summary']['level'], string> = {
+  ok: 'ok  ', attention: '!!  ', risk: 'XX  ',
+}
+
+/**
+ * One screen a human can act on: the verdict first, then each finding with the
+ * command that fixes it, then the inventory behind it.
+ */
+function renderHygiene(report: HygieneReport): void {
+  console.log(`${HYGIENE_MARK[report.summary.level]}${report.summary.text}`)
+  for (const finding of report.findings) {
+    console.log(`\n    ${LEVEL_WORD[finding.level]}: ${finding.text}`)
+    console.log(`    fix: ${finding.fix}`)
+    for (const path of finding.paths.slice(0, 5)) console.log(`      ${path}`)
+    if (finding.paths.length > 5) console.log(`      … and ${finding.paths.length - 5} more`)
+  }
+  const free = report.diskFreeGb === null ? 'unknown' : `${report.diskFreeGb} GB`
+  console.log(`\n${report.checkouts.length} checkout(s), ${free} free`)
+  for (const checkout of report.checkouts) {
+    const flags = [
+      (checkout.dirtyFiles ?? 0) > 0 ? `${checkout.dirtyFiles} dirty` : null,
+      (checkout.untrackedFiles ?? 0) > 0 ? `${checkout.untrackedFiles} untracked` : null,
+      (checkout.stashes ?? 0) > 0 ? `${checkout.stashes} stash` : null,
+      checkout.unpushed.length > 0 ? `${checkout.unpushed.length} unpushed` : null,
+      checkout.orphan ? 'orphan' : null,
+      checkout.staleDays !== null ? `${checkout.staleDays}d old` : null,
+      checkout.sizeMb !== null ? `${checkout.sizeMb} MB` : null,
+    ].filter((flag): flag is string => flag !== null)
+    console.log(`  ${(checkout.branch ?? '-').padEnd(28)} ${checkout.path}` +
+      (flags.length > 0 ? `\n      ${flags.join('   ')}` : ''))
+  }
+  if (report.unavailable.length > 0) {
+    console.log(`\n${report.unavailable.length} reading(s) unavailable: ${report.unavailable.slice(0, 3).join('; ')}` +
+      (report.unavailable.length > 3 ? ' …' : ''))
+  }
+}
+
+const LEVEL_WORD: Record<HygieneReport['summary']['level'], string> = {
+  ok: 'ok', attention: 'attention', risk: 'risk',
+}
+
+/**
+ * The rescue is a separate verb for a reason: it is the only hygiene action
+ * that writes, so it happens only when a human types it. It prints exactly what
+ * the W1 method promises — the ref, the commit, and the proof that neither the
+ * working tree nor the real index nor HEAD moved.
+ */
+function renderSnapshots(result: WipSnapshotResult): void {
+  console.log(`wip-snapshot ${result.date}: ${result.created} rescued, ${result.skipped} had nothing to save`)
+  for (const entry of result.entries) {
+    if (entry.ref === null) {
+      console.log(`\n    FAILED: ${entry.checkout}`)
+      if (entry.error !== null) console.log(`      ${entry.error}`)
+      continue
+    }
+    console.log(`\n    ${entry.branch ?? '(detached)'}  ${entry.checkout}`)
+    console.log(`      ${entry.ref}  ${entry.commit?.slice(0, 12)}  ${entry.files} file(s)`)
+    const proofs = [
+      entry.treeUnchanged ? 'tree unchanged' : 'TREE CHANGED',
+      entry.indexUnchanged ? 'index unchanged' : 'INDEX CHANGED',
+      entry.headUnchanged ? 'HEAD unchanged' : 'HEAD MOVED',
+    ]
+    console.log(`      ${proofs.join('   ')}`)
+  }
+  if (result.unavailable.length > 0) {
+    console.log(`\n${result.unavailable.length} rescue(s) did not complete: ${result.unavailable.slice(0, 3).join('; ')}` +
+      (result.unavailable.length > 3 ? ' …' : ''))
+  }
+}
+
+function hygieneCommand(args: string[]): void {
+  const workspaceId = flagValue(args, '--workspace') ?? singleWorkspaceId()
+  if (args.includes('--wip-snapshot')) {
+    const result = createWipSnapshots(db, workspaceId)
+    if (args.includes('--json')) return jsonOut(result)
+    renderSnapshots(result)
+    return
+  }
+  const report = hygieneReport(db, workspaceId)
+  if (args.includes('--json')) return jsonOut(report)
+  renderHygiene(report)
+}
+
 function notesSearch(args: string[]): void {
   const asJson = args.includes('--json')
   const text = args.filter(arg => !arg.startsWith('--') && !/^\d+$/.test(arg)).join(' ')
@@ -838,6 +929,7 @@ switch (command) {
   }
   case 'compact': compact(); break
   case 'plan': planCommand(args); break
+  case 'hygiene': hygieneCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)
@@ -953,6 +1045,7 @@ switch (command) {
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
       '       plugbrain notes <list|query|search|read|write|graph|backlinks> …\n' +
       '       plugbrain intel <query|context|impact|detect-changes|cypher|status> …\n' +
+      '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot]\n' +
       '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
       '       plugbrain backup [target_path]\n' +
