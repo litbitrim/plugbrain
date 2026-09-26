@@ -27,7 +27,7 @@
  *      incremental cost — a planet is not a federation of separate indexes.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { gitText } from './indexer/git.ts'
@@ -35,12 +35,6 @@ import { indexWorkspace, type IndexProgress, type IndexResult } from './indexer/
 import type { IndexRoot } from './indexer/scan.ts'
 import { cachedOnce, generationCache, publishedGeneration } from './store/count-cache.ts'
 
-/**
- * The workspace id of a folder. Deliberately the SAME derivation the CLI and
- * the HTTP API have always used: a folder registered from either side must
- * land on one row, and an id that changed shape would silently re-register
- * every existing workspace under a new name.
- */
 /**
  * The physical path is the identity boundary. `resolve()` alone preserves a
  * Junction/symlink spelling, so the same writable directory could otherwise
@@ -52,8 +46,81 @@ export const canonicalPath = (path: string): string => {
   try { return realpathSync.native(absolute) } catch { return absolute }
 }
 
+const WORKSPACE_ID_MARKER = 'plugbrain-workspace-id'
+
+/**
+ * The git COMMON directory of a checkout, resolved without spawning git
+ * because this sits on the identity path and is called constantly.
+ * `<root>/.git` is a directory for a main worktree and a `gitdir:` pointer
+ * file for a linked one; a linked worktree's git dir lives at
+ * `<common>/worktrees/<name>`, so the common dir is two levels above it.
+ * Returns null for a folder that is not a git checkout at all.
+ */
+function commonGitDir(root: string): string | null {
+  const dotGit = join(resolve(root), '.git')
+  if (!existsSync(dotGit)) return null
+  if (statSync(dotGit).isDirectory()) return dotGit
+  const pointer = readFileSync(dotGit, 'utf8').trim()
+  if (!pointer.startsWith('gitdir:')) return null
+  const gitDir = pointer.slice('gitdir:'.length).trim()
+  const abs = isAbsolute(gitDir) ? gitDir : resolve(root, gitDir)
+  return resolve(abs, '..', '..')
+}
+
+/**
+ * The identity a folder was MINTED with, if it carries one.
+ *
+ * Deriving identity from the path alone cannot satisfy the contract, and no
+ * amount of care makes it: a `git clone` is byte-identical to its origin in
+ * everything git can see, so nothing derivable tells a clone apart from a
+ * folder that merely moved. Only something `git clone` does not copy can, and
+ * the git common directory is exactly that — a clone builds a fresh one, while
+ * a move carries the old one along, and every worktree of one repository
+ * shares it.
+ *
+ * This is a pure read. It never writes, because a lookup that mints identity
+ * as a side effect would hand out a new id to anything that merely asked.
+ * Registration mints; see {@link pinWorkspaceId}.
+ */
+function pinnedWorkspaceId(root: string): string | null {
+  const common = commonGitDir(root)
+  if (common === null) return null
+  const marker = join(common, WORKSPACE_ID_MARKER)
+  if (!existsSync(marker)) return null
+  const value = readFileSync(marker, 'utf8').trim()
+  return /^ws-[0-9a-f]{12}$/.test(value) ? value : null
+}
+
+/**
+ * Record the identity this folder is to keep. Called on registration only.
+ *
+ * The value written is whatever the folder resolves to TODAY, which for an
+ * already-known workspace is its existing path-derived id. That is what keeps
+ * this change backward compatible: nothing is renumbered, every existing row
+ * keeps the id it has, and the marker simply pins it so the next move cannot
+ * take it away. Failure to write is not fatal — a read-only or exotic git dir
+ * degrades to the old path-derived behaviour rather than refusing to register.
+ */
+export function pinWorkspaceId(root: string, id: string): void {
+  const common = commonGitDir(root)
+  if (common === null) return
+  try {
+    writeFileSync(join(common, WORKSPACE_ID_MARKER), `${id}\n`, 'utf8')
+  } catch {
+    // Identity stays path-derived for this folder; registration still succeeds.
+  }
+}
+
+/**
+ * The workspace id of a folder: the pinned marker when the folder carries one,
+ * otherwise the canonical-path hash. Deliberately the SAME derivation the CLI
+ * and the HTTP API both use — a folder registered from either side must land
+ * on one row, and an id that changed shape would silently re-register every
+ * existing workspace under a new name.
+ */
 export const workspaceIdFor = (root: string): string =>
-  `ws-${createHash('sha256').update(canonicalPath(root).toLowerCase()).digest('hex').slice(0, 12)}`
+  pinnedWorkspaceId(root)
+  ?? `ws-${createHash('sha256').update(canonicalPath(root).toLowerCase()).digest('hex').slice(0, 12)}`
 
 /**
  * Fold a path for identity: absolute, forward slashes, no trailing separator,

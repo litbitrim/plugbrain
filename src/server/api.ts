@@ -7,7 +7,7 @@
  * every projection, so a track is visible in every graph without the client
  * having to correlate anything itself.
  */
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, resolve as resolvePath } from 'node:path'
@@ -17,6 +17,7 @@ import { buildBriefing, renderBriefing } from '../context/briefing.ts'
 import {
   activePlanetFileScope, assertPlanetIndexSelectionConfigured, getPlanetIndexSelection,
   listWorkspaceView, noteRootRows, planetHistory, registerPlanet, setPlanetIndexSelection,
+  workspaceIdFor,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
 import * as attachments from '../notes/attachments.ts'
@@ -2336,7 +2337,10 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!existsSync(root) || !statSync(root).isDirectory()) {
         return json(res, { ok: false, error: `not a directory: ${root}` }, 400)
       }
-      const id = `ws-${createHash('sha256').update(root.toLowerCase()).digest('hex').slice(0, 12)}`
+      // One identity derivation for both registration sides: the CLI's
+      // `register` and this endpoint must mint the same id for one folder,
+      // including a pinned marker a previous registration left behind.
+      const id = workspaceIdFor(root)
       // Both separators: a Windows root splits on backslashes, and a class of
       // only `/` leaves the whole path as the workspace name.
       const fallback = root.split(/[\\/]/).filter(Boolean).pop() ?? id

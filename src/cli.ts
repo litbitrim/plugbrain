@@ -36,7 +36,7 @@ import { join, resolve } from 'node:path'
 import { openStore } from './store/schema.ts'
 import {
   assertPlanetIndexSelectionConfigured, listPlanet, planetHistory, registerPlanet,
-  setPlanetIndexSelection, workspaceIdFor,
+  setPlanetIndexSelection, workspaceIdFor, pinWorkspaceId,
 } from './planet.ts'
 import {
   backlinksOf, listNotes, noteGraph, queryNotes, readNote, searchNotesWithLines, writeNote,
@@ -90,6 +90,8 @@ function register(path: string, name?: string): void {
     `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(root) DO UPDATE SET name = excluded.name`
   ).run(id, label, root, new Date().toISOString())
+  // Registration mints identity: pin it so a later move cannot take it away.
+  pinWorkspaceId(root, id)
   console.log(`registered ${label}  ${id}\n  ${root}`)
 }
 
