@@ -71,10 +71,11 @@ test('session-start hook is cheap, local and non-blocking by construction', () =
 test('every skill declares name and description and stays brief', () => {
   for (const skill of ['skills/brain/SKILL.md', 'skills/open/SKILL.md']) {
     const content = readFileSync(resolve(ROOT, skill), 'utf8')
-    assert.match(content, /^---\n/, `${skill} must start with YAML frontmatter`)
+    // Windows checkouts with core.autocrlf turn LF into CRLF.
+    assert.match(content, /^---\r?\n/, `${skill} must start with YAML frontmatter`)
     assert.match(content, /^name: /m, `${skill} must declare a name`)
     assert.match(content, /^description: /m, `${skill} must declare a description`)
-    const body = content.replace(/^---\n[\s\S]*?\n---\n/, '')
+    const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '')
     assert.ok(body.length > 0, `${skill} must have instructions`)
     assert.ok(body.length < 8000, `${skill} should stay compact`)
   }
