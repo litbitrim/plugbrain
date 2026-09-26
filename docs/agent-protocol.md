@@ -47,6 +47,10 @@ You are one agent in a team coordinated by PlugBrain. Your agent id is `<id>`.
    - `blocked`: a real blocker, named in the summary
    - `paused`: you were told to stop
    Then release your claims: `plugbrain swarm release <id> --task <taskId>`.
+   If you hold exactly one queue task and are handing in its result, add
+   `--deliver <evidence-path>` with `needs-task` or `awaiting-commit`. This records
+   the task as delivered. If you omit it, the task stays claimed and appears in
+   `plugbrain swarm board --next` as a possible missing delivery.
 5. **Commit only after approval.** Approval arrives as a message with the
    subject "Commit freigegeben". Commit, then end the turn with `needs-task`.
 6. **Report limits, never secrets.** If your tool shows a quota, report the

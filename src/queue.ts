@@ -27,6 +27,7 @@ import { randomUUID } from 'node:crypto'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from './access.ts'
 import { addTaskDependency, ensureDependencySchema, syncDependencies, UNBLOCKED_TASK_SQL } from './coord/dependencies.ts'
+import { assertNotCredential } from './coord/resources.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
 import { coordEvents } from './coord/events.ts'
 
@@ -44,6 +45,7 @@ export interface QueueTask {
   claimed_by: string | null
   claimed_at: string | null
   delivered_path: string | null
+  delivered_summary: string | null
   created_at: string
   updated_at: string
 }
@@ -65,6 +67,7 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
   claimed_by     TEXT REFERENCES agents(id) ON DELETE SET NULL,
   claimed_at     TEXT,
   delivered_path TEXT,
+  delivered_summary TEXT,
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL
 );
@@ -75,7 +78,14 @@ CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state
 // The candidates every offer reads are filtered by the dependency table, so it
 // belongs to the queue schema: a store that only ever touched the queue must
 // still be able to answer "who is next" without a missing-table error.
-export function ensureQueueSchema(db: DatabaseSync): void { db.exec(SCHEMA); ensureDependencySchema(db) }
+export function ensureQueueSchema(db: DatabaseSync): void {
+  db.exec(SCHEMA)
+  const columns = db.prepare('PRAGMA table_info(queue_tasks)').all() as unknown as Array<{ name: string }>
+  if (!columns.some(column => column.name === 'delivered_summary')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN delivered_summary TEXT')
+  }
+  ensureDependencySchema(db)
+}
 
 const load = (db: DatabaseSync, id: string): QueueTask => {
   const row = rowAs<QueueTask>(db.prepare('SELECT * FROM queue_tasks WHERE id = ?').get(id))
@@ -188,6 +198,7 @@ export function deliverTask(
   taskId: string,
   agentId: string,
   deliveredPath: string,
+  deliveredSummary?: string,
 ): QueueTask {
   ensureQueueSchema(db)
   const task = load(db, taskId)
@@ -195,10 +206,12 @@ export function deliverTask(
   if (task.claimed_by !== agentId) {
     throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)
   }
+  const summary = deliveredSummary === undefined ? null : deliveredSummary.slice(0, 2000)
+  if (summary !== null) assertNotCredential('delivery summary', summary)
   const now = new Date().toISOString()
   db.prepare(
-    `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, updated_at = ? WHERE id = ?`,
-  ).run(deliveredPath, now, taskId)
+    `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, delivered_summary = ?, updated_at = ? WHERE id = ?`,
+  ).run(deliveredPath, summary, now, taskId)
   // The delivery may be exactly the event another task was waiting for.
   syncDependencies(db, task.workspace_id)
   return load(db, taskId)

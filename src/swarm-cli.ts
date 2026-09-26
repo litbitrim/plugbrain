@@ -32,6 +32,9 @@ import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, registerAgent } from './access.ts'
 import { deliverTask, enqueueTask } from './queue.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
+import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from './coord/chronicle.ts'
+import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.ts'
+import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd } from './coord/turn-delivery.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureSwarmOpsSchema, hostSnapshot, listQuotas,
   readReviewPool, recordTurn, releaseLease,
@@ -76,7 +79,7 @@ const positionals = (args: string[], valued: string[]): string[] => {
 }
 
 const VALUED = [
-  '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary',
+  '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary', '--deliver', '--since',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
   '--repo', '--target', '--auto', '--after',
 ]
@@ -107,7 +110,16 @@ function printPing(ping: TurnPing): void {
   if (ping.inbox.length > 0) console.log('  gelesen quittieren: plugbrain swarm ack <agent> <messageId>')
 }
 
-function printBoard(board: SwarmBoard): void {
+function printNextActions(actions: SwarmNextAction[]): void {
+  console.log('Als Nächstes')
+  if (actions.length === 0) console.log('  Keine offenen Handlungsvorschläge.')
+  for (const action of actions) {
+    console.log(`- [${action.priority}] ${action.title}: ${action.reason}`)
+    console.log(`  ${action.command}`)
+  }
+}
+
+function printBoard(board: SwarmBoard, nextActions: SwarmNextAction[]): void {
   const drives = board.host.drives.map(drive => `${drive.root} ${(drive.freeBytes / GB).toFixed(1)} GB frei`).join(', ')
   const ram = `${Math.round((board.host.memory.freeBytes / board.host.memory.totalBytes) * 100)} % RAM frei`
   console.log(`Fleet ${board.workspaceId} · ${board.agents.filter(row => !row.retired).length} Worker · ${drives} · ${ram}`)
@@ -130,6 +142,8 @@ function printBoard(board: SwarmBoard): void {
     }
   }
   for (const overlap of board.overlaps) console.log(`  ÜBERLAPPUNG ${overlap.worktree}: ${overlap.agents.join(', ')}`)
+  console.log()
+  printNextActions(nextActions)
 }
 
 export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: () => string): number {
@@ -137,7 +151,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   // Every command may be the first one a fresh store sees: `enqueue` used to
   // fail with "no such column: workspace_id" until some `register` had widened
   // the agents table.
-  ensureSwarmOpsSchema(db)
+  if (step !== 'chronik') ensureSwarmOpsSchema(db)
   const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
@@ -169,20 +183,39 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'turn': {
-      const usage = 'plugbrain swarm turn <agent> start|end [--state needs-task|awaiting-commit|blocked|paused] [--summary <s>] [--claim]'
+      const usage = 'plugbrain swarm turn <agent> start|end [--state needs-task|awaiting-commit|blocked|paused] [--summary <s>] [--claim] [--deliver <evidence>]'
       const agentId = need(pos[0], usage)
       const phase = need(pos[1], usage)
       if (phase !== 'start' && phase !== 'end') throw new AccessDenied(`usage: ${usage}`)
       const state = flag(rest, '--state') as TurnEndState | null
       if (state !== null && !TURN_END_STATES.includes(state)) throw new AccessDenied(`unknown state: ${state} (${TURN_END_STATES.join(', ')})`)
+      const deliveryPath = flag(rest, '--deliver')
+      let deliveryTaskId: string | null = null
+      if (deliveryPath !== null) {
+        const endState = state ?? 'needs-task'
+        if (phase !== 'end' || (endState !== 'needs-task' && endState !== 'awaiting-commit')) {
+          throw new AccessDenied('--deliver is only valid when ending with needs-task or awaiting-commit')
+        }
+        if (deliveryPath.trim() === '') throw new AccessDenied('deliver evidence path cannot be empty')
+        deliveryTaskId = currentTaskForTurnDelivery(db, workspaceId, agentId)
+      }
       const ping = recordTurn(db, {
         workspaceId, agentId, phase,
         state: state ?? undefined,
         summary: flag(rest, '--summary') ?? undefined,
         claimNext: rest.includes('--claim'),
       })
-      if (asJson) console.log(JSON.stringify(ping, null, 2))
-      else printPing(ping)
+      let delivery: { taskId: string; evidence: string } | null = null
+      if (deliveryPath !== null) {
+        const task = deliverTaskAtTurnEnd(db, deliveryTaskId!, agentId, deliveryPath, flag(rest, '--summary') ?? undefined)
+        delivery = { taskId: task.id, evidence: task.delivered_path ?? deliveryPath }
+        ping.currentTask = null
+      }
+      if (asJson) console.log(JSON.stringify({ ...ping, ...(delivery === null ? {} : { delivery }) }, null, 2))
+      else {
+        printPing(ping)
+        if (delivery) console.log(`  GELIEFERT ${delivery.taskId}: ${delivery.evidence}`)
+      }
       return 0
     }
     case 'retire': {
@@ -234,38 +267,31 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       const reaper = reapWorktrees(db, workspaceId)
       reaper.missing = missing
       const board = agentsBoard(db, workspaceId, { gitStatus: rest.includes('--git') })
-      const summary = { eligible: reaper.candidates.filter(row => row.eligible).length,
+      const nextActions = getSwarmNextActions(db, workspaceId)
+      const summary = {
+        eligible: reaper.candidates.filter(row => row.eligible).length,
         retained: reaper.candidates.filter(row => !row.eligible).length,
         reasons: reaper.candidates.filter(row => !row.eligible).map(row => ({ path: row.path, reason: row.reason })),
-        missing: reaper.missing }
-      if (asJson) console.log(JSON.stringify({ ...board, reaper: summary }, null, 2))
-      else { printBoard(board); console.log(`Reaper: ${summary.eligible} reapable, ${summary.retained} retained`)
+        missing: reaper.missing,
+      }
+      if (rest.includes('--next')) {
+        if (asJson) console.log(JSON.stringify(nextActions, null, 2))
+        else printNextActions(nextActions)
+      } else if (asJson) console.log(JSON.stringify({ ...board, nextActions, reaper: summary }, null, 2))
+      else {
+        printBoard(board, nextActions)
+        console.log(`Reaper: ${summary.eligible} reapable, ${summary.retained} retained`)
         for (const row of summary.reasons) console.log(`  retained ${row.path}: ${row.reason}`)
-        for (const row of reaper.missing) console.log(`  missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`) }
+        for (const row of reaper.missing) console.log(`  missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`)
+      }
       return 0
     }
-    case 'reap': {
-      const auto = flag(rest, '--auto')
-      if (auto !== null) {
-        if (auto !== 'on' && auto !== 'off') throw new AccessDenied('usage: plugbrain swarm reap --auto on|off')
-        setReapAuto(db, workspaceId, auto === 'on')
-        console.log(`reap.auto ${auto}`)
-        return 0
-      }
-      const result = reapWorktrees(db, workspaceId, {
-        repo: flag(rest, '--repo') ?? undefined, target: flag(rest, '--target') ?? undefined,
-        apply: rest.includes('--apply'),
-      })
-      if (asJson) console.log(JSON.stringify(result, null, 2))
-      else {
-        for (const row of result.candidates) console.log(`${row.eligible ? 'reapable' : 'retained'} ${row.path}: ${row.reason}`)
-        for (const row of result.removed) console.log(`removed ${row.path}; restore with: ${row.restoreCommand}`)
-        for (const row of result.missing) console.log(`missing ${row.path}${row.quarantinedAt ? ` (quarantine: ${row.quarantinedAt})` : ''}`)
-        if (result.pruneCommand) {
-          console.log(`prune dry run only: ${result.pruneCommand}`)
-          for (const line of result.pruneReport) console.log(`  ${line}`)
-        }
-      }
+    case 'chronik': {
+      const usage = 'plugbrain swarm chronik [--since <iso|2h>] [--json|--md]'
+      const chronicle = buildSwarmChronicle(db, workspaceId, { since: flag(rest, '--since') ?? undefined })
+      if (rest.includes('--json')) console.log(JSON.stringify(chronicle, null, 2))
+      else if (rest.includes('--md') || !rest.includes('--json')) console.log(formatSwarmChronicleMarkdown(chronicle))
+      else throw new AccessDenied(`usage: ${usage}`)
       return 0
     }
     case 'send': {
@@ -404,6 +430,6 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool> …')
   }
 }

@@ -543,8 +543,10 @@ Without `--workspace` the single registered workspace is used.
   `--worktree` binds the agent to a checkout so the board can show its branch.
 - `swarm turn <agent> start [--claim]`: check in at the start of a turn. Prints
   unread messages and the task offered to this agent; `--claim` takes it.
-- `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]`:
-  check out with exactly one state.
+- `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>] [--deliver <evidence>]`:
+  check out with exactly one state. On `needs-task` or `awaiting-commit`, `--deliver`
+  marks the agent's single held task as delivered and stores its evidence path and turn summary. Without
+  `--deliver`, the queue task stays `claimed` and is surfaced under `swarm board --next`.
 - `swarm ack <agent> <messageId>`: mark a message as read. Unread messages are
   shown at every turn start until acknowledged.
 - `swarm retire <agent> --note <reason>`: take an agent off the board.
@@ -567,7 +569,7 @@ Without `--workspace` the single registered workspace is used.
   with `awaiting-commit` commit. It arrives as a message.
 
 **Overview and machine**
-- `swarm board [--git] [--json]`: every agent once with account, turn state,
+- `swarm board [--git] [--json] [--next]`: every agent once with account, turn state,
   unread messages, task, leases and worktree; `--git` adds branch, head and
   uncommitted files, plus overlaps where two agents write in one worktree. A
   `working` worker without Brain contact is marked `silent` and shown with its
@@ -586,6 +588,13 @@ Without `--workspace` the single registered workspace is used.
   off). When on, a turn that ends with `awaiting-commit` queues one review task
   for the first reviewer whose account differs from the author's.
 - `swarm review-pool show [--json]`: pool, routing switch and threshold.
+  uncommitted files, plus overlaps where two agents write in one worktree. The board
+  appends an `Als Nächstes` section with ranked suggestions, reasons and commands;
+  `--next` prints just those suggestions.
+- `swarm chronik [--since <iso|2h>] [--json|--md]`: show stored queue, message,
+  lease and quota events in timestamp order. Markdown is the default and can be used
+  as a handoff note. Missing turn history is named explicitly until a version that
+  stores turn history is available; the chronicle does not invent events.
 - `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
 - `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
   report how much of an account's quota is left. Numbers only, never keys.
@@ -598,7 +607,7 @@ plugbrain swarm enqueue "Fix the flaky login test" --body "Repro in issue #12" -
 plugbrain swarm turn codex-1 start --claim
 plugbrain swarm claim codex-1 src/auth/login.ts --task <task-id>
 plugbrain swarm admit test && npm test
-plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass"
+plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass" --deliver closeout/login.md
 plugbrain swarm release codex-1 --task <task-id>
 plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
 plugbrain swarm turn agent-1 start
