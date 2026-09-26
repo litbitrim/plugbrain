@@ -17,6 +17,7 @@ import SearchView from './views/SearchView'
 import NotesView from './views/NotesView'
 import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
+import BriefingView from './views/BriefingView'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
 import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
@@ -24,6 +25,7 @@ import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
 const MAIN_VIEWS: { id: ViewId; label: string; testName?: string; hint: string }[] = [
+  { id: 'briefing', label: 'Briefing', testName: 'Briefing', hint: 'Projekt-Briefing: Zusammenfassung, Kennzahlen, Hotspots' },
   { id: 'notes', label: 'Notizen', testName: 'Wissen', hint: 'Notizen lesen, schreiben und verknüpfen' },
   { id: 'atlas', label: 'Graph', testName: 'Atlas', hint: 'Wissensgraph: Symbole, Notizen und Verbindungen' },
   { id: 'search', label: 'Suche', hint: 'Code und Notizen durchsuchen' },
@@ -46,7 +48,7 @@ function initialView(): ViewId {
   const fromUrl = new URLSearchParams(location.search).get('view')
   const stored = (() => { try { return localStorage.getItem('plugbrain.view') } catch { return null } })()
   const candidate = fromUrl || stored
-  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'notes'
+  return VIEWS.some(v => v.id === candidate) ? candidate as ViewId : 'briefing'
 }
 
 function initialWorkspace(): string {
@@ -730,6 +732,18 @@ export default function App() {
             )}
           </div>
         ) : <>
+          {view === 'briefing' && (
+            <div className="pb-view">
+              <BriefingView
+                workspaceId={workspaceId}
+                workspaceName={workspaceName}
+                onOpenFile={path => handleOpenSource(path)}
+                onOpenNotes={() => setView('notes')}
+              />
+              {sourceOverlay}
+            </div>
+          )}
+
           {view === 'atlas' && (
             <div className="pb-view">
               <div className="pb-view-header">

@@ -2100,6 +2100,219 @@
   }
 }
 
+/* ── Briefing View (UX-02 X1) ────────────────────────────────────────── */
+.briefing-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+.briefing-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.briefing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+.briefing-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.briefing-card--summary {
+  grid-column: 1 / -1;
+  background: var(--raised);
+}
+.briefing-card__head h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink);
+}
+.briefing-summary-text {
+  margin: 0;
+  font-size: var(--fs);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.briefing-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.briefing-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 12px 8px;
+  border-radius: var(--r);
+  border: 1px solid var(--line-soft);
+}
+.briefing-stat__num {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.briefing-stat__label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.briefing-languages {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.briefing-subhead {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.briefing-lang-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.briefing-lang-chip {
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--ink);
+}
+.briefing-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.briefing-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--r);
+  background: var(--bg);
+  border: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+.briefing-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: left;
+  padding: 0;
+  word-break: break-all;
+}
+.briefing-link-btn:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.briefing-desc {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.briefing-degree-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  padding: 2px 6px;
+  border-radius: var(--r);
+  color: var(--accent);
+  font-weight: 600;
+}
+.briefing-change-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-xs);
+}
+.briefing-kind-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.briefing-time {
+  color: var(--faint);
+}
+.briefing-card--unavailable {
+  text-align: center;
+  padding: 32px 20px;
+  align-items: center;
+}
+.briefing-unavailable-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+}
+.briefing-card--unavailable h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+.briefing-card--unavailable p {
+  margin: 0;
+  max-width: 500px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.briefing-empty {
+  margin: 0;
+  color: var(--faint);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .briefing-body {
+    padding: 12px 8px;
+  }
+  .briefing-grid {
+    grid-template-columns: 1fr;
+  }
+  .briefing-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
 
 
 

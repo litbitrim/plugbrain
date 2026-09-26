@@ -3,7 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData } from '../types'
 
 export interface GalaxyPlanet {
   id: string
@@ -658,3 +658,53 @@ export async function fetchAgentInspect(agentId: string, workspaceId?: string): 
   if (!res.ok) return null
   return res.json()
 }
+
+export async function fetchBriefing(workspaceId: string): Promise<BriefingData | { unavailable: true; error?: string }> {
+  try {
+    const res = await fetch(`/api/briefing?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { unavailable: true }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return { unavailable: true, error: err?.error ?? `HTTP ${res.status}` }
+    }
+    const data = await res.json()
+    return data as BriefingData
+  } catch (cause) {
+    return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function askQuestion(workspaceId: string, question: string, limit = 5): Promise<AskResponse | { unavailable: true; error?: string }> {
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ workspace: workspaceId, question, limit }),
+    })
+    if (res.status === 404 || res.status === 501) return { unavailable: true }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return { unavailable: true, error: err?.error ?? `HTTP ${res.status}` }
+    }
+    const data = await res.json()
+    return data as AskResponse
+  } catch (cause) {
+    return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
+export async function fetchHygiene(workspaceId: string): Promise<HygieneData | { unavailable: true; error?: string }> {
+  try {
+    const res = await fetch(`/api/hygiene?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
+    if (res.status === 404 || res.status === 501) return { unavailable: true }
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      return { unavailable: true, error: err?.error ?? `HTTP ${res.status}` }
+    }
+    const data = await res.json()
+    return data as HygieneData
+  } catch (cause) {
+    return { unavailable: true, error: cause instanceof Error ? cause.message : String(cause) }
+  }
+}
+
