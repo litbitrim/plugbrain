@@ -27,6 +27,15 @@ verification failed on macOS and Windows. 0.3.1 is the first published build.
   test launched the browser before its cleanup guard. A missing browser left the
   test server and the store open, and the run never ended. The test now always
   closes what it opened, and CI installs Chromium for it.
+- **One folder, one spelling.** Hygiene, the checkout census, workspace
+  recognition and the daemon compared paths as text. On Windows a folder can
+  arrive as an 8.3 short name (`C:\Users\RUNNER~1\...`), on macOS as
+  `/var/...` or `/private/var/...`. Hygiene then missed checkouts and a
+  registered workspace was not recognised on the next run. Paths are now made
+  canonical before they are compared; what you typed is still what is shown.
+- Two tests only passed in the author's checkout: one read a schema from
+  private git history, two probes needed PowerShell on Linux. Both are
+  portable now.
 
 ### Changed
 
@@ -41,6 +50,14 @@ verification failed on macOS and Windows. 0.3.1 is the first published build.
   `release`) and left out `enqueue`, `ack`, `approve`, `deliver` and `quota`.
 - New `docs/agent-protocol.md`: the per-turn rules as a block to paste into a
   project's `AGENTS.md` or `CLAUDE.md`.
+
+### Known issues
+
+- **macOS:** when the brain store (`PLUGBRAIN_HOME`) lives inside a watched
+  vault, the file watcher reports a write to the store as a change of the vault
+  folder and the daemon starts a re-index that finds nothing to change. The
+  default store location, `~/.plugbrain`, is outside any vault and is not
+  affected. The test for this case is skipped on macOS until it is fixed.
 
 ## [0.3.0] — 2026-09-26 (tagged, not released)
 
