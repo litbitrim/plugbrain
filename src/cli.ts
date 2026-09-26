@@ -56,7 +56,7 @@ import { buildBriefing, renderBriefing } from './context/briefing.ts'
 import { askQuestion } from './ask/index.ts'
 import { startServer } from './server/api.ts'
 import { startDaemon } from './daemon.ts'
-import { IndexRunBusy, runIndexInProcess } from './index/runner.ts'
+import { IndexRunBusy, runIndexInProcess, startIndexRun } from './index/runner.ts'
 import { appraiseRun, describeRun, listRunStates } from './index/runs.ts'
 import type { IndexProgress } from './indexer/index.ts'
 import type { IndexResult } from './indexer/scan.ts'
@@ -72,6 +72,12 @@ import { runSwarmCli } from './swarm-cli.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
 import { resolveBrainHome } from './home.ts'
+import {
+  findGitRoot, planWorkspaceRoot, registerWorkspaceRoot, resolveMcpWorkspace,
+} from './setup/workspace-from-cwd.ts'
+import {
+  buildEntry, CLIENTS, parseClientSelection, setupClients, type ClientSetupResult,
+} from './setup/clients.ts'
 
 const HOME = resolveBrainHome()
 
@@ -91,7 +97,16 @@ function resolveUiRoot(): string {
 }
 const DB_FILE = join(HOME, 'plugbrain.db')
 
-const db = openStore(DB_FILE)
+/**
+ * `init --dry-run` plans only: it opens the real store read-only when one
+ * exists (so "already known" stays honest) and an in-memory store when none
+ * does, so a dry run creates no database file at all.
+ */
+const DRY_RUN_INIT = process.argv[2] === 'init' && process.argv.includes('--dry-run')
+
+const db = DRY_RUN_INIT
+  ? (existsSync(DB_FILE) ? openStore(DB_FILE, { readOnly: true }) : openStore(':memory:'))
+  : openStore(DB_FILE)
 
 function register(path: string, name?: string): void {
   const root = resolve(path)
@@ -1034,6 +1049,140 @@ function agents(): void {
   for (const a of rows) console.log(`  ${a.color.padEnd(20)} ${a.name.padEnd(24)} last seen ${a.last_seen}`)
 }
 
+/** The default port `serve` binds and `init` prints. */
+const UI_PORT_DEFAULT = 4310
+
+/** The CLI file named in a client entry: whatever node was asked to run. */
+function selfCliPath(): string {
+  return process.argv[1] ?? import.meta.filename
+}
+
+/**
+ * Where the clients' config files live.
+ *
+ * Normally the user's home, but `PLUGBRAIN_CONFIG_HOME` overrides it so a test
+ * (or a sandboxed run) can point at a temp folder and never touch the owner's
+ * real configuration. This is separate from `PLUGBRAIN_HOME`, which is the
+ * brain STORE, not the clients.
+ */
+function clientHome(): string {
+  const override = process.env.PLUGBRAIN_CONFIG_HOME?.trim()
+  return override !== undefined && override !== '' ? override : homedir()
+}
+
+/**
+ * A compact before/after diff for `setup --dry-run`.
+ *
+ * Config files change in one place, so a full diff engine would be noise. The
+ * common head and tail are skipped and only the changed lines are shown, which
+ * is exactly the paragraph a human wants to approve.
+ */
+function renderEntryDiff(before: string | null, after: string | null): string {
+  const a = (before ?? '').split(/\r?\n/)
+  const b = (after ?? '').split(/\r?\n/)
+  if (a[a.length - 1] === '') a.pop()
+  if (b[b.length - 1] === '') b.pop()
+  let start = 0
+  while (start < a.length && start < b.length && a[start] === b[start]) start += 1
+  let endA = a.length
+  let endB = b.length
+  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) { endA -= 1; endB -= 1 }
+  const lines: string[] = []
+  for (let i = start; i < endA; i += 1) lines.push(`      - ${a[i]}`)
+  for (let i = start; i < endB; i += 1) lines.push(`      + ${b[i]}`)
+  return lines.length === 0 ? '      (only whitespace differs)' : lines.join('\n')
+}
+
+/** One line per detected client plus its backup, so the human sees every touch. */
+function printClientResults(results: ClientSetupResult[], home: string = homedir()): void {
+  const verbs: Record<string, string> = {
+    created: 'added', updated: 'updated', unchanged: 'unchanged', 'dry-run': 'would change',
+    undone: 'restored', skipped: 'skipped', error: 'error',
+  }
+  const detected = results.filter(r => r.detected)
+  for (const r of detected) {
+    const verb = verbs[r.action] ?? r.action
+    const detail = r.action === 'error' ? `  ${r.error}` : ''
+    console.log(`  ${r.label.padEnd(12)} ${verb.padEnd(12)} ${r.path}${detail}`)
+    if (r.action === 'dry-run') console.log(renderEntryDiff(r.before, r.after))
+    if (r.backupPath) console.log(`      backup: ${r.backupPath}`)
+    if (r.restoredFrom) console.log(`      from:   ${r.restoredFrom}`)
+    if (r.counterBackupPath) console.log(`      kept:   ${r.counterBackupPath}`)
+    if (r.note) console.log(`      note:  ${r.note}`)
+  }
+  if (detected.length === 0) {
+    console.log(`  no supported client found under ${home}`)
+  } else {
+    const missing = results.length - detected.length
+    if (missing > 0) console.log(`  (${missing} client(s) not installed — nothing written for them)`)
+  }
+}
+
+/**
+ * `plugbrain init [path]` — one command from nothing to a usable brain.
+ *
+ * A vibe coder stands in a project folder and types one word. This registers
+ * the folder (its git root when it is a repository), indexes it where they can
+ * watch, prints where the UI will be, and teaches every client it can find to
+ * start us. Running it twice changes nothing.
+ */
+function initCommand(args: string[]): void {
+  const dryRun = args.includes('--dry-run')
+  const given = args.find(arg => !arg.startsWith('--'))
+  const dir = resolve(given ?? process.cwd())
+  if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+    console.error(`not a directory: ${dir}`)
+    process.exit(2)
+  }
+  const root = findGitRoot(dir) ?? dir
+  if (dryRun) console.log('dry run (nothing is written):')
+  const record = dryRun ? planWorkspaceRoot(db, root) : registerWorkspaceRoot(db, root)
+  const state = record.created
+    ? (dryRun ? 'would register' : 'registered')
+    : 'already known'
+  console.log(`${state} workspace ${record.name}`)
+  console.log(`  workspace ${record.id}`)
+  console.log(`  root      ${resolve(root)}`)
+  if (dryRun) {
+    console.log(`  would index ${record.name}`)
+  } else {
+    process.stdout.write(`indexing ${record.name} …\n`)
+    reportIndex(record.name, runIndexInProcess(db, record.id, { onProgress: progressPrinter(record.name) }))
+  }
+
+  console.log(`\nUI: http://127.0.0.1:${UI_PORT_DEFAULT}/  (start it with: plugbrain serve)`)
+
+  if (args.includes('--no-clients')) return
+  const home = clientHome()
+  const entry = buildEntry(selfCliPath())
+  const results = setupClients({ home, entry, dryRun })
+  console.log('\nclients:')
+  printClientResults(results, home)
+  console.log(`\nOpen your project in a client above and ask it to use PlugBrain.`)
+}
+
+/**
+ * `plugbrain setup [--all|claude|…] [--dry-run] [--undo]` — write the MCP
+ * entry into the clients' own config files. `init` calls the same engine.
+ */
+function setupCommand(args: string[]): void {
+  const dryRun = args.includes('--dry-run')
+  const undo = args.includes('--undo')
+  const { only, unknown } = parseClientSelection(args)
+  if (unknown.length > 0) {
+    console.error(`unknown client(s): ${unknown.join(', ')}`)
+    console.error(`known: ${CLIENTS.map(client => client.id).join(', ')}  (or --all)`)
+    process.exit(1)
+  }
+  const home = clientHome()
+  const entry = buildEntry(selfCliPath())
+  const results = setupClients({ home, entry, only, dryRun, undo })
+  if (undo) console.log('undo:')
+  else if (dryRun) console.log('dry run (nothing is written):')
+  else console.log('setup:')
+  printClientResults(results, home)
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
 switch (command) {
@@ -1152,10 +1301,35 @@ switch (command) {
     })
     break
   }
+  case 'init': initCommand(args); break
+  case 'setup': setupCommand(args); break
   case 'mcp': {
-    const ws = flagValue(args, '--workspace') ?? undefined
+    // No `--workspace` is the normal case now: the client starts the server in
+    // the project folder, so the folder states the workspace. `--workspace`
+    // stays as an explicit override and `PLUGBRAIN_WORKSPACE` as the machine's.
+    const override = flagValue(args, '--workspace')
     const authKey = flagValue(args, '--auth-key') ?? process.env.PLUG_BRAIN_AUTH_KEY ?? null
-    startMcpServer({ db, workspaceId: ws, authKey })
+    const resolution = resolveMcpWorkspace({ db, cwd: process.cwd(), override })
+    if (resolution.workspaceId === null) {
+      // Start anyway: a refusal must reach the client as a tool error, not as a
+      // server that died before it could answer `initialize`.
+      console.error(`plugbrain mcp: ${resolution.reason}`)
+      startMcpServer({ db, authKey, workspaceError: resolution.reason })
+      break
+    }
+    if (resolution.needsIndex) {
+      // A just-registered git root has a cold index; warm it in the background
+      // so the server answers at once. Indexing is best-effort: a busy or
+      // unpackaged worker is reported, never fatal.
+      try {
+        startIndexRun(resolution.workspaceId, { dbFile: DB_FILE })
+        console.error(`plugbrain mcp: indexing ${resolution.root} in the background …`)
+      } catch (error) {
+        console.error(`plugbrain mcp: could not start indexing ${resolution.root}: ` +
+          `${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    startMcpServer({ db, workspaceId: resolution.workspaceId, authKey })
     break
   }
   case 'backup': {
@@ -1182,7 +1356,9 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      'usage: plugbrain <init|setup|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      '       plugbrain init [path] [--no-clients] [--dry-run]  register + index + enroll clients\n' +
+      '       plugbrain setup [--all|claude|codex|cursor|windsurf|hermes|agy|opencode] [--dry-run] [--undo]\n' +
       '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
@@ -1192,7 +1368,7 @@ switch (command) {
       '       plugbrain machine [--json]\n' +
       '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
       '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
-      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]\n' +
+      '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
       '       plugbrain backup [target_path]\n' +
       '       plugbrain restore <backup_path>')
     process.exit(1)

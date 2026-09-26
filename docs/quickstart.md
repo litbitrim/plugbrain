@@ -1,0 +1,127 @@
+# Quickstart
+
+PlugBrain gives your AI coding client a brain for the project you are already
+standing in. You type **one** command inside your project folder, and from then
+on Claude Code, Codex, Cursor and friends know that project through PlugBrain —
+no workspace id, no token, no copy-pasting paths between config files.
+
+PlugBrain needs **Node.js 22+** and nothing else: the graph lives in a single
+SQLite file, no database server.
+
+## 1. One command
+
+From your project folder:
+
+```sh
+plugbrain init
+```
+
+That is the whole setup. It
+
+1. registers the folder (its git root, when it is a repository),
+2. indexes it, printing progress as it goes,
+3. prints the URL of the local dashboard,
+4. adds a `plugbrain` MCP entry to every client it finds installed.
+
+Run it twice and nothing changes the second time — `init` is idempotent.
+
+Not inside a git repository? Point it at any folder explicitly:
+
+```sh
+plugbrain init ./my-notes --no-clients
+```
+
+`--no-clients` registers and indexes without touching any client config.
+
+## 2. See what would happen first
+
+`--dry-run` reports exactly what `init` would do — including the client config
+diff — and writes **nothing**: no workspace row, no client file, no index.
+
+```sh
+plugbrain init --dry-run
+```
+
+Real output against a throwaway folder and a temporary config home (the CLI's
+own path is abbreviated here):
+
+```text
+dry run (nothing is written):
+would register workspace my-app
+  workspace ws-4e5477b5c7e3
+  root      /home/you/projects/my-app
+  would index my-app
+
+UI: http://127.0.0.1:4310/  (start it with: plugbrain serve)
+
+clients:
+  Cursor       would change /tmp/tmp.1FV57ZcB7e/.cursor/mcp.json
+      - {}
+      + {
+      +   "mcpServers": {
+      +     "plugbrain": {
+      +       "command": "/usr/bin/node",
+      +       "args": [
+      +         "--experimental-strip-types",
+      +         "/path/to/plugbrain/src/cli.ts",
+      +         "mcp"
+      +       ]
+      +     }
+      +   }
+      + }
+  (6 client(s) not installed — nothing written for them)
+```
+
+Every client that is not installed is reported as skipped, so you always see
+which files were considered.
+
+## 3. Start the dashboard (optional)
+
+```sh
+plugbrain serve
+```
+
+Then open <http://127.0.0.1:4310/>. **Atlas** shows the knowledge graph,
+**City** the code metropolis, **Agent Mesh** the live swarm.
+
+## 4. Point your client at it
+
+`init` already did this for every detected client. To manage it yourself:
+
+```sh
+plugbrain setup                 # every detected client
+plugbrain setup cursor          # just one: claude | codex | cursor | windsurf |
+                                #            hermes | agy | opencode
+plugbrain setup --all --dry-run # show the diff, write nothing
+plugbrain setup --all --undo    # restore each file's newest backup
+```
+
+Before a config file changes at all, a copy named
+`<file>.plugbrain-backup-<stamp>` is written next to it. Every other entry in
+the file — and its comments and formatting — is left untouched.
+
+The entry it writes is deliberately dumb: an absolute `node` and an absolute
+path to the PlugBrain CLI, running the `mcp` verb. The workspace is not baked
+in; the server reads it from the folder your client starts it in.
+
+## Supported clients
+
+| Client | Config file |
+| --- | --- |
+| Claude Code | `~/.claude.json` → `mcpServers` |
+| Codex | `~/.codex/config.toml` → `[mcp_servers.plugbrain]` |
+| Cursor | `~/.cursor/mcp.json` |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| Hermes | `~/.hermes/config.yaml` → `mcp_servers` |
+| AGY | `~/.gemini/antigravity/mcp_config.json` → `mcpServers` |
+| OpenCode | `~/.config/opencode/opencode.json` → `mcp` |
+
+JSON, TOML and YAML are each written the way the client reads them. In a
+sandbox or a test you can redirect all of them with `PLUGBRAIN_CONFIG_HOME=<dir>`
+(the brain store itself is separate, under `PLUGBRAIN_HOME`).
+
+## 5. Done
+
+Ask your client to use PlugBrain — for example *"use PlugBrain to find where
+authentication is handled"*. The server starts itself in your project folder and
+knows which workspace that is.
