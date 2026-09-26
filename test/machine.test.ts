@@ -16,12 +16,19 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { openStore } from '../src/store/schema.ts'
+import { serve, type ServerHandle } from '../src/server/api.ts'
 import {
-  collectMachine, driveLevel, forecastFrom, linearTrend, pruneSamples, recordSamples,
-  seriesSince, type MachineReport,
+  collectMachine, defaultDriveRoots, driveLevel, forecastFrom, linearTrend, pruneSamples,
+  recordSamples, seriesSince, type MachineReport,
 } from '../src/machine/collect.ts'
-import { registeredCheckoutPaths, scanGitRepos, type CensusRepo, type CensusReport } from '../src/machine/git-census.ts'
+import { driveRoots, hostSnapshot } from '../src/coord/resources.ts'
+import { McpServer } from '../src/mcp/server.ts'
+import {
+  gitCensus, gitCensusCached, registeredCheckoutPaths, resetCensusCache, scanGitRepos,
+  type CensusRepo, type CensusReport,
+} from '../src/machine/git-census.ts'
 import { withMachineFindings } from '../src/machine/findings.ts'
+import { snapshotRepo } from '../src/hygiene/snapshot.ts'
 
 const GB = 1024 ** 3
 
@@ -227,6 +234,20 @@ test('a tight directory cap reports complete:false instead of a truncated lie', 
   }
 })
 
+test('gitCensusCached answers at once on a cold cache instead of blocking', () => {
+  const fx = tempHome('cached')
+  try {
+    resetCensusCache()
+    const cold = gitCensusCached(fx.db, { roots: [fx.dir], budgetMs: 5_000 })
+    assert.equal(cold.complete, false)
+    assert.deepEqual(cold.unavailable, ['census'])
+    assert.deepEqual(cold.repos, [])
+  } finally {
+    resetCensusCache()
+    fx.cleanup()
+  }
+})
+
 // ---------------------------------------------------------------------------
 // M3 — findings, the sentences a human acts on
 // ---------------------------------------------------------------------------
@@ -327,6 +348,171 @@ test('dangling worktrees are a risk finding with the prune command', () => {
   assert.match(orphans?.text ?? '', /^2 worktrees are dangling/)
   assert.equal(orphans?.fix, 'git worktree prune (in the base repo), after checking the worktree is really gone')
 })
+
+// ---------------------------------------------------------------------------
+// M4 — surfaces: /api/machine, /api/repos, and the single-repo rescue
+// ---------------------------------------------------------------------------
+
+test('GET /api/machine answers the contract shape', async () => {
+  const fx = tempHome('api-machine')
+  let handle: ServerHandle | null = null
+  try {
+    // Warm a tiny, bounded census so the route does not start a whole-disk walk
+    // (and so no background scan outlives this test into the repos one).
+    resetCensusCache()
+    gitCensus(fx.db, { roots: [fx.dir], budgetMs: 5_000 })
+    const token = 'machine-api-token'
+    handle = await serve(
+      { db: fx.db, dbFile: join(fx.dir, 'brain.db'), uiRoot: null, authKey: token, requireAuth: true }, 0)
+    const res = await fetch(`http://127.0.0.1:${handle.port}/api/machine`,
+      { headers: { Authorization: `Bearer ${token}` } })
+    assert.equal(res.status, 200)
+    const body = await res.json() as Record<string, unknown> & {
+      drives: Array<{ mount: string; freeGb: number; totalGb: number; level: string }>
+      pagefile: { sizeGb: number | null }
+      memory: { freeGb: number | null; totalGb: number | null }
+      cpu: { load: number | null }
+      forecast: unknown[]
+      findings: unknown[]
+      unavailable: string[]
+    }
+    assert.equal(body.ok, true)
+    assert.equal(typeof body.checkedAt, 'string')
+    assert.ok(Array.isArray(body.drives))
+    assert.ok(Array.isArray(body.forecast))
+    assert.ok(Array.isArray(body.findings))
+    assert.ok(Array.isArray(body.unavailable))
+    assert.ok(!('data' in body), 'fields sit beside ok, never under data')
+    for (const drive of body.drives) {
+      assert.equal(typeof drive.mount, 'string')
+      assert.ok(['ok', 'attention', 'risk'].includes(drive.level))
+    }
+  } finally {
+    try { await handle?.close() } catch { /* best effort */ }
+    fx.cleanup()
+  }
+})
+
+test('GET /api/repos serves the census and honours ?dirty=1', { skip: skipGit }, async () => {
+  const fx = tempHome('api-repos')
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-repos-api-'))
+  let handle: ServerHandle | null = null
+  try {
+    const clean = join(root, 'clean')
+    const dirty = join(root, 'dirty')
+    makeRepo(clean)
+    const origin = join(root, 'origin.git')
+    git(root, ['init', '-q', '--bare', origin])
+    git(clean, ['remote', 'add', 'origin', origin])
+    git(clean, ['push', '-q', '-u', 'origin', 'main'])
+    makeRepo(dirty)
+    writeFileSync(join(dirty, 'a.ts'), 'work\n')
+
+    // Warm the module cache with a bounded scan, so the route answers from it
+    // instead of walking the whole machine.
+    resetCensusCache()
+    gitCensus(fx.db, { roots: [root], budgetMs: 30_000 })
+
+    const token = 'repos-api-token'
+    handle = await serve(
+      { db: fx.db, dbFile: join(fx.dir, 'brain.db'), uiRoot: null, authKey: token, requireAuth: true }, 0)
+    const all = await (await fetch(`http://127.0.0.1:${handle.port}/api/repos`,
+      { headers: { Authorization: `Bearer ${token}` } })).json() as {
+        ok: boolean; repos: Array<{ path: string }>; totals: { repos: number }; complete: boolean
+      }
+    assert.equal(all.ok, true)
+    assert.equal(all.repos.length, 2)
+    assert.equal(all.totals.repos, 2)
+
+    const dirtyOnly = await (await fetch(`http://127.0.0.1:${handle.port}/api/repos?dirty=1`,
+      { headers: { Authorization: `Bearer ${token}` } })).json() as {
+        dirty: boolean; repos: Array<{ path: string; dirtyFiles: number | null }>
+      }
+    assert.equal(dirtyOnly.dirty, true)
+    assert.equal(dirtyOnly.repos.length, 1)
+    assert.ok(dirtyOnly.repos[0]!.path.endsWith('dirty'))
+  } finally {
+    try { await handle?.close() } catch { /* best effort */ }
+    fx.cleanup()
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('--wip-snapshot --repo rescues an unregistered repo without moving tree, index or HEAD', { skip: skipGit }, () => {
+  const fx = tempHome('repo-snapshot')
+  const root = mkdtempSync(join(tmpdir(), 'plugbrain-repo-snap-'))
+  try {
+    const repo = join(root, 'outside')
+    makeRepo(repo)
+    writeFileSync(join(repo, 'a.txt'), 'tracked, unsaved\n')
+    writeFileSync(join(repo, 'fresh.txt'), 'untracked, unsaved\n')
+    const gitDir = gitOut(repo, ['rev-parse', '--absolute-git-dir'])
+    const beforeStatus = gitOut(repo, ['status', '--porcelain=v1', '--untracked-files=all'])
+    const beforeHead = gitOut(repo, ['rev-parse', 'HEAD'])
+
+    const entry = snapshotRepo(repo)
+    assert.ok(entry.ref !== null, entry.error ?? 'snapshot failed')
+    assert.equal(entry.treeUnchanged, true)
+    assert.equal(entry.indexUnchanged, true)
+    assert.equal(entry.headUnchanged, true)
+    assert.equal(entry.files, 2)
+    assert.equal(gitOut(repo, ['status', '--porcelain=v1', '--untracked-files=all']), beforeStatus)
+    assert.equal(gitOut(repo, ['rev-parse', 'HEAD']), beforeHead)
+    assert.equal(existsSync(join(gitDir, 'index')), true)
+    void fx
+  } finally {
+    fx.cleanup()
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+// ---------------------------------------------------------------------------
+// M5 — the shared measurement and the MCP surfaces
+// ---------------------------------------------------------------------------
+
+test('admission and the machine report look at the same drives', () => {
+  // `swarm admit` measures through hostSnapshot, the machine lane through
+  // collectMachine. If they ever enumerated different volumes, admission could
+  // call a build safe on a disk that is actually the one filling up.
+  assert.deepEqual(defaultDriveRoots(), driveRoots(), 'one source of truth for the drives')
+  const drives = hostSnapshot().drives.map(drive => drive.root)
+  for (const root of drives) {
+    assert.ok(driveRoots().includes(root), `${root} came from the shared enumeration`)
+  }
+})
+
+test('the MCP tools machine and repos answer the contract shape', async () => {
+  const fx = tempHome('mcp')
+  try {
+    // Warm a bounded census so the tools answer instantly and this test never
+    // walks the real machine.
+    resetCensusCache()
+    gitCensus(fx.db, { roots: [fx.dir], budgetMs: 5_000 })
+    const mcp = new McpServer({ db: fx.db, workspaceId: 'ws-machine', authKey: null })
+
+    const machine = await mcp.executeTool('machine', {}) as {
+      ok: boolean; drives: unknown[]; pagefile: { sizeGb: number | null }; findings: unknown[]
+    }
+    assert.equal(machine.ok, true)
+    assert.ok(Array.isArray(machine.drives))
+    assert.ok(Array.isArray(machine.findings))
+    assert.ok('sizeGb' in machine.pagefile)
+
+    const repos = await mcp.executeTool('repos', {}) as { ok: boolean; repos: unknown[]; total?: number }
+    assert.equal(repos.ok, true)
+    assert.ok(Array.isArray(repos.repos))
+  } finally {
+    resetCensusCache()
+    fx.cleanup()
+  }
+})
+
+/** Read-only git, returning trimmed stdout for the proofs above. */
+function gitOut(cwd: string, args: string[]): string {
+  return execFileSync('git', ['-c', 'user.email=brain@test', '-c', 'user.name=brain', '-c', 'commit.gpgsign=false', ...args], {
+    cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
+  }).trim()
+}
 
 // existsSync/utimesSync are kept for later census fixtures that touch mtimes.
 void existsSync
