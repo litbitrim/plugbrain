@@ -24,7 +24,7 @@ import { serve, type ServerHandle } from '../src/server/api.ts'
 import { discoverCheckouts, registerPlanet, setPlanetIndexSelection } from '../src/planet.ts'
 import { collectHygiene } from '../src/hygiene/collect.ts'
 import { withFindings } from '../src/hygiene/findings.ts'
-import { createWipSnapshots, hygieneReport, type HygieneCheckout } from '../src/hygiene/index.ts'
+import { createWipSnapshots, hygieneReport, snapshotRepo, type HygieneCheckout } from '../src/hygiene/index.ts'
 
 const HAS_GIT = ((): boolean => {
   try { execFileSync('git', ['--version'], { stdio: 'ignore' }); return true } catch { return false }
@@ -326,6 +326,27 @@ test('--wip-snapshot skips a clean checkout instead of writing noise refs', { sk
     assert.equal(result.created, 0)
     assert.equal(result.skipped, 1)
     assert.deepEqual(result.entries, [])
+  } finally { fx.cleanup() }
+})
+
+test('a failed rescue reports the error and never claims its proofs', { skip: skipGit }, () => {
+  const fx = fixture('snapshot-fail')
+  try {
+    // A `.git` *file* pointing at a git directory that does not exist: every git
+    // call fails, so nothing can be read and nothing can be written. The entry
+    // must say so — an earlier version compared a value against itself and
+    // reported "unchanged" as a consequence of the failure.
+    const broken = join(fx.dir, 'broken')
+    mkdirSync(broken, { recursive: true })
+    writeFileSync(join(broken, '.git'), 'gitdir: C:/plugbrain/definitely/missing/gitdir\n')
+
+    const entry = snapshotRepo(broken)
+    assert.equal(entry.ref, null, 'no ref was written')
+    assert.equal(entry.commit, null, 'no commit was written')
+    assert.ok(entry.error !== null, 'the failure is reported, not hidden')
+    assert.equal(entry.treeUnchanged, false, 'the tree was never proven unchanged')
+    assert.equal(entry.indexUnchanged, false, 'the index was never proven unchanged')
+    assert.equal(entry.headUnchanged, false, 'HEAD was never proven unmoved')
   } finally { fx.cleanup() }
 })
 

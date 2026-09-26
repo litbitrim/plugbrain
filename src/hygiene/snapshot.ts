@@ -163,10 +163,13 @@ function unchanged(before: Fingerprint, after: Fingerprint): {
   indexUnchanged: boolean
   headUnchanged: boolean
 } {
+  // Every proof needs a KNOWN "before". If git could not answer before the
+  // rescue started, the honest answer is false (unknown), never a true that
+  // just happens to match because both sides are null.
   return {
     treeUnchanged: before.status !== null && before.status === after.status,
     indexUnchanged: before.indexHash !== null && before.indexHash === after.indexHash,
-    headUnchanged: before.head === after.head,
+    headUnchanged: before.head !== null && before.head === after.head,
   }
 }
 
@@ -233,8 +236,11 @@ function snapshotOne(
     error: null as string | null,
   }
 
+  // Captured before anything runs, so the catch branch can compare REAL
+  // before/after fingerprints instead of declaring the flags true by construction.
+  let before: Fingerprint | null = null
   try {
-    const before = fingerprint(row.path, process.env, timeoutMs)
+    before = fingerprint(row.path, process.env, timeoutMs)
 
     // Temp index starts from HEAD so the WIP commit is a real child of history.
     // A checkout with no commits yet has no HEAD; an empty tree is then right.
@@ -262,11 +268,15 @@ function snapshotOne(
     const after = fingerprint(row.path, process.env, timeoutMs)
     return { ...base, ref, commit, files, ...unchanged(before, after) }
   } catch (error) {
+    // A rescue that failed must not claim its proofs. Compare the real
+    // fingerprints; if even the "before" could not be read, all three stay false.
     const after = fingerprint(row.path, process.env, timeoutMs)
-    const before = after // best effort: whatever is true now is what we report
+    const proofs = before === null
+      ? { treeUnchanged: false, indexUnchanged: false, headUnchanged: false }
+      : unchanged(before, after)
     return {
       ...base,
-      ...unchanged(before, after),
+      ...proofs,
       error: error instanceof Error ? error.message.split('\n')[0]! : String(error),
     }
   } finally {
