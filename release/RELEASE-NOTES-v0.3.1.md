@@ -1,6 +1,6 @@
 # PlugBrain 0.3.1 Release Notes (candidate)
 
-**Release status:** Candidate; not published  
+**Release status:** Candidate; not published
 **Version:** 0.3.1
 
 PlugBrain 0.3.1 is intended as the first published build. The earlier 0.3.0 tag was not released after cross-platform verification failed.
