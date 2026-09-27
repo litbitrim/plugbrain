@@ -18,7 +18,7 @@
  *                                             remove the rows of checkouts the selection does not keep
  *   plugbrain compact                         give freed pages back to the disk (VACUUM)
  *
- *   plugbrain plan [status|next|task <M00>|gates]   the master ledger joined with the brain's queue
+ *   plugbrain plan [status|next|task <M00>|gates|decompose <gate-or-requirement>]   inspect or decompose the ledger
  *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
  *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
@@ -73,7 +73,8 @@ import { currentDiskScan, diskTree, largestDiskFiles, scanDisk } from './disk/sc
 import { runSwarmCli, runSwarmSupervisorChild } from './swarm-cli.ts'
 import { runSwarmWatchCli } from './swarm-watch.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
-import { planTask, planView, type PlanTask } from './plan.ts'
+import { ledgerPath, planTask, planView, type PlanTask } from './plan.ts'
+import { applyDecomposedTask, decomposeLedgerTarget, type DecompositionLedger } from './plan-decompose.ts'
 import { resolveBrainHome } from './home.ts'
 import {
   findGitRoot, planWorkspaceRoot, registerWorkspaceRoot, resolveMcpWorkspace,
@@ -317,6 +318,31 @@ function planCommand(args: string[]): void {
   const [step = 'status', ...rest] = args
   const workspaceId = flagValue(rest, '--workspace') ?? singlePlanetId()
   const json = args.includes('--json')
+  if (step === 'decompose') {
+    const target = rest.find(arg => !arg.startsWith('--'))
+    if (target === undefined) {
+      console.error('usage: plugbrain plan decompose <gate-or-requirement> [--apply] [--json]')
+      process.exit(1)
+    }
+    const path = ledgerPath(db, workspaceId)
+    const ledger = JSON.parse(readFileSync(path, 'utf8')) as DecompositionLedger
+    const result = decomposeLedgerTarget(ledger, target)
+    const task = args.includes('--apply') && result.state === 'executable'
+      ? applyDecomposedTask(db, workspaceId, result)
+      : null
+    if (json) return jsonOut({ ...result, task })
+    console.log(`${result.state}: ${result.spec.id} ${result.spec.title}`)
+    if (result.reason) console.log(`  lead: ${result.reason}`)
+    console.log(`  category: ${result.spec.category ?? '(missing)'}`)
+    console.log(`  brief: ${result.spec.brief || '(missing)'}`)
+    console.log(`  acceptance: ${result.spec.acceptance.join('; ') || '(missing)'}`)
+    console.log(`  reviewer: ${result.spec.reviewerRole ?? '(missing)'}`)
+    console.log(`  dependencies: ${result.spec.dependsOn.join(', ') || '(none)'}`)
+    console.log(`  evidence: ${result.spec.evidence.join(', ') || '(missing)'}`)
+    if (task) console.log(`  queue task: ${task.id}`)
+    else if (args.includes('--apply')) console.log('  no queue mutation: lead review is required')
+    return
+  }
   if (step === 'task') {
     const id = rest.find(arg => !arg.startsWith('--'))
     if (id === undefined) { console.error('usage: plugbrain plan task <M00>'); process.exit(1) }

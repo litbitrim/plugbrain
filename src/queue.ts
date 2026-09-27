@@ -46,6 +46,7 @@ export interface QueueTask {
   claimed_at: string | null
   delivered_path: string | null
   delivered_summary: string | null
+  decomposition_key?: string | null
   created_at: string
   updated_at: string
 }
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
   claimed_at     TEXT,
   delivered_path TEXT,
   delivered_summary TEXT,
+  decomposition_key TEXT,
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL
 );
@@ -95,6 +97,10 @@ export function ensureQueueSchema(db: DatabaseSync): void {
   if (!columns.some(column => column.name === 'delivered_summary')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN delivered_summary TEXT')
   }
+  if (!columns.some(column => column.name === 'decomposition_key')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN decomposition_key TEXT')
+  }
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_decomposition_key ON queue_tasks(decomposition_key) WHERE decomposition_key IS NOT NULL')
   ensureDependencySchema(db)
 }
 
@@ -115,7 +121,7 @@ const load = (db: DatabaseSync, id: string): QueueTask => {
 export function enqueueTask(
   db: DatabaseSync,
   workspaceId: string,
-  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string },
+  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string; decompositionKey?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
@@ -130,11 +136,11 @@ export function enqueueTask(
   db.prepare(
     `INSERT INTO queue_tasks
        (id, workspace_id, title, body, addressed_to, requested_by, state,
-        claimed_by, claimed_at, delivered_path, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?)`,
+        claimed_by, claimed_at, delivered_path, created_at, updated_at, decomposition_key)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?, ?)`,
   ).run(
     id, workspaceId, title, input.body ?? '',
-    input.addressedTo ?? null, input.requestedBy ?? null, now, now,
+    input.addressedTo ?? null, input.requestedBy ?? null, now, now, input.decompositionKey ?? null,
   )
   if (input.afterTaskId !== undefined) addTaskDependency(db, id, input.afterTaskId)
   const task = load(db, id)
