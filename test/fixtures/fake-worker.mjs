@@ -67,6 +67,11 @@ if (mode === 'ok') {
 }
 
 if (mode === 'die') {
+  const start = brain('swarm', 'turn', agent, 'start', '--claim', '--workspace', workspace)
+  emit({
+    type: 'item.completed',
+    item: { type: 'command_execution', command: `plugbrain swarm turn ${agent} start --claim`, exit_code: start.status },
+  })
   emit({ type: 'item.completed', item: { type: 'agent_message', text: 'about to die without a turn end' } })
   emit({ type: 'item.completed', item: { type: 'command_execution', command: 'node --run build', exit_code: 1 } })
   process.exit(3)

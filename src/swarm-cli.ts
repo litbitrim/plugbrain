@@ -27,7 +27,7 @@
  *   plugbrain swarm review-pool set <agent>... | review-pool auto on|off | review-pool show
  *   plugbrain swarm runner set <agent> --cmd <exe> [--model <m>] [--effort <e>] [--sandbox <s>] [--search]
  *   plugbrain swarm runner show <agent>
- *   plugbrain swarm run <agent> [--status|--stop]   the Brain starts and watches the CLI process itself
+ *   plugbrain swarm run <agent> [--once|--status|--stop]  refill the worker's queue headless
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
@@ -44,6 +44,7 @@ import {
   reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
   setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
+  assertActiveSupervisorAttempt, runSupervisorLoop, startSupervisor, stopSupervisor,
   touchAgentContact, watchdogSettings, workerRunStatus,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
@@ -59,6 +60,14 @@ const flag = (args: string[], name: string): string | null => {
   if (inline !== undefined) return inline.slice(name.length + 1)
   const at = args.indexOf(name)
   return at === -1 ? null : args[at + 1] ?? null
+}
+
+const numberFlag = (args: string[], name: string): number | undefined => {
+  const value = flag(args, name)
+  if (value === null) return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) throw new AccessDenied(`${name} must be a finite number`)
+  return parsed
 }
 
 const flags = (args: string[], name: string): string[] => {
@@ -201,6 +210,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   // fail with "no such column: workspace_id" until some `register` had widened
   // the agents table.
   if (step !== 'chronik') ensureSwarmOpsSchema(db)
+  assertActiveSupervisorAttempt(db)
   const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
@@ -263,8 +273,26 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'run': {
-      const usage = 'plugbrain swarm run <agent> [--status] [--stop] [--json]'
+      const usage = 'plugbrain swarm run <agent> [--once|--status|--stop|--stop-supervisor] [--json]'
       const agentId = need(pos[0], usage)
+      if (rest.includes('--supervisor-child')) throw new AccessDenied('supervisor child must use the internal async dispatch')
+      if (!rest.includes('--once') && !rest.includes('--status') && !rest.includes('--stop') && !rest.includes('--stop-supervisor')) {
+        const supervisor = startSupervisor(db, {
+          workspaceId, agentId,
+          idleMs: numberFlag(rest, '--idle-ms'),
+          maxIdleChecks: numberFlag(rest, '--max-idle-checks'),
+          maxAttempts: numberFlag(rest, '--max-attempts'),
+          pollMs: numberFlag(rest, '--poll-ms'),
+        })
+        if (asJson) console.log(JSON.stringify(supervisor, null, 2))
+        else console.log(`supervising ${agentId}: pid ${supervisor.pid} (${supervisor.supervisorId})`)
+        return 0
+      }
+      if (rest.includes('--stop-supervisor')) {
+        stopSupervisor(db, agentId)
+        console.log(`supervisor stop requested for ${agentId}`)
+        return 0
+      }
       if (rest.includes('--status')) return printRunStatus(db, workspaceId, agentId, asJson)
       if (rest.includes('--stop')) {
         const run = stopWorkerRun(db, { agentId, workspaceId })
@@ -571,4 +599,23 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     default:
       throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
+}
+
+/** Internal entry point used only by the detached supervisor child. */
+export async function runSwarmSupervisorChild(
+  db: DatabaseSync, args: string[], defaultWorkspace: () => string,
+): Promise<number> {
+  const [step, ...rest] = args
+  const agentId = need(positionals(rest, VALUED)[0], 'internal supervisor needs an agent id')
+  if (step !== 'run' || !rest.includes('--supervisor-child')) throw new AccessDenied('invalid internal supervisor invocation')
+  const supervisorId = process.env.PLUGBRAIN_SUPERVISOR_ID
+  if (!supervisorId) throw new AccessDenied('internal supervisor identity is missing')
+  await runSupervisorLoop(db, {
+    workspaceId: flag(rest, '--workspace') ?? defaultWorkspace(), agentId, supervisorId,
+    idleMs: numberFlag(rest, '--idle-ms'),
+    maxIdleChecks: numberFlag(rest, '--max-idle-checks'),
+    maxAttempts: numberFlag(rest, '--max-attempts'),
+    pollMs: numberFlag(rest, '--poll-ms'),
+  })
+  return 0
 }

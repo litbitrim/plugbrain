@@ -90,6 +90,8 @@ CREATE TABLE IF NOT EXISTS worker_runs (
   if (!columns.some(column => column.name === 'process_started_at')) {
     db.exec('ALTER TABLE worker_runs ADD COLUMN process_started_at TEXT')
   }
+  if (!columns.some(column => column.name === 'task_id')) db.exec('ALTER TABLE worker_runs ADD COLUMN task_id TEXT')
+  if (!columns.some(column => column.name === 'attempt_token')) db.exec('ALTER TABLE worker_runs ADD COLUMN attempt_token TEXT')
 }
 
 // ---------------------------------------------------------------------------
@@ -320,6 +322,7 @@ export interface PromptInput {
   agentId: string
   workspaceRoot: string
   docs: ProtocolDocs
+  task?: { id: string; title: string; body: string }
 }
 
 /** Fill the template. The brief is named by the task, so the prompt cannot point at one. */
@@ -332,6 +335,10 @@ export function renderRunnerPrompt(input: PromptInput): string {
     workspaceRoot: input.workspaceRoot,
     plugbrain: brainCommand(input.workspaceRoot),
     protocolDocs: joinClause(named),
+    claimFlag: input.task === undefined ? '--claim' : '',
+    taskContext: input.task === undefined ? '' :
+      `\nAssigned queue task (already atomically claimed): ${input.task.id}\nTitle: ${input.task.title}\nBrief/body:\n${input.task.body}\n` +
+      `Do not claim a second task. Finish this task, deliver it, and end the turn once.`,
   }
   return RUNNER_PROMPT_TEMPLATE.replace(/\{\{(\w+)\}\}/g, (whole, key: string) => values[key] ?? whole)
 }
@@ -655,6 +662,10 @@ export interface StartRunInput {
   cwd?: string
   home?: string
   now?: Date
+  /** A task preclaimed by the persistent supervisor. */
+  task?: { id: string; title: string; body: string }
+  /** Fences Brain commands made by a stale retry attempt. */
+  attemptToken?: string
 }
 
 /**
@@ -702,7 +713,11 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
   const lastDocPath = join(workersDir, `${input.agentId}-${stamp}-last.md`)
   const promptPath = join(workersDir, `${input.agentId}-${stamp}-prompt.md`)
 
-  const prompt = renderRunnerPrompt({ agentId: input.agentId, workspaceRoot, docs: discoverProtocolDocs(workspaceRoot) })
+  if (input.task !== undefined) {
+    assertNotCredential('task title', input.task.title)
+    assertNotCredential('task body', input.task.body)
+  }
+  const prompt = renderRunnerPrompt({ agentId: input.agentId, workspaceRoot, docs: discoverProtocolDocs(workspaceRoot), task: input.task })
   if (prompt.length > MAX_PROMPT_CHARS) {
     throw new AccessDenied(`the rendered prompt is ${prompt.length} characters; the limit is ${MAX_PROMPT_CHARS}`)
   }
@@ -719,17 +734,19 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
   const runId = `${input.agentId}-${stamp}`
   db.prepare(`
     INSERT INTO worker_runs (agent_id, run_id, pid, started_at, cwd, log_path, last_doc_path, prompt_path,
-                             command_text, via_comspec, log_mtime_ms, log_size, ended_at, ended_reason, stopped_at, blocked_at)
-    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL)
+                             command_text, via_comspec, log_mtime_ms, log_size, ended_at, ended_reason, stopped_at, blocked_at,
+                             task_id, attempt_token)
+    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)
     ON CONFLICT(agent_id) DO UPDATE SET
       run_id = excluded.run_id, pid = NULL, started_at = excluded.started_at, cwd = excluded.cwd,
       log_path = excluded.log_path, last_doc_path = excluded.last_doc_path, prompt_path = excluded.prompt_path,
       command_text = excluded.command_text, via_comspec = excluded.via_comspec,
       log_mtime_ms = NULL, log_size = NULL, last_event_at = NULL, last_event_kind = NULL, last_event_text = NULL,
-      ended_at = NULL, ended_reason = NULL, stopped_at = NULL, blocked_at = NULL
+      ended_at = NULL, ended_reason = NULL, stopped_at = NULL, blocked_at = NULL,
+      task_id = excluded.task_id, attempt_token = excluded.attempt_token
   `).run(
     input.agentId, runId, nowIso, verifiedCwd, logPath, lastDocPath, promptPath, plan.commandText,
-    plan.viaComspec ? 1 : 0,
+    plan.viaComspec ? 1 : 0, input.task?.id ?? null, input.attemptToken ?? null,
   )
 
   let pid: number | null = null
@@ -743,7 +760,11 @@ export function startWorkerRun(db: DatabaseSync, input: StartRunInput): WorkerRu
         detached: true,
         windowsHide: true,
         stdio: ['ignore', logFd, errFd],
-        env: { ...process.env, PLUGBRAIN_HOME: home },
+        env: { ...process.env, PLUGBRAIN_HOME: home,
+          ...(input.attemptToken === undefined ? {} : {
+            PLUGBRAIN_ATTEMPT_TOKEN: input.attemptToken, PLUGBRAIN_SUPERVISED_AGENT: input.agentId,
+          }),
+        },
         ...(plan.viaComspec ? { windowsVerbatimArguments: true } : {}),
       })
       pid = child.pid ?? null

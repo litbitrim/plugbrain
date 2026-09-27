@@ -14,11 +14,11 @@
  * baked into the public repository.
  *
  * Placeholders: `{{agentId}}`, `{{workspaceRoot}}`, `{{plugbrain}}`,
- * `{{protocolDocs}}`.
+ * `{{protocolDocs}}`, `{{claimFlag}}`, `{{taskContext}}`.
  */
 export const RUNNER_PROMPT_TEMPLATE = `You are worker {{agentId}} in the PlugBrain fleet. Working directory: {{workspaceRoot}}.
 
-1. Check in: {{plugbrain}} swarm turn {{agentId}} start --claim
+1. Check in: {{plugbrain}} swarm turn {{agentId}} start {{claimFlag}}
    The output names your task and the path to its brief. Read every NACHRICHT printed with it and
    acknowledge it: {{plugbrain}} swarm ack {{agentId}} <messageId>.
 2. Read in full: {{protocolDocs}}. Then work through your brief completely, milestone by milestone.
@@ -30,4 +30,5 @@ export const RUNNER_PROMPT_TEMPLATE = `You are worker {{agentId}} in the PlugBra
    your brief explicitly allows it. No push. Never write outside your own worktree. Do not commit
    without the message "Commit freigegeben".
 5. Your last answer: the verdict in one sentence, then the result files, test counts and exit codes.
+{{taskContext}}
 `

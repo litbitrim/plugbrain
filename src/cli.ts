@@ -70,7 +70,7 @@ import { machineReport, type MachineReport } from './machine/index.ts'
 import { gitCensus, type CensusReport } from './machine/git-census.ts'
 import { diskRecommendations, diskWipeCheck } from './disk/analysis.ts'
 import { currentDiskScan, diskTree, largestDiskFiles, scanDisk } from './disk/scan.ts'
-import { runSwarmCli } from './swarm-cli.ts'
+import { runSwarmCli, runSwarmSupervisorChild } from './swarm-cli.ts'
 import { runSwarmWatchCli } from './swarm-watch.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
 import { planTask, planView, type PlanTask } from './plan.ts'
@@ -1308,6 +1308,11 @@ switch (command) {
   case 'swarm':
     if (args[0] === 'watch') {
       void runSwarmWatchCli(args.slice(1)).then(code => { process.exitCode = code }).catch(error => {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exitCode = 1
+      })
+    } else if (args[0] === 'run' && args.includes('--supervisor-child')) {
+      void runSwarmSupervisorChild(db, args, singlePlanetId).then(code => { process.exitCode = code }).catch(error => {
         console.error(error instanceof Error ? error.message : String(error))
         process.exitCode = 1
       })
