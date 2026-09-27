@@ -702,7 +702,9 @@ plugbrain swarm board
 plugbrain swarm watch --for agent-1 --dirs ./review --timeout 20m --json
 ```
 
-`swarm watch` streams coordination events from the local Brain live-event endpoint, batches events for five seconds, and checks watched Markdown directories and resource admission every 30 seconds. It exits with `0` on an event, `3` on timeout, and `1` if the live-event stream fails. Set `PLUGBRAIN_URL` when the local Brain is served on a non-default URL.
+`swarm watch` streams coordination events from the local Brain live-event endpoint, batches events for five seconds, and checks watched Markdown directories and resource admission every 30 seconds. It reports turn changes, new messages and queued tasks for the watched agent, task deliveries, the `still?` watchdog, and the file/admission changes it polls itself. It exits with `0` on an event, `3` on timeout, and `1` after the live-event stream keeps failing. Set `PLUGBRAIN_URL` when the local Brain is served on a non-default URL.
+
+The stream carries a monotonic event id and reconnects with bounded backoff on a dropped connection. `swarm watch` remembers the last id it saw in `<store home>/swarm-watch-cursor` and sends it as `Last-Event-ID` on the next (re)connection; the server replays the events still in its bounded buffer after that id. A restart therefore resumes where the previous run stopped — events older than the replay buffer are the only gap.
 
 **Example: let the Brain start the agent**
 ```bash

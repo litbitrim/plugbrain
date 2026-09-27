@@ -212,9 +212,18 @@ export function deliverTask(
   db.prepare(
     `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, delivered_summary = ?, updated_at = ? WHERE id = ?`,
   ).run(deliveredPath, summary, now, taskId)
+  const delivered = load(db, taskId)
   // The delivery may be exactly the event another task was waiting for.
   syncDependencies(db, task.workspace_id)
-  return load(db, taskId)
+  coordEvents.emitLive('task.delivered', {
+    taskId: delivered.id,
+    title: delivered.title,
+    agentId: delivered.claimed_by,
+    addressedTo: delivered.addressed_to,
+    evidence: delivered.delivered_path,
+    deliveredAt: delivered.updated_at,
+  })
+  return delivered
 }
 
 /** How many tasks are waiting. The one number that predicts trouble. */

@@ -532,7 +532,7 @@ test('M4: MCP server lists all 28 tools and executes tool calls over JSON-RPC', 
 test('M4: SSE stream delivers live events for register, claim, and message', async () => {
   const f = await createCoordFixture()
   try {
-    const sseEvents: Array<{ type: string; data: any }> = []
+    const sseEvents: Array<{ type: string; data: any; id?: string }> = []
 
     // Connect to /api/live/events
     const controller = new AbortController()
@@ -556,9 +556,10 @@ test('M4: SSE stream delivers live events for register, claim, and message', asy
           for (const block of blocks) {
             const eventMatch = block.match(/event:\s*([^\r\n]+)/)
             const dataMatch = block.match(/data:\s*([^\r\n]+)/)
+            const idMatch = block.match(/^id:\s*([^\r\n]+)/m)
             if (eventMatch && dataMatch) {
               try {
-                sseEvents.push({ type: eventMatch[1].trim(), data: JSON.parse(dataMatch[1].trim()) })
+                sseEvents.push({ type: eventMatch[1].trim(), data: JSON.parse(dataMatch[1].trim()), id: idMatch?.[1]?.trim() })
               } catch {}
             }
           }
@@ -600,6 +601,40 @@ test('M4: SSE stream delivers live events for register, claim, and message', asy
     assert.ok(eventTypes.includes('agent.registered'), 'SSE should receive agent.registered')
     assert.ok(eventTypes.includes('claim.acquired'), 'SSE should receive claim.acquired')
     assert.ok(eventTypes.includes('message.sent'), 'SSE should receive message.sent')
+    assert.ok(sseEvents.every((e) => e.id !== undefined && /^\d+$/.test(e.id)), 'every frame carries a numeric id')
+
+    // A reconnect with Last-Event-ID replays what the buffer still holds. No new
+    // activity happens on this second connection, so anything it receives is replay.
+    const replayController = new AbortController()
+    const replayRes = await fetch(`${f.baseUrl}/api/live/events`, {
+      headers: { 'Last-Event-ID': '0' },
+      signal: replayController.signal,
+    })
+    assert.equal(replayRes.status, 200)
+    const replayReader = replayRes.body?.getReader()
+    const replayDecoder = new TextDecoder()
+    const replayedIds: string[] = []
+    const replayedTypes: string[] = []
+    let replayText = ''
+    const replayDeadline = Date.now() + 4000
+    while (Date.now() < replayDeadline && !replayedTypes.includes('message.sent')) {
+      const { done, value } = await replayReader!.read()
+      if (done) break
+      replayText += replayDecoder.decode(value, { stream: true })
+      const frames = replayText.split('\n\n')
+      replayText = frames.pop() ?? ''
+      for (const frame of frames) {
+        const typeMatch = frame.match(/event:\s*([^\r\n]+)/)
+        const idMatch = frame.match(/^id:\s*([^\r\n]+)/m)
+        if (typeMatch && idMatch) {
+          replayedTypes.push(typeMatch[1].trim())
+          replayedIds.push(idMatch[1].trim())
+        }
+      }
+    }
+    replayController.abort()
+    assert.ok(replayedTypes.includes('message.sent'), 'Last-Event-ID 0 replays the buffered events')
+    assert.ok(replayedIds.every((id) => Number(id) > 0), 'replayed frames keep their original ids')
   } finally {
     await f.cleanup()
   }

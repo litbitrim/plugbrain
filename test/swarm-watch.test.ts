@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { openStore } from '../src/store/schema.ts'
-import { coordEvents } from '../src/coord/events.ts'
+import { CoordEventBus, coordEvents } from '../src/coord/events.ts'
 import { registerSwarmAgent } from '../src/coord/registry.ts'
 import { registerWorkerProfile, recordTurn } from '../src/coord/swarm-ops.ts'
-import { formatWatchResult, runSwarmWatch, type WatchEvent } from '../src/swarm-watch.ts'
+import { formatWatchResult, runSwarmWatch, sseSubscribe, type WatchEvent } from '../src/swarm-watch.ts'
 
 const event = (type: string, data: unknown): WatchEvent => ({ type, data, timestamp: '2026-09-26T20:00:00.000Z' })
 
@@ -90,7 +92,7 @@ test('swarm watch receives turn transitions emitted from a test Brain store', as
   try {
     const watching = runSwarmWatch({
       forAgent: 'watch-fixture', timeoutMs: 200, batchMs: 2, pollMs: 100,
-      subscribe: listener => coordEvents.onLive(listener),
+      subscribe: listener => coordEvents.onLive(payload => listener({ id: String(payload.id), type: payload.type, data: payload.data, timestamp: payload.timestamp })),
       snapshotFiles: async () => new Map(),
       sampleAdmission: () => ({ test: true, build: true, worktree: true }),
       emit: () => undefined,
@@ -116,4 +118,82 @@ test('swarm watch timeout is exit 3 and JSON output has a stable machine-readabl
   assert.equal(result.code, 3)
   assert.equal(result.timedOut, true)
   assert.deepEqual(JSON.parse(formatWatchResult(result.events, result.timedOut, true)), { events: [], timedOut: true })
+})
+
+test('swarm watch wakes once for a message, not again when it is delivered', async () => {
+  const emitted: WatchEvent[] = []
+  const result = await runSwarmWatch({
+    forAgent: 'a1', timeoutMs: 200, batchMs: 2, pollMs: 100,
+    subscribe: subscribeAfter(
+      event('message.sent', { id: 'm-1', toAgent: 'a1', subject: 'review' }),
+      event('message.delivered', { messageId: 'm-1', agentId: 'a1' }),
+    ),
+    emit: events => { emitted.push(...events) },
+    snapshotFiles: async () => new Map(),
+    sampleAdmission: () => ({ test: true, build: true, worktree: true }),
+  })
+  assert.equal(result.code, 0)
+  assert.deepEqual(result.events.map(row => row.type), ['message.sent'])
+  assert.deepEqual(emitted.map(row => row.type), ['message.sent'])
+})
+
+test('swarm watch wakes when the watched agent delivers a task', async () => {
+  const result = await runSwarmWatch({
+    forAgent: 'a1', timeoutMs: 200, batchMs: 2, pollMs: 100,
+    subscribe: subscribeAfter(event('task.delivered', { taskId: 't-1', title: 'build reaper', agentId: 'a1', evidence: 'review/R-BR3.md' })),
+    emit: () => undefined,
+    snapshotFiles: async () => new Map(),
+    sampleAdmission: () => ({ test: true, build: true, worktree: true }),
+  })
+  assert.equal(result.code, 0)
+  assert.equal(result.events[0]?.type, 'task.delivered')
+  assert.match(formatWatchResult(result.events, false), /Aufgabe geliefert t-1/)
+})
+
+test('the event bus assigns monotonic ids and replays events after a cursor', () => {
+  const bus = new CoordEventBus()
+  const first = bus.emitLive('one', { n: 1 })
+  const second = bus.emitLive('two', { n: 2 })
+  assert.equal(second.id, first.id + 1)
+  assert.deepEqual(bus.replaySince(String(first.id)).map(row => row.type), ['two'])
+  assert.deepEqual(bus.replaySince(undefined).map(row => row.type), ['one', 'two'])
+  assert.deepEqual(bus.replaySince(String(second.id)), [])
+  assert.equal(bus.latestEventId(), second.id)
+})
+
+test('sseSubscribe reconnects with bounded backoff and resumes from Last-Event-ID', async () => {
+  const cursors: string[] = []
+  const lastEventIds: Array<string | undefined> = []
+  let connections = 0
+  const server = createServer((req, res) => {
+    connections += 1
+    lastEventIds.push(req.headers['last-event-id'] as string | undefined)
+    res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+    if (connections === 1) {
+      res.write('id: 7\nevent: agent.turn\ndata: {"agentId":"a1","previousState":"working","state":"blocked"}\n\n')
+      res.end()
+    } else {
+      res.write('id: 8\nevent: agent.turn\ndata: {"agentId":"a1","previousState":"blocked","state":"needs-task"}\n\n')
+    }
+  })
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', () => resolve()))
+  const port = (server.address() as AddressInfo).port
+  try {
+    const result = await runSwarmWatch({
+      forAgent: 'a1', timeoutMs: 4000, batchMs: 60, pollMs: 60_000,
+      subscribe: (listener, onError) => sseSubscribe(`http://127.0.0.1:${port}/live`, listener, onError, {
+        baseBackoffMs: 20, maxBackoffMs: 50, maxRetries: 5, onCursor: id => cursors.push(id),
+      }),
+      snapshotFiles: async () => new Map(),
+      sampleAdmission: () => ({ test: true, build: true, worktree: true }),
+      emit: () => undefined,
+    })
+    assert.equal(result.code, 0, 'the second event after a reconnect still wakes the watcher')
+    assert.equal(connections, 2, 'a normally closed stream is retried')
+    assert.equal(lastEventIds[1], '7', 'the reconnect resumes from the last seen id')
+    assert.deepEqual(cursors, ['7', '8'])
+    assert.deepEqual(result.events.map(row => row.id), ['7', '8'])
+  } finally {
+    server.close()
+  }
 })
