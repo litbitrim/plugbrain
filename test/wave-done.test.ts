@@ -3,7 +3,7 @@ import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 import { coordEvents } from '../src/coord/events.ts'
 import {
-  ensureWaveDoneSchema, recordWaveDone, type WaveTaskEvidence,
+  ensureWaveDoneSchema, recordWaveDone, type WaveManifestEvidence, type WaveTaskEvidence,
 } from '../src/coord/wave-done.ts'
 
 const evidence = (overrides: Partial<WaveTaskEvidence> = {}): WaveTaskEvidence => ({
@@ -31,11 +31,18 @@ const database = (): DatabaseSync => {
   return db
 }
 
+const manifest = (waveId: string, taskIds: string[] = ['task-a']): WaveManifestEvidence => ({
+  waveId, taskIds, source: 'operator', authorityRef: `operator:manifest:${waveId}`, confidence: 'authoritative',
+})
+
+const record = (db: DatabaseSync, waveId: string, tasks: WaveTaskEvidence[]) =>
+  recordWaveDone(db, 'ws-test', waveId, manifest(waveId, tasks.map(task => task.taskId)), tasks)
+
 test('wave done is recorded and announced only when every task has delivery, independent review, and integration proof', () => {
   const db = database()
   try {
     const before = coordEvents.latestEventId()
-    const result = recordWaveDone(db, 'ws-test', 'wave-3', [evidence()])
+    const result = record(db, 'wave-3', [evidence()])
     assert.equal(result.status, 'DONE')
     assert.equal(result.blockers.length, 0)
     assert.equal(coordEvents.latestEventId(), before + 1)
@@ -47,7 +54,7 @@ test('an open review prevents a completion event', () => {
   const db = database()
   try {
     const before = coordEvents.latestEventId()
-    const result = recordWaveDone(db, 'ws-test', 'wave-open-review', [evidence({ reviewJudgment: null, reviewedCommit: null })])
+    const result = record(db, 'wave-open-review', [evidence({ reviewJudgment: null, reviewedCommit: null })])
     assert.equal(result.status, 'BLOCKED')
     assert.ok(result.blockers.some(blocker => blocker.includes('review')))
     assert.equal(coordEvents.latestEventId(), before)
@@ -57,7 +64,7 @@ test('an open review prevents a completion event', () => {
 test('a review from the task owner is not independent', () => {
   const db = database()
   try {
-    const result = recordWaveDone(db, 'ws-test', 'wave-self-review', [evidence({
+    const result = record(db, 'wave-self-review', [evidence({
       independentReview: {
         source: 'operator', reviewerId: 'worker-a', authorityRef: 'operator:review:self',
         confidence: 'authoritative', judgment: 'PASS', commit: 'abc123',
@@ -72,7 +79,7 @@ test('missing integration proof prevents a completion event', () => {
   const db = database()
   try {
     const before = coordEvents.latestEventId()
-    const result = recordWaveDone(db, 'ws-test', 'wave-no-merge', [evidence({ integration: null })])
+    const result = record(db, 'wave-no-merge', [evidence({ integration: null })])
     assert.equal(result.status, 'BLOCKED')
     assert.ok(result.blockers.some(blocker => blocker.includes('integration')))
     assert.equal(coordEvents.latestEventId(), before)
@@ -82,7 +89,7 @@ test('missing integration proof prevents a completion event', () => {
 test('an explicit authoritative owner decision can resolve the integration requirement', () => {
   const db = database()
   try {
-    const result = recordWaveDone(db, 'ws-test', 'wave-decision', [evidence({
+    const result = record(db, 'wave-decision', [evidence({
       integration: null,
       ownerDecision: { source: 'operator', authorityRef: 'operator:decision:42', confidence: 'authoritative', decision: 'defer integration' },
     })])
@@ -94,11 +101,24 @@ test('an explicit authoritative owner decision can resolve the integration requi
 test('a duplicate trigger returns the first report without emitting another event', () => {
   const db = database()
   try {
-    const first = recordWaveDone(db, 'ws-test', 'wave-idempotent', [evidence()])
+    const first = record(db, 'wave-idempotent', [evidence()])
     const afterFirst = coordEvents.latestEventId()
-    const second = recordWaveDone(db, 'ws-test', 'wave-idempotent', [evidence()])
+    const second = record(db, 'wave-idempotent', [evidence()])
     assert.equal(second.status, 'DONE')
     assert.equal(second.eventId, first.eventId)
     assert.equal(coordEvents.latestEventId(), afterFirst)
+  } finally { db.close() }
+})
+
+test('a missing or incomplete authoritative manifest blocks completion', () => {
+  const db = database()
+  try {
+    const missing = recordWaveDone(db, 'ws-test', 'wave-no-manifest', null, [evidence()])
+    assert.equal(missing.status, 'BLOCKED')
+    assert.ok(missing.blockers.some(blocker => blocker.includes('manifest')))
+
+    const omitted = recordWaveDone(db, 'ws-test', 'wave-omitted-task', manifest('wave-omitted-task', ['task-a', 'task-b']), [evidence()])
+    assert.equal(omitted.status, 'BLOCKED')
+    assert.ok(omitted.blockers.some(blocker => blocker.includes('task-b')))
   } finally { db.close() }
 })

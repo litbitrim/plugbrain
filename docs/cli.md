@@ -613,13 +613,14 @@ Without `--workspace` the single registered workspace is used.
   task, agent, delivery attempt, source `HEAD` when `--repo` or the selected workspace root
   identifies a Git checkout, normalized evidence path and SHA-256. Review tasks
   titled `R-…` (or passed with `--review`) require a verdict and reviewed commit hash.
-- `swarm wave-done <waveId> --task <taskId>... [--json]`: evaluate an explicit
-  wave task manifest against stored delivery receipts, an authoritative
-  independent `review.completed` trace for the delivered commit, and either an
-  `integration.accepted` trace or an explicit `wave.owner-decision` trace per
-  task. Missing evidence returns `BLOCKED` (exit 1) and emits no event. A
-  complete report is persisted and emits one `WAVE-DONE` event; repeating the
-  command returns the same report without emitting another event.
+- `swarm wave-done <waveId> [--json]`: evaluate the authoritative
+  operator `wave.manifest` trace (`payload.waveId` and `payload.taskIds`) against
+  stored delivery receipts, an authoritative independent `review.completed`
+  trace (`payload.verdict` and `payload.commit`) for the delivered commit, and
+  either an `integration.accepted` trace or an explicit `wave.owner-decision`
+  trace per task. Missing evidence returns `BLOCKED` (exit 1) and emits no
+  event. A complete report is persisted and emits one `WAVE-DONE` event;
+  repeating the command returns the same report without emitting another event.
 - `swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]`: take a write
   lease on paths. A path another agent holds is refused.
 - `swarm release <agent> [<path>...] [--task <id>]`: release leases (all of the agent's, or the given ones).

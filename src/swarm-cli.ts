@@ -19,7 +19,7 @@
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
- *   plugbrain swarm wave-done <waveId> --task <taskId>...        record a wave only when evidence is complete
+ *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
@@ -35,7 +35,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
 import { enqueueTask } from './queue.ts'
-import { ensureWaveDoneSchema, recordWaveDone, type WaveTaskEvidence } from './coord/wave-done.ts'
+import {
+  ensureWaveDoneSchema, recordWaveDone,
+  type WaveManifestEvidence, type WaveTaskEvidence,
+} from './coord/wave-done.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from './coord/chronicle.ts'
 import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.ts'
@@ -486,10 +489,26 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'wave-done': {
-      const usage = 'plugbrain swarm wave-done <waveId> --task <taskId>... [--json]'
+      const usage = 'plugbrain swarm wave-done <waveId> [--json]'
       const waveId = need(pos[0], usage)
-      const taskIds = [...new Set(flags(rest, '--task').map(taskId => taskId.trim()).filter(Boolean))]
-      if (taskIds.length === 0) throw new AccessDenied(`usage: ${usage}`)
+      const manifestRows = db.prepare(`SELECT source, authority_ref, confidence, payload
+        FROM trace_events WHERE workspace_id = ? AND type = 'wave.manifest'
+        ORDER BY occurred_at DESC, id DESC`).all(workspaceId) as
+        Array<{ source: string; authority_ref: string; confidence: string; payload: string }>
+      let manifest: WaveManifestEvidence | null = null
+      for (const row of manifestRows) {
+        const payload = JSON.parse(row.payload) as Record<string, unknown>
+        if (payload.waveId !== waveId) continue
+        manifest = {
+          source: row.source,
+          authorityRef: row.authority_ref,
+          confidence: row.confidence,
+          waveId,
+          taskIds: Array.isArray(payload.taskIds) ? payload.taskIds.filter((id): id is string => typeof id === 'string') : [],
+        }
+        break
+      }
+      const taskIds = manifest?.taskIds ?? []
       const evidence: WaveTaskEvidence[] = taskIds.map(taskId => {
         const task = db.prepare(`SELECT id, title, state, claimed_by FROM queue_tasks
           WHERE workspace_id = ? AND id = ?`).get(workspaceId, taskId) as
@@ -551,7 +570,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         }
       })
       ensureWaveDoneSchema(db)
-      const report = recordWaveDone(db, workspaceId, waveId, evidence)
+      const report = recordWaveDone(db, workspaceId, waveId, manifest, evidence)
       if (asJson) console.log(JSON.stringify(report, null, 2))
       else {
         console.log(`${report.status} ${report.waveId}${report.alreadyRecorded ? ' (bereits gemeldet)' : ''}`)

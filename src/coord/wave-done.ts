@@ -21,6 +21,11 @@ export interface WaveTaskEvidence {
   ownerDecision: (WaveEvidenceRef & { decision: string }) | null
 }
 
+export interface WaveManifestEvidence extends WaveEvidenceRef {
+  waveId: string
+  taskIds: string[]
+}
+
 export interface WaveDoneTask {
   taskId: string
   title: string
@@ -32,6 +37,7 @@ export interface WaveDoneReport {
   status: 'DONE' | 'BLOCKED'
   waveId: string
   eventId: string | null
+  manifestRef: string | null
   generatedAt: string
   tasks: WaveDoneTask[]
   blockers: string[]
@@ -49,10 +55,28 @@ export function ensureWaveDoneSchema(db: DatabaseSync): void {
   )`)
 }
 
-function evaluateWave(waveId: string, input: WaveTaskEvidence[]): Omit<WaveDoneReport, 'eventId' | 'generatedAt'> {
+function evaluateWave(
+  waveId: string,
+  manifest: WaveManifestEvidence | null,
+  input: WaveTaskEvidence[],
+): Omit<WaveDoneReport, 'eventId' | 'generatedAt'> {
   const blockers: string[] = []
   if (waveId.trim() === '') blockers.push('wave id is missing')
-  if (input.length === 0) blockers.push('wave has no authoritative task manifest')
+  const validManifest = manifest !== null && manifest.waveId === waveId
+    && manifest.source === 'operator' && manifest.confidence === 'authoritative'
+    && manifest.authorityRef.trim() !== '' && manifest.taskIds.length > 0
+    && manifest.taskIds.every(id => id.trim() !== '')
+    && new Set(manifest.taskIds).size === manifest.taskIds.length
+  if (!validManifest) blockers.push('authoritative wave manifest is missing or invalid')
+  const manifestIds = new Set(validManifest ? manifest!.taskIds : [])
+  const inputIds = new Set(input.map(task => task.taskId))
+  for (const taskId of manifestIds) {
+    if (!inputIds.has(taskId)) blockers.push(`${taskId}: task from the manifest has no task record`)
+  }
+  for (const taskId of inputIds) {
+    if (!manifestIds.has(taskId)) blockers.push(`${taskId}: task is not in the authoritative wave manifest`)
+  }
+  if (input.length === 0 && !validManifest) blockers.push('wave has no task evidence')
   const seen = new Set<string>()
   const tasks = input.map(task => {
     const taskBlockers: string[] = []
@@ -97,7 +121,13 @@ function evaluateWave(waveId: string, input: WaveTaskEvidence[]): Omit<WaveDoneR
       evidence: refs,
     } satisfies WaveDoneTask
   })
-  return { status: blockers.length === 0 ? 'DONE' : 'BLOCKED', waveId, tasks, blockers }
+  return {
+    status: blockers.length === 0 ? 'DONE' : 'BLOCKED',
+    waveId,
+    manifestRef: validManifest ? manifest!.authorityRef : null,
+    tasks,
+    blockers,
+  }
 }
 
 /** Persist the first complete report and emit exactly one live WAVE-DONE event. */
@@ -105,6 +135,7 @@ export function recordWaveDone(
   db: DatabaseSync,
   workspaceId: string,
   waveId: string,
+  manifest: WaveManifestEvidence | null,
   evidence: WaveTaskEvidence[],
 ): WaveDoneReport {
   ensureWaveDoneSchema(db)
@@ -112,7 +143,7 @@ export function recordWaveDone(
     .get(workspaceId, waveId) as { report_json: string } | undefined
   if (existing) return { ...(JSON.parse(existing.report_json) as WaveDoneReport), alreadyRecorded: true }
 
-  const evaluated = evaluateWave(waveId, evidence)
+  const evaluated = evaluateWave(waveId, manifest, evidence)
   const generatedAt = new Date().toISOString()
   if (evaluated.status === 'BLOCKED') return { ...evaluated, eventId: null, generatedAt }
 
