@@ -166,6 +166,12 @@ test('invalid provider or key names fail closed; multiple env keys require QUOTA
   )
 })
 
+test('provider endpoints require HTTPS before a bearer credential can be sent', () => {
+  assert.throws(() => createLlmClient({
+    providers: [{ id: 'nvidia', baseUrl: 'http://provider.example/v1', keyEnvNames: ['NVIDIA_API_KEY_01'] }],
+  }), /invalid base URL/)
+})
+
 test('usage stays explicit when pricing or token counts are unavailable', async () => {
   const usage: unknown[] = []
   const client = createLlmClient({

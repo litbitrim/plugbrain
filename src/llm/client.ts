@@ -124,7 +124,7 @@ export function createLlmClient(options: LlmClientOptions) {
       || provider.keyEnvNames.some(name => !isProviderKeyName(provider.id, name))) {
       throw new Error(`LLM provider ${String(provider.id)} has invalid key name configuration`)
     }
-    if (!isHttpUrl(provider.baseUrl)) throw new Error(`LLM provider ${provider.id} has an invalid base URL`)
+    if (!isHttpsUrl(provider.baseUrl)) throw new Error(`LLM provider ${provider.id} has an invalid base URL`)
     if (provider.pricing && ![provider.pricing.inputUsdPerMillion, provider.pricing.outputUsdPerMillion]
       .every(rate => Number.isFinite(rate) && rate >= 0)) {
       throw new Error(`LLM provider ${provider.id} has invalid pricing configuration`)
@@ -212,10 +212,10 @@ function isProviderKeyName(provider: LlmProviderId, name: string): boolean {
   return typeof name === 'string' && Boolean(prefix) && new RegExp(`^${prefix}\\d{2}$`).test(name)
 }
 
-function isHttpUrl(value: string): boolean {
+function isHttpsUrl(value: string): boolean {
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' || url.protocol === 'http:'
+    return url.protocol === 'https:'
   } catch {
     return false
   }
