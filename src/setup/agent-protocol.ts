@@ -8,6 +8,13 @@ import { resolveClientTargets, type ClientDefinition, type SetupEntry } from './
 export const START_MARKER = '<!-- plugbrain:agent-protocol:start -->'
 export const END_MARKER = '<!-- plugbrain:agent-protocol:end -->'
 
+export class InvalidAgentMarkersError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InvalidAgentMarkersError'
+  }
+}
+
 // Kept in sync with the fenced block in docs/agent-protocol.md. The installed
 // CLI can therefore initialize a project without shipping the documentation.
 export const AGENT_PROTOCOL_BLOCK = `## Working with PlugBrain
@@ -63,10 +70,10 @@ function markerRange(text: string): { start: number; end: number } | null {
   const starts = text.split(START_MARKER).length - 1
   const ends = text.split(END_MARKER).length - 1
   if (starts === 0 && ends === 0) return null
-  if (starts !== 1 || ends !== 1) throw new Error('invalid or duplicate PlugBrain markers; repair the markers and retry')
+  if (starts !== 1 || ends !== 1) throw new InvalidAgentMarkersError('invalid or duplicate PlugBrain markers; repair the markers and retry')
   const start = text.indexOf(START_MARKER)
   const end = text.indexOf(END_MARKER)
-  if (end < start + START_MARKER.length) throw new Error('invalid PlugBrain marker order; repair the markers and retry')
+  if (end < start + START_MARKER.length) throw new InvalidAgentMarkersError('invalid PlugBrain marker order; repair the markers and retry')
   return { start, end: end + END_MARKER.length }
 }
 
@@ -121,11 +128,13 @@ export function manageAgentFile(file: string, options: { dryRun?: boolean; undo?
         const range = markerRange(before)
         if (!range) return { path: file, action: 'unchanged', before, after: before, backup }
         const reduced = `${before.slice(0, range.start)}${before.slice(range.end)}`
+        if (options.dryRun) return { path: file, action: 'dry-run', before, after: reduced.trim() === '' ? null : reduced, backup }
         if (reduced.trim() === '') { unlinkSync(file); return { path: file, action: 'undone', before, after: null, backup } }
         writeFileSync(file, reduced)
         return { path: file, action: 'undone', before, after: reduced, backup }
       }
       if (before !== null && markerRange(saved) === null && before === renderAgentFile(saved).text) {
+        if (options.dryRun) return { path: file, action: 'dry-run', before, after: saved, backup }
         writeFileSync(file, saved)
         return { path: file, action: 'undone', before, after: saved, backup }
       }
@@ -133,6 +142,7 @@ export function manageAgentFile(file: string, options: { dryRun?: boolean; undo?
       const range = markerRange(before)
       if (!range) return { path: file, action: 'unchanged', before, after: before, backup }
       const after = `${before.slice(0, range.start)}${before.slice(range.end)}`
+      if (options.dryRun) return { path: file, action: 'dry-run', before, after, backup }
       writeFileSync(file, after)
       return { path: file, action: 'undone', before, after, backup }
     }
@@ -244,7 +254,8 @@ export async function doctorAgents(options: {
       mcp = entry === null ? 'wrong' : installedVersion(entry, installRoot) ? 'ok' : 'wrong'
     }
     let fix = 'plugbrain init'
-    if (installed === 'ok' && mcp !== 'ok') fix = `plugbrain setup ${target.def.id}`
+    if (installed !== 'ok') fix = `Install ${target.def.label}, then run: plugbrain setup ${target.def.id}`
+    else if (mcp !== 'ok') fix = `plugbrain setup ${target.def.id}`
     else if (daemon !== 'ok') fix = 'plugbrain serve'
     else if (workspace !== 'ok') fix = 'plugbrain init'
     else if (agents !== 'ok') fix = 'plugbrain agents-file'
