@@ -19,6 +19,7 @@
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
+ *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
@@ -35,6 +36,10 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
 import { enqueueTask } from './queue.ts'
+import {
+  ensureWaveDoneSchema, recordWaveDone,
+  type WaveManifestEvidence, type WaveTaskEvidence,
+} from './coord/wave-done.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from './coord/chronicle.ts'
 import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.ts'
@@ -513,6 +518,96 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0
     }
+    case 'wave-done': {
+      const usage = 'plugbrain swarm wave-done <waveId> [--json]'
+      const waveId = need(pos[0], usage)
+      const manifestRows = db.prepare(`SELECT source, authority_ref, confidence, payload
+        FROM trace_events WHERE workspace_id = ? AND type = 'wave.manifest'
+        ORDER BY occurred_at DESC, id DESC`).all(workspaceId) as
+        Array<{ source: string; authority_ref: string; confidence: string; payload: string }>
+      let manifest: WaveManifestEvidence | null = null
+      for (const row of manifestRows) {
+        const payload = JSON.parse(row.payload) as Record<string, unknown>
+        if (payload.waveId !== waveId) continue
+        manifest = {
+          source: row.source,
+          authorityRef: row.authority_ref,
+          confidence: row.confidence,
+          waveId,
+          taskIds: Array.isArray(payload.taskIds) ? payload.taskIds.filter((id): id is string => typeof id === 'string') : [],
+        }
+        break
+      }
+      const taskIds = manifest?.taskIds ?? []
+      const evidence: WaveTaskEvidence[] = taskIds.map(taskId => {
+        const task = db.prepare(`SELECT id, title, state, claimed_by FROM queue_tasks
+          WHERE workspace_id = ? AND id = ?`).get(workspaceId, taskId) as
+          { id: string; title: string; state: string; claimed_by: string | null } | undefined
+        const delivery = db.prepare(`SELECT review_judgment, source_revision, reviewed_commit
+          FROM queue_deliveries WHERE task_id = ?`).get(taskId) as
+          { review_judgment: string | null; source_revision: string | null; reviewed_commit: string | null } | undefined
+        const reviews = db.prepare(`SELECT source, agent_id, authority_ref, confidence, payload
+          FROM trace_events WHERE workspace_id = ? AND task_id = ? AND type = 'review.completed'
+          ORDER BY occurred_at DESC, id DESC`).all(workspaceId, taskId) as
+          Array<{ source: string; agent_id: string | null; authority_ref: string; confidence: string; payload: string }>
+        const integration = db.prepare(`SELECT source, authority_ref, confidence, payload
+          FROM trace_events WHERE workspace_id = ? AND task_id = ? AND type = 'integration.accepted'
+          ORDER BY occurred_at DESC, id DESC LIMIT 1`).get(workspaceId, taskId) as
+          { source: string; authority_ref: string; confidence: string; payload: string } | undefined
+        const ownerDecision = db.prepare(`SELECT source, authority_ref, confidence, payload
+          FROM trace_events WHERE workspace_id = ? AND task_id = ? AND type = 'wave.owner-decision'
+          ORDER BY occurred_at DESC, id DESC LIMIT 1`).get(workspaceId, taskId) as
+          { source: string; authority_ref: string; confidence: string; payload: string } | undefined
+        const integratedPayload = integration ? JSON.parse(integration.payload) as Record<string, unknown> : null
+        const decisionPayload = ownerDecision ? JSON.parse(ownerDecision.payload) as Record<string, unknown> : null
+        const independentReview = reviews.map(review => ({
+          source: review.source,
+          reviewerId: review.agent_id ?? '',
+          authorityRef: review.authority_ref,
+          confidence: review.confidence,
+          payload: JSON.parse(review.payload) as Record<string, unknown>,
+        })).find(review => review.reviewerId !== '' && review.reviewerId !== task?.claimed_by
+          && review.payload.verdict === 'PASS' && review.payload.commit === delivery?.source_revision
+          && review.confidence === 'authoritative' && review.authorityRef.trim() !== '')
+        return {
+          taskId,
+          title: task?.title ?? '(unknown task)',
+          state: task?.state ?? 'missing',
+          claimedBy: task?.claimed_by ?? null,
+          reviewJudgment: delivery?.review_judgment ?? null,
+          sourceRevision: delivery?.source_revision ?? null,
+          reviewedCommit: delivery?.reviewed_commit ?? null,
+          independentReview: independentReview ? {
+            source: independentReview.source,
+            reviewerId: independentReview.reviewerId,
+            authorityRef: independentReview.authorityRef,
+            confidence: independentReview.confidence,
+            judgment: String(independentReview.payload.verdict),
+            commit: String(independentReview.payload.commit),
+          } : null,
+          integration: integration ? {
+            source: integration.source,
+            authorityRef: integration.authority_ref,
+            confidence: integration.confidence,
+            commit: typeof integratedPayload?.commit === 'string' ? integratedPayload.commit : null,
+          } : null,
+          ownerDecision: ownerDecision ? {
+            source: ownerDecision.source,
+            authorityRef: ownerDecision.authority_ref,
+            confidence: ownerDecision.confidence,
+            decision: typeof decisionPayload?.decision === 'string' ? decisionPayload.decision : '',
+          } : null,
+        }
+      })
+      ensureWaveDoneSchema(db)
+      const report = recordWaveDone(db, workspaceId, waveId, manifest, evidence)
+      if (asJson) console.log(JSON.stringify(report, null, 2))
+      else {
+        console.log(`${report.status} ${report.waveId}${report.alreadyRecorded ? ' (bereits gemeldet)' : ''}`)
+        for (const blocker of report.blockers) console.log(`- ${blocker}`)
+      }
+      return report.status === 'DONE' ? 0 : 1
+    }
     case 'approve': {
       const usage = 'plugbrain swarm approve <agent> [--note <n>] [--by <agent>]'
       const by = flag(rest, '--by') ?? INTEGRATOR
@@ -617,7 +712,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
 }
 
