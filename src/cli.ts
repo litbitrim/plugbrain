@@ -334,6 +334,8 @@ function planCommand(args: string[]): void {
     console.log(`${result.state}: ${result.spec.id} ${result.spec.title}`)
     if (result.reason) console.log(`  lead: ${result.reason}`)
     console.log(`  category: ${result.spec.category ?? '(missing)'}`)
+    console.log(`  brief: ${result.spec.brief || '(missing)'}`)
+    console.log(`  acceptance: ${result.spec.acceptance.join('; ') || '(missing)'}`)
     console.log(`  reviewer: ${result.spec.reviewerRole ?? '(missing)'}`)
     console.log(`  dependencies: ${result.spec.dependsOn.join(', ') || '(none)'}`)
     console.log(`  evidence: ${result.spec.evidence.join(', ') || '(missing)'}`)
