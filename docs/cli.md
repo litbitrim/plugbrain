@@ -579,6 +579,9 @@ Without `--workspace` the single registered workspace is used.
 - `swarm claim <agentId> <path> --task <taskId>`: Acquire mutual exclusion lease on a path.
 - `swarm release <agentId> <leaseId>`: Release held lease.
 - `swarm board`: View active fleet status, unread messages, and worktrees.
+- `swarm supersede <task> [--by <task>] --note <reason>`: Permanently prevent a pending task from being offered again, optionally linking its replacement.
+- `swarm reassign <task> --to <agent>`: Restrict a pending task to a registered worker.
+- `swarm priority <task> <n>`: Set an integer priority; larger values are offered first.
 - `swarm reap [--repo <path>] [--target <branch>] [--apply]`: Preview or safely remove merged, clean linked worktrees; defaults to a read-only dry run.
 - `swarm reap --auto on|off`: Enable or disable automatic cleanup for this workspace.
 - `swarm send <fromAgent> <toAgent> --body <text>`: Send peer message.
@@ -609,6 +612,16 @@ Without `--workspace` the single registered workspace is used.
   makes it wait: it is neither offered nor claimable until the predecessor is
   delivered or its holder has ended a turn with `awaiting-commit` or
   `needs-task`; the addressee then gets one message that the task is free.
+- `swarm supersede <task> [--by <task>] --note <reason>`:
+  permanently remove a pending task from worker offers and record the actor,
+  optional replacement task, and reason. Superseded tasks and the latest queue
+  changes appear on `swarm board` and in its JSON projection.
+- `swarm reassign <task> --to <agent>`:
+  limit a pending task to a registered worker. The change is audited and shown
+  on the board.
+- `swarm priority <task> <n>`:
+  set a pending task's integer priority from -100000 to 100000. Higher values
+  are offered first; equal priorities remain first-in-first-out.
 - `swarm deliver <agent> <taskId> --path <evidence> [--repo <worktree>] [--review]`:
   hand in a claimed task. The named agent must hold it and the evidence file must
   exist, be non-empty and resolve inside the workspace. The receipt includes the

@@ -31,7 +31,8 @@ import { assertNotCredential } from './coord/resources.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
 import { coordEvents } from './coord/events.ts'
 
-export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled'
+export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled' | 'superseded'
+export type QueueOperation = 'supersede' | 'reassign' | 'priority'
 
 export interface QueueTask {
   id: string
@@ -47,6 +48,8 @@ export interface QueueTask {
   delivered_path: string | null
   delivered_summary: string | null
   decomposition_key?: string | null
+  priority: number
+  superseded_by: string | null
   created_at: string
   updated_at: string
 }
@@ -72,6 +75,8 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
   decomposition_key TEXT,
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL
+  ,priority      INTEGER NOT NULL DEFAULT 0
+  ,superseded_by TEXT
 );
 -- The claim query filters on exactly this, and it runs on every idle agent.
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
@@ -86,6 +91,18 @@ CREATE TABLE IF NOT EXISTS queue_deliveries (
   reviewed_commit TEXT,
   delivered_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS queue_task_events (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  task_id TEXT NOT NULL REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  operation TEXT NOT NULL,
+  by_agent TEXT NOT NULL REFERENCES agents(id),
+  old_value TEXT,
+  new_value TEXT,
+  note TEXT,
+  occurred_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_queue_task_events_workspace ON queue_task_events(workspace_id, occurred_at DESC);
 `
 
 // The candidates every offer reads are filtered by the dependency table, so it
@@ -99,6 +116,12 @@ export function ensureQueueSchema(db: DatabaseSync): void {
   }
   if (!columns.some(column => column.name === 'decomposition_key')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN decomposition_key TEXT')
+  }
+  if (!columns.some(column => column.name === 'priority')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN priority INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!columns.some(column => column.name === 'superseded_by')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN superseded_by TEXT')
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_decomposition_key ON queue_tasks(decomposition_key) WHERE decomposition_key IS NOT NULL')
   ensureDependencySchema(db)
@@ -180,7 +203,7 @@ export function claimNextTask(
         WHERE workspace_id = ? AND state = 'pending'
           AND (addressed_to IS NULL OR addressed_to = ?)
           AND ${UNBLOCKED_TASK_SQL}
-        ORDER BY created_at ASC, rowid ASC
+        ORDER BY priority DESC, created_at ASC, rowid ASC
         LIMIT 1`,
     ).get(workspaceId, agentId) as { id: string } | undefined
 
@@ -201,6 +224,199 @@ export function claimNextTask(
     db.exec('ROLLBACK')
     throw error
   }
+}
+
+export interface QueueEvent {
+  id: string
+  workspace_id: string
+  task_id: string
+  operation: QueueOperation
+  by_agent: string
+  old_value: string | null
+  new_value: string | null
+  note: string | null
+  occurred_at: string
+}
+
+function recordQueueOperation(
+  db: DatabaseSync,
+  input: { workspaceId: string; taskId: string; operation: QueueOperation; byAgent: string; oldValue: string | null; newValue: string | null; note?: string },
+): void {
+  db.prepare(`INSERT INTO queue_task_events
+    (id, workspace_id, task_id, operation, by_agent, old_value, new_value, note, occurred_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(`qevent-${randomUUID().slice(0, 12)}`, input.workspaceId, input.taskId, input.operation,
+      input.byAgent, input.oldValue, input.newValue, input.note ?? null, new Date().toISOString())
+}
+
+function mutableTask(db: DatabaseSync, workspaceId: string, taskId: string): QueueTask {
+  const task = load(db, taskId)
+  if (task.workspace_id !== workspaceId) throw new AccessDenied(`task ${taskId} belongs to another workspace`)
+  if (task.state !== 'pending' && task.state !== 'claimed') {
+    throw new AccessDenied(`task ${taskId} is ${task.state}, not pending or safely claimed`)
+  }
+  if (task.state === 'claimed') {
+    const hasLeaseTable = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'leases'").get() !== undefined
+    if (hasLeaseTable) {
+      const activeLease = db.prepare(`SELECT 1 FROM leases
+        WHERE workspace_id = ? AND task_id = ? AND released_at IS NULL AND expires_at > ? LIMIT 1`)
+        .get(workspaceId, taskId, new Date().toISOString())
+      if (activeLease !== undefined) throw new AccessDenied(`task ${taskId} has an active lease and cannot be changed`)
+    }
+    const agentColumns = new Set((db.prepare('PRAGMA table_info(agents)').all() as Array<{ name: string }>).map(column => column.name))
+    if (task.claimed_by && (agentColumns.has('turn_state') || agentColumns.has('worktrees'))) {
+      const columns = ['turn_state', 'worktrees'].filter(column => agentColumns.has(column)).join(', ')
+      const holder = db.prepare(`SELECT ${columns} FROM agents WHERE id = ?`).get(task.claimed_by) as
+        { turn_state?: string | null; worktrees?: string | null } | undefined
+      if (holder?.turn_state === 'working') throw new AccessDenied(`task ${taskId} is held by active worker ${task.claimed_by}`)
+      if (holder?.worktrees) {
+        let paths: unknown
+        try { paths = JSON.parse(holder.worktrees) } catch {
+          throw new AccessDenied(`cannot verify the worktrees for task ${taskId}; refusing to change its claim`)
+        }
+        if (!Array.isArray(paths) || paths.length > 0) {
+          throw new AccessDenied(`task ${taskId} is held by worker ${task.claimed_by} with a registered worktree`)
+        }
+      }
+    }
+  }
+  return task
+}
+
+function pendingTask(db: DatabaseSync, workspaceId: string, taskId: string): QueueTask {
+  const task = load(db, taskId)
+  if (task.workspace_id !== workspaceId) throw new AccessDenied(`task ${taskId} belongs to another workspace`)
+  if (task.state !== 'pending') throw new AccessDenied(`task ${taskId} is ${task.state}, not pending`)
+  return task
+}
+
+/** Permanently remove an obsolete unstarted task from every offer and record why. */
+export function supersedeTask(
+  db: DatabaseSync,
+  workspaceId: string,
+  taskId: string,
+  input: { byAgent: string; byTaskId?: string; note: string },
+): QueueTask {
+  ensureQueueSchema(db)
+  requireWorkspace(db, workspaceId)
+  requireAgent(db, input.byAgent)
+  const note = input.note.trim().slice(0, 2000)
+  if (note === '') throw new AccessDenied('superseding a task needs a note')
+  assertNotCredential('queue operation note', note)
+  if (input.byTaskId === taskId) throw new AccessDenied('a task cannot supersede itself')
+  if (input.byTaskId !== undefined) {
+    const replacement = load(db, input.byTaskId)
+    if (replacement.workspace_id !== workspaceId) throw new AccessDenied(`replacement task ${input.byTaskId} belongs to another workspace`)
+  }
+  const now = new Date().toISOString()
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const task = mutableTask(db, workspaceId, taskId)
+    const result = db.prepare(`UPDATE queue_tasks SET state = 'superseded', superseded_by = ?, claimed_by = NULL,
+      claimed_at = NULL, updated_at = ? WHERE workspace_id = ? AND id = ? AND state = ?`)
+      .run(input.byTaskId ?? null, now, workspaceId, taskId, task.state)
+    if (Number(result.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before superseding`)
+    recordQueueOperation(db, {
+      workspaceId, taskId, operation: 'supersede', byAgent: input.byAgent,
+      oldValue: `${task.state}:${task.claimed_by ?? ''}`, newValue: input.byTaskId ?? 'superseded', note,
+    })
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  const updated = load(db, taskId)
+  coordEvents.emitLive('task.updated', { taskId, operation: 'supersede', byAgent: input.byAgent, at: now })
+  return updated
+}
+
+/** Route an unstarted task to one registered worker and record the change. */
+export function reassignTask(
+  db: DatabaseSync,
+  workspaceId: string,
+  taskId: string,
+  input: { byAgent: string; addressedTo: string },
+): QueueTask {
+  ensureQueueSchema(db)
+  requireWorkspace(db, workspaceId)
+  requireAgent(db, input.byAgent)
+  requireAgent(db, input.addressedTo)
+  const now = new Date().toISOString()
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const task = mutableTask(db, workspaceId, taskId)
+    if (task.addressed_to === input.addressedTo && task.state === 'pending') {
+      throw new AccessDenied(`task ${taskId} is already addressed to ${input.addressedTo}`)
+    }
+    const result = db.prepare(`UPDATE queue_tasks SET addressed_to = ?, state = 'pending', claimed_by = NULL,
+      claimed_at = NULL, updated_at = ? WHERE workspace_id = ? AND id = ? AND state = ?`)
+      .run(input.addressedTo, now, workspaceId, taskId, task.state)
+    if (Number(result.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before reassignment`)
+    recordQueueOperation(db, {
+      workspaceId, taskId, operation: 'reassign', byAgent: input.byAgent,
+      oldValue: `${task.state}:${task.claimed_by ?? task.addressed_to ?? ''}`, newValue: `pending:${input.addressedTo}`,
+    })
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  const updated = load(db, taskId)
+  coordEvents.emitLive('task.updated', { taskId, operation: 'reassign', byAgent: input.byAgent, at: now })
+  return updated
+}
+
+/** Set the pending-task claim order. Larger values are offered first. */
+export function prioritizeTask(
+  db: DatabaseSync,
+  workspaceId: string,
+  taskId: string,
+  input: { byAgent: string; priority: number },
+): QueueTask {
+  ensureQueueSchema(db)
+  requireWorkspace(db, workspaceId)
+  requireAgent(db, input.byAgent)
+  if (!Number.isSafeInteger(input.priority)) throw new AccessDenied('priority must be an integer')
+  if (input.priority < -100_000 || input.priority > 100_000) throw new AccessDenied('priority must be between -100000 and 100000')
+  const now = new Date().toISOString()
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const task = pendingTask(db, workspaceId, taskId)
+    if (task.priority === input.priority) throw new AccessDenied(`task ${taskId} already has priority ${input.priority}`)
+    const result = db.prepare(`UPDATE queue_tasks SET priority = ?, updated_at = ?
+      WHERE workspace_id = ? AND id = ? AND state = ?`)
+      .run(input.priority, now, workspaceId, taskId, task.state)
+    if (Number(result.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before reprioritizing`)
+    recordQueueOperation(db, {
+      workspaceId, taskId, operation: 'priority', byAgent: input.byAgent,
+      oldValue: String(task.priority), newValue: String(input.priority),
+    })
+    db.exec('COMMIT')
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
+  const updated = load(db, taskId)
+  coordEvents.emitLive('task.updated', { taskId, operation: 'priority', byAgent: input.byAgent, at: now })
+  return updated
+}
+
+/** Recent auditable queue changes, newest first. */
+export function listQueueEvents(
+  db: DatabaseSync,
+  workspaceId: string,
+  options: { taskId?: string; limit?: number } = {},
+): QueueEvent[] {
+  ensureQueueSchema(db)
+  requireWorkspace(db, workspaceId)
+  const limit = Math.min(500, Math.max(1, Math.floor(options.limit ?? 100)))
+  if (options.taskId !== undefined) {
+    return rowsAs<QueueEvent>(db.prepare(`SELECT * FROM queue_task_events
+      WHERE workspace_id = ? AND task_id = ? ORDER BY occurred_at DESC LIMIT ?`)
+      .all(workspaceId, options.taskId, limit))
+  }
+  return rowsAs<QueueEvent>(db.prepare(`SELECT * FROM queue_task_events
+    WHERE workspace_id = ? ORDER BY occurred_at DESC LIMIT ?`).all(workspaceId, limit))
 }
 
 /**

@@ -1521,7 +1521,7 @@ switch (command) {
       '       plugbrain machine [--json]\n' +
       '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
       '       plugbrain disk <scan [path...]|tree [path]|recommend [--json]|wipe-check [--json]|largest [n]>\n' +
-      '       plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …\n' +
+      '       plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|supersede|reassign|priority|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …\n' +
       '       plugbrain swarm runner set|show <agent> …  ·  plugbrain swarm run <agent> [--status|--stop]   start and watch a CLI worker\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
       '       plugbrain backup [target_path]\n' +

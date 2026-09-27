@@ -18,6 +18,9 @@
  *   plugbrain swarm reap --auto on|off
  *   plugbrain swarm send <agent> --subject <s> --body <b> [--from <agent>]
  *   plugbrain swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>] [--after <taskId>]
+ *   plugbrain swarm supersede <task> [--by <task>] --note <reason>
+ *   plugbrain swarm reassign <task> --to <agent>
+ *   plugbrain swarm priority <task> <n>
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
  *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
@@ -35,7 +38,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
-import { enqueueTask } from './queue.ts'
+import { enqueueTask, prioritizeTask, reassignTask, supersedeTask } from './queue.ts'
 import {
   ensureWaveDoneSchema, recordWaveDone,
   type WaveManifestEvidence, type WaveTaskEvidence,
@@ -138,6 +141,16 @@ function printBoard(board: SwarmBoard, nextActions: SwarmNextAction[]): void {
   const drives = board.host.drives.map(drive => `${drive.root} ${(drive.freeBytes / GB).toFixed(1)} GB frei`).join(', ')
   const ram = `${Math.round((board.host.memory.freeBytes / board.host.memory.totalBytes) * 100)} % RAM frei`
   console.log(`Fleet ${board.workspaceId} · ${board.agents.filter(row => !row.retired).length} Worker · ${drives} · ${ram}`)
+  const pending = board.queue.tasks.filter(task => task.state === 'pending').length
+  const claimed = board.queue.tasks.filter(task => task.state === 'claimed').length
+  const superseded = board.queue.tasks.filter(task => task.state === 'superseded').length
+  console.log(`Queue: ${pending} pending · ${claimed} claimed · ${superseded} superseded`)
+  for (const task of board.queue.tasks.filter(task => task.state === 'claimed')) {
+    console.log(`  Claimed ${task.id} by ${task.claimedBy ?? 'unknown'}: ${task.title}`)
+  }
+  for (const change of board.queue.recentChanges.slice(0, 10)) {
+    console.log(`  Queue ${change.operation} ${change.taskId} by ${change.byAgent}${change.note ? `: ${change.note}` : ''}`)
+  }
   for (const admission of board.admission) {
     if (!admission.allowed) console.log(`  KEIN PLATZ für ${admission.kind}: ${admission.reasons.join('; ')}`)
   }
@@ -502,6 +515,37 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         (planRef === null ? '' : `  [${planRef}]`))
       return 0
     }
+    case 'supersede': {
+      const usage = 'plugbrain swarm supersede <task> [--by <task>] --note <reason>'
+      const task = supersedeTask(db, workspaceId, need(pos[0], usage), {
+        byAgent: (process.env.PLUGBRAIN_AGENT ?? INTEGRATOR).trim(),
+        byTaskId: flag(rest, '--by') ?? undefined,
+        note: need(flag(rest, '--note'), usage),
+      })
+      if (asJson) console.log(JSON.stringify(task, null, 2))
+      else console.log(`superseded ${task.id}${task.superseded_by ? ` by ${task.superseded_by}` : ''}`)
+      return 0
+    }
+    case 'reassign': {
+      const usage = 'plugbrain swarm reassign <task> --to <agent>'
+      const task = reassignTask(db, workspaceId, need(pos[0], usage), {
+        byAgent: (process.env.PLUGBRAIN_AGENT ?? INTEGRATOR).trim(),
+        addressedTo: need(flag(rest, '--to'), usage),
+      })
+      if (asJson) console.log(JSON.stringify(task, null, 2))
+      else console.log(`reassigned ${task.id} → ${task.addressed_to}`)
+      return 0
+    }
+    case 'priority': {
+      const usage = 'plugbrain swarm priority <task> <n>'
+      const priority = Number(need(pos[1], usage))
+      const task = prioritizeTask(db, workspaceId, need(pos[0], usage), {
+        byAgent: (process.env.PLUGBRAIN_AGENT ?? INTEGRATOR).trim(), priority,
+      })
+      if (asJson) console.log(JSON.stringify(task, null, 2))
+      else console.log(`priority ${task.id}: ${task.priority}`)
+      return 0
+    }
     case 'deliver': {
       // The worker that holds a task hands in its candidate: the queue row
       // moves to `delivered` and points at the evidence. Acceptance is not
@@ -712,7 +756,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
 }
 

@@ -26,6 +26,7 @@ import { PassThrough } from 'node:stream'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { registerAgent } from '../src/access.ts'
+import { enqueueTask } from '../src/queue.ts'
 import * as coord from '../src/coord/index.ts'
 import { McpServer, MCP_TOOLS } from '../src/mcp/server.ts'
 import { createAwarenessPort } from '../src/projections/awareness.ts'
@@ -385,7 +386,7 @@ test('M4: awareness pack reports dependency overlap when another task claims an 
   }
 })
 
-test('M4: MCP server lists all 28 tools and executes tool calls over JSON-RPC', async () => {
+test('M4: MCP server lists coordination tools and executes tool calls over JSON-RPC', async () => {
   const f = await createCoordFixture()
   try {
     const inStream = new PassThrough()
@@ -432,19 +433,41 @@ test('M4: MCP server lists all 28 tools and executes tool calls over JSON-RPC', 
     //    the hygiene/machine lanes (git guard and hardware awareness).
     const listRes = await sendRpc({ id: 2, method: 'tools/list' })
     const tools = listRes.result.tools as Array<{ name: string }>
-    assert.equal(tools.length, 28, `Expected 28 tools, found ${tools.length}`)
+    assert.equal(tools.length, MCP_TOOLS.length)
     const toolNames = tools.map((t) => t.name)
     const expected = [
       'ask', 'search', 'read', 'context_pack', 'query', 'context', 'impact',
       'detect_changes', 'claim', 'release', 'awareness', 'inbox_read',
       'message_send', 'heartbeat', 'cypher', 'rename_preview',
       'swarm_turn', 'swarm_board', 'swarm_resources',
+      'swarm_supersede', 'swarm_reassign', 'swarm_priority',
       'plan', 'notes_search', 'notes_read', 'notes_query', 'notes_backlinks',
       'hygiene', 'machine', 'repos',
     ]
     for (const exp of expected) {
       assert.ok(toolNames.includes(exp), `Missing MCP tool: ${exp}`)
     }
+
+    coord.registerSwarmAgent(f.db, { agentId: 'mcp-tester', workspaceId: f.workspaceId })
+    const obsolete = enqueueTask(f.db, f.workspaceId, { title: 'Obsolete task' })
+    const replacement = enqueueTask(f.db, f.workspaceId, { title: 'Replacement task' })
+    const routed = enqueueTask(f.db, f.workspaceId, { title: 'Routed task' })
+    const queueCall = async (id: number, name: string, args: Record<string, unknown>) => {
+      const response = await sendRpc({ id, method: 'tools/call', params: { name, arguments: { ...args, authKey: f.authKey } } })
+      return JSON.parse(response.result.content[0].text)
+    }
+    assert.equal((await queueCall(20, 'swarm_supersede', {
+      taskId: obsolete.id, byTaskId: replacement.id, note: 'replaced by current brief', byAgent: 'mcp-tester',
+    })).task.state, 'superseded')
+    assert.equal((await queueCall(21, 'swarm_reassign', {
+      taskId: routed.id, toAgent: 'mcp-tester', byAgent: 'mcp-tester',
+    })).task.addressed_to, 'mcp-tester')
+    assert.equal((await queueCall(22, 'swarm_priority', {
+      taskId: replacement.id, priority: 7, byAgent: 'mcp-tester',
+    })).task.priority, 7)
+    const queueBoard = await queueCall(23, 'swarm_board', {})
+    assert.equal(queueBoard.board.queue.tasks.find((task: { id: string }) => task.id === obsolete.id)?.state, 'superseded')
+    assert.equal(queueBoard.board.queue.recentChanges.length, 3)
 
     // 3. tools/call: heartbeat
     const hbRes = await sendRpc({

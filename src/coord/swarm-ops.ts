@@ -21,7 +21,7 @@ import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
-import { claimNextTask, ensureQueueSchema } from '../queue.ts'
+import { claimNextTask, ensureQueueSchema, listQueue, listQueueEvents } from '../queue.ts'
 import { syncDependencies, UNBLOCKED_TASK_SQL } from './dependencies.ts'
 import { coordEvents } from './events.ts'
 import { ensureWatchdogSchema, silenceMinutesFor, watchdogSettings, watchTurnEnd } from './watchdog.ts'
@@ -294,7 +294,7 @@ function nextTaskFor(db: DatabaseSync, workspaceId: string, agentId: string): Qu
     SELECT id, title, body FROM queue_tasks
      WHERE workspace_id = ? AND state = 'pending' AND (addressed_to IS NULL OR addressed_to = ?)
        AND ${UNBLOCKED_TASK_SQL}
-     ORDER BY created_at ASC, rowid ASC LIMIT 1
+     ORDER BY priority DESC, created_at ASC, rowid ASC LIMIT 1
   `).get(workspaceId, agentId) as { id: string; title: string; body: string } | undefined)
 }
 
@@ -481,6 +481,16 @@ export interface SwarmBoard {
   overlaps: Array<{ worktree: string; agents: string[] }>
   host: HostSnapshot
   admission: Admission[]
+  queue: {
+    tasks: Array<{
+      id: string; title: string; state: string; addressedTo: string | null; priority: number; supersededBy: string | null
+      claimedBy: string | null; updatedAt: string
+    }>
+    recentChanges: Array<{
+      id: string; taskId: string; operation: string; byAgent: string; oldValue: string | null
+      newValue: string | null; note: string | null; occurredAt: string
+    }>
+  }
 }
 
 const normalizePath = (path: string): string => resolve(path).replace(/[\\/]+$/, '').toLowerCase()
@@ -594,5 +604,15 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
     overlaps,
     host,
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
+    queue: {
+      tasks: listQueue(db, workspaceId).map(task => ({
+        id: task.id, title: task.title, state: task.state, addressedTo: task.addressed_to,
+        priority: task.priority, supersededBy: task.superseded_by, claimedBy: task.claimed_by, updatedAt: task.updated_at,
+      })),
+      recentChanges: listQueueEvents(db, workspaceId, { limit: 50 }).map(event => ({
+        id: event.id, taskId: event.task_id, operation: event.operation, byAgent: event.by_agent,
+        oldValue: event.old_value, newValue: event.new_value, note: event.note, occurredAt: event.occurred_at,
+      })),
+    },
   }
 }

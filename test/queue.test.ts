@@ -17,8 +17,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { registerAgent } from '../src/access.ts'
+import { ensureLeaseSchema } from '../src/coord/leases.ts'
 import {
   claimNextTask, deliverTask, enqueueTask, listQueue, queueDepth,
+  listQueueEvents, prioritizeTask, reassignTask, supersedeTask,
 } from '../src/queue.ts'
 
 const WS = 'ws-queue-test'
@@ -69,6 +71,79 @@ test('claiming is first-in-first-out, so nothing starves', () => {
     enqueueTask(f.db, WS, { title: 'second' })
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.equal(claimed?.id, a.id)
+  } finally { f.cleanup() }
+})
+
+test('queue operations are audited, visible, and affect future offers', () => {
+  const f = fixture()
+  try {
+    const replaced = enqueueTask(f.db, WS, { title: 'old task' })
+    const ordinary = enqueueTask(f.db, WS, { title: 'ordinary task' })
+    const urgent = enqueueTask(f.db, WS, { title: 'urgent task' })
+
+    const superseded = supersedeTask(f.db, WS, replaced.id, {
+      byAgent: 'agent-nvidia', byTaskId: urgent.id, note: 'replaced by the current brief',
+    })
+    assert.equal(superseded.state, 'superseded')
+    assert.equal(superseded.superseded_by, urgent.id)
+    assert.equal(reassignTask(f.db, WS, ordinary.id, { byAgent: 'agent-nvidia', addressedTo: 'agent-gemini' }).addressed_to, 'agent-gemini')
+    assert.equal(prioritizeTask(f.db, WS, urgent.id, { byAgent: 'agent-nvidia', priority: 8 }).priority, 8)
+
+    assert.equal(claimNextTask(f.db, WS, 'agent-nvidia')?.id, urgent.id)
+    assert.equal(claimNextTask(f.db, WS, 'agent-nvidia'), null, 'reassigned work is not offered to another worker')
+    assert.equal(claimNextTask(f.db, WS, 'agent-gemini')?.id, ordinary.id)
+
+    const rows = listQueue(f.db, WS)
+    assert.equal(rows.find(row => row.id === replaced.id)?.state, 'superseded')
+    assert.equal(rows.find(row => row.id === urgent.id)?.priority, 8)
+    const events = listQueueEvents(f.db, WS, { taskId: replaced.id })
+    assert.deepEqual(events.map(event => event.operation), ['supersede'])
+    assert.equal(events[0]?.by_agent, 'agent-nvidia')
+    assert.equal(events[0]?.note, 'replaced by the current brief')
+    assert.equal(listQueueEvents(f.db, WS).length, 3)
+  } finally { f.cleanup() }
+})
+
+test('a stale claim can be atomically rerouted, but an active lease blocks queue mutation', () => {
+  const f = fixture()
+  try {
+    const claimed = enqueueTask(f.db, WS, { title: 'claimed task' })
+    assert.ok(claimNextTask(f.db, WS, 'agent-nvidia'))
+    const rerouted = reassignTask(f.db, WS, claimed.id, { byAgent: 'agent-gemini', addressedTo: 'agent-gemini' })
+    assert.equal(rerouted.state, 'pending')
+    assert.equal(rerouted.claimed_by, null)
+    assert.equal(rerouted.claimed_at, null)
+    assert.equal(rerouted.addressed_to, 'agent-gemini')
+    assert.equal(listQueueEvents(f.db, WS, { taskId: claimed.id })[0]?.old_value, 'claimed:agent-nvidia')
+    assert.equal(claimNextTask(f.db, WS, 'agent-gemini')?.id, claimed.id)
+    const superseded = supersedeTask(f.db, WS, claimed.id, {
+      byAgent: 'agent-nvidia', note: 'duplicate without a started lease or worktree',
+    })
+    assert.equal(superseded.state, 'superseded')
+    assert.equal(superseded.claimed_by, null)
+    assert.equal(listQueueEvents(f.db, WS, { taskId: claimed.id })[0]?.old_value, 'claimed:agent-gemini')
+
+    const leased = enqueueTask(f.db, WS, { title: 'leased task' })
+    assert.ok(claimNextTask(f.db, WS, 'agent-nvidia'))
+    ensureLeaseSchema(f.db)
+    f.db.prepare(`INSERT INTO leases
+      (id, workspace_id, agent_id, task_id, paths_json, symbols_json, mode, epoch, created_at, expires_at, released_at, ttl_ms)
+      VALUES (?, ?, ?, ?, '[]', '[]', 'write', 1, ?, ?, NULL, 60000)`)
+      .run('lease-active', WS, 'agent-nvidia', leased.id, new Date().toISOString(), new Date(Date.now() + 60000).toISOString())
+    assert.throws(() => supersedeTask(f.db, WS, leased.id, { byAgent: 'agent-gemini', note: 'obsolete' }), /active lease/i)
+    assert.equal(listQueue(f.db, WS).find(row => row.id === leased.id)?.state, 'claimed')
+  } finally { f.cleanup() }
+})
+
+test('queue mutations reject invalid addressees, bad priorities, and cross-workspace tasks', () => {
+  const f = fixture()
+  try {
+    const pending = enqueueTask(f.db, WS, { title: 'pending task' })
+    f.db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run('ws-other', 'other', join(f.dir, 'other'), new Date().toISOString())
+    assert.throws(() => reassignTask(f.db, WS, pending.id, { byAgent: 'agent-gemini', addressedTo: 'missing-agent' }), /agent/i)
+    assert.throws(() => prioritizeTask(f.db, WS, pending.id, { byAgent: 'agent-gemini', priority: 1.5 }), /integer/i)
+    assert.throws(() => supersedeTask(f.db, 'ws-other', pending.id, { byAgent: 'agent-gemini', note: 'obsolete' }), /another workspace/i)
   } finally { f.cleanup() }
 })
 
