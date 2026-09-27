@@ -21,6 +21,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workspaceIdFor } from '../src/planet.ts'
 import { buildRunnerArgv, discoverProtocolDocs, isOwnedProcess, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
+import { assertActiveSupervisorAttempt, classifySupervisorFailure } from '../src/coord/supervisor.ts'
 
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 const FAKE = fileURLToPath(new URL('./fixtures/fake-worker.mjs', import.meta.url))
@@ -178,7 +179,7 @@ test('swarm run starts the worker detached, keeps its log, and the board shows p
     const set = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'ok'), '--workspace', b.ws)
     assert.equal(set.code, 0, set.err)
 
-    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws, '--json')
     assert.equal(started.code, 0, started.err)
     const run = JSON.parse(started.out) as RunJson
     assert.ok(Number.isInteger(run.pid) && (run.pid ?? 0) > 0, `expected a pid, got ${started.out}`)
@@ -225,7 +226,7 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
-    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
 
     const board = await settleBoard(b, 'fake-01')
@@ -255,7 +256,7 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
-    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
     await delay(300)
     db = new DatabaseSync(join(b.home, 'plugbrain.db'))
@@ -286,7 +287,7 @@ test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'hang'), '--workspace', b.ws).code, 0)
-    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws, '--json')
     assert.equal(started.code, 0, started.err)
     const run = JSON.parse(started.out) as RunJson
 
@@ -312,7 +313,7 @@ test('swarm run --stop kills only the verified worker process tree', async () =>
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'tree'), '--workspace', b.ws).code, 0)
-    const started = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws, '--json')
     assert.equal(started.code, 0, started.err)
     const run = JSON.parse(started.out) as RunJson
     const deadline = Date.now() + 10_000
@@ -332,13 +333,13 @@ test('swarm run refuses a worker without a profile and refuses a second live run
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
-    const missing = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    const missing = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(missing.code, 3)
     assert.match(missing.err, /no runner profile for fake-01/)
 
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'hang'), '--workspace', b.ws).code, 0)
-    assert.equal(b.run('swarm', 'run', 'fake-01', '--workspace', b.ws).code, 0)
-    const second = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws)
+    assert.equal(b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws).code, 0)
+    const second = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(second.code, 3)
     assert.match(second.err, /already has a live run/)
     assert.equal(b.run('swarm', 'run', 'fake-01', '--stop', '--workspace', b.ws).code, 0)
@@ -409,4 +410,86 @@ test('the prompt names the protocol documents the workspace actually has', () =>
     assert.ok(!bare.includes('{{'))
     assert.match(bare, /Read in full: the brief named by your task\./)
   } finally { b.cleanup() }
+})
+
+test('swarm run supervisor claims the next task, runs a fake worker and stops for a lead decision after the retry limit', async () => {
+  const b = brain()
+  let db: DatabaseSync | null = null
+  let supervisorPid: number | null = null
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'enqueue', 'supervised task', '--to', 'fake-01', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
+    const launched = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws,
+      '--max-attempts', '2', '--max-idle-checks', '1', '--idle-ms', '50', '--poll-ms', '50', '--json')
+    assert.equal(launched.code, 0, launched.err)
+    const supervisor = JSON.parse(launched.out) as { pid: number; supervisorId: string }
+    supervisorPid = supervisor.pid
+    assert.ok(supervisor.pid > 0)
+
+    const deadline = Date.now() + 30_000
+    let state: { active: number; last_failure: string | null } | undefined
+    while (Date.now() < deadline) {
+      db ??= new DatabaseSync(join(b.home, 'plugbrain.db'))
+      state = db.prepare("SELECT active, last_failure FROM worker_supervisors WHERE agent_id = 'fake-01'").get() as
+        { active: number; last_failure: string | null } | undefined
+      if (state?.active === 0) break
+      await delay(100)
+    }
+    assert.equal(state?.active, 0, 'supervisor stops after a bounded unsuccessful attempt')
+    assert.equal(state?.last_failure, 'crash')
+    const attempts = db!.prepare("SELECT attempt, attempt_token, outcome, ended_at FROM worker_task_attempts WHERE agent_id = 'fake-01' ORDER BY attempt")
+      .all() as Array<{ attempt: number; attempt_token: string; outcome: string; ended_at: string | null }>
+    assert.equal(attempts.length, 2, 'the crash is retried once, then reaches the configured bound')
+    assert.equal(attempts[0]?.outcome, 'crash')
+    assert.equal(attempts[0]?.ended_at !== null, true)
+    assert.equal(attempts[1]?.outcome, 'crash')
+    const reservations = db!.prepare('SELECT pool_id, attempt_id, settled_at, usage, outcome FROM quota_reservations ORDER BY reserved_at')
+      .all() as Array<{ pool_id: string; attempt_id: string; settled_at: string | null; usage: number | null; outcome: string | null }>
+    assert.equal(reservations.length, 2, 'every launched attempt reserves one shared account-pool slot')
+    assert.deepEqual(reservations.map(row => row.pool_id), ['test:fake', 'test:fake'])
+    assert.ok(reservations.every(row => row.settled_at !== null && row.usage === null && row.outcome === 'crash'))
+    const promptPath = (db!.prepare("SELECT prompt_path FROM worker_runs WHERE agent_id = 'fake-01'").get() as { prompt_path: string }).prompt_path
+    const assignedPrompt = readFileSync(promptPath, 'utf8')
+    assert.match(assignedPrompt, /Assigned queue task \(already atomically claimed\)/)
+    assert.match(assignedPrompt, /supervised task/)
+    assert.doesNotMatch(assignedPrompt, /swarm turn fake-01 start --claim/)
+    const task = db!.prepare("SELECT state, claimed_by FROM queue_tasks WHERE title = 'supervised task'").get() as
+      { state: string; claimed_by: string | null } | undefined
+    assert.equal(task?.state, 'pending')
+    assert.equal(task?.claimed_by, null)
+    const leadMessage = db!.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }
+    assert.equal(Number(leadMessage.n), 1)
+    const oldToken = process.env.PLUGBRAIN_ATTEMPT_TOKEN
+    const oldAgent = process.env.PLUGBRAIN_SUPERVISED_AGENT
+    try {
+      process.env.PLUGBRAIN_ATTEMPT_TOKEN = attempts[0]!.attempt_token
+      process.env.PLUGBRAIN_SUPERVISED_AGENT = 'fake-01'
+      assert.throws(() => assertActiveSupervisorAttempt(db!), /stale supervisor attempt is fenced/)
+    } finally {
+      if (oldToken === undefined) delete process.env.PLUGBRAIN_ATTEMPT_TOKEN
+      else process.env.PLUGBRAIN_ATTEMPT_TOKEN = oldToken
+      if (oldAgent === undefined) delete process.env.PLUGBRAIN_SUPERVISED_AGENT
+      else process.env.PLUGBRAIN_SUPERVISED_AGENT = oldAgent
+    }
+    assert.equal(classifySupervisorFailure({ exitCode: 1, output: 'HTTP 429: rate limit; Retry-After: 2' }), 'quota')
+    assert.equal(classifySupervisorFailure({ exitCode: 1, output: 'authentication failed' }), 'auth')
+    assert.equal(classifySupervisorFailure({ exitCode: 3, output: 'worker exited' }), 'crash')
+    const exitDeadline = Date.now() + 10_000
+    for (;;) {
+      try { process.kill(supervisor.pid, 0) } catch { break }
+      if (Date.now() >= exitDeadline) assert.fail(`supervisor process ${supervisor.pid} did not exit`)
+      await delay(50)
+    }
+    supervisorPid = null
+  } finally {
+    if (supervisorPid !== null) {
+      const exitDeadline = Date.now() + 10_000
+      while (Date.now() < exitDeadline) {
+        try { process.kill(supervisorPid, 0); await delay(50) } catch { break }
+      }
+    }
+    db?.close()
+    b.cleanup()
+  }
 })

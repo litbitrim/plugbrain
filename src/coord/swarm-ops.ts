@@ -56,6 +56,7 @@ export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   const has = (name: string) => columns.some(column => column.name === name)
   if (!has('surface')) db.exec('ALTER TABLE agents ADD COLUMN surface TEXT')
   if (!has('account')) db.exec('ALTER TABLE agents ADD COLUMN account TEXT')
+  if (!has('quota_pool')) db.exec('ALTER TABLE agents ADD COLUMN quota_pool TEXT')
   if (!has('resource_key')) db.exec('ALTER TABLE agents ADD COLUMN resource_key TEXT')
   if (!has('turn_state')) db.exec('ALTER TABLE agents ADD COLUMN turn_state TEXT')
   if (!has('turn_state_at')) db.exec('ALTER TABLE agents ADD COLUMN turn_state_at TEXT')
@@ -85,6 +86,7 @@ interface ProfileRow {
   model: string | null
   surface: string | null
   account: string | null
+  quota_pool: string | null
   resource_key: string | null
   turn_state: string | null
   turn_state_at: string | null
@@ -98,6 +100,7 @@ export interface WorkerProfile {
   agentId: string
   surface: WorkerSurface | null
   account: string | null
+  quotaPool: string | null
   resourceKey: string | null
   model: string | null
   worktrees: string[]
@@ -117,6 +120,7 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
   agentId: row.id,
   surface: row.surface as WorkerSurface | null,
   account: row.account,
+  quotaPool: row.quota_pool,
   resourceKey: row.resource_key,
   model: row.model,
   worktrees: parseWorktrees(row.worktrees),
@@ -125,7 +129,7 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
 })
 
 const loadProfile = (db: DatabaseSync, agentId: string): ProfileRow =>
-  db.prepare(`SELECT id, model, surface, account, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at
+  db.prepare(`SELECT id, model, surface, account, quota_pool, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at
                 FROM agents WHERE id = ?`).get(agentId) as unknown as ProfileRow
 
 export interface RegisterWorkerInput {
@@ -133,6 +137,8 @@ export interface RegisterWorkerInput {
   surface: WorkerSurface
   /** A name for the account the worker spends, e.g. `owner:chatgpt` or `nvidia:key-01`. */
   account: string
+  /** Shared provider/project quota identity; defaults to account. */
+  quotaPool?: string
   /** An exclusive resource such as one BYOK key. At most one active worker carries it. */
   resourceKey?: string
   model?: string
@@ -150,6 +156,9 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   const account = input.account.trim()
   if (account === '' || account.length > 80) throw new AccessDenied('a worker needs an account label of at most 80 characters')
   assertNotCredential('account', account)
+  const quotaPool = (input.quotaPool ?? account).trim()
+  if (quotaPool === '' || quotaPool.length > 80) throw new AccessDenied('a quota pool needs a label of at most 80 characters')
+  assertNotCredential('quota pool', quotaPool)
 
   const resourceKey = input.resourceKey === undefined ? null : input.resourceKey.trim().toLowerCase()
   if (resourceKey !== null) {
@@ -175,10 +184,10 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
     }
     db.prepare(`
       UPDATE agents
-         SET surface = ?, account = ?, resource_key = ?, model = COALESCE(?, model),
+         SET surface = ?, account = ?, quota_pool = ?, resource_key = ?, model = COALESCE(?, model),
              worktrees = ?, retired_at = NULL, last_seen = ?
        WHERE id = ?
-    `).run(input.surface, account, resourceKey, input.model ?? null, JSON.stringify(worktrees), now, input.agentId)
+    `).run(input.surface, account, quotaPool, resourceKey, input.model ?? null, JSON.stringify(worktrees), now, input.agentId)
     db.exec('COMMIT')
   } catch (error: unknown) {
     db.exec('ROLLBACK')

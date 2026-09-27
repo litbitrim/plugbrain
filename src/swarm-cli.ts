@@ -5,7 +5,7 @@
  * Code), can run a command, so this is the one channel all of them share. It
  * works on the local store directly: a worker never needs the Core's HTTP key.
  *
- *   plugbrain swarm register <agent> --surface <s> --account <label> [--key <resource>]
+ *   plugbrain swarm register <agent> --surface <s> --account <label> [--quota-pool <pool>] [--key <resource>]
  *                            [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]
  *   plugbrain swarm turn <agent> start [--claim]
  *   plugbrain swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]
@@ -22,12 +22,13 @@
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
+ *   plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show
  *   plugbrain swarm admit <edit|test|index|build|install|worktree>   exit 0 = room, 5 = no room
  *   plugbrain swarm watchdog [--json] [--dry-run] | watchdog silent-after <minutes>
  *   plugbrain swarm review-pool set <agent>... | review-pool auto on|off | review-pool show
  *   plugbrain swarm runner set <agent> --cmd <exe> [--model <m>] [--effort <e>] [--sandbox <s>] [--search]
  *   plugbrain swarm runner show <agent>
- *   plugbrain swarm run <agent> [--status|--stop]   the Brain starts and watches the CLI process itself
+ *   plugbrain swarm run <agent> [--once|--status|--stop]  refill the worker's queue headless
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
@@ -40,10 +41,11 @@ import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.
 import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd, deliverTaskWithEvidence } from './coord/turn-delivery.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
-  getRunnerProfile, hostSnapshot, listQuotas, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
+  configureQuotaPool, getRunnerProfile, hostSnapshot, listQuotaPools, listQuotas, quotaPoolSummary, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
   reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
   setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
+  assertActiveSupervisorAttempt, runSupervisorLoop, startSupervisor, stopSupervisor,
   touchAgentContact, watchdogSettings, workerRunStatus,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
   type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
@@ -59,6 +61,14 @@ const flag = (args: string[], name: string): string | null => {
   if (inline !== undefined) return inline.slice(name.length + 1)
   const at = args.indexOf(name)
   return at === -1 ? null : args[at + 1] ?? null
+}
+
+const numberFlag = (args: string[], name: string): number | undefined => {
+  const value = flag(args, name)
+  if (value === null) return undefined
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) throw new AccessDenied(`${name} must be a finite number`)
+  return parsed
 }
 
 const flags = (args: string[], name: string): string[] => {
@@ -83,10 +93,10 @@ const positionals = (args: string[], valued: string[]): string[] => {
 }
 
 const VALUED = [
-  '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary', '--deliver', '--since',
+  '--workspace', '--surface', '--account', '--quota-pool', '--key', '--model', '--name', '--worktree', '--state', '--summary', '--deliver', '--since',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
   '--repo', '--target', '--auto', '--after',
-  '--cmd', '--args', '--effort', '--sandbox', '--cwd',
+  '--cmd', '--args', '--effort', '--sandbox', '--cwd', '--max-concurrent', '--rpm',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -201,6 +211,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   // fail with "no such column: workspace_id" until some `register` had widened
   // the agents table.
   if (step !== 'chronik') ensureSwarmOpsSchema(db)
+  assertActiveSupervisorAttempt(db)
   const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
@@ -222,6 +233,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         agentId,
         surface,
         account: need(flag(rest, '--account'), usage),
+        quotaPool: flag(rest, '--quota-pool') ?? undefined,
         resourceKey: flag(rest, '--key') ?? undefined,
         model: flag(rest, '--model') ?? undefined,
         worktrees: flags(rest, '--worktree'),
@@ -263,8 +275,26 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'run': {
-      const usage = 'plugbrain swarm run <agent> [--status] [--stop] [--json]'
+      const usage = 'plugbrain swarm run <agent> [--once|--status|--stop|--stop-supervisor] [--json]'
       const agentId = need(pos[0], usage)
+      if (rest.includes('--supervisor-child')) throw new AccessDenied('supervisor child must use the internal async dispatch')
+      if (!rest.includes('--once') && !rest.includes('--status') && !rest.includes('--stop') && !rest.includes('--stop-supervisor')) {
+        const supervisor = startSupervisor(db, {
+          workspaceId, agentId,
+          idleMs: numberFlag(rest, '--idle-ms'),
+          maxIdleChecks: numberFlag(rest, '--max-idle-checks'),
+          maxAttempts: numberFlag(rest, '--max-attempts'),
+          pollMs: numberFlag(rest, '--poll-ms'),
+        })
+        if (asJson) console.log(JSON.stringify(supervisor, null, 2))
+        else console.log(`supervising ${agentId}: pid ${supervisor.pid} (${supervisor.supervisorId})`)
+        return 0
+      }
+      if (rest.includes('--stop-supervisor')) {
+        stopSupervisor(db, agentId)
+        console.log(`supervisor stop requested for ${agentId}`)
+        return 0
+      }
       if (rest.includes('--status')) return printRunStatus(db, workspaceId, agentId, asJson)
       if (rest.includes('--stop')) {
         const run = stopWorkerRun(db, { agentId, workspaceId })
@@ -494,8 +524,9 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     case 'resources': {
       const host = hostSnapshot()
       const quotas = listQuotas(db)
+      const quotaPools = listQuotaPools(db)
       const admission = WORK_KINDS.map(kind => admitWork(kind, host))
-      if (asJson) { console.log(JSON.stringify({ host, quotas, admission }, null, 2)); return 0 }
+      if (asJson) { console.log(JSON.stringify({ host, quotas, quotaPools, admission }, null, 2)); return 0 }
       for (const drive of host.drives) console.log(`${drive.root} ${(drive.freeBytes / GB).toFixed(1)} von ${(drive.totalBytes / GB).toFixed(0)} GB frei`)
       console.log(`RAM ${(host.memory.freeBytes / GB).toFixed(1)} von ${(host.memory.totalBytes / GB).toFixed(0)} GB frei`)
       for (const entry of admission) console.log(`  ${entry.kind.padEnd(8)} ${entry.allowed ? 'ok' : `NEIN: ${entry.reasons.join('; ')}`}`)
@@ -503,6 +534,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         console.log(`  Kontingent ${quota.account}: ${quota.remaining} ${quota.unit}${quota.exhausted ? ' (erschöpft)' : ''}` +
           `${quota.resetsAt ? `, zurück ${quota.resetsAt}` : ''} · ${quota.updatedAt}`)
       }
+      for (const pool of quotaPools) console.log(`  Quota-Pool ${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}${pool.blockedUntil ? `, bis ${pool.blockedUntil}` : ''}`)
       return 0
     }
     case 'quota': {
@@ -515,6 +547,22 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       })
       touchAgentContact(db, reportedBy)
       console.log(`${report.account}: ${report.remaining} ${report.unit}${report.exhausted ? ' (erschöpft)' : ''}`)
+      return 0
+    }
+    case 'quota-pool': {
+      const action = pos[0]
+      if (action === 'show') {
+        const pools = listQuotaPools(db)
+        const summaries = pools.map(pool => quotaPoolSummary(db, pool.id)!).filter(Boolean)
+        if (asJson) console.log(JSON.stringify(summaries, null, 2))
+        else for (const pool of summaries) console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}, active=${pool.activeReservations}, settled=${pool.settledAttempts}, usage=${pool.reportedUsage} across ${pool.attemptsWithUnknownUsage} unknown${pool.blockedUntil ? `, blocked until ${pool.blockedUntil}` : ''}`)
+        return 0
+      }
+      if (action !== 'set') throw new AccessDenied('usage: plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show')
+      const usage = 'plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]'
+      const pool = configureQuotaPool(db, { id: need(pos[1], usage), maxConcurrent: numberFlag(rest, '--max-concurrent') ?? 1,
+        maxRequestsPerMinute: numberFlag(rest, '--rpm') ?? null })
+      console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}`)
       return 0
     }
     case 'admit': {
@@ -571,4 +619,23 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     default:
       throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
+}
+
+/** Internal entry point used only by the detached supervisor child. */
+export async function runSwarmSupervisorChild(
+  db: DatabaseSync, args: string[], defaultWorkspace: () => string,
+): Promise<number> {
+  const [step, ...rest] = args
+  const agentId = need(positionals(rest, VALUED)[0], 'internal supervisor needs an agent id')
+  if (step !== 'run' || !rest.includes('--supervisor-child')) throw new AccessDenied('invalid internal supervisor invocation')
+  const supervisorId = process.env.PLUGBRAIN_SUPERVISOR_ID
+  if (!supervisorId) throw new AccessDenied('internal supervisor identity is missing')
+  await runSupervisorLoop(db, {
+    workspaceId: flag(rest, '--workspace') ?? defaultWorkspace(), agentId, supervisorId,
+    idleMs: numberFlag(rest, '--idle-ms'),
+    maxIdleChecks: numberFlag(rest, '--max-idle-checks'),
+    maxAttempts: numberFlag(rest, '--max-attempts'),
+    pollMs: numberFlag(rest, '--poll-ms'),
+  })
+  return 0
 }

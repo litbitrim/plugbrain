@@ -585,9 +585,11 @@ Without `--workspace` the single registered workspace is used.
 - `swarm resources`: Display host CPU, RAM, disk quotas, and admission decisions.
 - `swarm admit <test|build|install>`: Check admission gate for hardware-intensive actions.
 **Agents**
-- `swarm register <agent> --surface <s> --account <label> [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
+- `swarm register <agent> --surface <s> --account <label> [--quota-pool <pool>] [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
   register an agent. Surfaces: `claude-code`, `codex-app`, `freebuff`, `agy`, `native`, `other`.
-  `--worktree` binds the agent to a checkout so the board can show its branch.
+  `--worktree` binds the agent to a checkout so the board can show its branch. Workers
+  that draw from one provider project must share the same `--quota-pool`, even when they
+  carry different resource keys; it defaults to the account label.
 - `swarm turn <agent> start [--claim]`: check in at the start of a turn. Prints
   unread messages and the task offered to this agent; `--claim` takes it.
 - `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>] [--deliver <evidence>] [--repo <worktree>] [--review]`:
@@ -652,9 +654,14 @@ Without `--workspace` the single registered workspace is used.
   stores turn history is available; the chronicle does not invent events. Reads are
   capped at 500 rows per source and output at 1,000 events; capped results say that
   older events were omitted.
-- `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
+- `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas and configured pool limits.
 - `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
   report how much of an account's quota is left. Numbers only, never keys.
+- `swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]`: configure one shared
+  provider/project pool. Reservations for worker attempts count against the same concurrency
+  and optional rolling RPM limit. `swarm quota-pool show [--json]` reports active and settled
+  attempts; unreported usage remains unknown rather than being counted as zero. A provider
+  429 applies a bounded, pool-wide cooldown using `Retry-After` when available.
 - `swarm admit <edit|test|index|build|install|worktree>`: exit 0 means there is
   room on this machine for that kind of work, exit 5 means there is not.
 
@@ -672,7 +679,17 @@ watched by the Brain itself, so a lane needs no handwork at its turn boundary.
   `{model}`, `{effort}` and `{sandbox}` are filled in per run. A token that
   resolves to nothing is dropped.
 - `swarm runner show <agent>`: the stored profile.
-- `swarm run <agent>`: start the process **detached** with an empty stdin and a
+- `swarm run <agent>`: start a detached refill loop by default. It atomically
+  claims the next eligible queue task, starts the worker with that task in its
+  prompt, and waits for the run to end before starting another attempt. The
+  loop stops after 24 idle checks (five minutes each), on an authentication
+  failure, or when a task needs a lead decision. `--max-idle-checks`,
+  `--idle-ms`, `--max-attempts` (1–5) and `--poll-ms` are available for controlled
+  operation and tests. A failed attempt is retried at most twice by default;
+  quota errors use a bounded 30-minute cooldown, and auth errors stop immediately.
+  Each task attempt has a fencing token; stale attempts cannot issue further
+  `swarm` state changes. The token is generated locally and is not a credential.
+- `swarm run <agent> --once`: start one process **detached** with an empty stdin and a
   JSONL log at `<PLUGBRAIN_HOME>/runs/workers/<agent>-<stamp>.jsonl` (stderr
   beside it, the last message at `…-last.md`, the rendered prompt at
   `…-prompt.md`). The prompt comes from a template in the source and names the
@@ -680,6 +697,8 @@ watched by the Brain itself, so a lane needs no handwork at its turn boundary.
   lane rules and the Brain's own wrapper under `<workspace>/koordination` — so
   nothing owner-specific is baked in. The run row is written before the process
   starts, and the working directory defaults to the workspace root.
+- `swarm run <agent> --stop-supervisor`: ask the refill loop to stop after its
+  current worker process settles.
 - `swarm run <agent> --status`: pid, start time, log path, last log event and
   the worker's turn state, plus the tail of the log.
 - `swarm run <agent> --stop`: stop the process (on Windows the whole process
@@ -720,7 +739,9 @@ The stream carries a monotonic event id and reconnects with bounded backoff on a
 ```bash
 plugbrain swarm runner set cx01 --cmd codex --model gpt-6-luna --effort high --sandbox bypass
 plugbrain swarm run cx01
+plugbrain swarm run cx01 --once     # one detached invocation, without queue refills
 plugbrain swarm run cx01 --status     # pid, last log event, turn state
 plugbrain swarm board                 # runner column, and settles dead runs
 plugbrain swarm run cx01 --stop       # stops it, turn becomes paused
+plugbrain swarm run cx01 --stop-supervisor
 ```
