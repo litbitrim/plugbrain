@@ -59,6 +59,7 @@ interface DependencyRow {
   after_workspace_id: string | null
   after_title: string | null
   after_state: string | null
+  after_attempt: number | null
   holder_state: string | null
 }
 
@@ -187,10 +188,12 @@ export function syncDependencies(
   const state = holderStateSql(db)
   const ready = db.prepare(`
     SELECT d.task_id, d.after_task_id, q.title AS task_title, q.state AS task_state, q.addressed_to,
-           p.workspace_id AS after_workspace_id, p.title AS after_title, p.state AS after_state, ${state.select}
+           p.workspace_id AS after_workspace_id, p.title AS after_title, p.state AS after_state,
+           COALESCE(receipt.delivery_attempt, 1) AS after_attempt, ${state.select}
       FROM task_dependencies d
       JOIN queue_tasks q ON q.id = d.task_id
       LEFT JOIN queue_tasks p ON p.id = d.after_task_id
+      LEFT JOIN queue_deliveries receipt ON receipt.task_id = p.id
       LEFT JOIN agents holder ON holder.id = p.claimed_by
      WHERE d.released_at IS NULL AND q.workspace_id = ?
        AND (p.id IS NULL OR p.workspace_id <> q.workspace_id OR ${state.arrived})
@@ -231,6 +234,7 @@ export function syncDependencies(
       body: `Deine Aufgabe "${row.task_title}" (${row.task_id}) ist jetzt frei: ` +
         `"${row.after_title}" (${row.after_task_id}) ist ${describePredecessor(row)}.\n` +
         `Nimm sie beim nächsten Turn-Start mit: plugbrain swarm turn <agent> start --claim`,
+      deliveryKey: `task.delivered:${row.after_task_id}:${row.after_attempt}`,
     })
   }
   return released

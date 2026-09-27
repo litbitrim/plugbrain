@@ -69,4 +69,8 @@ export interface InboxMessage {
   createdAt: string
   deliveredAt: string | null
   readAt: string | null
+  /** Receipt ACK, stored per recipient and independent of processing. */
+  acknowledgedAt?: string | null
+  /** When the consumer completed handling this message. */
+  processedAt?: string | null
 }

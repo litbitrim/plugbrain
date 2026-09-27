@@ -2254,6 +2254,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const channel = (body.channel as string | undefined) ?? q.get('channel') ?? undefined
       const missionId = (body.missionId as string | undefined) ?? q.get('missionId') ?? undefined
       const unreadOnly = body.unreadOnly === true || q.get('unreadOnly') === 'true'
+      const afterCursor = body.afterCursor === true || q.get('afterCursor') === 'true'
       const waitMs = typeof body.waitMs === 'number' ? body.waitMs : Number(q.get('waitMs') ?? 0)
 
       const messages = await coord.readInbox(db, {
@@ -2262,6 +2263,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         channel,
         missionId,
         unreadOnly,
+        afterCursor,
         waitMs: Number.isFinite(waitMs) ? waitMs : 0,
       })
       return json(res, { ok: true, messages })
@@ -2275,6 +2277,16 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
       const acked = coord.confirmDelivery(db, messageId, agentId)
       return json(res, { ok: true, acked })
+    }
+
+    if (p === '/api/agent/inbox/processed' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const messageId = String(body.messageId ?? '').trim()
+      const agentId = String(body.agentId ?? '').trim()
+      if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
+      const processed = coord.markMessageProcessed(db, messageId, agentId)
+      return json(res, { ok: true, processed })
     }
 
     // ── Swarm Agent Inspect (M5: Mesh Inspection) ───────────────────────
