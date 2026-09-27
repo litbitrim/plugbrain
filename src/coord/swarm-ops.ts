@@ -244,25 +244,35 @@ export interface TurnPing {
 interface InboxRow {
   id: string; workspace_id: string; from_agent: string; to_agent: string | null; channel: string | null
   subject: string; body: string; created_at: string; delivered_at: string | null; read_at: string | null
+  receipt_delivered_at: string | null; acknowledged_at: string | null; processed_at: string | null
 }
 
 function unreadInbox(db: DatabaseSync, workspaceId: string, agentId: string): InboxMessage[] {
   const rows = db.prepare(`
-    SELECT * FROM inbox_messages
-     WHERE workspace_id = ? AND (to_agent = ? OR to_agent IS NULL) AND read_at IS NULL
-     ORDER BY created_at ASC
-  `).all(workspaceId, agentId) as unknown as InboxRow[]
+    SELECT m.*, r.delivered_at AS receipt_delivered_at, r.acknowledged_at, r.processed_at
+      FROM inbox_messages m LEFT JOIN inbox_delivery_receipts r ON r.message_id = m.id AND r.agent_id = ?
+     WHERE m.workspace_id = ? AND (m.to_agent = ? OR m.to_agent IS NULL)
+       AND COALESCE(r.acknowledged_at, CASE WHEN m.to_agent = ? THEN m.read_at END) IS NULL
+     ORDER BY m.created_at ASC, m.rowid ASC
+  `).all(agentId, workspaceId, agentId, agentId) as unknown as InboxRow[]
   const now = new Date().toISOString()
   return rows.map(row => {
+    db.prepare('INSERT OR IGNORE INTO inbox_delivery_receipts(message_id, agent_id) VALUES (?, ?)').run(row.id, agentId)
     if (row.delivered_at === null) {
       db.prepare('UPDATE inbox_messages SET delivered_at = ? WHERE id = ?').run(now, row.id)
       row.delivered_at = now
+    }
+    if (row.receipt_delivered_at === null) {
+      db.prepare('UPDATE inbox_delivery_receipts SET delivered_at = ? WHERE message_id = ? AND agent_id = ?').run(now, row.id, agentId)
       coordEvents.emitLive('message.delivered', { messageId: row.id, agentId, deliveredAt: now })
     }
     return {
       id: row.id, workspaceId: row.workspace_id, fromAgent: row.from_agent, toAgent: row.to_agent,
       channel: row.channel, subject: row.subject, body: row.body,
-      createdAt: row.created_at, deliveredAt: row.delivered_at, readAt: row.read_at,
+      createdAt: row.created_at, deliveredAt: row.delivered_at,
+      readAt: row.acknowledged_at ?? row.read_at,
+      acknowledgedAt: row.acknowledged_at ?? row.read_at,
+      processedAt: row.processed_at,
     }
   })
 }
@@ -506,9 +516,11 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
     const retired = profile.retired_at !== null
     const turnState = profile.turn_state as TurnState | null
     const unread = (db.prepare(`
-      SELECT COUNT(*) AS n FROM inbox_messages
-       WHERE workspace_id = ? AND (to_agent = ? OR to_agent IS NULL) AND read_at IS NULL
-    `).get(workspaceId, presence.id) as { n: number }).n
+      SELECT COUNT(*) AS n FROM inbox_messages m
+       WHERE m.workspace_id = ? AND (m.to_agent = ? OR m.to_agent IS NULL)
+         AND COALESCE((SELECT r.acknowledged_at FROM inbox_delivery_receipts r
+           WHERE r.message_id = m.id AND r.agent_id = ?), CASE WHEN m.to_agent = ? THEN m.read_at END) IS NULL
+    `).get(workspaceId, presence.id, presence.id, presence.id) as { n: number }).n
 
     // The still-reading answers "has this working worker been in touch?" — it is
     // a reading with a minute count, never a verdict about the process.
