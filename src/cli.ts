@@ -114,20 +114,18 @@ const db = DRY_RUN_INIT || READ_ONLY_DOCTOR
   : openStore(DB_FILE)
 
 function register(path: string, name?: string): void {
-  const root = resolve(path)
-  if (!existsSync(root) || !statSync(root).isDirectory()) {
-    console.error(`not a directory: ${root}`)
+  const given = resolve(path)
+  if (!existsSync(given) || !statSync(given).isDirectory()) {
+    console.error(`not a directory: ${given}`)
     process.exit(2)
   }
-  const id = workspaceIdFor(root)
-  const label = name ?? root.split(/[\\/]/).filter(Boolean).pop() ?? id
-  db.prepare(
-    `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
-     ON CONFLICT(root) DO UPDATE SET name = excluded.name`
-  ).run(id, label, root, new Date().toISOString())
+  // Store the canonical root (and update a legacy row in place) so a junction
+  // or 8.3 spelling cannot become a second workspace; the confirmation keeps
+  // the spelling the caller used.
+  const record = registerWorkspaceRoot(db, given, name)
   // Registration mints identity: pin it so a later move cannot take it away.
-  pinWorkspaceId(root, id)
-  console.log(`registered ${label}  ${id}\n  ${root}`)
+  pinWorkspaceId(given, record.id)
+  console.log(`registered ${record.name}  ${record.id}\n  ${given}`)
 }
 
 function reportIndex(name: string, r: IndexResult): void {
