@@ -202,8 +202,10 @@ export function evaluateClaim(
   db: DatabaseSync,
   workspaceId: string,
   request: ClaimRequest,
+  precomputedClaims?: readonly LiveClaim[],
 ): ConflictVerdict {
-  const held = liveClaims(db, workspaceId).filter(claim => claim.taskId !== request.taskId)
+  const held = (precomputedClaims ?? liveClaims(db, workspaceId))
+    .filter(claim => claim.taskId !== request.taskId)
   const wanted = new Set(request.paths)
   const wantedModules = new Set([...wanted].map(moduleOf))
 

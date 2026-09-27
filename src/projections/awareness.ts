@@ -219,14 +219,15 @@ export function buildAwarenessPack(db: DatabaseSync, request: AwarenessRequest):
   }
 
   // -- live claims held by OTHER tasks --------------------------------------
+  const allClaims = liveClaims(db, workspaceId)
   const verdict = evaluateClaim(db, workspaceId, {
     taskId: request.taskId,
     ...(request.agentId === undefined ? {} : { agentId: request.agentId }),
     paths: intended,
     mode: request.mode ?? 'write',
-  })
+  }, allClaims)
 
-  const claims = liveClaims(db, workspaceId)
+  const claims = allClaims
     .filter(claim => claim.taskId !== request.taskId)
     .filter(claim => intended.includes(claim.path) || intendedModules.has(moduleOf(claim.path)))
     .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.taskId < b.taskId ? -1 : 1))
@@ -277,8 +278,8 @@ export function buildAwarenessPack(db: DatabaseSync, request: AwarenessRequest):
         WHERE e.workspace_id = ? AND e.resolved = 1 AND f.path IN (${holes})
       `).all(workspaceId, ...intended) as unknown as Array<{ path: string }>).map(r => r.path))
 
-      const allClaims = liveClaims(db, workspaceId).filter(claim => claim.taskId !== request.taskId)
       for (const c of allClaims) {
+        if (c.taskId === request.taskId) continue
         if (callerFiles.has(c.path)) {
           relatedMap.set(c.taskId, {
             taskId: c.taskId, agentId: c.agentId,

@@ -11,6 +11,8 @@ verification failed on macOS and Windows. 0.3.1 is the first published build.
 
 ### Fixed
 
+- **Awareness claims reused under load.** An awareness response now reads the live-claim snapshot once and reuses it for conflict evaluation and related-task projection, removing repeated scans without changing claim decisions.
+- **Timing budgets measured in isolation.** CI runs the awareness, Board-read and no-hang timing tests in a separate serial `test:budget` step on every matrix OS; the parallel suite reports those tests as skipped with a reason.
 - **A vault opened through a linked path could not read its own notes.** When
   the vault root was reached through a junction, a symlink or the macOS
   `/var` → `/private/var` link, path containment compared each file's real path

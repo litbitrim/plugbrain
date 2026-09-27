@@ -53,5 +53,11 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # Timing budgets need the machine to themselves: measured beside other
+      # test files they measure contention, not the product. `npm test` reports
+      # them as skipped; this serial step is the only place they run, on every OS.
+      - name: Run budget tests
+        run: npm run test:budget
+
       - name: Secret scan
         run: npm run secret:scan
