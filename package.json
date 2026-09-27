@@ -30,6 +30,7 @@
   },
   "scripts": {
     "test": "node --experimental-strip-types --test test/*.test.ts desktop/*.test.cjs ui/src/lib/*.test.ts ui/src/lib/*.test.js",
+    "test:budget": "node --experimental-strip-types --test --test-concurrency=1 test/flake-load-budget.test.ts test/board-reads-budget.test.ts test/no-hang-during-index.test.ts",
     "index": "node --experimental-strip-types src/cli.ts index",
     "serve": "node --experimental-strip-types src/cli.ts serve",
     "status": "node --experimental-strip-types src/cli.ts status",
