@@ -5,7 +5,7 @@
  * Code), can run a command, so this is the one channel all of them share. It
  * works on the local store directly: a worker never needs the Core's HTTP key.
  *
- *   plugbrain swarm register <agent> --surface <s> --account <label> [--key <resource>]
+ *   plugbrain swarm register <agent> --surface <s> --account <label> [--quota-pool <pool>] [--key <resource>]
  *                            [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]
  *   plugbrain swarm turn <agent> start [--claim]
  *   plugbrain swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]
@@ -22,6 +22,7 @@
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
+ *   plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show
  *   plugbrain swarm admit <edit|test|index|build|install|worktree>   exit 0 = room, 5 = no room
  *   plugbrain swarm watchdog [--json] [--dry-run] | watchdog silent-after <minutes>
  *   plugbrain swarm review-pool set <agent>... | review-pool auto on|off | review-pool show
@@ -40,7 +41,7 @@ import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.
 import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd, deliverTaskWithEvidence } from './coord/turn-delivery.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
-  getRunnerProfile, hostSnapshot, listQuotas, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
+  configureQuotaPool, getRunnerProfile, hostSnapshot, listQuotaPools, listQuotas, quotaPoolSummary, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
   reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
   setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
@@ -92,10 +93,10 @@ const positionals = (args: string[], valued: string[]): string[] => {
 }
 
 const VALUED = [
-  '--workspace', '--surface', '--account', '--key', '--model', '--name', '--worktree', '--state', '--summary', '--deliver', '--since',
+  '--workspace', '--surface', '--account', '--quota-pool', '--key', '--model', '--name', '--worktree', '--state', '--summary', '--deliver', '--since',
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
   '--repo', '--target', '--auto', '--after',
-  '--cmd', '--args', '--effort', '--sandbox', '--cwd',
+  '--cmd', '--args', '--effort', '--sandbox', '--cwd', '--max-concurrent', '--rpm',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -232,6 +233,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         agentId,
         surface,
         account: need(flag(rest, '--account'), usage),
+        quotaPool: flag(rest, '--quota-pool') ?? undefined,
         resourceKey: flag(rest, '--key') ?? undefined,
         model: flag(rest, '--model') ?? undefined,
         worktrees: flags(rest, '--worktree'),
@@ -522,8 +524,9 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     case 'resources': {
       const host = hostSnapshot()
       const quotas = listQuotas(db)
+      const quotaPools = listQuotaPools(db)
       const admission = WORK_KINDS.map(kind => admitWork(kind, host))
-      if (asJson) { console.log(JSON.stringify({ host, quotas, admission }, null, 2)); return 0 }
+      if (asJson) { console.log(JSON.stringify({ host, quotas, quotaPools, admission }, null, 2)); return 0 }
       for (const drive of host.drives) console.log(`${drive.root} ${(drive.freeBytes / GB).toFixed(1)} von ${(drive.totalBytes / GB).toFixed(0)} GB frei`)
       console.log(`RAM ${(host.memory.freeBytes / GB).toFixed(1)} von ${(host.memory.totalBytes / GB).toFixed(0)} GB frei`)
       for (const entry of admission) console.log(`  ${entry.kind.padEnd(8)} ${entry.allowed ? 'ok' : `NEIN: ${entry.reasons.join('; ')}`}`)
@@ -531,6 +534,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         console.log(`  Kontingent ${quota.account}: ${quota.remaining} ${quota.unit}${quota.exhausted ? ' (erschöpft)' : ''}` +
           `${quota.resetsAt ? `, zurück ${quota.resetsAt}` : ''} · ${quota.updatedAt}`)
       }
+      for (const pool of quotaPools) console.log(`  Quota-Pool ${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}${pool.blockedUntil ? `, bis ${pool.blockedUntil}` : ''}`)
       return 0
     }
     case 'quota': {
@@ -543,6 +547,22 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       })
       touchAgentContact(db, reportedBy)
       console.log(`${report.account}: ${report.remaining} ${report.unit}${report.exhausted ? ' (erschöpft)' : ''}`)
+      return 0
+    }
+    case 'quota-pool': {
+      const action = pos[0]
+      if (action === 'show') {
+        const pools = listQuotaPools(db)
+        const summaries = pools.map(pool => quotaPoolSummary(db, pool.id)!).filter(Boolean)
+        if (asJson) console.log(JSON.stringify(summaries, null, 2))
+        else for (const pool of summaries) console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}, active=${pool.activeReservations}, settled=${pool.settledAttempts}, usage=${pool.reportedUsage} across ${pool.attemptsWithUnknownUsage} unknown${pool.blockedUntil ? `, blocked until ${pool.blockedUntil}` : ''}`)
+        return 0
+      }
+      if (action !== 'set') throw new AccessDenied('usage: plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show')
+      const usage = 'plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]'
+      const pool = configureQuotaPool(db, { id: need(pos[1], usage), maxConcurrent: numberFlag(rest, '--max-concurrent') ?? 1,
+        maxRequestsPerMinute: numberFlag(rest, '--rpm') ?? null })
+      console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}`)
       return 0
     }
     case 'admit': {

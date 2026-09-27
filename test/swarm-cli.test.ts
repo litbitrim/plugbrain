@@ -247,6 +247,12 @@ test('quotas, resources and admission are available to every worker', () => {
     assert.deepEqual(parsed.quotas.map(row => row.account), ['owner:chatgpt'])
     assert.deepEqual(parsed.admission.map(row => row.kind), ['edit', 'test', 'index', 'build', 'install', 'worktree'])
     assert.equal(b.run('swarm', 'admit', 'edit', '--workspace', b.ws).code, 0)
+    const setPool = b.run('swarm', 'quota-pool', 'set', 'nvidia:project-a', '--max-concurrent', '3', '--rpm', '20', '--workspace', b.ws)
+    assert.equal(setPool.code, 0, setPool.err)
+    assert.match(b.run('swarm', 'quota-pool', 'show', '--workspace', b.ws).out, /nvidia:project-a: concurrency=3, rpm=20/)
+    const register = b.run('swarm', 'register', 'nv01', '--surface', 'freebuff', '--account', 'nvidia:key-01',
+      '--quota-pool', 'nvidia:project-a', '--workspace', b.ws)
+    assert.equal(register.code, 0, register.err)
     const bad = b.run('swarm', 'quota', 'nvidia:key-02', '5', 'rpm', '--note', 'nvapi-' + 'x'.repeat(36), '--workspace', b.ws)
     assert.equal(bad.code, 3)
     assert.match(bad.err, /looks like a credential/)

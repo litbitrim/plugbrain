@@ -16,6 +16,7 @@ import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { claimNextTask } from '../queue.ts'
 import { ensureIntegrator, sendMessage } from './inbox.ts'
 import { getRunnerProfile, getWorkerRun, reconcileWorkerRuns, startWorkerRun } from './runner.ts'
+import { configureQuotaPool, ensureQuotaPoolSchema, getQuotaPool, noteQuotaRateLimit, reserveQuota, settleQuota } from './quota-pools.ts'
 
 const DEFAULT_IDLE_MS = 5 * 60_000
 const DEFAULT_MAX_IDLE_CHECKS = 24
@@ -34,13 +35,17 @@ export function classifySupervisorFailure(input: { exitCode: number | null; outp
   return input.exitCode === 0 ? 'clean' : 'crash'
 }
 
-function quotaBackoffMs(output: string): number {
-  const seconds = /retry-after\s*:\s*(\d+)/i.exec(output)?.[1]
-  if (seconds === undefined) return DEFAULT_QUOTA_BACKOFF_MS
-  return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, Number(seconds) * 1000))
+function quotaBackoffMs(output: string, now = Date.now()): number {
+  const value = /retry-after\s*:\s*([^\r\n]+)/i.exec(output)?.[1]?.trim()
+  if (value === undefined) return DEFAULT_QUOTA_BACKOFF_MS
+  const seconds = Number(value)
+  const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : Date.parse(value) - now
+  if (!Number.isFinite(delay)) return DEFAULT_QUOTA_BACKOFF_MS
+  return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, delay))
 }
 
 export function ensureSupervisorSchema(db: DatabaseSync): void {
+  ensureQuotaPoolSchema(db)
   db.exec(`
 CREATE TABLE IF NOT EXISTS worker_supervisors (
   agent_id TEXT PRIMARY KEY,
@@ -239,7 +244,21 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
       .get(task.id) as { n: number }).n)
     let finished = false
     while (!finished && attemptNumber < maxAttempts && supervisorOwns(db, input.agentId, input.supervisorId)) {
-      attemptNumber += 1
+      const profile = db.prepare('SELECT account, quota_pool FROM agents WHERE id = ?').get(input.agentId) as
+        { account: string | null; quota_pool: string | null } | undefined
+      const poolId = profile?.quota_pool?.trim() || profile?.account?.trim() || ''
+      if (!poolId) throw new AccessDenied(`no quota pool or account is configured for ${input.agentId}`)
+      if (!getQuotaPool(db, poolId)) configureQuotaPool(db, { id: poolId, maxConcurrent: 1 })
+      const nextAttempt = attemptNumber + 1
+      const reservation = reserveQuota(db, { poolId, attemptId: `${task.id}:${nextAttempt}` })
+      if (!reservation.allowed) {
+        const delay = reservation.reason === 'cooldown' && reservation.retryAt
+          ? Math.max(pollMs, Math.min(MAX_QUOTA_BACKOFF_MS, Date.parse(reservation.retryAt) - Date.now()))
+          : pollMs
+        await new Promise(resolve => setTimeout(resolve, delay))
+        continue
+      }
+      attemptNumber = nextAttempt
       const attemptToken = `attempt-${randomUUID()}`
       const startedAt = new Date().toISOString()
       setSupervisor(db, input.agentId, input.supervisorId, { taskId: task.id, attempt: attemptNumber, failure: null })
@@ -259,6 +278,10 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
         }
         const output = readRunOutput(current)
         const failure = classifySupervisorFailure({ exitCode: current.endedReason === 'turn-end' ? 0 : 1, output })
+        if (failure === 'quota') {
+          noteQuotaRateLimit(db, poolId, quotaBackoffMs(output))
+        }
+        settleQuota(db, { reservationId: reservation.reservation!.id, outcome: failure })
         const queue = db.prepare('SELECT state, claimed_by FROM queue_tasks WHERE id = ?').get(task.id) as
           { state: string; claimed_by: string | null } | undefined
         const endedTurn = db.prepare('SELECT turn_state FROM agents WHERE id = ?').get(input.agentId) as { turn_state: string | null }
@@ -284,6 +307,7 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
         if (failure === 'quota') await new Promise(resolve => setTimeout(resolve, quotaBackoffMs(output)))
       } catch (error) {
         const message = String(error)
+        settleQuota(db, { reservationId: reservation.reservation!.id, outcome: 'launch-error' })
         db.prepare('UPDATE worker_task_attempts SET ended_at = ?, outcome = ? WHERE task_id = ? AND attempt = ?')
           .run(new Date().toISOString(), 'launch-error', task.id, attemptNumber)
         if (attemptNumber >= maxAttempts) {

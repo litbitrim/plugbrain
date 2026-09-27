@@ -585,9 +585,11 @@ Without `--workspace` the single registered workspace is used.
 - `swarm resources`: Display host CPU, RAM, disk quotas, and admission decisions.
 - `swarm admit <test|build|install>`: Check admission gate for hardware-intensive actions.
 **Agents**
-- `swarm register <agent> --surface <s> --account <label> [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
+- `swarm register <agent> --surface <s> --account <label> [--quota-pool <pool>] [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
   register an agent. Surfaces: `claude-code`, `codex-app`, `freebuff`, `agy`, `native`, `other`.
-  `--worktree` binds the agent to a checkout so the board can show its branch.
+  `--worktree` binds the agent to a checkout so the board can show its branch. Workers
+  that draw from one provider project must share the same `--quota-pool`, even when they
+  carry different resource keys; it defaults to the account label.
 - `swarm turn <agent> start [--claim]`: check in at the start of a turn. Prints
   unread messages and the task offered to this agent; `--claim` takes it.
 - `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>] [--deliver <evidence>] [--repo <worktree>] [--review]`:
@@ -652,9 +654,14 @@ Without `--workspace` the single registered workspace is used.
   stores turn history is available; the chronicle does not invent events. Reads are
   capped at 500 rows per source and output at 1,000 events; capped results say that
   older events were omitted.
-- `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
+- `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas and configured pool limits.
 - `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
   report how much of an account's quota is left. Numbers only, never keys.
+- `swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]`: configure one shared
+  provider/project pool. Reservations for worker attempts count against the same concurrency
+  and optional rolling RPM limit. `swarm quota-pool show [--json]` reports active and settled
+  attempts; unreported usage remains unknown rather than being counted as zero. A provider
+  429 applies a bounded, pool-wide cooldown using `Retry-After` when available.
 - `swarm admit <edit|test|index|build|install|worktree>`: exit 0 means there is
   room on this machine for that kind of work, exit 5 means there is not.
 

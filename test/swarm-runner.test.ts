@@ -444,6 +444,11 @@ test('swarm run supervisor claims the next task, runs a fake worker and stops fo
     assert.equal(attempts[0]?.outcome, 'crash')
     assert.equal(attempts[0]?.ended_at !== null, true)
     assert.equal(attempts[1]?.outcome, 'crash')
+    const reservations = db!.prepare('SELECT pool_id, attempt_id, settled_at, usage, outcome FROM quota_reservations ORDER BY reserved_at')
+      .all() as Array<{ pool_id: string; attempt_id: string; settled_at: string | null; usage: number | null; outcome: string | null }>
+    assert.equal(reservations.length, 2, 'every launched attempt reserves one shared account-pool slot')
+    assert.deepEqual(reservations.map(row => row.pool_id), ['test:fake', 'test:fake'])
+    assert.ok(reservations.every(row => row.settled_at !== null && row.usage === null && row.outcome === 'crash'))
     const promptPath = (db!.prepare("SELECT prompt_path FROM worker_runs WHERE agent_id = 'fake-01'").get() as { prompt_path: string }).prompt_path
     const assignedPrompt = readFileSync(promptPath, 'utf8')
     assert.match(assignedPrompt, /Assigned queue task \(already atomically claimed\)/)

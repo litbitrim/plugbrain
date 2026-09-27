@@ -13,12 +13,20 @@ first place.
 ## Before the first turn
 
 Register each agent once. The account label tells the board which quota the
-agent spends; one key or subscription can carry several agents.
+agent spends. Set `--quota-pool` to the provider project/account limit shared by
+its agents; different keys in that project must use the same pool name.
 
 ```bash
 plugbrain swarm register codex-1 --surface other --account openai --model gpt-6-luna
 plugbrain swarm register claude-1 --surface claude-code --account anthropic
+plugbrain swarm register nv01 --surface freebuff --account nvidia:key-01 --key nvidia-01 --quota-pool nvidia:project-a
+plugbrain swarm register nv02 --surface freebuff --account nvidia:key-02 --key nvidia-02 --quota-pool nvidia:project-a
 ```
+
+Configure the shared pool once with `plugbrain swarm quota-pool set nvidia:project-a
+--max-concurrent 2 --rpm 30`. Supervised runs reserve an attempt atomically and
+settle it after the worker exits. Provider-reported usage is only recorded when
+available; missing usage stays unknown.
 
 Surfaces are `claude-code`, `codex-app`, `freebuff`, `agy`, `native` and `other`.
 
