@@ -321,7 +321,10 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
   }
   coordEvents.emitLive('agent.turn', { agentId: input.agentId, phase: input.phase, state, at: now })
-  if (input.phase === 'end') runAutoReap(db, input.workspaceId)
+  if (input.phase === 'end') {
+    try { runAutoReap(db, input.workspaceId) }
+    catch (error) { console.error(`[swarm-ops] auto-reap failed at turn end: ${error instanceof Error ? error.message : String(error)}`) }
+  }
   return ping
 }
 
@@ -348,7 +351,8 @@ export function approveCommit(
   const now = new Date().toISOString()
   db.prepare(`UPDATE agents SET turn_state = 'commit-approved', turn_state_at = ? WHERE id = ?`).run(now, input.agentId)
   coordEvents.emitLive('agent.commit.approved', { agentId: input.agentId, by: input.by, at: now })
-  runAutoReap(db, input.workspaceId)
+  try { runAutoReap(db, input.workspaceId) }
+  catch (error) { console.error(`[swarm-ops] auto-reap failed at commit approval: ${error instanceof Error ? error.message : String(error)}`) }
   return message
 }
 

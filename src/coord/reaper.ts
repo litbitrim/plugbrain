@@ -1,14 +1,15 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, type Dirent } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, realpathSync, type Dirent } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { storeHome } from '../index/runs.ts'
 import { ensureLeaseSchema } from './leases.ts'
 
-export interface ReapOptions { repo?: string; target?: string; apply?: boolean; now?: Date }
+export interface ReapOptions { repo?: string; target?: string; apply?: boolean; now?: Date; gracePeriodMs?: number }
 export interface ReapCandidate {
   path: string; branch: string | null; commit: string | null; target: string | null
   eligible: boolean; reason: string; restoreCommand?: string
+  error?: string
 }
 export interface ReapResult {
   dryRun: boolean; candidates: ReapCandidate[]; removed: ReapCandidate[]
@@ -16,7 +17,13 @@ export interface ReapResult {
 }
 
 interface Worktree { path: string; head: string | null; branch: string | null; locked: boolean }
-const normalize = (path: string): string => resolve(path).replace(/[\\/]+$/, '').toLowerCase()
+
+/** Canonicalize a path using fs.realpathSync.native (resolves symlinks, junctions, 8.3 names).
+ *  Non-existent paths fall back to resolve()+lowercase without throwing. */
+const normalize = (path: string): string => {
+  try { return realpathSync.native(path).replace(/[\\/]+$/, '').toLowerCase() }
+  catch { return resolve(path).replace(/[\\/]+$/, '').toLowerCase() }
+}
 const git = (cwd: string, ...args: string[]): string => execFileSync('git', ['-C', cwd, ...args], {
   encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15000, windowsHide: true,
 }).trim()
@@ -36,6 +43,7 @@ function ensureReaperSchema(db: DatabaseSync): void {
   const hasAgent = (name: string) => agentColumns.some(column => column.name === name)
   if (!hasAgent('workspace_id')) db.exec('ALTER TABLE agents ADD COLUMN workspace_id TEXT')
   if (!hasAgent('turn_state')) db.exec('ALTER TABLE agents ADD COLUMN turn_state TEXT')
+  if (!hasAgent('turn_state_at')) db.exec('ALTER TABLE agents ADD COLUMN turn_state_at TEXT')
   if (!hasAgent('worktrees')) db.exec('ALTER TABLE agents ADD COLUMN worktrees TEXT')
   if (!hasAgent('retired_at')) db.exec('ALTER TABLE agents ADD COLUMN retired_at TEXT')
   const columns = db.prepare('PRAGMA table_info(checkouts)').all() as unknown as Array<{ name: string }>
@@ -67,7 +75,8 @@ export function isReapAutoEnabled(db: DatabaseSync, workspaceId: string): boolea
 
 export function runAutoReap(db: DatabaseSync, workspaceId: string): ReapResult | null {
   if (!isReapAutoEnabled(db, workspaceId)) return null
-  return reapWorktrees(db, workspaceId, { apply: true })
+  // Grace period: protect worktrees of workers who ended their turn recently
+  return reapWorktrees(db, workspaceId, { apply: true, gracePeriodMs: 5 * 60_000 })
 }
 
 /** Mark registry paths that no longer exist and detach stale worker bindings. */
@@ -141,7 +150,7 @@ function repositories(root: string, requested?: string): string[] {
   return found
 }
 
-function safetyReason(db: DatabaseSync, workspaceId: string, root: string, candidate: Worktree, primary: Worktree, target: string): string | null {
+function safetyReason(db: DatabaseSync, workspaceId: string, root: string, candidate: Worktree, primary: Worktree, target: string, gracePeriodMs?: number): string | null {
   if (normalize(candidate.path) === normalize(primary.path)) return 'primary checkout'
   if (candidate.locked) return 'worktree locked'
   if (!candidate.branch || !candidate.head) return 'detached branch'
@@ -154,8 +163,8 @@ function safetyReason(db: DatabaseSync, workspaceId: string, root: string, candi
     return hasUntracked ? `untracked: ${lines.filter(line => line.startsWith('??')).length} file(s)`
       : `uncommitted: ${lines.length} file(s)`
   }
-  const profiles = db.prepare(`SELECT id, turn_state, worktrees FROM agents
-    WHERE workspace_id = ? AND retired_at IS NULL`).all(workspaceId) as unknown as Array<{ id: string; turn_state: string | null; worktrees: string | null }>
+  const profiles = db.prepare(`SELECT id, turn_state, turn_state_at, worktrees FROM agents
+    WHERE workspace_id = ? AND retired_at IS NULL`).all(workspaceId) as unknown as Array<{ id: string; turn_state: string | null; turn_state_at: string | null; worktrees: string | null }>
   const bound = profiles.filter(profile => {
     try { return (JSON.parse(profile.worktrees ?? '[]') as string[]).some(path => normalize(path) === normalize(candidate.path)) }
     catch { return false }
@@ -164,6 +173,18 @@ function safetyReason(db: DatabaseSync, workspaceId: string, root: string, candi
     .all(workspaceId, new Date().toISOString()) as unknown as Array<{ agent_id: string }>
   if (bound.some(profile => profile.turn_state === 'working')) return 'running turn bound to worktree'
   if (bound.some(profile => activeLeases.some(lease => lease.agent_id === profile.id))) return 'active lease bound to worktree'
+  // Grace period: protect worktrees of workers who recently ended their turn
+  if (gracePeriodMs !== undefined && gracePeriodMs > 0) {
+    const graceCutoff = Date.now() - gracePeriodMs
+    for (const profile of bound) {
+      if (profile.turn_state_at) {
+        const turnEndTime = Date.parse(profile.turn_state_at)
+        if (!Number.isNaN(turnEndTime) && turnEndTime >= graceCutoff) {
+          return 'worker turn ended recently (grace period)'
+        }
+      }
+    }
+  }
   const leasePaths = db.prepare(`SELECT paths_json FROM leases WHERE workspace_id = ? AND released_at IS NULL AND expires_at > ?`)
     .all(workspaceId, new Date().toISOString()) as unknown as Array<{ paths_json: string }>
   const prefix = relative(root, candidate.path).replace(/\\/g, '/').replace(/\/$/, '').toLowerCase()
@@ -207,9 +228,23 @@ export function reapWorktrees(db: DatabaseSync, workspaceId: string, options: Re
     const trees = listWorktrees(repo)
     const primary = trees[0]
     if (!primary) continue
-    const target = options.target ?? primary.branch ?? 'HEAD'
+    const target = options.target ?? primary.branch
+    if (!target) {
+      // No valid target (primary is detached and no --target given): mark all as ineligible
+      for (const tree of trees) {
+        candidates.push({
+          path: tree.path,
+          branch: tree.branch,
+          commit: tree.head,
+          target: null,
+          eligible: false,
+          reason: 'no merge target (primary checkout detached; use --target)',
+        })
+      }
+      continue
+    }
     for (const tree of trees) {
-      const reason = safetyReason(db, workspaceId, wsRoot, tree, primary, target)
+      const reason = safetyReason(db, workspaceId, wsRoot, tree, primary, target, options.gracePeriodMs)
       const item: ReapCandidate = {
         path: tree.path, branch: tree.branch, commit: tree.head, target,
         eligible: reason === null, reason: reason ?? 'reapable',
@@ -217,15 +252,28 @@ export function reapWorktrees(db: DatabaseSync, workspaceId: string, options: Re
       if (reason === null) item.restoreCommand = `git worktree add "${tree.path}" "${tree.branch}"`
       candidates.push(item)
       if (reason !== null || options.apply !== true) continue
-      git(repo, 'worktree', 'remove', tree.path)
+      try {
+        git(repo, 'worktree', 'remove', tree.path)
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? error.message : String(error)
+        item.eligible = false
+        item.reason = `git worktree remove failed: ${detail}`
+        item.error = detail
+        continue
+      }
       detachReapedPath(db, workspaceId, tree.path)
       const receipt = { path: tree.path, branch: tree.branch!, commit: tree.head!, target, removedAt: at,
         restoreCommand: item.restoreCommand! }
-      db.prepare(`INSERT INTO worktree_reap_receipts (workspace_id, path, branch, commit_hash, target, removed_at, restore_command)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(workspaceId, receipt.path, receipt.branch, receipt.commit, receipt.target, at, receipt.restoreCommand)
-      const file = join(storeHome(), 'worktree-reap-receipts.jsonl')
-      mkdirSync(dirname(file), { recursive: true })
-      appendFileSync(file, `${JSON.stringify(receipt)}\n`, 'utf8')
+      try {
+        db.prepare(`INSERT INTO worktree_reap_receipts (workspace_id, path, branch, commit_hash, target, removed_at, restore_command)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`).run(workspaceId, receipt.path, receipt.branch, receipt.commit, receipt.target, at, receipt.restoreCommand)
+        const file = join(storeHome(), 'worktree-reap-receipts.jsonl')
+        mkdirSync(dirname(file), { recursive: true })
+        appendFileSync(file, `${JSON.stringify(receipt)}\n`, 'utf8')
+      } catch (error: unknown) {
+        const detail = error instanceof Error ? error.message : String(error)
+        item.error = (item.error ? item.error + '; ' : '') + `receipt write failed: ${detail}`
+      }
       removed.push(item)
     }
   }
