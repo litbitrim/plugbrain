@@ -175,11 +175,15 @@ test('M4: two real agent processes interact, conflict 409, message handoff, and 
 test('M4: dead agent (expired heartbeat) does not block claims or writes permanently', async () => {
   const f = await createCoordFixture()
   try {
-    // Register agent dead-1 with short TTL (500ms)
+    const heartbeatTtlMs = 60_000
+
+    // Keep the live case comfortably inside its TTL; CI setup and lease work
+    // must not decide whether this agent is alive.
     coord.registerSwarmAgent(f.db, {
       agentId: 'agent-dead-1',
       workspaceId: f.workspaceId,
-      heartbeatTtlMs: 500,
+      taskId: 'task-dead-1',
+      heartbeatTtlMs,
     })
 
     // Acquire lease
@@ -196,8 +200,13 @@ test('M4: dead agent (expired heartbeat) does not block claims or writes permane
     coord.registerSwarmAgent(f.db, {
       agentId: 'agent-alive-2',
       workspaceId: f.workspaceId,
-      heartbeatTtlMs: 60000,
+      taskId: 'task-alive-2',
+      heartbeatTtlMs,
     })
+
+    const livePresence = coord.getAgentPresence(f.db, { agentId: 'agent-alive-2' })
+    assert.equal(livePresence[0].presence, 'active')
+    assert.equal(livePresence[0].isExpired, false)
 
     // Immediate attempt to claim by alive agent should conflict
     const blockedRes = coord.acquireLease(f.db, f.workspaceId, {
@@ -209,8 +218,11 @@ test('M4: dead agent (expired heartbeat) does not block claims or writes permane
     assert.equal(blockedRes.acquired, false)
     assert.equal(blockedRes.conflict?.holder.agentId, 'agent-dead-1')
 
-    // Wait 600ms for agent-dead-1 heartbeat to expire
-    await new Promise((r) => setTimeout(r, 600))
+    // Expire only the heartbeat value in the fixture database. Keep the TTL
+    // unchanged and avoid a wall-clock sleep that can expire during setup on CI.
+    const staleHeartbeat = new Date(Date.now() - heartbeatTtlMs - 1).toISOString()
+    f.db.prepare('UPDATE agents SET last_heartbeat = ? WHERE id = ?')
+      .run(staleHeartbeat, 'agent-dead-1')
 
     // Verify presence is dead
     const presences = coord.getAgentPresence(f.db, { agentId: 'agent-dead-1' })
