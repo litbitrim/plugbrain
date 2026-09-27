@@ -59,6 +59,7 @@ export const TRACE_EVENT_TYPES = [
   'integration.queued',
   'integration.accepted',
   'integration.rejected',
+  'wave.owner-decision',
   'worker.started',
   'worker.heartbeat',
   'worker.backoff',
