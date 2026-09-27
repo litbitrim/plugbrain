@@ -42,9 +42,9 @@ const HOST: coord.HostSnapshot = {
   cpuBusyFraction: null,
 }
 
-function register(f: Fixture, agentId: string, account: string): void {
+function register(f: Fixture, agentId: string, account: string, model?: string): void {
   coord.registerSwarmAgent(f.db, { agentId, workspaceId: f.workspaceId, heartbeatTtlMs: 6 * 60 * 60_000 })
-  coord.registerWorkerProfile(f.db, { agentId, surface: 'freebuff', account })
+  coord.registerWorkerProfile(f.db, { agentId, surface: 'freebuff', account, ...(model === undefined ? {} : { model }) })
 }
 
 const minutesAgo = (now: Date, minutes: number): Date => new Date(now.getTime() - minutes * 60_000)
@@ -187,6 +187,62 @@ test('BR-2a: unknown reviewer accounts do not count as independent', () => {
   } finally { f.cleanup() }
 })
 
+test('AP03: same model family with different accounts is not independent', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-author', 'account-a', 'gpt-6-luna')
+    register(f, 'w-reviewer', 'account-b', 'gpt-5.4')
+    coord.setReviewPool(f.db, f.workspaceId, ['w-reviewer'])
+    coord.setReviewAuto(f.db, f.workspaceId, true)
+
+    const result = coord.routeReviewForAuthor(f.db, f.workspaceId, 'w-author')
+    assert.equal(result.routed, false)
+    assert.match(result.reason, /known different model family/)
+    assert.equal(reviewTaskCount(f), 0)
+  } finally { f.cleanup() }
+})
+
+test('AP03: different registered model families route, while unknown and changed metadata fail closed', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-author', 'account-a', 'gpt-6-luna')
+    register(f, 'w-reviewer', 'account-b', 'claude-sonnet-4')
+    coord.setReviewPool(f.db, f.workspaceId, ['w-reviewer'])
+    coord.setReviewAuto(f.db, f.workspaceId, true)
+
+    const routed = coord.routeReviewForAuthor(f.db, f.workspaceId, 'w-author')
+    assert.equal(routed.routed, true)
+    const queued = f.db.prepare('SELECT body FROM queue_tasks WHERE id = ?').get(routed.taskId) as { body: string }
+    assert.match(queued.body, /openai \(gpt-6-luna\) -> anthropic \(claude-sonnet-4\)/)
+
+    f.db.prepare("UPDATE agents SET model = 'custom-deployment-model' WHERE id = 'w-reviewer'").run()
+    assert.deepEqual(coord.resolveReviewIndependence(f.db, 'w-author', 'w-reviewer'), {
+      independent: false, reason: 'unknown-model',
+    })
+
+    f.db.prepare("UPDATE agents SET model = 'gpt-6-pro' WHERE id = 'w-reviewer'").run()
+    assert.deepEqual(coord.resolveReviewIndependence(f.db, 'w-author', 'w-reviewer'), {
+      independent: false, reason: 'same-model-family',
+    })
+  } finally { f.cleanup() }
+})
+
+test('AP03: conflicting current agent and runner model metadata is treated as stale', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-author', 'account-a', 'gpt-6-luna')
+    register(f, 'w-reviewer', 'account-b', 'claude-sonnet-4')
+    coord.setRunnerProfile(f.db, { agentId: 'w-reviewer', cmd: 'node', model: 'gpt-6-luna' })
+    assert.deepEqual(coord.resolveReviewIndependence(f.db, 'w-author', 'w-reviewer'), {
+      independent: false, reason: 'stale-model-metadata',
+    })
+    coord.setReviewPool(f.db, f.workspaceId, ['w-reviewer'])
+    coord.setReviewAuto(f.db, f.workspaceId, true)
+    assert.equal(coord.routeReviewForAuthor(f.db, f.workspaceId, 'w-author').routed, false)
+    assert.equal(reviewTaskCount(f), 0)
+  } finally { f.cleanup() }
+})
+
 test('BR-2a: --after blocks a task until its predecessor is delivered, then tells the addressee', () => {
   const f = createFixture()
   try {
@@ -308,12 +364,12 @@ test('BR-2a: a turn ended with awaiting-commit frees what waits on it — blocke
 test('BR-2a: review routing picks a reviewer with another account, once, and only when on', () => {
   const f = createFixture()
   try {
-    register(f, 'w-author', 'freebuff:freebucks')
-    register(f, 'nv-review', 'nvidia:key-01')
-    register(f, 'fb-review', 'freebuff:freebucks')
-    register(f, 'owner-review', 'owner:chatgpt')
-    register(f, 'w-author-2', 'gemini:key-03')
-    register(f, 'w-author-3', 'freebuff:freebucks')
+    register(f, 'w-author', 'freebuff:freebucks', 'gpt-6-luna')
+    register(f, 'nv-review', 'nvidia:key-01', 'claude-sonnet-4')
+    register(f, 'fb-review', 'freebuff:freebucks', 'gpt-5.4')
+    register(f, 'owner-review', 'owner:chatgpt', 'gemini-2.5-pro')
+    register(f, 'w-author-2', 'gemini:key-03', 'gemini-2.5-pro')
+    register(f, 'w-author-3', 'freebuff:freebucks', 'gpt-6-luna')
 
     const cli = (args: string[]): number => runSwarmCli(f.db, [...args, '--workspace', f.workspaceId], () => f.workspaceId)
     // The first entry shares the author's account and must be skipped.
@@ -328,7 +384,7 @@ test('BR-2a: review routing picks a reviewer with another account, once, and onl
     const reviews = f.db.prepare(`SELECT id, title, addressed_to, body FROM queue_tasks WHERE workspace_id = ? AND title LIKE 'Review:%'`)
       .all(f.workspaceId) as unknown as Array<{ id: string; title: string; addressed_to: string; body: string }>
     assert.equal(reviews.length, 1)
-    assert.equal(reviews[0]!.addressed_to, 'nv-review', 'a review goes to a different account than the author')
+    assert.equal(reviews[0]!.addressed_to, 'nv-review', 'a review goes to a different account and model family')
     assert.match(reviews[0]!.title, /Review: Cx01 Aufgabe/)
     assert.match(reviews[0]!.body, /w-author/)
     assert.equal(queueTask(f, reviews[0]!.id).state, 'pending')

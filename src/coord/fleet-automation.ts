@@ -3,6 +3,7 @@ import { enqueueTask } from '../queue.ts'
 import { ensureSystemAgent, sendMessage } from './inbox.ts'
 import { routeReviewForAuthor } from './watchdog.ts'
 import { ensureCoordSchema } from './registry.ts'
+import { resolveReviewIndependence } from './model-family.ts'
 
 export interface FleetAutomationEvent {
   id?: string | number
@@ -84,9 +85,7 @@ function markEvent(db: DatabaseSync, workspaceId: string, key: string, action: s
 
 function queueReview(db: DatabaseSync, workspaceId: string, authorId: string, taskId: string, caseSourceTaskId = taskId): FleetAutomationResult {
   const route = routeReviewForAuthor(db, workspaceId, authorId)
-  const sourceRoute = db.prepare(`SELECT task_id FROM review_routes
-    WHERE workspace_id = ? AND author_id = ? AND source_task_id = ?`).get(workspaceId, authorId, taskId) as { task_id: string } | undefined
-  const reviewTaskId = route.taskId ?? sourceRoute?.task_id
+  const reviewTaskId = route.taskId
   if (reviewTaskId !== undefined) {
     linkTask(db, workspaceId, taskId, caseSourceTaskId, caseSourceTaskId === taskId ? 'source' : 'fix')
     linkTask(db, workspaceId, reviewTaskId, caseSourceTaskId, 'review')
@@ -124,6 +123,27 @@ function processDelivered(db: DatabaseSync, workspaceId: string, taskId: string)
     const current = db.prepare(`SELECT author_id, fix_round, state FROM fleet_automation_cases
       WHERE workspace_id = ? AND source_task_id = ?`).get(workspaceId, sourceTaskId) as { author_id: string; fix_round: number; state: string } | undefined
     if (current === undefined) return { action: 'ignored' }
+    const identity = db.prepare(`
+      SELECT r.author_id, r.reviewer_id, author.account AS author_account, reviewer.account AS reviewer_account,
+             reviewer.retired_at
+        FROM review_routes r
+        JOIN agents author ON author.id = r.author_id
+        JOIN agents reviewer ON reviewer.id = r.reviewer_id
+       WHERE r.workspace_id = ? AND r.task_id = ?
+    `).get(workspaceId, taskId) as {
+      author_id: string; reviewer_id: string; author_account: string | null; reviewer_account: string | null; retired_at: string | null
+    } | undefined
+    const independence = identity === undefined ? null
+      : resolveReviewIndependence(db, identity.author_id, identity.reviewer_id)
+    if (identity === undefined || identity.author_id !== current.author_id || identity.retired_at !== null
+      || !identity.author_account || !identity.reviewer_account || identity.author_account === identity.reviewer_account
+      || independence === null || 'reason' in independence) {
+      db.prepare(`UPDATE fleet_automation_cases SET state = 'awaiting-lead', updated_at = ?
+        WHERE workspace_id = ? AND source_task_id = ?`).run(new Date().toISOString(), workspaceId, sourceTaskId)
+      leadDecision(db, workspaceId, `Review independence needs decision: ${sourceTaskId}`,
+        `Review task ${taskId} no longer has verifiable independent reviewer account and model-family metadata. No automatic integration or fix routing was created.`)
+      return { action: 'lead-decision-required' }
+    }
     if (judgment === 'PASS' || judgment === 'PASS_MIT_AUFLAGEN') {
       if (current.state === 'integration-ready') return { action: 'duplicate' }
       const source = db.prepare('SELECT title FROM queue_tasks WHERE id = ?').get(sourceTaskId) as { title: string }

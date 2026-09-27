@@ -17,7 +17,8 @@ function fixture() {
     .run(workspaceId, 'AP-03', dir, new Date().toISOString())
   const register = (agentId: string, account: string) => {
     coord.registerSwarmAgent(db, { agentId, workspaceId })
-    coord.registerWorkerProfile(db, { agentId, surface: 'codex-app', account })
+    const model = agentId === 'reviewer' ? 'claude-sonnet-4' : agentId === 'integrator' ? 'gemini-2.5-pro' : 'gpt-6-luna'
+    coord.registerWorkerProfile(db, { agentId, surface: 'codex-app', account, model })
   }
   register('author', 'account-author')
   register('same-account', 'account-author')
@@ -80,6 +81,33 @@ test('review PASS creates an integration task for the integrator', () => {
     const integration = rows(f.db, f.workspaceId).find(row => row.title.startsWith('Integrate:'))
     assert.equal(integration?.addressed_to, 'integrator')
     assert.match(integration?.body ?? '', /reviewer/)
+  } finally { f.close() }
+})
+
+test('a model-family change after routing blocks an automatic integration PASS', () => {
+  const f = fixture()
+  try {
+    const source = enqueueTask(f.db, f.workspaceId, { title: 'Review-family drift', addressedTo: 'author' })
+    f.db.prepare("UPDATE queue_tasks SET state = 'delivered', claimed_by = 'author', claimed_at = ?, delivered_path = 'result.md' WHERE id = ?")
+      .run(new Date().toISOString(), source.id)
+    assert.equal(handleFleetAutomationEvent(f.db, f.workspaceId, {
+      id: 'drift-source', type: 'task.delivered', data: { taskId: source.id },
+    }).action, 'review-queued')
+
+    const review = rows(f.db, f.workspaceId).find(row => row.title.startsWith('Review:'))!
+    f.db.prepare("UPDATE agents SET model = 'gpt-5.4' WHERE id = 'reviewer'").run()
+    f.db.prepare("UPDATE queue_tasks SET state = 'delivered', claimed_by = 'reviewer', claimed_at = ? WHERE id = ?")
+      .run(new Date(Date.now() + 1000).toISOString(), review.id)
+    f.db.prepare("INSERT INTO queue_deliveries (task_id, delivered_by, delivery_attempt, delivered_path, delivered_sha256, review_judgment, reviewed_commit, delivered_at) VALUES (?, 'reviewer', 1, 'review.md', 'hash', 'PASS', 'aabbcc', ?)")
+      .run(review.id, new Date().toISOString())
+
+    const result = handleFleetAutomationEvent(f.db, f.workspaceId, {
+      id: 'drift-review', type: 'task.delivered', data: { taskId: review.id },
+    })
+    assert.equal(result.action, 'lead-decision-required')
+    assert.equal(rows(f.db, f.workspaceId).some(row => row.title.startsWith('Integrate:')), false)
+    assert.equal((f.db.prepare(`SELECT state FROM fleet_automation_cases WHERE workspace_id = ? AND source_task_id = ?`)
+      .get(f.workspaceId, source.id) as { state: string }).state, 'awaiting-lead')
   } finally { f.close() }
 })
 
