@@ -18,16 +18,18 @@
  *
  * Alongside that sits the reviewer pool: a per-workspace, ordered list of
  * reviewers, and a switch (off by default) that turns a finished turn into a
- * review task for the first reviewer whose *account* differs from the author's.
- * Routing across accounts is the point: a review by the same subscription is
- * not an independent review.
+ * review task only when registered account and model family both differ.
+ * Neither a distinct account nor a distinct model label alone proves an
+ * independent review.
  */
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { enqueueTask } from '../queue.ts'
 import { syncDependencies } from './dependencies.ts'
 import { coordEvents } from './events.ts'
-import { ensureSystemAgent, sendMessage } from './inbox.ts'
+import { ensureSystemAgent } from './inbox.ts'
+import { handleFleetAutomationEvent } from './fleet-automation.ts'
+import { resolveReviewIndependence } from './model-family.ts'
 
 export const DEFAULT_SILENT_AFTER_MINUTES = 45
 
@@ -310,27 +312,23 @@ export function scanWatchdog(
         const current = silentWorkers(db, workspaceId, { now, silentAfterMinutes: settings.silentAfterMinutes })
           .find(item => item.agentId === reading.agentId)
         if (current === undefined || !caseIsUnannounced(current)) { db.exec('COMMIT'); continue }
-        ensureSystemAgent(db, workspaceId)
-        sendMessage(db, {
-          workspaceId,
-          fromAgent: 'integrator',
-          toAgent: 'integrator',
-          subject: `Still: ${current.agentId} seit ${current.minutes} min ohne Kontakt`,
-          body: `${current.agentId}${current.account === null ? '' : ` (${current.account})`} steht seit ` +
-            `${current.minutes} Minuten auf working, ohne Kontakt zum Brain` +
-            `${current.lastContactAt === null ? ` (Turn-Start ${current.workingSince})` : ` (letzter Kontakt ${current.lastContactAt})`}.\n` +
-            'Prüfen: hängt der Tab/Prozess? Continue geben — oder sauber abmelden: plugbrain swarm retire <agent> --note <grund>.',
-        })
-        db.prepare('UPDATE agents SET silence_alerted_at = ? WHERE id = ?').run(now.toISOString(), current.agentId)
         db.exec('COMMIT')
       } catch (error: unknown) {
         db.exec('ROLLBACK')
         throw error
       }
-      coordEvents.emitLive('watchdog.silent', {
-        workspaceId, agentId: reading.agentId, minutes: reading.minutes, at: now.toISOString(),
+      const heldTask = db.prepare(`SELECT id FROM queue_tasks
+        WHERE workspace_id = ? AND claimed_by = ? AND state = 'claimed'
+        ORDER BY claimed_at DESC LIMIT 1`).get(workspaceId, reading.agentId) as { id: string } | undefined
+      const event = coordEvents.emitLive('watchdog.silent', {
+        workspaceId, agentId: reading.agentId, minutes: reading.minutes,
+        workingSince: reading.workingSince, lastContactAt: reading.lastContactAt,
+        heldTaskId: heldTask?.id ?? null, at: now.toISOString(),
       })
-      alerted.push(reading.agentId)
+      const automation = handleFleetAutomationEvent(db, workspaceId, event)
+      if (automation.action === 'lead-decision-required') {
+        alerted.push(reading.agentId)
+      }
     }
   }
 
@@ -367,10 +365,9 @@ interface AuthorTaskRow {
  * Queue a review for a turn that ended with `awaiting-commit`.
  *
  * Only when the workspace has switched this on. The reviewer is the first
- * entry of the pool that is not the author, not retired, and whose account is
- * provably different — two `freebuff:freebucks` tabs cannot give each other an
- * independent review. An account that is unknown cannot be compared, so it is
- * accepted; the pool order decides then.
+ * pool entry that is not the author, not retired, has a different known
+ * account, and has current registered model metadata resolving to a different
+ * family. Unknown, stale, or same-family metadata is skipped.
  *
  * One review per author and source task: ending the same turn again (or the
  * integrator reopening it) must not pile up duplicate review tasks.
@@ -394,23 +391,39 @@ export function routeReviewForAuthor(
   `).get(workspaceId, authorId) as unknown as AuthorTaskRow | undefined
   const sourceTaskId = sourceTask?.id ?? ''
 
-  const already = db.prepare(
-    'SELECT task_id FROM review_routes WHERE workspace_id = ? AND author_id = ? AND source_task_id = ?',
-  ).get(workspaceId, authorId, sourceTaskId) as { task_id: string } | undefined
-  if (already !== undefined) return { routed: false, reason: `already routed (${already.task_id})` }
+  const already = db.prepare(`
+    SELECT r.task_id, r.reviewer_id, reviewer.account AS reviewer_account, reviewer.retired_at
+      FROM review_routes r JOIN agents reviewer ON reviewer.id = r.reviewer_id
+     WHERE r.workspace_id = ? AND r.author_id = ? AND r.source_task_id = ?
+  `).get(workspaceId, authorId, sourceTaskId) as {
+    task_id: string; reviewer_id: string; reviewer_account: string | null; retired_at: string | null
+  } | undefined
+  if (already !== undefined) {
+    const current = resolveReviewIndependence(db, authorId, already.reviewer_id)
+    if (already.retired_at !== null || !already.reviewer_account || !author?.account
+      || already.reviewer_account === author.account || 'reason' in current) {
+      return { routed: false, reason: 'existing review route independence cannot be proven' }
+    }
+    return { routed: false, reason: `already routed (${already.task_id})`, reviewer: already.reviewer_id, taskId: already.task_id }
+  }
 
   const reviewer = readReviewPool(db, workspaceId).find(entry => {
     if (entry.agentId === authorId || entry.retired) return false
     if (entry.account === null || entry.account.trim() === '' || author?.account == null || author.account.trim() === '') return false
-    return entry.account !== author.account
+    if (entry.account === author.account) return false
+    return resolveReviewIndependence(db, authorId, entry.agentId).independent
   })
-  if (reviewer === undefined) return { routed: false, reason: 'no reviewer with a different account in the pool' }
+  if (reviewer === undefined) return { routed: false, reason: 'no reviewer with a different account and known different model family in the pool' }
+
+  const independence = resolveReviewIndependence(db, authorId, reviewer.agentId)
+  if ('reason' in independence) return { routed: false, reason: `reviewer independence cannot be proven: ${independence.reason}` }
 
   ensureSystemAgent(db, workspaceId)
   const task = enqueueTask(db, workspaceId, {
     title: sourceTask === undefined ? `Review: Turn of ${authorId}` : `Review: ${sourceTask.title}`,
     body: [
       `Author: ${authorId}${author?.account == null ? '' : ` (${author.account})`}`,
+      `Model families: ${independence.authorFamily} (${independence.authorModel}) -> ${independence.reviewerFamily} (${independence.reviewerModel})`,
       sourceTask === undefined ? 'Task: none claimed' : `Task: ${sourceTask.id}: ${sourceTask.title} (${sourceTask.state})`,
       `Evidence: ${sourceTask?.delivered_path ?? '—'}`,
       `Worktree: ${parseWorktrees(author?.worktrees).join(', ') || '—'}`,

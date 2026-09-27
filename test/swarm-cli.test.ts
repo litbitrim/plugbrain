@@ -191,8 +191,12 @@ test('swarm delivery is documented in the generated agent block and CLI referenc
 test('waiting tasks, the reviewer pool and the watchdog cycle all work through the CLI', () => {
   const b = brain()
   try {
-    for (const [id, account] of [['cx01', 'owner:chatgpt'], ['nv03', 'nvidia:key-03'], ['nv04', 'nvidia:key-04']] as const) {
-      assert.equal(b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', account, '--workspace', b.ws).code, 0)
+    for (const [id, account, model] of [
+      ['cx01', 'owner:chatgpt', 'gpt-6-luna'],
+      ['nv03', 'nvidia:key-03', 'claude-sonnet-4'],
+      ['nv04', 'nvidia:key-04', 'gemini-2.5-pro'],
+    ] as const) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', account, '--model', model, '--workspace', b.ws).code, 0)
     }
 
     // A task with --after stays out of reach until its predecessor arrives.
