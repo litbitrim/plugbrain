@@ -20,6 +20,7 @@ import {
   workspaceIdFor,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
+import { deliverTaskWithEvidence } from '../coord/turn-delivery.ts'
 import * as attachments from '../notes/attachments.ts'
 import { hygieneReport } from '../hygiene/index.ts'
 import { machineReport } from '../machine/index.ts'
@@ -2438,13 +2439,19 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/queue/deliver' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
       const taskId = String(body.taskId ?? '').trim()
       const agentId = String(body.agentId ?? '').trim()
       const path = String(body.deliveredPath ?? '').trim()
       if (!taskId || !agentId || !path) {
         return json(res, { ok: false, error: 'taskId, agentId and deliveredPath required' }, 400)
       }
-      return json(res, { ok: true, task: queue.deliverTask(db, taskId, agentId, path) })
+      return json(res, { ok: true, task: deliverTaskWithEvidence(db, taskId, agentId, path, undefined, {
+        workspaceId,
+        workspaceRoot: access.requireWorkspace(db, workspaceId).root,
+        repoPath: typeof body.repoPath === 'string' ? body.repoPath : undefined,
+        reviewRequired: body.review === true,
+      }) })
     }
 
     if (p === '/api/workspaces' && req.method === 'POST') {

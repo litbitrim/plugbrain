@@ -73,6 +73,17 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
 );
 -- The claim query filters on exactly this, and it runs on every idle agent.
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
+CREATE TABLE IF NOT EXISTS queue_deliveries (
+  task_id TEXT PRIMARY KEY REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  delivered_by TEXT NOT NULL,
+  delivery_attempt INTEGER NOT NULL,
+  source_revision TEXT,
+  delivered_path TEXT NOT NULL,
+  delivered_sha256 TEXT NOT NULL,
+  review_judgment TEXT,
+  reviewed_commit TEXT,
+  delivered_at TEXT NOT NULL
+);
 `
 
 // The candidates every offer reads are filtered by the dependency table, so it
@@ -199,31 +210,52 @@ export function deliverTask(
   agentId: string,
   deliveredPath: string,
   deliveredSummary?: string,
+  receipt?: { workspaceId: string; deliveredBy: string; sourceRevision: string | null; sha256: string; reviewJudgment: string | null; reviewedCommit: string | null },
 ): QueueTask {
   ensureQueueSchema(db)
-  const task = load(db, taskId)
-  if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
-  if (task.claimed_by !== agentId) {
-    throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)
-  }
   const summary = deliveredSummary === undefined ? null : deliveredSummary.slice(0, 2000)
   if (summary !== null) assertNotCredential('delivery summary', summary)
   const now = new Date().toISOString()
-  db.prepare(
-    `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, delivered_summary = ?, updated_at = ? WHERE id = ?`,
-  ).run(deliveredPath, summary, now, taskId)
-  const delivered = load(db, taskId)
-  // The delivery may be exactly the event another task was waiting for.
-  syncDependencies(db, task.workspace_id)
-  coordEvents.emitLive('task.delivered', {
-    taskId: delivered.id,
-    title: delivered.title,
-    agentId: delivered.claimed_by,
-    addressedTo: delivered.addressed_to,
-    evidence: delivered.delivered_path,
-    deliveredAt: delivered.updated_at,
-  })
-  return delivered
+  db.exec('BEGIN IMMEDIATE')
+  try {
+    const task = load(db, taskId)
+    if (receipt && task.workspace_id !== receipt.workspaceId) {
+      throw new AccessDenied(`task ${taskId} belongs to another workspace`)
+    }
+    if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
+    if (task.claimed_by !== agentId) {
+      throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)
+    }
+    const changed = db.prepare(
+      `UPDATE queue_tasks SET state = 'delivered', delivered_path = ?, delivered_summary = ?, updated_at = ?
+        WHERE id = ? AND state = 'claimed' AND claimed_by = ? AND (? IS NULL OR workspace_id = ?)`,
+    ).run(deliveredPath, summary, now, taskId, agentId, receipt?.workspaceId ?? null, receipt?.workspaceId ?? null)
+    if (Number(changed.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before delivery`)
+    if (receipt) {
+      db.prepare(`INSERT INTO queue_deliveries
+        (task_id, delivered_by, delivery_attempt, source_revision, delivered_path, delivered_sha256,
+         review_judgment, reviewed_commit, delivered_at)
+        VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`)
+        .run(taskId, receipt.deliveredBy, receipt.sourceRevision, deliveredPath, receipt.sha256,
+          receipt.reviewJudgment, receipt.reviewedCommit, now)
+    }
+    // The delivery may be exactly the event another task was waiting for.
+    syncDependencies(db, task.workspace_id)
+    const delivered = load(db, taskId)
+    db.exec('COMMIT')
+    coordEvents.emitLive('task.delivered', {
+      taskId: delivered.id,
+      title: delivered.title,
+      agentId: delivered.claimed_by,
+      addressedTo: delivered.addressed_to,
+      evidence: delivered.delivered_path,
+      deliveredAt: delivered.updated_at,
+    })
+    return delivered
+  } catch (error) {
+    db.exec('ROLLBACK')
+    throw error
+  }
 }
 
 /** How many tasks are waiting. The one number that predicts trouble. */

@@ -5,11 +5,15 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workspaceIdFor } from '../src/planet.ts'
+import { openStore } from '../src/store/schema.ts'
+import { AGENT_PROTOCOL_BLOCK } from '../src/setup/agent-protocol.ts'
+import { deliverTaskWithEvidence } from '../src/coord/turn-delivery.ts'
 
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 
@@ -77,13 +81,111 @@ test('a worker hands in its claimed task with the evidence path, and only the ho
     assert.equal(b.run('swarm', 'enqueue', 'M15: Overlays', '--to', 'wf-m15', '--workspace', b.ws).code, 0)
     const start = b.run('swarm', 'turn', 'wf-m15', 'start', '--claim', '--workspace', b.ws, '--json')
     const taskId = (JSON.parse(start.out) as { claimedTask: { id: string } }).claimedTask.id
-    const stranger = b.run('swarm', 'deliver', 'wf-m16', taskId, '--path', 'x/DONE.md', '--workspace', b.ws)
+    const evidenceDir = join(b.home, 'root', 'closeout', 'M15')
+    mkdirSync(evidenceDir, { recursive: true })
+    const evidence = join(evidenceDir, 'DONE.md')
+    writeFileSync(evidence, 'Implementation complete.\n')
+    const stranger = b.run('swarm', 'deliver', 'wf-m16', taskId, '--path', evidence, '--workspace', b.ws)
     assert.equal(stranger.code, 3)
     assert.match(stranger.err, /held by wf-m15/)
-    const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', 'closeout/M15/DONE.md', '--workspace', b.ws)
+    const repo = join(b.home, 'repo')
+    mkdirSync(repo)
+    execFileSync('git', ['init', '-b', 'main', repo])
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'delivery@test.invalid'])
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'Delivery Test'])
+    writeFileSync(join(repo, 'source.txt'), 'source\n')
+    execFileSync('git', ['-C', repo, 'add', '.'])
+    execFileSync('git', ['-C', repo, 'commit', '-m', 'source revision'])
+    const sourceRevision = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', evidence, '--repo', repo, '--workspace', b.ws)
     assert.equal(delivered.code, 0, delivered.err)
-    assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays → closeout\/M15\/DONE\.md/)
+    assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays/)
+    const db = openStore(join(b.home, 'plugbrain.db'))
+    try {
+      const receipt = db.prepare('SELECT task_id, delivered_by, delivery_attempt, source_revision, delivered_path, delivered_sha256 FROM queue_deliveries WHERE task_id = ?')
+        .get(taskId) as { task_id: string; delivered_by: string; delivery_attempt: number; source_revision: string; delivered_path: string; delivered_sha256: string }
+      assert.deepEqual({ ...receipt }, {
+        task_id: taskId,
+        delivered_by: 'wf-m15',
+        delivery_attempt: 1,
+        source_revision: sourceRevision,
+        delivered_path: 'closeout/M15/DONE.md',
+        delivered_sha256: createHash('sha256').update('Implementation complete.\n').digest('hex'),
+      })
+    } finally { db.close() }
   } finally { b.cleanup() }
+})
+
+test('delivery rejects missing, empty, outside-workspace, and incomplete review evidence', () => {
+  const b = brain()
+  try {
+    for (const [agent, title] of [['reviewer-missing', 'Missing artifact'], ['reviewer-review', 'R- Review result']] as const) {
+      assert.equal(b.run('swarm', 'register', agent, '--surface', 'other', '--account', 'test', '--workspace', b.ws).code, 0)
+      const enqueue = b.run('swarm', 'enqueue', title, '--to', agent, '--workspace', b.ws)
+      const taskId = /eingereiht (task-[0-9a-f-]+)/.exec(enqueue.out)?.[1]
+      assert.ok(taskId)
+      assert.equal(b.run('swarm', 'turn', agent, 'start', '--claim', '--workspace', b.ws).code, 0)
+      const missing = b.run('swarm', 'deliver', agent, taskId, '--path', 'missing.md', '--workspace', b.ws)
+      assert.equal(missing.code, 3)
+      assert.match(missing.err, /does not exist/i)
+      const emptyPath = join(b.home, 'root', 'empty.md')
+      writeFileSync(emptyPath, '')
+      const empty = b.run('swarm', 'deliver', agent, taskId, '--path', emptyPath, '--workspace', b.ws)
+      assert.equal(empty.code, 3)
+      assert.match(empty.err, /empty/i)
+      const outside = join(b.home, 'outside.md')
+      writeFileSync(outside, 'outside workspace')
+      const rejected = b.run('swarm', 'deliver', agent, taskId, '--path', outside, '--workspace', b.ws)
+      assert.equal(rejected.code, 3)
+      assert.match(rejected.err, /workspace/i)
+      if (title.startsWith('R-')) {
+        const review = join(b.home, 'root', 'review.md')
+        writeFileSync(review, `This review says it is not PASS.\nReviewed commit: \`${'a'.repeat(40)}\`\n`)
+        const incomplete = b.run('swarm', 'deliver', agent, taskId, '--path', review, '--workspace', b.ws)
+        assert.equal(incomplete.code, 3)
+        assert.match(incomplete.err, /review.*judgment.*commit hash/i)
+        writeFileSync(review, `Verdict: PASS\nReviewed commit: \`${'a'.repeat(40)}\`\n`)
+        const complete = b.run('swarm', 'deliver', agent, taskId, '--path', review, '--workspace', b.ws)
+        assert.equal(complete.code, 0, complete.err)
+        const db = openStore(join(b.home, 'plugbrain.db'))
+        try {
+          const receipt = db.prepare('SELECT review_judgment, reviewed_commit FROM queue_deliveries WHERE task_id = ?').get(taskId) as
+            { review_judgment: string; reviewed_commit: string }
+          assert.equal(receipt.review_judgment, 'PASS')
+          assert.equal(receipt.reviewed_commit, 'a'.repeat(40))
+        } finally { db.close() }
+      }
+    }
+  } finally { b.cleanup() }
+})
+
+test('delivery cannot use a task from a different selected workspace', () => {
+  const b = brain()
+  const db = openStore(join(b.home, 'plugbrain.db'))
+  try {
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run('ws-other', 'Other workspace', join(b.home, 'other'), new Date().toISOString())
+    const queued = b.run('swarm', 'enqueue', 'Scoped task', '--workspace', b.ws)
+    const taskId = /eingereiht (task-[0-9a-f-]+)/.exec(queued.out)?.[1]
+    assert.ok(taskId)
+    const evidence = join(b.home, 'root', 'evidence.md')
+    writeFileSync(evidence, 'evidence\n')
+    assert.throws(() => deliverTaskWithEvidence(db, taskId, 'some-agent', evidence, undefined, {
+      workspaceId: 'ws-other', workspaceRoot: join(b.home, 'other'),
+    }), /unknown task/i)
+  } finally { db.close(); b.cleanup() }
+})
+
+test('swarm delivery is documented in the generated agent block and CLI reference', () => {
+  const protocol = readFileSync(new URL('../docs/agent-protocol.md', import.meta.url), 'utf8')
+  const cliHelp = readFileSync(new URL('../docs/cli.md', import.meta.url), 'utf8')
+  const commandHelp = readFileSync(new URL('../src/cli.ts', import.meta.url), 'utf8')
+  for (const text of [protocol, AGENT_PROTOCOL_BLOCK]) {
+    assert.match(text, /plugbrain swarm deliver <id> <taskId> --path/)
+    assert.match(text, /needs-task.*or.*awaiting-commit/s)
+  }
+  assert.match(cliHelp, /swarm deliver <agent> <taskId> --path/)
+  assert.match(commandHelp, /swarm <register\|turn\|ack\|board\|chronik\|send\|enqueue\|deliver/)
 })
 
 test('waiting tasks, the reviewer pool and the watchdog cycle all work through the CLI', () => {

@@ -2,7 +2,7 @@ import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,8 +11,8 @@ import { workspaceIdFor } from '../src/planet.ts'
 import { acquireLease, registerSwarmAgent, releaseLease, sendMessage } from '../src/coord/index.ts'
 import { recordTurn, registerWorkerProfile } from '../src/coord/swarm-ops.ts'
 import { reportQuota } from '../src/coord/resources.ts'
-import { claimNextTask, deliverTask, enqueueTask } from '../src/queue.ts'
-import { buildSwarmChronicle } from '../src/coord/chronicle.ts'
+import { claimNextTask, deliverTask, enqueueTask, ensureQueueSchema } from '../src/queue.ts'
+import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from '../src/coord/chronicle.ts'
 import { getSwarmNextActions } from '../src/coord/next-actions.ts'
 
 const WS = 'ws-swarm-chronicle'
@@ -66,6 +66,25 @@ test('swarm chronicle orders stored queue, message, lease, and quota events and 
       [...chronicle.events.map(event => Date.parse(event.at))].sort((a, b) => a - b))
     assert.ok((chronicle.events.find(event => event.type === 'task.claimed')?.waitMs ?? -1) >= 0)
     assert.ok(chronicle.missingSources.some(source => /turn/i.test(source)))
+  } finally { f.cleanup() }
+})
+
+test('swarm chronicle caps source reads and reports omitted history', () => {
+  const f = fixture()
+  try {
+    ensureQueueSchema(f.db)
+    const now = new Date().toISOString()
+    const insert = f.db.prepare(`INSERT INTO queue_tasks
+      (id, workspace_id, title, body, state, created_at, updated_at)
+      VALUES (?, ?, ?, '', 'pending', ?, ?)`)
+    for (let index = 0; index < 520; index += 1) {
+      insert.run(`task-cap-${index}`, WS, `Task ${index}`, now, now)
+    }
+    const chronicle = buildSwarmChronicle(f.db, WS, { since: '365d' })
+    assert.ok(chronicle.events.length <= 1000)
+    assert.equal(chronicle.truncated, true)
+    assert.equal(chronicle.sourceRowCapReached, true)
+    assert.match(formatSwarmChronicleMarkdown(chronicle), /Weitere Ereignisse ausgelassen/)
   } finally { f.cleanup() }
 })
 
@@ -145,6 +164,8 @@ test('turn end delivers a claimed task only when --deliver is supplied', () => {
     assert.equal(keptTask.code, 0, keptTask.err)
     assert.equal(run('swarm', 'turn', 'worker-deliver', 'start', '--claim', '--workspace', workspace).code, 0)
     assert.equal(run('swarm', 'turn', 'worker-keep', 'start', '--claim', '--workspace', workspace).code, 0)
+    mkdirSync(join(root, 'closeout'), { recursive: true })
+    writeFileSync(join(root, 'closeout', 'DELIVER.md'), 'Finished.\n')
     const delivered = run('swarm', 'turn', 'worker-deliver', 'end', '--state', 'awaiting-commit', '--summary', 'Finished', '--deliver', 'closeout/DELIVER.md', '--workspace', workspace, '--json')
     assert.equal(delivered.code, 0, delivered.err)
     const kept = run('swarm', 'turn', 'worker-keep', 'end', '--state', 'needs-task', '--summary', 'No evidence yet', '--workspace', workspace, '--json')

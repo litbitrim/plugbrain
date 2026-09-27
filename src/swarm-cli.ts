@@ -32,12 +32,12 @@
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
 import type { DatabaseSync } from 'node:sqlite'
-import { AccessDenied } from './access.ts'
-import { deliverTask, enqueueTask } from './queue.ts'
+import { AccessDenied, requireWorkspace } from './access.ts'
+import { enqueueTask } from './queue.ts'
 import { PLAN_REF, setPlanRef } from './plan.ts'
 import { buildSwarmChronicle, formatSwarmChronicleMarkdown } from './coord/chronicle.ts'
 import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.ts'
-import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd } from './coord/turn-delivery.ts'
+import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd, deliverTaskWithEvidence } from './coord/turn-delivery.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
   getRunnerProfile, hostSnapshot, listQuotas, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
@@ -286,7 +286,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'turn': {
-      const usage = 'plugbrain swarm turn <agent> start|end [--state needs-task|awaiting-commit|blocked|paused] [--summary <s>] [--claim] [--deliver <evidence>]'
+      const usage = 'plugbrain swarm turn <agent> start|end [--state needs-task|awaiting-commit|blocked|paused] [--summary <s>] [--claim] [--deliver <evidence>] [--repo <worktree>] [--review]'
       const agentId = need(pos[0], usage)
       const phase = need(pos[1], usage)
       if (phase !== 'start' && phase !== 'end') throw new AccessDenied(`usage: ${usage}`)
@@ -310,7 +310,12 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       })
       let delivery: { taskId: string; evidence: string } | null = null
       if (deliveryPath !== null) {
-        const task = deliverTaskAtTurnEnd(db, deliveryTaskId!, agentId, deliveryPath, flag(rest, '--summary') ?? undefined)
+        const task = deliverTaskAtTurnEnd(db, deliveryTaskId!, agentId, deliveryPath, flag(rest, '--summary') ?? undefined, {
+          workspaceId,
+          workspaceRoot: requireWorkspace(db, workspaceId).root,
+          repoPath: flag(rest, '--repo') ?? undefined,
+          reviewRequired: rest.includes('--review'),
+        })
         delivery = { taskId: task.id, evidence: task.delivered_path ?? deliveryPath }
         ping.currentTask = null
       }
@@ -466,9 +471,14 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       // The worker that holds a task hands in its candidate: the queue row
       // moves to `delivered` and points at the evidence. Acceptance is not
       // decided here — that is the review and the integrator's approval.
-      const usage = 'plugbrain swarm deliver <agent> <taskId> --path <evidence>'
+      const usage = 'plugbrain swarm deliver <agent> <taskId> --path <evidence> [--repo <worktree>] [--review]'
       const deliveredBy = need(pos[0], usage)
-      const task = deliverTask(db, need(pos[1], usage), deliveredBy, need(flag(rest, '--path'), usage))
+      const task = deliverTaskWithEvidence(db, need(pos[1], usage), deliveredBy, need(flag(rest, '--path'), usage), undefined, {
+        workspaceId,
+        workspaceRoot: requireWorkspace(db, workspaceId).root,
+        repoPath: flag(rest, '--repo') ?? undefined,
+        reviewRequired: rest.includes('--review'),
+      })
       touchAgentContact(db, deliveredBy)
       console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0

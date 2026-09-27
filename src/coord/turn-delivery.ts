@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from '../access.ts'
 import { deliverTask, ensureQueueSchema, type QueueTask } from '../queue.ts'
+import { inspectDeliveryEvidence, sourceRevision } from './delivery-evidence.ts'
 
 /** Mark the worker's sole held task delivered at the turn boundary. */
 export function currentTaskForTurnDelivery(
@@ -23,9 +24,31 @@ export function deliverTaskAtTurnEnd(
   taskId: string,
   agentId: string,
   evidencePath: string,
-  summary?: string,
+  summary: string | undefined,
+  options: { workspaceId: string; workspaceRoot: string; repoPath?: string; reviewRequired?: boolean },
 ): QueueTask {
-  const evidence = evidencePath.trim()
-  if (evidence === '') throw new AccessDenied('deliver evidence path cannot be empty')
-  return deliverTask(db, taskId, agentId, evidence, summary)
+  return deliverTaskWithEvidence(db, taskId, agentId, evidencePath, summary, options)
+}
+
+export function deliverTaskWithEvidence(
+  db: DatabaseSync,
+  taskId: string,
+  agentId: string,
+  evidencePath: string,
+  summary: string | undefined,
+  options: { workspaceId: string; workspaceRoot: string; repoPath?: string; reviewRequired?: boolean },
+): QueueTask {
+  const task = db.prepare('SELECT title FROM queue_tasks WHERE id = ? AND workspace_id = ?').get(taskId, options.workspaceId) as { title: string } | undefined
+  if (!task) throw new AccessDenied(`unknown task: ${taskId}`)
+  const evidence = inspectDeliveryEvidence(options.workspaceRoot, evidencePath, {
+    reviewRequired: options.reviewRequired || /^R-/i.test(task.title),
+  })
+  return deliverTask(db, taskId, agentId, evidence.path, summary, {
+    workspaceId: options.workspaceId,
+    deliveredBy: agentId,
+    sourceRevision: sourceRevision(options.repoPath ?? options.workspaceRoot),
+    sha256: evidence.sha256,
+    reviewJudgment: evidence.reviewJudgment,
+    reviewedCommit: evidence.reviewedCommit,
+  })
 }
