@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from '../access.ts'
 import { deliverTask, ensureQueueSchema, type QueueTask } from '../queue.ts'
+import { handleFleetAutomationEvent } from './fleet-automation.ts'
 import { inspectDeliveryEvidence, sourceRevision } from './delivery-evidence.ts'
 
 /** Mark the worker's sole held task delivered at the turn boundary. */
@@ -43,7 +44,7 @@ export function deliverTaskWithEvidence(
   const evidence = inspectDeliveryEvidence(options.workspaceRoot, evidencePath, {
     reviewRequired: options.reviewRequired || /^R-/i.test(task.title),
   })
-  return deliverTask(db, taskId, agentId, evidence.path, summary, {
+  const delivered = deliverTask(db, taskId, agentId, evidence.path, summary, {
     workspaceId: options.workspaceId,
     deliveredBy: agentId,
     sourceRevision: sourceRevision(options.repoPath ?? options.workspaceRoot),
@@ -51,4 +52,8 @@ export function deliverTaskWithEvidence(
     reviewJudgment: evidence.reviewJudgment,
     reviewedCommit: evidence.reviewedCommit,
   })
+  handleFleetAutomationEvent(db, options.workspaceId, {
+    type: 'task.delivered', data: { taskId: delivered.id },
+  })
+  return delivered
 }

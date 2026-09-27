@@ -115,6 +115,9 @@ test('BR-2a: the integrator is told once per case, and again only after new cont
     const now = new Date('2026-09-26T20:00:00.000Z')
     coord.recordTurn(f.db, { workspaceId: f.workspaceId, agentId: 'w-quiet', phase: 'start' })
     backdate(f, 'w-quiet', minutesAgo(now, 50).toISOString())
+    const task = enqueueTask(f.db, f.workspaceId, { title: 'Quiet worker task', addressedTo: 'w-quiet' })
+    f.db.prepare("UPDATE queue_tasks SET state = 'claimed', claimed_by = 'w-quiet', claimed_at = ? WHERE id = ?")
+      .run(minutesAgo(now, 50).toISOString(), task.id)
 
     // A dry run observes without telling anybody.
     const dry = coord.scanWatchdog(f.db, f.workspaceId, { now, alert: false })
@@ -127,8 +130,8 @@ test('BR-2a: the integrator is told once per case, and again only after new cont
     assert.equal(first.silent[0]?.alerted, true)
     const told = messagesTo(f, 'integrator')
     assert.equal(told.length, 1)
-    assert.match(told[0]!.subject, /Still: w-quiet/)
-    assert.match(told[0]!.body, /50 Minuten/)
+    assert.match(told[0]!.subject, /Silent work needs decision: Quiet worker task/)
+    assert.match(told[0]!.body, /holding task/)
 
     // The same case is never reported twice.
     const second = coord.scanWatchdog(f.db, f.workspaceId, { now })
@@ -157,6 +160,9 @@ test('BR-2a: silence notice and case latch commit together', () => {
     const now = new Date('2026-09-26T20:00:00.000Z')
     coord.recordTurn(f.db, { workspaceId: f.workspaceId, agentId: 'w-quiet', phase: 'start' })
     backdate(f, 'w-quiet', minutesAgo(now, 50).toISOString())
+    const task = enqueueTask(f.db, f.workspaceId, { title: 'Quiet worker task', addressedTo: 'w-quiet' })
+    f.db.prepare("UPDATE queue_tasks SET state = 'claimed', claimed_by = 'w-quiet', claimed_at = ? WHERE id = ?")
+      .run(minutesAgo(now, 50).toISOString(), task.id)
     f.db.exec(`CREATE TRIGGER fail_silence_latch BEFORE UPDATE OF silence_alerted_at ON agents
       BEGIN SELECT RAISE(ABORT, 'simulated crash before latch'); END`)
     assert.throws(() => coord.scanWatchdog(f.db, f.workspaceId, { now }), /simulated crash/)

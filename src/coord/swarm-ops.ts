@@ -22,6 +22,7 @@ import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { claimNextTask, ensureQueueSchema } from '../queue.ts'
+import { handleFleetAutomationEvent } from './fleet-automation.ts'
 import { syncDependencies, UNBLOCKED_TASK_SQL } from './dependencies.ts'
 import { coordEvents } from './events.ts'
 import { ensureWatchdogSchema, silenceMinutesFor, watchdogSettings, watchTurnEnd } from './watchdog.ts'
@@ -393,6 +394,12 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     summary: summary ?? (input.phase === 'end' ? previous?.turn_summary : null) ?? null,
     at: now,
   })
+  if (state === 'blocked') {
+    handleFleetAutomationEvent(db, input.workspaceId, {
+      type: 'agent.turn',
+      data: { agentId: input.agentId, phase: input.phase, state, summary, at: now },
+    })
+  }
   if (input.phase === 'end') {
     try { runAutoReap(db, input.workspaceId) }
     catch (error) { console.error(`[swarm-ops] auto-reap failed at turn end: ${error instanceof Error ? error.message : String(error)}`) }

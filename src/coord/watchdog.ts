@@ -27,7 +27,8 @@ import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { enqueueTask } from '../queue.ts'
 import { syncDependencies } from './dependencies.ts'
 import { coordEvents } from './events.ts'
-import { ensureSystemAgent, sendMessage } from './inbox.ts'
+import { ensureSystemAgent } from './inbox.ts'
+import { handleFleetAutomationEvent } from './fleet-automation.ts'
 
 export const DEFAULT_SILENT_AFTER_MINUTES = 45
 
@@ -310,27 +311,23 @@ export function scanWatchdog(
         const current = silentWorkers(db, workspaceId, { now, silentAfterMinutes: settings.silentAfterMinutes })
           .find(item => item.agentId === reading.agentId)
         if (current === undefined || !caseIsUnannounced(current)) { db.exec('COMMIT'); continue }
-        ensureSystemAgent(db, workspaceId)
-        sendMessage(db, {
-          workspaceId,
-          fromAgent: 'integrator',
-          toAgent: 'integrator',
-          subject: `Still: ${current.agentId} seit ${current.minutes} min ohne Kontakt`,
-          body: `${current.agentId}${current.account === null ? '' : ` (${current.account})`} steht seit ` +
-            `${current.minutes} Minuten auf working, ohne Kontakt zum Brain` +
-            `${current.lastContactAt === null ? ` (Turn-Start ${current.workingSince})` : ` (letzter Kontakt ${current.lastContactAt})`}.\n` +
-            'Prüfen: hängt der Tab/Prozess? Continue geben — oder sauber abmelden: plugbrain swarm retire <agent> --note <grund>.',
-        })
-        db.prepare('UPDATE agents SET silence_alerted_at = ? WHERE id = ?').run(now.toISOString(), current.agentId)
         db.exec('COMMIT')
       } catch (error: unknown) {
         db.exec('ROLLBACK')
         throw error
       }
-      coordEvents.emitLive('watchdog.silent', {
-        workspaceId, agentId: reading.agentId, minutes: reading.minutes, at: now.toISOString(),
+      const heldTask = db.prepare(`SELECT id FROM queue_tasks
+        WHERE workspace_id = ? AND claimed_by = ? AND state = 'claimed'
+        ORDER BY claimed_at DESC LIMIT 1`).get(workspaceId, reading.agentId) as { id: string } | undefined
+      const event = coordEvents.emitLive('watchdog.silent', {
+        workspaceId, agentId: reading.agentId, minutes: reading.minutes,
+        workingSince: reading.workingSince, lastContactAt: reading.lastContactAt,
+        heldTaskId: heldTask?.id ?? null, at: now.toISOString(),
       })
-      alerted.push(reading.agentId)
+      const automation = handleFleetAutomationEvent(db, workspaceId, event)
+      if (automation.action === 'lead-decision-required') {
+        alerted.push(reading.agentId)
+      }
     }
   }
 
