@@ -590,10 +590,13 @@ Without `--workspace` the single registered workspace is used.
   `--worktree` binds the agent to a checkout so the board can show its branch.
 - `swarm turn <agent> start [--claim]`: check in at the start of a turn. Prints
   unread messages and the task offered to this agent; `--claim` takes it.
-- `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>] [--deliver <evidence>]`:
-  check out with exactly one state. On `needs-task` or `awaiting-commit`, `--deliver`
-  marks the agent's single held task as delivered and stores its evidence path and turn summary. Without
-  `--deliver`, the queue task stays `claimed` and is surfaced under `swarm board --next`.
+- `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>] [--deliver <evidence>] [--repo <worktree>] [--review]`:
+  check out with exactly one state. `--deliver` hands in the single held task; the
+  evidence must be a non-empty file inside the workspace. A delivery records the
+  agent, attempt, source revision when available, evidence path and SHA-256. Review
+  tasks titled `R-…` (or explicitly marked with `--review`) also need a judgment
+  (`PASS`, `PASS_MIT_AUFLAGEN` or `FAIL`) and a 40-character reviewed commit hash.
+  Without a delivery, the queue task stays `claimed` and appears under `swarm board --next`.
 - `swarm ack <agent> <messageId>`: mark a message as read. Unread messages are
   shown at every turn start until acknowledged.
 - `swarm retire <agent> --note <reason>`: take an agent off the board.
@@ -604,7 +607,12 @@ Without `--workspace` the single registered workspace is used.
   makes it wait: it is neither offered nor claimable until the predecessor is
   delivered or its holder has ended a turn with `awaiting-commit` or
   `needs-task`; the addressee then gets one message that the task is free.
-- `swarm deliver <agent> <taskId> --path <evidence>`: hand in a claimed task with its evidence.
+- `swarm deliver <agent> <taskId> --path <evidence> [--repo <worktree>] [--review]`:
+  hand in a claimed task. The named agent must hold it and the evidence file must
+  exist, be non-empty and resolve inside the workspace. The receipt includes the
+  task, agent, delivery attempt, source `HEAD` when `--repo` or the selected workspace root
+  identifies a Git checkout, normalized evidence path and SHA-256. Review tasks
+  titled `R-…` (or passed with `--review`) require a verdict and reviewed commit hash.
 - `swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]`: take a write
   lease on paths. A path another agent holds is refused.
 - `swarm release <agent> [<path>...] [--task <id>]`: release leases (all of the agent's, or the given ones).
@@ -641,7 +649,9 @@ Without `--workspace` the single registered workspace is used.
 - `swarm chronik [--since <iso|2h>] [--json|--md]`: show stored queue, message,
   lease and quota events in timestamp order. Markdown is the default and can be used
   as a handoff note. Missing turn history is named explicitly until a version that
-  stores turn history is available; the chronicle does not invent events.
+  stores turn history is available; the chronicle does not invent events. Reads are
+  capped at 500 rows per source and output at 1,000 events; capped results say that
+  older events were omitted.
 - `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
 - `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
   report how much of an account's quota is left. Numbers only, never keys.

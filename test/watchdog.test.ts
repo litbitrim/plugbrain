@@ -9,7 +9,7 @@
 import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
@@ -203,6 +203,8 @@ test('BR-2a: --after blocks a task until its predecessor is delivered, then tell
     assert.equal(messagesTo(f, 'w-two').length, 0)
 
     // Delivery is the moment it arrives — with exactly one notice.
+    mkdirSync(join(f.dir, 'review'), { recursive: true })
+    writeFileSync(join(f.dir, 'review', 'BASIS.md'), 'Basis delivery evidence.\n')
     assert.equal(cli(['deliver', 'w-one', basis.id, '--path', 'review/BASIS.md']), 0)
     const told = messagesTo(f, 'w-two')
     assert.equal(told.length, 1)

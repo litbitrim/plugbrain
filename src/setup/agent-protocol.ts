@@ -26,16 +26,23 @@ You are one agent in a team coordinated by PlugBrain. Your agent id is \`<id>\`.
 3. **Before tests, builds, installs or new worktrees:** run
    \`plugbrain swarm admit test|build|install|worktree\`. Exit code 5 means the
    machine has no room. Do not start the work; end the turn as \`blocked\`.
-4. **End of every turn,** with exactly one state:
+4. **Hand in completed work:** run
+   \`plugbrain swarm deliver <id> <taskId> --path <evidence> [--repo <worktree>]\`.
+   The evidence must be a non-empty file inside the workspace. The receipt stores
+   its SHA-256, your agent id, attempt, and source revision when available. Review
+   tasks (title starts with \`R-\` or \`--review\`) also need a verdict and reviewed commit hash.
+5. **End of every turn,** with exactly one state:
    \`plugbrain swarm turn <id> end --state <state> --summary "<one or two sentences>"\`
    - \`needs-task\`: you are done and need new work
    - \`awaiting-commit\`: a tested change is ready; wait for approval
    - \`blocked\`: a real blocker, named in the summary
    - \`paused\`: you were told to stop
    Then release your claims: \`plugbrain swarm release <id> --task <taskId>\`.
-5. **Commit only after approval.** Approval arrives as a message with the
+   Ending with \`needs-task\` without a delivery leaves the task claimed and visible
+   under \`plugbrain swarm board --next\`.
+6. **Commit only after approval.** Approval arrives as a message with the
    subject "Commit freigegeben". Commit, then end the turn with \`needs-task\`.
-6. **Report limits, never secrets.** If your tool shows a quota, report the
+7. **Report limits, never secrets.** If your tool shows a quota, report the
    number: \`plugbrain swarm quota <account> <remaining> percent|credits|requests|rpm|tokens\`.
    Never put keys or tokens into commands, summaries, messages or notes.`
 

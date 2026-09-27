@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import { requireWorkspace } from '../access.ts'
 import { redactCredentialText } from './resources.ts'
 
@@ -33,9 +33,14 @@ export interface SwarmChronicle {
   events: SwarmChronicleEvent[]
   sources: Array<{ name: string; available: boolean }>
   missingSources: string[]
+  truncated: boolean
+  omittedEvents: number
+  sourceRowCapReached: boolean
 }
 
 type SqlRow = Record<string, unknown>
+const MAX_SOURCE_ROWS = 500
+const MAX_EVENTS = 1000
 
 function hasTable(db: DatabaseSync, name: string): boolean {
   return db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined
@@ -59,14 +64,15 @@ const text = (row: SqlRow, key: string): string | null => {
   return typeof value === 'string' ? value : null
 }
 
-function readTurnEvents(db: DatabaseSync, workspaceId: string, cutoff: number): { events: SwarmChronicleEvent[]; source: string | null } {
+function readTurnEvents(db: DatabaseSync, workspaceId: string, cutoff: number): { events: SwarmChronicleEvent[]; source: string | null; truncated: boolean } {
   const table = ['swarm_turn_history', 'swarm_turns', 'turn_history'].find(name => hasTable(db, name))
-  if (!table) return { events: [], source: null }
+  if (!table) return { events: [], source: null, truncated: false }
   const columns = new Set((db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(column => column.name))
-  if (!columns.has('workspace_id')) return { events: [], source: null }
-  const rows = db.prepare(`SELECT * FROM ${table} WHERE workspace_id = ?`).all(workspaceId) as unknown as SqlRow[]
+  if (!columns.has('workspace_id')) return { events: [], source: null, truncated: false }
+  const rows = db.prepare(`SELECT * FROM ${table} WHERE workspace_id = ? ORDER BY rowid DESC LIMIT ${MAX_SOURCE_ROWS + 1}`).all(workspaceId) as unknown as SqlRow[]
+  const truncated = rows.length > MAX_SOURCE_ROWS
   const events: SwarmChronicleEvent[] = []
-  for (const row of rows) {
+  for (const row of rows.slice(0, MAX_SOURCE_ROWS)) {
     const at = text(row, 'ended_at') ?? text(row, 'created_at') ?? text(row, 'at') ?? text(row, 'turn_state_at')
     const agent = text(row, 'agent_id') ?? text(row, 'agent')
     if (!at || !agent || Date.parse(at) < cutoff) continue
@@ -76,7 +82,7 @@ function readTurnEvents(db: DatabaseSync, workspaceId: string, cutoff: number): 
       summary: text(row, 'summary') ?? text(row, 'turn_summary'),
     })
   }
-  return { events, source: table }
+  return { events, source: table, truncated }
 }
 
 /** Read only recorded swarm state and present it as a time-ordered handoff. */
@@ -89,12 +95,18 @@ export function buildSwarmChronicle(
   const now = options.now ?? Date.now()
   const cutoff = sinceDate(options.since, now)
   const events: SwarmChronicleEvent[] = []
+  let sourceTruncated = false
+  const bounded = (sql: string, ...params: SQLInputValue[]): SqlRow[] => {
+    const rows = db.prepare(sql).all(...params) as unknown as SqlRow[]
+    if (rows.length > MAX_SOURCE_ROWS) sourceTruncated = true
+    return rows.slice(0, MAX_SOURCE_ROWS)
+  }
   const within = (at: string | null): at is string => at !== null && Number.isFinite(Date.parse(at)) && Date.parse(at) >= cutoff
 
   if (hasTable(db, 'queue_tasks')) {
     const columns = new Set((db.prepare('PRAGMA table_info(queue_tasks)').all() as Array<{ name: string }>).map(column => column.name))
     const summaryColumn = columns.has('delivered_summary') ? 'delivered_summary' : 'NULL AS delivered_summary'
-    const tasks = db.prepare(`SELECT id, title, state, claimed_by, claimed_at, delivered_path, ${summaryColumn}, created_at, updated_at FROM queue_tasks WHERE workspace_id = ?`).all(workspaceId) as unknown as SqlRow[]
+    const tasks = bounded(`SELECT id, title, state, claimed_by, claimed_at, delivered_path, ${summaryColumn}, created_at, updated_at FROM queue_tasks WHERE workspace_id = ? ORDER BY updated_at DESC LIMIT ${MAX_SOURCE_ROWS + 1}`, workspaceId)
     for (const row of tasks) {
       const id = text(row, 'id')!
       const title = text(row, 'title')!
@@ -119,8 +131,8 @@ export function buildSwarmChronicle(
   }
 
   if (hasTable(db, 'inbox_messages')) {
-    const messages = db.prepare(`SELECT id, from_agent, to_agent, subject, created_at, delivered_at, read_at
-      FROM inbox_messages WHERE workspace_id = ?`).all(workspaceId) as unknown as SqlRow[]
+    const messages = bounded(`SELECT id, from_agent, to_agent, subject, created_at, delivered_at, read_at
+      FROM inbox_messages WHERE workspace_id = ? ORDER BY COALESCE(read_at, delivered_at, created_at) DESC LIMIT ${MAX_SOURCE_ROWS + 1}`, workspaceId)
     for (const row of messages) {
       const common = {
         messageId: text(row, 'id')!, fromAgent: text(row, 'from_agent')!, toAgent: text(row, 'to_agent'),
@@ -136,7 +148,8 @@ export function buildSwarmChronicle(
   }
 
   if (hasTable(db, 'leases')) {
-    const leases = db.prepare('SELECT id, agent_id, paths_json, created_at, released_at FROM leases WHERE workspace_id = ?').all(workspaceId) as unknown as SqlRow[]
+    const leases = bounded(`SELECT id, agent_id, paths_json, created_at, released_at FROM leases WHERE workspace_id = ?
+      ORDER BY COALESCE(released_at, created_at) DESC LIMIT ${MAX_SOURCE_ROWS + 1}`, workspaceId)
     for (const row of leases) {
       let paths: string[] = []
       try { paths = JSON.parse(text(row, 'paths_json') ?? '[]') as string[] } catch { /* malformed historical payload is omitted */ }
@@ -150,7 +163,7 @@ export function buildSwarmChronicle(
   }
 
   if (hasTable(db, 'resource_quotas')) {
-    const quotas = db.prepare('SELECT account, remaining, unit, reported_by, updated_at FROM resource_quotas ORDER BY account').all() as unknown as SqlRow[]
+    const quotas = bounded(`SELECT account, remaining, unit, reported_by, updated_at FROM resource_quotas ORDER BY updated_at DESC LIMIT ${MAX_SOURCE_ROWS + 1}`)
     for (const row of quotas) {
       const at = text(row, 'updated_at')
       if (within(at)) events.push({
@@ -161,6 +174,7 @@ export function buildSwarmChronicle(
   }
 
   const turnHistory = readTurnEvents(db, workspaceId, cutoff)
+  sourceTruncated ||= turnHistory.truncated
   events.push(...turnHistory.events)
   for (const event of events) {
     for (const [key, value] of Object.entries(event)) {
@@ -170,6 +184,8 @@ export function buildSwarmChronicle(
     }
   }
   events.sort((left, right) => Date.parse(left.at) - Date.parse(right.at) || left.type.localeCompare(right.type))
+  const omittedEvents = Math.max(0, events.length - MAX_EVENTS)
+  if (omittedEvents > 0) events.splice(0, omittedEvents)
 
   const historyAvailable = turnHistory.source !== null
   const sources = [
@@ -192,6 +208,9 @@ export function buildSwarmChronicle(
     events,
     sources,
     missingSources,
+    truncated: sourceTruncated || omittedEvents > 0,
+    omittedEvents,
+    sourceRowCapReached: sourceTruncated,
   }
 }
 
@@ -211,6 +230,9 @@ export function formatSwarmChronicleMarkdown(chronicle: SwarmChronicle): string 
   }
   lines.push('', '## Quellen', '', ...chronicle.sources.map(source => `- ${source.name}: ${source.available ? 'verfügbar' : 'fehlt'}`))
   if (chronicle.missingSources.length > 0) lines.push('', '## Nicht gespeichert', '', ...chronicle.missingSources.map(source => `- ${source}`))
+  if (chronicle.truncated) lines.push('', 'Weitere Ereignisse ausgelassen.', `- Höchstens ${MAX_EVENTS} Ereignisse und ${MAX_SOURCE_ROWS} Datensätze je Quelle werden eingelesen.`)
+  if (chronicle.omittedEvents > 0) lines.push(`- Durch das Ereignislimit entfernt: ${chronicle.omittedEvents}.`)
+  if (chronicle.sourceRowCapReached) lines.push('- Mindestens eine Quelle hat das Datensatzlimit erreicht; weitere Quellzeilen wurden abgeschnitten.')
   lines.push('')
   return lines.join('\n')
 }
