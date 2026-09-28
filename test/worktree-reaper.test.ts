@@ -2,7 +2,7 @@ import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
@@ -15,7 +15,8 @@ function git(cwd: string, ...args: string[]): string {
 }
 
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-reaper-'))
+  // Git reports physical worktree paths; macOS tmpdir may use a /var alias.
+  const dir = realpathSync.native(mkdtempSync(join(tmpdir(), 'plugbrain-reaper-')))
   const repo = join(dir, 'repo')
   mkdirSync(repo)
   git(dir, 'init', '-b', 'main', repo)
