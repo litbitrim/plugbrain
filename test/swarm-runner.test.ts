@@ -26,6 +26,12 @@ import { assertActiveSupervisorAttempt, classifySupervisorFailure } from '../src
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 const FAKE = fileURLToPath(new URL('./fixtures/fake-worker.mjs', import.meta.url))
 
+// Native ownership checks currently use Windows process-tree identity. Keep
+// these end-to-end cases on that platform and verify refusal elsewhere.
+const windowsRunnerOnly = {
+  skip: process.platform === 'win32' ? false : 'requires Windows process-tree identity',
+}
+
 interface Brain {
   home: string
   root: string
@@ -172,7 +178,25 @@ test('runner profiles reject credential-like args, unknown commands, and cwd out
   } finally { b.cleanup() }
 })
 
-test('swarm run starts the worker detached, keeps its log, and the board shows pid and last event', async () => {
+test('swarm run refuses unsupported platforms before recording or starting a worker', {
+  skip: process.platform === 'win32' ? 'non-Windows refusal contract' : false,
+}, () => {
+  const b = brain()
+  try {
+    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--workspace', b.ws).code, 0)
+    const profile = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node',
+      '--args', fakeArgs(b, 'done'), '--workspace', b.ws)
+    assert.equal(profile.code, 0, profile.err)
+    const result = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
+    assert.equal(result.code, 3)
+    assert.match(result.err, /not supported on this platform; Windows process-tree identity is required/)
+    const board = b.run('swarm', 'board', '--workspace', b.ws, '--json')
+    assert.equal(board.code, 0, board.err)
+    assert.equal((JSON.parse(board.out) as BoardJson).agents.find(row => row.id === 'fake-01')?.runner, null)
+  } finally { b.cleanup() }
+})
+
+test('swarm run starts the worker detached, keeps its log, and the board shows pid and last event', windowsRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -221,7 +245,7 @@ test('swarm run starts the worker detached, keeps its log, and the board shows p
   } finally { b.cleanup() }
 })
 
-test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', async () => {
+test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', windowsRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -250,7 +274,7 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
   } finally { b.cleanup() }
 })
 
-test('blocked booking, run latch, and notification reconcile atomically and retry exactly once', async () => {
+test('blocked booking, run latch, and notification reconcile atomically and retry exactly once', windowsRunnerOnly, async () => {
   const b = brain()
   let db: DatabaseSync | null = null
   try {
@@ -282,7 +306,7 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
   } finally { db?.close(); b.cleanup() }
 })
 
-test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
+test('swarm run --stop ends a hanging worker and pauses its turn', windowsRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -308,7 +332,7 @@ test('swarm run --stop ends a hanging worker and pauses its turn', async () => {
   } finally { b.cleanup() }
 })
 
-test('swarm run --stop kills only the verified worker process tree', async () => {
+test('swarm run --stop kills only the verified worker process tree', windowsRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -329,7 +353,7 @@ test('swarm run --stop kills only the verified worker process tree', async () =>
   } finally { b.cleanup() }
 })
 
-test('swarm run refuses a worker without a profile and refuses a second live run', async () => {
+test('swarm run refuses a worker without a profile and refuses a second live run', windowsRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -412,7 +436,7 @@ test('the prompt names the protocol documents the workspace actually has', () =>
   } finally { b.cleanup() }
 })
 
-test('swarm run supervisor claims the next task, runs a fake worker and stops for a lead decision after the retry limit', async () => {
+test('swarm run supervisor claims the next task, runs a fake worker and stops for a lead decision after the retry limit', windowsRunnerOnly, async () => {
   const b = brain()
   let db: DatabaseSync | null = null
   let supervisorPid: number | null = null
