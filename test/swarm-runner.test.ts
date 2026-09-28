@@ -183,9 +183,10 @@ test('swarm run refuses unsupported platforms before recording or starting a wor
 }, () => {
   const b = brain()
   try {
-    assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--workspace', b.ws).code, 0)
+    const registered = b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws)
+    assert.equal(registered.code, 0, registered.err)
     const profile = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node',
-      '--args', fakeArgs(b, 'done'), '--workspace', b.ws)
+      '--args', fakeArgs(b, 'ok'), '--workspace', b.ws)
     assert.equal(profile.code, 0, profile.err)
     const result = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
     assert.equal(result.code, 3)
