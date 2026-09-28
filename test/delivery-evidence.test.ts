@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { execFileSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -35,9 +35,11 @@ test('Windows short and long names identify the same evidence boundary', {
   skip: process.platform !== 'win32' ? 'Windows short path aliases' : false,
 }, t => {
   const { root, outside } = fixture()
-  const shortRoot = execFileSync('cmd.exe', ['/d', '/c', `for %I in ("${root}") do @echo %~sI`], {
-    encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true,
-  }).trim()
+  const shortPath = spawnSync('cmd.exe', ['/d', '/c', `for %I in ("${root}") do @echo %~sI`], {
+    encoding: 'utf8', windowsVerbatimArguments: true, windowsHide: true, timeout: 10_000,
+  })
+  assert.equal(shortPath.status, 0, shortPath.error?.message ?? shortPath.stderr)
+  const shortRoot = shortPath.stdout.trim()
   if (shortRoot.toLowerCase() === root.toLowerCase()) {
     t.skip('this volume does not provide short path aliases')
     return
