@@ -26,6 +26,7 @@ function brain() {
       env: { ...process.env, PLUGBRAIN_HOME: home, PLUGBRAIN_NO_DAEMON: '1' },
       encoding: 'utf8',
       timeout: 60_000,
+      windowsHide: true,
     })
     return { code: result.status, out: result.stdout, err: result.stderr }
   }
@@ -72,6 +73,37 @@ test('a worker registers, gets pinged at its turn end, claims work and shows on 
   } finally { b.cleanup() }
 })
 
+test('queue supersede, reassign and priority commands persist audit history and show on the board', () => {
+  const b = brain()
+  try {
+    for (const id of ['cx11', 'nv01']) {
+      assert.equal(b.run('swarm', 'register', id, '--surface', 'other', '--account', 'test', '--workspace', b.ws).code, 0)
+    }
+    const old = /eingereiht (task-[0-9a-f-]+)/.exec(b.run('swarm', 'enqueue', 'Old task', '--workspace', b.ws).out)?.[1]
+    const next = /eingereiht (task-[0-9a-f-]+)/.exec(b.run('swarm', 'enqueue', 'Replacement', '--workspace', b.ws).out)?.[1]
+    const routed = /eingereiht (task-[0-9a-f-]+)/.exec(b.run('swarm', 'enqueue', 'Routed', '--workspace', b.ws).out)?.[1]
+    assert.ok(old && next && routed)
+
+    assert.equal(b.run('swarm', 'supersede', old, '--by', next, '--note', 'replaced brief', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'reassign', routed, '--to', 'nv01', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'priority', next, '10', '--workspace', b.ws).code, 0)
+
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as {
+      queue: { tasks: Array<{ id: string; state: string; priority: number; addressedTo: string | null; supersededBy: string | null }>; recentChanges: Array<{ taskId: string; operation: string }> }
+    }
+    assert.equal(board.queue.tasks.find(task => task.id === old)?.state, 'superseded')
+    assert.equal(board.queue.tasks.find(task => task.id === old)?.supersededBy, next)
+    assert.equal(board.queue.tasks.find(task => task.id === routed)?.addressedTo, 'nv01')
+    assert.equal(board.queue.tasks.find(task => task.id === next)?.priority, 10)
+    assert.deepEqual(board.queue.recentChanges.map(change => change.operation), ['priority', 'reassign', 'supersede'])
+
+    const claimed = JSON.parse(b.run('swarm', 'turn', 'cx11', 'start', '--claim', '--workspace', b.ws, '--json').out) as {
+      claimedTask: { id: string } | null
+    }
+    assert.equal(claimed.claimedTask?.id, next, 'priority controls order and superseded work is never offered')
+  } finally { b.cleanup() }
+})
+
 test('a worker hands in its claimed task with the evidence path, and only the holder can', () => {
   const b = brain()
   try {
@@ -90,13 +122,13 @@ test('a worker hands in its claimed task with the evidence path, and only the ho
     assert.match(stranger.err, /held by wf-m15/)
     const repo = join(b.home, 'repo')
     mkdirSync(repo)
-    execFileSync('git', ['init', '-b', 'main', repo])
-    execFileSync('git', ['-C', repo, 'config', 'user.email', 'delivery@test.invalid'])
-    execFileSync('git', ['-C', repo, 'config', 'user.name', 'Delivery Test'])
+    execFileSync('git', ['init', '-b', 'main', repo], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'delivery@test.invalid'], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'Delivery Test'], { windowsHide: true })
     writeFileSync(join(repo, 'source.txt'), 'source\n')
-    execFileSync('git', ['-C', repo, 'add', '.'])
-    execFileSync('git', ['-C', repo, 'commit', '-m', 'source revision'])
-    const sourceRevision = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+    execFileSync('git', ['-C', repo, 'add', '.'], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'commit', '-m', 'source revision'], { windowsHide: true })
+    const sourceRevision = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }).trim()
     const delivered = b.run('swarm', 'deliver', 'wf-m15', taskId, '--path', evidence, '--repo', repo, '--workspace', b.ws)
     assert.equal(delivered.code, 0, delivered.err)
     assert.match(delivered.out, /geliefert task-[0-9a-f-]+: M15: Overlays/)
@@ -286,12 +318,12 @@ test('swarm reap defaults to a read-only plan and persists the automatic setting
   try {
     const repo = join(b.home, 'reap-repo')
     mkdirSync(repo)
-    execFileSync('git', ['init', '-b', 'main', repo])
-    execFileSync('git', ['-C', repo, 'config', 'user.email', 'cli-reaper@test.invalid'])
-    execFileSync('git', ['-C', repo, 'config', 'user.name', 'CLI Reaper Test'])
+    execFileSync('git', ['init', '-b', 'main', repo], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'config', 'user.email', 'cli-reaper@test.invalid'], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'config', 'user.name', 'CLI Reaper Test'], { windowsHide: true })
     writeFileSync(join(repo, 'base.txt'), 'base\n')
-    execFileSync('git', ['-C', repo, 'add', '.'])
-    execFileSync('git', ['-C', repo, 'commit', '-m', 'base'])
+    execFileSync('git', ['-C', repo, 'add', '.'], { windowsHide: true })
+    execFileSync('git', ['-C', repo, 'commit', '-m', 'base'], { windowsHide: true })
     const preview = b.run('swarm', 'reap', '--repo', repo, '--workspace', b.ws, '--json')
     assert.equal(preview.code, 0, preview.err)
     const result = JSON.parse(preview.out) as { dryRun: boolean; removed: unknown[]; candidates: Array<{ reason: string }> }

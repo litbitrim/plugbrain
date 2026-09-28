@@ -300,6 +300,49 @@ export const MCP_TOOLS = [
     },
   },
   {
+    name: 'swarm_supersede',
+    description: 'Mark a pending queue task as superseded so it can never be offered again; record the reason.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to supersede' },
+        byTaskId: { type: 'string', description: 'Optional replacement task ID' },
+        note: { type: 'string', description: 'Reason for superseding the task' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'note', 'byAgent'],
+    },
+  },
+  {
+    name: 'swarm_reassign',
+    description: 'Restrict a pending queue task to a registered worker and record the change.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to reassign' },
+        toAgent: { type: 'string', description: 'Registered worker who may claim the task' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'toAgent', 'byAgent'],
+    },
+  },
+  {
+    name: 'swarm_priority',
+    description: 'Set the priority of a pending queue task; larger values are offered first.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to prioritize' },
+        priority: { type: 'number', description: 'Integer from -100000 to 100000' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'priority', 'byAgent'],
+    },
+  },
+  {
     name: 'swarm_board',
     description: 'The fleet board: every worker with surface, account, turn state, unread messages, task, leases, '
       + 'worktrees and attention flags, plus host resources',
@@ -765,6 +808,37 @@ export class McpServer {
             claimNext: args.claimNext === true,
           })
           return { ok: true, ping }
+        }
+
+        case 'swarm_supersede': {
+          this.checkAuth(args)
+          const workspaceId = this.getWorkspaceId(args)
+          const byAgent = String(args.byAgent ?? '')
+          const task = coord.supersedeTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent,
+            byTaskId: args.byTaskId ? String(args.byTaskId) : undefined,
+            note: String(args.note ?? ''),
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'swarm_reassign': {
+          this.checkAuth(args)
+          const workspaceId = this.getWorkspaceId(args)
+          const task = coord.reassignTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent: String(args.byAgent ?? ''), addressedTo: String(args.toAgent ?? ''),
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'swarm_priority': {
+          this.checkAuth(args)
+          const priority = Number(args.priority)
+          const workspaceId = this.getWorkspaceId(args)
+          const task = coord.prioritizeTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent: String(args.byAgent ?? ''), priority,
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
         case 'reap': {
