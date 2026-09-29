@@ -82,8 +82,39 @@ jobs:
           path: artifacts/*
           if-no-files-found: error
 
-  publish:
+  verify-signed-installer:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugbrain-windows-latest
+          path: artifacts
+
+      - name: Verify trusted Authenticode signature and artifact identity
+        shell: pwsh
+        env:
+          EXPECTED_SIGNER_THUMBPRINT: ${{ vars.PLUGBRAIN_SIGNER_THUMBPRINT }}
+        run: |
+          $expected = ($env:EXPECTED_SIGNER_THUMBPRINT -replace '\s', '').ToUpperInvariant()
+          if ($expected -notmatch '^[0-9A-F]{40}$') { throw 'PLUGBRAIN_SIGNER_THUMBPRINT must name the approved code-signing certificate.' }
+          $installers = @(Get-ChildItem -LiteralPath artifacts -Filter 'PlugBrain-*-win-x64.exe' -File)
+          if ($installers.Count -ne 1) { throw "Expected exactly one Windows installer, found $($installers.Count)." }
+          $installer = $installers[0]
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer.FullName
+          if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate) { throw "Installer Authenticode status is $($signature.Status)." }
+          if ($signature.SignerCertificate.Thumbprint.ToUpperInvariant() -ne $expected) { throw 'Installer signer does not match the approved certificate.' }
+          $actualHash = (Get-FileHash -LiteralPath $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $checksum = (Get-Content -LiteralPath "$($installer.FullName).sha256" -Raw).Trim()
+          if ($checksum -ne "$actualHash  $($installer.Name)") { throw 'Installer checksum does not match the signed bytes.' }
+          $provenance = Get-Content -LiteralPath "$($installer.FullName).provenance.json" -Raw | ConvertFrom-Json
+          if ($provenance.sha256 -ne $actualHash -or $provenance.signature.type -ne 'authenticode' -or $provenance.signature.thumbprint -ne $expected) {
+            throw 'Installer provenance does not identify the signed bytes and approved signer.'
+          }
+
+  publish:
+    needs: [build, verify-signed-installer]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
