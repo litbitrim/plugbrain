@@ -513,24 +513,59 @@ plugbrain agents
 ---
 
 ### `swarm`
-Multi-agent coordination desk for managing leases, turn checkpoints, admissions, and messaging.
+The coordination desk for a team of agents: registration, turns, the task
+queue, messages, path claims, commit approval, quotas and machine admission.
+It works on the local store directly, so an agent needs no HTTP token. The
+per-turn rules for agents are in [agent-protocol.md](agent-protocol.md).
+The command output is in German for now.
 
 ```bash
-plugbrain swarm <subcommand> [args]
+plugbrain swarm <subcommand> [args] [--workspace <id>]
 ```
 
-**Subcommands:**
-- `swarm register <agentId> [name]`: Register a new agent worker.
-- `swarm turn <agentId> <start|end>`: Check in at a turn boundary.
-- `swarm claim <agentId> <path> --task <taskId>`: Acquire mutual exclusion lease on a path.
-- `swarm release <agentId> <leaseId>`: Release held lease.
-- `swarm board`: View active fleet status, unread messages, and worktrees.
-- `swarm send <fromAgent> <toAgent> --body <text>`: Send peer message.
-- `swarm resources`: Display host CPU, RAM, disk quotas, and admission decisions.
-- `swarm admit <test|build|install>`: Check admission gate for hardware-intensive actions.
+Without `--workspace` the single registered workspace is used.
 
-**Example:**
+**Agents**
+- `swarm register <agent> --surface <s> --account <label> [--key <resource>] [--model <m>] [--name <n>] [--worktree <path>]... [--takeover]`:
+  register an agent. Surfaces: `claude-code`, `codex-app`, `freebuff`, `agy`, `native`, `other`.
+  `--worktree` binds the agent to a checkout so the board can show its branch.
+- `swarm turn <agent> start [--claim]`: check in at the start of a turn. Prints
+  unread messages and the task offered to this agent; `--claim` takes it.
+- `swarm turn <agent> end --state needs-task|awaiting-commit|blocked|paused [--summary <s>]`:
+  check out with exactly one state.
+- `swarm ack <agent> <messageId>`: mark a message as read. Unread messages are
+  shown at every turn start until acknowledged.
+- `swarm retire <agent> --note <reason>`: take an agent off the board.
+
+**Work**
+- `swarm enqueue <title> [--body <b>] [--to <agent>] [--plan <M00>] [--by <agent>]`:
+  queue a task, for one agent (`--to`) or for whoever takes it first.
+- `swarm deliver <agent> <taskId> --path <evidence>`: hand in a claimed task with its evidence.
+- `swarm claim <agent> <path>... [--task <id>] [--ttl-min <n>]`: take a write
+  lease on paths. A path another agent holds is refused.
+- `swarm release <agent> [<path>...] [--task <id>]`: release leases (all of the agent's, or the given ones).
+- `swarm send <agent> --subject <s> --body <b> [--from <agent>]`: message an
+  agent. The first argument is the recipient.
+- `swarm approve <agent> [--note <n>] [--by <agent>]`: let an agent that ended
+  with `awaiting-commit` commit. It arrives as a message.
+
+**Overview and machine**
+- `swarm board [--git] [--json]`: every agent once with account, turn state,
+  unread messages, task, leases and worktree; `--git` adds branch, head and
+  uncommitted files, plus overlaps where two agents write in one worktree.
+- `swarm resources [--json]`: free disk and RAM, admission per kind of work, reported quotas.
+- `swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]`:
+  report how much of an account's quota is left. Numbers only, never keys.
+- `swarm admit <edit|test|index|build|install|worktree>`: exit 0 means there is
+  room on this machine for that kind of work, exit 5 means there is not.
+
+**Example: one task through one agent**
 ```bash
-plugbrain swarm turn agent-1 start
-plugbrain swarm board
+plugbrain swarm enqueue "Fix the flaky login test" --body "Repro in issue #12" --to codex-1
+plugbrain swarm turn codex-1 start --claim
+plugbrain swarm claim codex-1 src/auth/login.ts --task <task-id>
+plugbrain swarm admit test && npm test
+plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass"
+plugbrain swarm release codex-1 --task <task-id>
+plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
 ```

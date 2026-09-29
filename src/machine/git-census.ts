@@ -20,6 +20,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
+import { canonicalPath } from '../planet.ts'
 import {
   boundedSizeMb, gitText, isOrphan, staleDays, statusCounts, stashCount, unpushedBranches,
   type HygieneUnpushedBranch,
@@ -165,13 +166,14 @@ export function scanGitRepos(
   options: CensusOptions = {},
 ): { repos: CensusRepo[]; complete: boolean; roots: string[] } {
   const now = options.now ?? new Date()
-  const roots = (options.roots ?? defaultCensusRoots()).map(root => resolve(root))
+  const roots = (options.roots ?? defaultCensusRoots()).map(root => canonicalPath(root))
   const deny = options.deny ?? []
   const maxDepth = options.maxDepth ?? DEFAULTS.maxDepth
   const maxDirs = options.maxDirs ?? DEFAULTS.maxDirs
   const maxRepos = options.maxRepos ?? DEFAULTS.maxRepos
   const deadline = Date.now() + (options.budgetMs ?? DEFAULTS.budgetMs)
   const denyNames = new Set([...DENY, ...deny.map(name => name.toLowerCase())])
+  const normalizedRegisteredPaths = new Set([...registeredPaths].map(norm))
 
   const repos: CensusRepo[] = []
   let complete = true
@@ -194,7 +196,7 @@ export function scanGitRepos(
     }
 
     if (children.includes('.git')) {
-      repos.push(measureRepo(dir, registeredPaths.has(norm(dir)), options, now))
+      repos.push(measureRepo(dir, normalizedRegisteredPaths.has(norm(dir)), options, now))
       // Do not descend into a repository's working tree: its size is measured
       // by the bounded walk above, and the tree itself is not a place to look
       // for independent repositories.
@@ -212,7 +214,10 @@ export function scanGitRepos(
   return { repos, complete, roots }
 }
 
-const norm = (path: string): string => path.replace(/\\/g, '/').replace(/\/+$/, '')
+const norm = (path: string): string => {
+  const canonical = canonicalPath(path).replace(/\\/g, '/').replace(/\/+$/, '')
+  return process.platform === 'win32' ? canonical.toLowerCase() : canonical
+}
 
 /** Paths of every non-retired checkout the brain knows, as a comparison set. */
 export function registeredCheckoutPaths(db: DatabaseSync): Set<string> {

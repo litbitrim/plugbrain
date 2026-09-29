@@ -7,7 +7,64 @@ import {
   fetchHygiene,
   fetchMachine,
   fetchRepos,
+  attachAgent,
 } from './brain-client.ts'
+
+// While an index run holds the store's writer lock, the daemon refuses every
+// store-writing route with 503 and says when to ask again (api.ts,
+// refuseWhileStoreIsBusy). A page that opens a note during a reindex must wait
+// for that, not give up: a failed attach makes the following read anonymous.
+describe('attachAgent waits out a running index (v0.3.1)', () => {
+  const originalFetch = globalThis.fetch
+  const busy = (retryAfterMs: number) => ({
+    ok: false,
+    status: 503,
+    json: async () => ({ ok: false, status: 'busy', busy: true, retryAfterMs, reason: 'an index run for ws-test is already in progress' }),
+  } as unknown as Response)
+  const attached = {
+    ok: true,
+    status: 200,
+    json: async () => ({ ok: true, agent: { id: 'portable-ui' } }),
+  } as unknown as Response
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('retries after retryAfterMs and resolves once the index run is done', async () => {
+    const answers = [busy(5), busy(5), attached]
+    const fetchMock = mock.fn(async () => answers.shift()!)
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const res = await attachAgent('ws-test', 'portable-ui', 'Portable UI')
+
+    assert.equal(fetchMock.mock.callCount(), 3)
+    assert.equal(res.ok, true)
+  })
+
+  test('gives up after its wait budget and reports the daemon\'s reason', async () => {
+    const fetchMock = mock.fn(async () => busy(5))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    await assert.rejects(
+      attachAgent('ws-test', 'portable-ui', 'Portable UI', { maxWaitMs: 40 }),
+      /index run for ws-test is already in progress/,
+    )
+    assert.ok(fetchMock.mock.callCount() >= 2, 'it asked again at least once before giving up')
+  })
+
+  test('does not retry a refusal that is not a busy store', async () => {
+    const fetchMock = mock.fn(async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({ ok: false, error: 'missing or wrong token' }),
+    } as unknown as Response))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    await assert.rejects(attachAgent('ws-test', 'portable-ui'), /missing or wrong token/)
+    assert.equal(fetchMock.mock.callCount(), 1)
+  })
+})
 
 describe('API envelope and discriminator tests (_API-VERTRAG / UX-03)', () => {
   const originalFetch = globalThis.fetch

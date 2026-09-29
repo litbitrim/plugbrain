@@ -21,11 +21,21 @@ import {
   prioritiseTimingProcess,
 } from './helpers/stable-load-budget.ts'
 
+/**
+ * A timing budget measured beside other test files is not evidence. These
+ * files run only in `npm run test:budget` (where npm sets the lifecycle
+ * event) or when PLUGBRAIN_BUDGET_TESTS=1 is exported; the parallel `npm test`
+ * reports them as skipped with the reason below instead of measuring noise.
+ */
+const BUDGET_TESTS_ENABLED
+  = process.env.PLUGBRAIN_BUDGET_TESTS === '1' || process.env.npm_lifecycle_event === 'test:budget'
+const budgetSkip = BUDGET_TESTS_ENABLED ? false : 'runs in test:budget'
+
 const AUTH = 'flake-load-token'
 const CONCURRENCY = 8
 const BUDGET_MS = 500
 
-test('FLAKE: Awareness Runtime and FO-3/FO-4 keep their contracts under concurrent load', async (t) => {
+test('FLAKE: Awareness Runtime and FO-3/FO-4 keep their contracts under concurrent load', { skip: budgetSkip }, async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-flake-load-'))
   const root = join(dir, 'ws')
   mkdirSync(join(root, 'src'), { recursive: true })

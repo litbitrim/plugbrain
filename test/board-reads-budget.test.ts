@@ -20,6 +20,11 @@ import { openStore } from '../src/store/schema.ts'
 import { registerPlanet, setPlanetIndexSelection } from '../src/planet.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 
+/** Timing budgets run only in `npm run test:budget`, never beside other files. */
+const BUDGET_TESTS_ENABLED
+  = process.env.PLUGBRAIN_BUDGET_TESTS === '1' || process.env.npm_lifecycle_event === 'test:budget'
+const budgetSkip = BUDGET_TESTS_ENABLED ? false : 'runs in test:budget'
+
 const FILE_COUNT = 3000
 const SYMBOLS_PER_FILE = 4
 const EDGES_PER_FILE = 12
@@ -106,7 +111,7 @@ async function buildFixture(): Promise<Fixture> {
   }
 }
 
-test('the five Board read routes answer 200 under the time budget', async () => {
+test('the five Board read routes answer 200 under the time budget', { skip: budgetSkip }, async () => {
   const fx = await buildFixture()
   try {
     const routes = [
@@ -140,7 +145,7 @@ test('the five Board read routes answer 200 under the time budget', async () => 
   }
 })
 
-test('the hot Board-read queries are index-served (EXPLAIN QUERY PLAN)', async () => {
+test('the hot Board-read queries are index-served (EXPLAIN QUERY PLAN)', { skip: budgetSkip }, async () => {
   const fx = await buildFixture()
   try {
     for (const { index, accept, sql, params } of HOT_QUERIES) {

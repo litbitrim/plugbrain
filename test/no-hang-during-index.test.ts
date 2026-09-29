@@ -24,6 +24,11 @@ import { workspaceIdFor } from '../src/planet.ts'
 import { removeRunState } from '../src/index/runs.ts'
 import { medianMs, prioritiseTimingProcess } from './helpers/stable-load-budget.ts'
 
+/** Timing budgets run only in `npm run test:budget`, never beside other files. */
+const BUDGET_TESTS_ENABLED
+  = process.env.PLUGBRAIN_BUDGET_TESTS === '1' || process.env.npm_lifecycle_event === 'test:budget'
+const budgetSkip = BUDGET_TESTS_ENABLED ? false : 'runs in test:budget'
+
 /** Run states and the store of this suite live under a throwaway home. */
 const home = mkdtempSync(join(tmpdir(), 'plugbrain-nohang-home-'))
 process.env.PLUGBRAIN_HOME = home
@@ -95,7 +100,7 @@ async function waitForRun(fx: Fixture, timeoutMs = 120_000): Promise<Record<stri
   throw new Error('the index run did not finish in time')
 }
 
-test('reads answer within 500 ms while an index run works, and say so', async (t) => {
+test('reads answer within 500 ms while an index run works, and say so', { skip: budgetSkip }, async (t) => {
   const fx = await createFixture(3000)
   try {
     const timing: Record<string, number[]> = {
@@ -185,7 +190,7 @@ test('reads answer within 500 ms while an index run works, and say so', async (t
   } finally { await fx.cleanup() }
 })
 
-test('a store-writing route is refused at once with the holder named', async () => {
+test('a store-writing route is refused at once with the holder named', { skip: budgetSkip }, async () => {
   const fx = await createFixture(3000)
   try {
     const started = await post(fx, '/api/reindex', { workspace: fx.workspaceId })
@@ -225,7 +230,7 @@ test('a store-writing route is refused at once with the holder named', async () 
   } finally { await fx.cleanup() }
 })
 
-test('a second reindex is answered with the run that exists, never a second one', async () => {
+test('a second reindex is answered with the run that exists, never a second one', { skip: budgetSkip }, async () => {
   const fx = await createFixture(3000)
   try {
     const first = await post(fx, '/api/reindex', {
