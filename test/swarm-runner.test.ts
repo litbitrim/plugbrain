@@ -188,9 +188,11 @@ test('swarm run refuses unsupported platforms before recording or starting a wor
     const profile = b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node',
       '--args', fakeArgs(b, 'ok'), '--workspace', b.ws)
     assert.equal(profile.code, 0, profile.err)
-    const result = b.run('swarm', 'run', 'fake-01', '--workspace', b.ws, '--json')
-    assert.equal(result.code, 3)
-    assert.match(result.err, /not supported on this platform; Windows process-tree identity is required/)
+    for (const mode of [[], ['--once']]) {
+      const result = b.run('swarm', 'run', 'fake-01', ...mode, '--workspace', b.ws, '--json')
+      assert.equal(result.code, 3)
+      assert.match(result.err, /not supported on this platform; Windows process-tree identity is required/)
+    }
     const board = b.run('swarm', 'board', '--workspace', b.ws, '--json')
     assert.equal(board.code, 0, board.err)
     assert.equal((JSON.parse(board.out) as BoardJson).agents.find(row => row.id === 'fake-01')?.runner, null)

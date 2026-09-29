@@ -89,6 +89,7 @@ function processAlive(pid: number | null): boolean {
 
 /** Start one detached supervisor process; an SQLite transaction prevents two refill loops per worker. */
 export function startSupervisor(db: DatabaseSync, input: StartSupervisorInput): { supervisorId: string; pid: number } {
+  if (process.platform !== 'win32') throw new AccessDenied('swarm run is not supported on this platform; Windows process-tree identity is required')
   ensureSupervisorSchema(db)
   const workspace = requireWorkspace(db, input.workspaceId)
   requireAgent(db, input.agentId)
