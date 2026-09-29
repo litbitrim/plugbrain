@@ -20,10 +20,13 @@ import {
   workspaceIdFor,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
+import { deliverTaskWithEvidence } from '../coord/turn-delivery.ts'
 import * as attachments from '../notes/attachments.ts'
 import { hygieneReport } from '../hygiene/index.ts'
 import { machineReport } from '../machine/index.ts'
 import { gitCensusCached } from '../machine/git-census.ts'
+import { diskRecommendations, diskWipeCheck } from '../disk/analysis.ts'
+import { currentDiskScan, diskTree, scanDisk } from '../disk/scan.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 import { resolveBrainHome } from '../home.ts'
@@ -85,6 +88,7 @@ import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
 import { askQuestion, buildProjectBriefing } from '../ask/index.ts'
 import * as coord from '../coord/index.ts'
+import { swarmApprovals, swarmBoard, swarmMessages, swarmTurns } from '../coord/swarm-read.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
 import { IndexRunBusy, IndexWorkerUnavailable, startIndexRun } from '../index/runner.ts'
@@ -1062,10 +1066,20 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
       })
+      // A reconnect may carry `Last-Event-ID`; replay what the buffer still has
+      // and never send an id twice (the live listener and the replay can both
+      // carry the same event when it fires while we are catching up).
+      const requested = req.headers['last-event-id']
+      const lastEventId = Array.isArray(requested) ? requested[0] : requested
+      let highestSent = Number.isFinite(Number(lastEventId)) ? Number(lastEventId) : 0
+      const send = (evt: { id: number; type: string; data: unknown }) => {
+        if (evt.id <= highestSent) return
+        highestSent = evt.id
+        res.write(`id: ${evt.id}\nevent: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
+      }
+      const unsubscribe = coord.coordEvents.onLive(send)
+      for (const evt of coord.coordEvents.replaySince(lastEventId)) send(evt)
       res.write(': connected\n\n')
-      const unsubscribe = coord.coordEvents.onLive((evt) => {
-        res.write(`event: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
-      })
       req.on('close', () => {
         unsubscribe()
       })
@@ -1158,9 +1172,59 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       })
     }
 
+    // ── Disk atlas: metadata-only inventory; no file bodies are read ──────
+    if (p === '/api/disk/scan' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const previous = currentDiskScan(db)
+      if (previous?.running) return json(res, { ok: false, error: 'disk scan already running', scan: previous }, 409)
+      const body = await readBody(req)
+      const roots = Array.isArray(body.roots) && body.roots.every(root => typeof root === 'string')
+        ? body.roots as string[] : undefined
+      // scanDisk allocates its own id. Starting it in the background keeps the
+      // request responsive; callers poll the authenticated status route.
+      void scanDisk(db, { roots }).catch(error => {
+        console.error(`disk scan failed: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      return json(res, { ok: true, started: true, scan: currentDiskScan(db) }, 202)
+    }
+    if (p === '/api/disk/scan' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, scan: currentDiskScan(db) })
+    }
+    if (p === '/api/disk/tree' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, directories: diskTree(db, q.get('path')) })
+    }
+    if (p === '/api/disk/recommendations' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskRecommendations(db, gitCensusCached(db)) })
+    }
+    if (p === '/api/disk/wipe-check' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskWipeCheck(db, gitCensusCached(db)) })
+    }
+
     if (p === '/api/agents') {
       access.requireWorkspace(db, ws)
       return json(res, { ok: true, agents: agentsOf(db, ws) })
+    }
+
+    // The fleet coordination ledger is the authoritative source for turns,
+    // messages, claims, worktrees and queue state. These endpoints are read-only
+    // and require the same bearer session used by authenticated UI operations.
+    if (p.startsWith('/api/swarm/')) {
+      if (req.method !== 'GET') return json(res, { ok: false, error: 'method not allowed' }, 405)
+      checkAuth(req, ctx)
+      access.requireWorkspace(db, ws)
+      const limit = clampLimit(q.get('limit'), 1000, 5000)
+      if (p === '/api/swarm/board') return json(res, { ok: true, board: swarmBoard(db, ws) })
+      if (p === '/api/swarm/turns') return json(res, { ok: true, ...swarmTurns(db, ws, limit) })
+      if (p === '/api/swarm/messages') return json(res, { ok: true, messages: swarmMessages(db, ws, limit) })
+      if (p === '/api/swarm/approvals') return json(res, { ok: true, approvals: swarmApprovals(db, ws, limit) })
+      if (p === '/api/swarm/queue') return json(res, {
+        ok: true, depth: queue.queueDepth(db, ws), tasks: queue.listQueue(db, ws),
+      })
+      return json(res, { ok: false, error: 'not found' }, 404)
     }
 
     // ── Agent Mesh: one trace-backed projection, never a registry fallback ──
@@ -2190,6 +2254,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const channel = (body.channel as string | undefined) ?? q.get('channel') ?? undefined
       const missionId = (body.missionId as string | undefined) ?? q.get('missionId') ?? undefined
       const unreadOnly = body.unreadOnly === true || q.get('unreadOnly') === 'true'
+      const afterCursor = body.afterCursor === true || q.get('afterCursor') === 'true'
       const waitMs = typeof body.waitMs === 'number' ? body.waitMs : Number(q.get('waitMs') ?? 0)
 
       const messages = await coord.readInbox(db, {
@@ -2198,6 +2263,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         channel,
         missionId,
         unreadOnly,
+        afterCursor,
         waitMs: Number.isFinite(waitMs) ? waitMs : 0,
       })
       return json(res, { ok: true, messages })
@@ -2211,6 +2277,16 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
       const acked = coord.confirmDelivery(db, messageId, agentId)
       return json(res, { ok: true, acked })
+    }
+
+    if (p === '/api/agent/inbox/processed' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const messageId = String(body.messageId ?? '').trim()
+      const agentId = String(body.agentId ?? '').trim()
+      if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
+      const processed = coord.markMessageProcessed(db, messageId, agentId)
+      return json(res, { ok: true, processed })
     }
 
     // ── Swarm Agent Inspect (M5: Mesh Inspection) ───────────────────────
@@ -2375,13 +2451,19 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/queue/deliver' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
       const taskId = String(body.taskId ?? '').trim()
       const agentId = String(body.agentId ?? '').trim()
       const path = String(body.deliveredPath ?? '').trim()
       if (!taskId || !agentId || !path) {
         return json(res, { ok: false, error: 'taskId, agentId and deliveredPath required' }, 400)
       }
-      return json(res, { ok: true, task: queue.deliverTask(db, taskId, agentId, path) })
+      return json(res, { ok: true, task: deliverTaskWithEvidence(db, taskId, agentId, path, undefined, {
+        workspaceId,
+        workspaceRoot: access.requireWorkspace(db, workspaceId).root,
+        repoPath: typeof body.repoPath === 'string' ? body.repoPath : undefined,
+        reviewRequired: body.review === true,
+      }) })
     }
 
     if (p === '/api/workspaces' && req.method === 'POST') {

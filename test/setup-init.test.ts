@@ -9,7 +9,7 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync, spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { ChildProcess } from 'node:child_process'
@@ -75,6 +75,11 @@ test('S2: init registers once, indexes, and enrolls a detected client', () => {
     assert.match(first, /generation/)
     assert.match(first, /clients:/)
     assert.match(first, /Claude Code/)
+    assert.match(first, /agent instructions:/)
+    const agentFile = readFileSync(join(f.repo, 'AGENTS.md'), 'utf8')
+    assert.match(agentFile, /<!-- plugbrain:agent-protocol:start -->/)
+    assert.match(agentFile, /<!-- plugbrain:agent-protocol:end -->/)
+    assert.match(agentFile, /agent id is `<id>`/)
     assert.doesNotMatch(first, /PlugBrain-Core--setup/, 'the entry must name this CLI, not the owner install')
 
     const enrolled = JSON.parse(readFileSync(join(f.home, '.claude.json'), 'utf8'))
@@ -136,8 +141,11 @@ test('S5: init --dry-run reports but writes neither a workspace nor a client', (
     assert.match(out, /would register workspace/)
     assert.match(out, /would index/)
     assert.match(out, /would change/)
+    assert.match(out, /agent instructions:/)
+    assert.match(out, /dry-run/)
 
     assert.equal(readFileSync(join(f.home, '.claude.json'), 'utf8'), '{}\n')
+    assert.equal(existsSync(join(f.repo, 'AGENTS.md')), false)
     const db = openStore(join(f.home, 'plugbrain.db'))
     try {
       const rows = db.prepare('SELECT id FROM workspaces').all() as Array<{ id: string }>
@@ -145,6 +153,21 @@ test('S5: init --dry-run reports but writes neither a workspace nor a client', (
     } finally {
       db.close()
     }
+  } finally {
+    f.cleanup()
+  }
+})
+
+test('doctor --agents --json is read-only when no Brain store exists', () => {
+  const f = makeFixture()
+  try {
+    const env = { ...tempEnv(f.home), PLUGBRAIN_DOCTOR_PORT: '9' }
+    const out = runCli(['doctor', '--agents', '--json'], env, f.repo)
+    const rows = JSON.parse(out) as Array<{ client: string; fix: string }>
+    assert.equal(rows.length, 7)
+    assert.ok(rows.every(row => typeof row.fix === 'string' && row.fix.length > 0))
+    assert.equal(existsSync(join(f.home, 'plugbrain.db')), false)
+    assert.deepEqual(readdirSync(f.home), [])
   } finally {
     f.cleanup()
   }

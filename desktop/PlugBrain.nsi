@@ -1,7 +1,7 @@
 Unicode true
 
 !define PRODUCT_NAME "PlugBrain"
-!define PRODUCT_VERSION "0.3.0"
+!define PRODUCT_VERSION "0.3.1"
 !define PRODUCT_PUBLISHER "PLUG"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"

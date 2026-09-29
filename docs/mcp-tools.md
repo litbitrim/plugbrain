@@ -1,12 +1,19 @@
 # PlugBrain MCP Tools Reference
 
-PlugBrain exposes 27 tools over the Model Context Protocol (MCP) JSON-RPC 2.0 stdio transport (`plugbrain mcp`).
+PlugBrain exposes 31 tools over the Model Context Protocol (MCP) JSON-RPC 2.0 stdio transport (`plugbrain mcp`).
 
 When invoked via `plugbrain mcp` without `--workspace`, the server automatically resolves the workspace from the current working directory. Tool parameters accept an explicit `workspaceId` when multiple workspaces exist or to override the binding.
 
 All tool executions return JSON objects conforming to `{ ok: boolean, ... }`. On error, `{ ok: false, error: string }` is returned.
 
 ---
+
+## Worktree maintenance
+
+### `reap`
+Preview safe cleanup of merged, clean Git worktrees. Set `apply` to `true` to remove eligible linked worktrees without force; branches are kept and recovery commands are recorded. `auto` enables or disables the workspace setting.
+
+**Parameters:** `workspaceId` (optional), `repo` (optional), `target` (optional), `apply` (optional, defaults to false), `auto` (optional boolean).
 
 ## Code Intelligence and Search
 
@@ -985,8 +992,17 @@ Turn boundary checkpoint: check in at turn start or submit a turn summary at tur
 
 ---
 
+### `swarm_supersede`
+Requires `taskId`, `note`, and `byAgent`; accepts optional `byTaskId` to link a replacement. A superseded pending task will never be offered again. The operation requires normal MCP authentication and is recorded in the board's audit history.
+
+### `swarm_reassign`
+Requires `taskId`, `toAgent`, and `byAgent`. Restricts a pending task to a registered worker, requires normal MCP authentication, and records the change in the board's audit history.
+
+### `swarm_priority`
+Requires `taskId`, integer `priority` (-100000 through 100000), and `byAgent`. Larger values are offered first. The operation requires normal MCP authentication and is recorded in the board's audit history.
+
 ### `swarm_board`
-Fleet overview showing every worker's status, unread messages, active leases, worktrees, and attention flags.
+Fleet overview showing every worker's status, unread messages, active leases, worktrees, and attention flags. It also includes queue tasks and the 50 latest queue changes, with each actor, operation, old/new value, and supersede reason.
 
 **Parameters:**
 - `workspaceId` (`string`, optional): Target workspace ID.

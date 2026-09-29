@@ -41,7 +41,7 @@ export interface WorkspaceCandidate {
  * would make `C:\Proj` and `C:\proj\src` look like strangers.
  */
 function fold(path: string): string {
-  let value = resolve(path).split(sep).join('/')
+  let value = canonicalPath(path).split(sep).join('/')
   while (value.length > 1 && value.endsWith('/')) value = value.slice(0, -1)
   return value.toLowerCase()
 }
@@ -100,36 +100,66 @@ export interface WorkspaceRecord {
 }
 
 /**
+ * The row that already names this folder, however it is spelled in the store.
+ *
+ * Identity is the derived id first; failing that, the same physical folder
+ * under a legacy spelling. Reading every root through `fold` (which runs
+ * `canonicalPath`) means an 8.3 or junction spelling written before the
+ * canonicalization fix is still recognized as this folder, so re-registering
+ * updates the row instead of colliding on the primary key or adding a twin.
+ */
+function existingWorkspaceRow(
+  db: DatabaseSync, absolute: string, id: string,
+): { id: string } | null {
+  const byId = db.prepare('SELECT id FROM workspaces WHERE id = ?').get(id) as
+    { id: string } | undefined
+  if (byId !== undefined) return { id: String(byId.id) }
+  const folded = fold(absolute)
+  const rows = db.prepare('SELECT id, root FROM workspaces').all() as
+    Array<{ id: unknown; root: unknown }>
+  for (const row of rows) {
+    if (fold(String(row.root)) === folded) return { id: String(row.id) }
+  }
+  return null
+}
+
+/**
  * What `registerWorkspaceRoot` WOULD write, without writing it.
  *
  * `init --dry-run` needs to name the workspace and say whether it is new while
  * changing nothing, so the decision is split from the write.
  */
 export function planWorkspaceRoot(db: DatabaseSync, root: string, name?: string): WorkspaceRecord {
-  const absolute = resolve(root)
-  const id = workspaceIdFor(absolute)
-  const existing = db.prepare('SELECT id FROM workspaces WHERE root = ?').get(absolute) as
-    { id: string } | undefined
+  const absolute = canonicalPath(root)
+  const derivedId = workspaceIdFor(absolute)
+  const existing = existingWorkspaceRow(db, absolute, derivedId)
+  const id = existing?.id ?? derivedId
   const label = name ?? basename(absolute) ?? id
-  return { id, name: label, created: existing === undefined }
+  return { id, name: label, created: existing === null }
 }
 
 /**
  * Register a folder as a workspace, idempotently.
  *
- * Mirrors the CLI's `register`: same id derivation, same `ON CONFLICT(root)`,
- * so a folder registered here and one registered by `plugbrain register` land
- * on one row rather than two.
+ * Mirrors the CLI's `register`: same id derivation, and a spelling-idempotent
+ * upsert, so a folder registered here and one registered by `plugbrain
+ * register` land on one row rather than two, whatever spelling either used.
  */
 export function registerWorkspaceRoot(
   db: DatabaseSync, root: string, name?: string,
 ): WorkspaceRecord {
-  const absolute = resolve(root)
+  const absolute = canonicalPath(root)
   const record = planWorkspaceRoot(db, root, name)
-  db.prepare(
-    `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
-     ON CONFLICT(root) DO UPDATE SET name = excluded.name`
-  ).run(record.id, record.name, absolute, new Date().toISOString())
+  if (record.created) {
+    db.prepare(
+      'INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)'
+    ).run(record.id, record.name, absolute, new Date().toISOString())
+  } else {
+    // Found by identity or by a legacy spelling: rewrite the root to its
+    // canonical form and keep the id, so identity is never renumbered.
+    db.prepare('UPDATE workspaces SET name = ?, root = ? WHERE id = ?')
+      .run(record.name, absolute, record.id)
+  }
   return record
 }
 
@@ -188,7 +218,7 @@ export function resolveMcpWorkspace(
     // than failing, and a folder is what a human is most likely to paste.
     const byId = rootOf(db, pinned)
     if (byId !== null) return { workspaceId: pinned, root: byId, source: 'env', needsIndex: false }
-    const absolute = resolve(pinned)
+    const absolute = canonicalPath(pinned)
     const id = workspaceIdFor(absolute)
     if (rootOf(db, id) !== null) {
       return { workspaceId: id, root: absolute, source: 'env', needsIndex: false }

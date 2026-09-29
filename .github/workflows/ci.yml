@@ -29,6 +29,12 @@ jobs:
       - name: Install UI dependencies
         run: npm ci --prefix ui
 
+      # GP-2 drives the real UI in Chromium. CI is the one place where the
+      # browser is downloaded (release.yml does the same). Without it GP-2 fails,
+      # and before v0.3.1 that failure also left the whole test run hanging.
+      - name: Install Chromium for the UI end-to-end test
+        run: node node_modules/playwright-core/cli.js install chromium
+
       # Advisory, not blocking: the core runs on --experimental-strip-types
       # and carries pre-existing strict-tsc findings in src/ that REL-01 is
       # not allowed to touch. The gate makes the debt visible; the load-check
@@ -46,6 +52,12 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      # Timing budgets need the machine to themselves: measured beside other
+      # test files they measure contention, not the product. `npm test` reports
+      # them as skipped; this serial step is the only place they run, on every OS.
+      - name: Run budget tests
+        run: npm run test:budget
 
       - name: Secret scan
         run: npm run secret:scan

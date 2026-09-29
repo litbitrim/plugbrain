@@ -23,9 +23,11 @@
 import { watch, type FSWatcher } from 'node:fs'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
-import { indexPlanetWorkspace } from './planet.ts'
+import { canonicalPath, indexPlanetWorkspace } from './planet.ts'
+import { cachedOnce, generationCache } from './store/count-cache.ts'
 import { IndexRunBusy, IndexRunStartFailed, startIndexRun } from './index/runner.ts'
 import { isNeverIndexedDir } from './indexer/scan.ts'
+import { runAutoReap } from './coord/reaper.ts'
 import {
   appraiseRun, readPendingReindex, removePendingReindex, storeHome, writePendingReindex,
 } from './index/runs.ts'
@@ -38,12 +40,15 @@ const MIN_INTERVAL_MS = 20_000
 const SWEEP_MS = 5 * 60_000
 /** How often to look for workspaces registered while this daemon was running. */
 const DISCOVERY_MS = 15_000
+const REAP_INTERVAL_MS = 10 * 60_000
 /** When another run holds the lock, perform one deferred recheck. */
 const BUSY_RETRY_MS = 10_000
 /** Poll a retained dirty request without repeatedly probing SQLite's writer lock. */
 const BUSY_MONITOR_MS = 30_000
 /** Do not turn a persistent worker failure into an autonomous start loop. */
 const MAX_PENDING_FAILURES = 2
+/** Bounded memo for the store-containment verdict; event bursts repeat paths. */
+const noiseCache = generationCache('daemon-noise')
 
 /**
  * Is this watcher event about something the indexer would never read?
@@ -65,9 +70,15 @@ export function isNoisePath(filename: string | null, home = storeHome()): boolea
   if (filename === null) return false
   const segments = filename.split(/[\\/]+/).filter(segment => segment !== '')
   if (segments.some(segment => isNeverIndexedDir(segment))) return true
-  const abs = resolve(filename)
-  const store = resolve(home)
-  return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
+  // The store test is a pure function of (filename, home) but costs a realpath
+  // per call, and an indexing burst re-reports the same paths again and again.
+  // Memoize the verdict, keyed by both so another store home cannot read this
+  // one's answer; `cachedOnce` keeps the map bounded.
+  return cachedOnce(noiseCache, `${home}\u0000${filename}`, () => {
+    const abs = canonicalPath(filename)
+    const store = canonicalPath(home)
+    return abs === store || abs.startsWith(store + '\\') || abs.startsWith(store + '/')
+  })
 }
 
 export interface DaemonHandle {
@@ -423,6 +434,13 @@ export function startDaemon(db: DatabaseSync, options: DaemonOptions = {}): Daem
   refresh()
   const sweepTimer = options.timers === false ? null : setInterval(sweep, SWEEP_MS)
   const discoverTimer = options.timers === false ? null : setInterval(refresh, DISCOVERY_MS)
+  const reapTimer = options.timers === false ? null : setInterval(() => {
+    for (const ws of workspaces()) {
+      try { runAutoReap(db, ws.id) }
+      catch (error) { log(`[daemon] ${ws.name}: automatic worktree reap failed — ${error instanceof Error ? error.message : String(error)}`) }
+    }
+  }, REAP_INTERVAL_MS)
+  reapTimer?.unref?.()
   const handle: DaemonHandle = {
     refresh,
     watching: () => list()
@@ -432,6 +450,7 @@ export function startDaemon(db: DatabaseSync, options: DaemonOptions = {}): Daem
       stopped = true
       if (sweepTimer !== null) clearInterval(sweepTimer)
       if (discoverTimer !== null) clearInterval(discoverTimer)
+      if (reapTimer !== null) clearInterval(reapTimer)
       for (const timer of timers.values()) clearTimeout(timer)
       timers.clear()
       for (const timer of busyMonitors.values()) clearTimeout(timer)

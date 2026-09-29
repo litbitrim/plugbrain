@@ -17,14 +17,20 @@
  *    worktree branch and uncommitted files) and never infers liveness.
  */
 import { execFileSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
-import { claimNextTask, ensureQueueSchema } from '../queue.ts'
+import { claimNextTask, ensureQueueSchema, listQueue, listQueueEvents } from '../queue.ts'
+import { handleFleetAutomationEvent } from './fleet-automation.ts'
+import { syncDependencies, UNBLOCKED_TASK_SQL } from './dependencies.ts'
 import { coordEvents } from './events.ts'
+import { ensureWatchdogSchema, silenceMinutesFor, watchdogSettings, watchTurnEnd } from './watchdog.ts'
 import { ensureInboxSchema, sendMessage } from './inbox.ts'
 import { listActiveLeases } from './leases.ts'
+import { runAutoReap } from './reaper.ts'
 import { ensureCoordSchema, getAgentPresence } from './registry.ts'
+import { runnerBoardStates, type RunnerBoardState } from './runner.ts'
 import type { InboxMessage, PresenceState } from './types.ts'
 import {
   admitWork, assertNotCredential, hostSnapshot, listQuotas,
@@ -39,17 +45,19 @@ export type TurnState =
 export type TurnEndState = 'needs-task' | 'awaiting-commit' | 'blocked' | 'paused'
 export const TURN_END_STATES: readonly TurnEndState[] = ['needs-task', 'awaiting-commit', 'blocked', 'paused']
 
-export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn'
+export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn' | 'silent'
 
 const DEFAULT_STALE_TURN_MS = 30 * 60_000
 const MAX_SUMMARY = 2000
 
 export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   ensureCoordSchema(db)
+  ensureWatchdogSchema(db)
   const columns = db.prepare('PRAGMA table_info(agents)').all() as unknown as Array<{ name: string }>
   const has = (name: string) => columns.some(column => column.name === name)
   if (!has('surface')) db.exec('ALTER TABLE agents ADD COLUMN surface TEXT')
   if (!has('account')) db.exec('ALTER TABLE agents ADD COLUMN account TEXT')
+  if (!has('quota_pool')) db.exec('ALTER TABLE agents ADD COLUMN quota_pool TEXT')
   if (!has('resource_key')) db.exec('ALTER TABLE agents ADD COLUMN resource_key TEXT')
   if (!has('turn_state')) db.exec('ALTER TABLE agents ADD COLUMN turn_state TEXT')
   if (!has('turn_state_at')) db.exec('ALTER TABLE agents ADD COLUMN turn_state_at TEXT')
@@ -60,23 +68,40 @@ export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   ensureQueueSchema(db)
 }
 
+function ensureTurnHistorySchema(db: DatabaseSync): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS swarm_turn_history (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    task_id TEXT,
+    started_at TEXT NOT NULL,
+    ended_at TEXT,
+    end_state TEXT,
+    summary TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_swarm_turn_history_workspace ON swarm_turn_history(workspace_id, started_at);`)
+}
+
 interface ProfileRow {
   id: string
   model: string | null
   surface: string | null
   account: string | null
+  quota_pool: string | null
   resource_key: string | null
   turn_state: string | null
   turn_state_at: string | null
   turn_summary: string | null
   worktrees: string | null
   retired_at: string | null
+  last_contact_at: string | null
 }
 
 export interface WorkerProfile {
   agentId: string
   surface: WorkerSurface | null
   account: string | null
+  quotaPool: string | null
   resourceKey: string | null
   model: string | null
   worktrees: string[]
@@ -96,6 +121,7 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
   agentId: row.id,
   surface: row.surface as WorkerSurface | null,
   account: row.account,
+  quotaPool: row.quota_pool,
   resourceKey: row.resource_key,
   model: row.model,
   worktrees: parseWorktrees(row.worktrees),
@@ -104,7 +130,7 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
 })
 
 const loadProfile = (db: DatabaseSync, agentId: string): ProfileRow =>
-  db.prepare(`SELECT id, model, surface, account, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at
+  db.prepare(`SELECT id, model, surface, account, quota_pool, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at
                 FROM agents WHERE id = ?`).get(agentId) as unknown as ProfileRow
 
 export interface RegisterWorkerInput {
@@ -112,6 +138,8 @@ export interface RegisterWorkerInput {
   surface: WorkerSurface
   /** A name for the account the worker spends, e.g. `owner:chatgpt` or `nvidia:key-01`. */
   account: string
+  /** Shared provider/project quota identity; defaults to account. */
+  quotaPool?: string
   /** An exclusive resource such as one BYOK key. At most one active worker carries it. */
   resourceKey?: string
   model?: string
@@ -129,6 +157,9 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   const account = input.account.trim()
   if (account === '' || account.length > 80) throw new AccessDenied('a worker needs an account label of at most 80 characters')
   assertNotCredential('account', account)
+  const quotaPool = (input.quotaPool ?? account).trim()
+  if (quotaPool === '' || quotaPool.length > 80) throw new AccessDenied('a quota pool needs a label of at most 80 characters')
+  assertNotCredential('quota pool', quotaPool)
 
   const resourceKey = input.resourceKey === undefined ? null : input.resourceKey.trim().toLowerCase()
   if (resourceKey !== null) {
@@ -137,7 +168,6 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
   }
   const worktrees = (input.worktrees ?? []).map(path => resolve(path))
   const now = new Date().toISOString()
-
   db.exec('BEGIN IMMEDIATE')
   try {
     if (resourceKey !== null) {
@@ -155,10 +185,10 @@ export function registerWorkerProfile(db: DatabaseSync, input: RegisterWorkerInp
     }
     db.prepare(`
       UPDATE agents
-         SET surface = ?, account = ?, resource_key = ?, model = COALESCE(?, model),
+         SET surface = ?, account = ?, quota_pool = ?, resource_key = ?, model = COALESCE(?, model),
              worktrees = ?, retired_at = NULL, last_seen = ?
        WHERE id = ?
-    `).run(input.surface, account, resourceKey, input.model ?? null, JSON.stringify(worktrees), now, input.agentId)
+    `).run(input.surface, account, quotaPool, resourceKey, input.model ?? null, JSON.stringify(worktrees), now, input.agentId)
     db.exec('COMMIT')
   } catch (error: unknown) {
     db.exec('ROLLBACK')
@@ -224,25 +254,35 @@ export interface TurnPing {
 interface InboxRow {
   id: string; workspace_id: string; from_agent: string; to_agent: string | null; channel: string | null
   subject: string; body: string; created_at: string; delivered_at: string | null; read_at: string | null
+  receipt_delivered_at: string | null; acknowledged_at: string | null; processed_at: string | null
 }
 
 function unreadInbox(db: DatabaseSync, workspaceId: string, agentId: string): InboxMessage[] {
   const rows = db.prepare(`
-    SELECT * FROM inbox_messages
-     WHERE workspace_id = ? AND (to_agent = ? OR to_agent IS NULL) AND read_at IS NULL
-     ORDER BY created_at ASC
-  `).all(workspaceId, agentId) as unknown as InboxRow[]
+    SELECT m.*, r.delivered_at AS receipt_delivered_at, r.acknowledged_at, r.processed_at
+      FROM inbox_messages m LEFT JOIN inbox_delivery_receipts r ON r.message_id = m.id AND r.agent_id = ?
+     WHERE m.workspace_id = ? AND (m.to_agent = ? OR m.to_agent IS NULL)
+       AND COALESCE(r.acknowledged_at, CASE WHEN m.to_agent = ? THEN m.read_at END) IS NULL
+     ORDER BY m.created_at ASC, m.rowid ASC
+  `).all(agentId, workspaceId, agentId, agentId) as unknown as InboxRow[]
   const now = new Date().toISOString()
   return rows.map(row => {
+    db.prepare('INSERT OR IGNORE INTO inbox_delivery_receipts(message_id, agent_id) VALUES (?, ?)').run(row.id, agentId)
     if (row.delivered_at === null) {
       db.prepare('UPDATE inbox_messages SET delivered_at = ? WHERE id = ?').run(now, row.id)
       row.delivered_at = now
+    }
+    if (row.receipt_delivered_at === null) {
+      db.prepare('UPDATE inbox_delivery_receipts SET delivered_at = ? WHERE message_id = ? AND agent_id = ?').run(now, row.id, agentId)
       coordEvents.emitLive('message.delivered', { messageId: row.id, agentId, deliveredAt: now })
     }
     return {
       id: row.id, workspaceId: row.workspace_id, fromAgent: row.from_agent, toAgent: row.to_agent,
       channel: row.channel, subject: row.subject, body: row.body,
-      createdAt: row.created_at, deliveredAt: row.delivered_at, readAt: row.read_at,
+      createdAt: row.created_at, deliveredAt: row.delivered_at,
+      readAt: row.acknowledged_at ?? row.read_at,
+      acknowledgedAt: row.acknowledged_at ?? row.read_at,
+      processedAt: row.processed_at,
     }
   })
 }
@@ -254,7 +294,8 @@ function nextTaskFor(db: DatabaseSync, workspaceId: string, agentId: string): Qu
   return taskRef(db.prepare(`
     SELECT id, title, body FROM queue_tasks
      WHERE workspace_id = ? AND state = 'pending' AND (addressed_to IS NULL OR addressed_to = ?)
-     ORDER BY created_at ASC, rowid ASC LIMIT 1
+       AND ${UNBLOCKED_TASK_SQL}
+     ORDER BY priority DESC, created_at ASC, rowid ASC LIMIT 1
   `).get(workspaceId, agentId) as { id: string; title: string; body: string } | undefined)
 }
 
@@ -282,23 +323,34 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   if (profile.retired_at !== null) throw new AccessDenied(`${input.agentId} is retired; register it again to resume`)
 
   let state: TurnState
+  let endState: TurnEndState | null = null
   if (input.phase === 'start') {
     state = 'working'
   } else {
     const wanted = input.state ?? 'needs-task'
     if (!TURN_END_STATES.includes(wanted)) throw new AccessDenied(`unknown turn end state: ${String(wanted)}`)
     state = wanted
+    endState = wanted
   }
   const summary = input.summary === undefined ? null : input.summary.slice(0, MAX_SUMMARY)
   if (summary !== null) assertNotCredential('summary', summary)
 
   const now = new Date().toISOString()
+  const previous = db.prepare('SELECT turn_state, turn_summary FROM agents WHERE id = ?').get(input.agentId) as
+    { turn_state: string | null; turn_summary: string | null } | undefined
   db.prepare(`
     UPDATE agents
        SET turn_state = ?, turn_state_at = ?, turn_summary = COALESCE(?, turn_summary),
-           last_heartbeat = ?, last_seen = ?
+           last_heartbeat = ?, last_seen = ?, last_contact_at = ?
      WHERE id = ?
-  `).run(state, now, summary, now, now, input.agentId)
+  `).run(state, now, summary, now, now, now, input.agentId)
+
+  // A turn boundary is Brain contact by definition. An ending turn can be the
+  // event another task was waiting for and can owe the fleet a review; a
+  // starting turn reconciles dependencies that a missed event left behind, so
+  // a release notice lands in this very ping.
+  if (endState !== null) watchTurnEnd(db, input.workspaceId, input.agentId, endState)
+  else syncDependencies(db, input.workspaceId)
 
   let claimedTask: QueueTaskRef | null = null
   if (input.claimNext === true) {
@@ -307,6 +359,21 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
       claimedTask = { id: claimed.id, title: claimed.title, body: claimed.body }
       db.prepare('UPDATE agents SET task_id = ? WHERE id = ?').run(claimed.id, input.agentId)
     }
+  }
+
+  if (input.phase === 'start') {
+    ensureTurnHistorySchema(db)
+    const task = currentTaskOf(db, input.workspaceId, input.agentId)
+    db.prepare(`INSERT INTO swarm_turn_history (id, workspace_id, agent_id, task_id, started_at)
+      VALUES (?, ?, ?, ?, ?)`)
+      .run(`turn-${randomUUID().slice(0, 12)}`, input.workspaceId, input.agentId, task?.id ?? null, now)
+  } else {
+    ensureTurnHistorySchema(db)
+    db.prepare(`UPDATE swarm_turn_history SET ended_at = ?, end_state = ?, summary = ?
+      WHERE id = (SELECT id FROM swarm_turn_history
+        WHERE workspace_id = ? AND agent_id = ? AND ended_at IS NULL
+        ORDER BY started_at DESC LIMIT 1)`)
+      .run(now, state, summary, input.workspaceId, input.agentId)
   }
 
   const host = options.host ?? hostSnapshot()
@@ -319,7 +386,24 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
     currentTask: currentTaskOf(db, input.workspaceId, input.agentId),
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
   }
-  coordEvents.emitLive('agent.turn', { agentId: input.agentId, phase: input.phase, state, at: now })
+  coordEvents.emitLive('agent.turn', {
+    agentId: input.agentId,
+    phase: input.phase,
+    previousState: previous?.turn_state ?? null,
+    state,
+    summary: summary ?? (input.phase === 'end' ? previous?.turn_summary : null) ?? null,
+    at: now,
+  })
+  if (state === 'blocked') {
+    handleFleetAutomationEvent(db, input.workspaceId, {
+      type: 'agent.turn',
+      data: { agentId: input.agentId, phase: input.phase, state, summary, at: now },
+    })
+  }
+  if (input.phase === 'end') {
+    try { runAutoReap(db, input.workspaceId) }
+    catch (error) { console.error(`[swarm-ops] auto-reap failed at turn end: ${error instanceof Error ? error.message : String(error)}`) }
+  }
   return ping
 }
 
@@ -346,6 +430,8 @@ export function approveCommit(
   const now = new Date().toISOString()
   db.prepare(`UPDATE agents SET turn_state = 'commit-approved', turn_state_at = ? WHERE id = ?`).run(now, input.agentId)
   coordEvents.emitLive('agent.commit.approved', { agentId: input.agentId, by: input.by, at: now })
+  try { runAutoReap(db, input.workspaceId) }
+  catch (error) { console.error(`[swarm-ops] auto-reap failed at commit approval: ${error instanceof Error ? error.message : String(error)}`) }
   return message
 }
 
@@ -375,11 +461,15 @@ export interface BoardRow {
   turnState: TurnState | null
   turnStateAt: string | null
   turnSummary: string | null
+  /** Whole minutes a `working` worker has been without Brain contact, or null. */
+  silentMinutes: number | null
   retired: boolean
   unread: number
   task: QueueTaskRef | null
   leases: Array<{ id: string; paths: string[]; symbols: string[]; mode: 'write' | 'read'; expiresAt: string }>
   worktrees: WorktreeState[]
+  /** The CLI process the Brain started for this worker, when it started one. */
+  runner: RunnerBoardState | null
   attention: AttentionFlag[]
 }
 
@@ -398,6 +488,16 @@ export interface SwarmBoard {
   overlaps: Array<{ worktree: string; agents: string[] }>
   host: HostSnapshot
   admission: Admission[]
+  queue: {
+    tasks: Array<{
+      id: string; title: string; state: string; addressedTo: string | null; priority: number; supersededBy: string | null
+      claimedBy: string | null; updatedAt: string
+    }>
+    recentChanges: Array<{
+      id: string; taskId: string; operation: string; byAgent: string; oldValue: string | null
+      newValue: string | null; note: string | null; occurredAt: string
+    }>
+  }
 }
 
 const normalizePath = (path: string): string => resolve(path).replace(/[\\/]+$/, '').toLowerCase()
@@ -430,21 +530,33 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
   requireWorkspace(db, workspaceId)
   const host = options.host ?? hostSnapshot()
   const staleTurnMs = options.staleTurnMs ?? DEFAULT_STALE_TURN_MS
+  const silentAfterMinutes = watchdogSettings(db, workspaceId).silentAfterMinutes
   const now = Date.now()
+  const nowDate = new Date(now)
   const exhausted = new Set(listQuotas(db).filter(quota => quota.exhausted).map(quota => quota.account))
   const leases = listActiveLeases(db, workspaceId)
+  const runners = runnerBoardStates(db)
 
   const agents: BoardRow[] = getAgentPresence(db, { workspaceId }).map(presence => {
     const profile = loadProfile(db, presence.id)
     const retired = profile.retired_at !== null
     const turnState = profile.turn_state as TurnState | null
     const unread = (db.prepare(`
-      SELECT COUNT(*) AS n FROM inbox_messages
-       WHERE workspace_id = ? AND (to_agent = ? OR to_agent IS NULL) AND read_at IS NULL
-    `).get(workspaceId, presence.id) as { n: number }).n
+      SELECT COUNT(*) AS n FROM inbox_messages m
+       WHERE m.workspace_id = ? AND (m.to_agent = ? OR m.to_agent IS NULL)
+         AND COALESCE((SELECT r.acknowledged_at FROM inbox_delivery_receipts r
+           WHERE r.message_id = m.id AND r.agent_id = ?), CASE WHEN m.to_agent = ? THEN m.read_at END) IS NULL
+    `).get(workspaceId, presence.id, presence.id, presence.id) as { n: number }).n
+
+    // The still-reading answers "has this working worker been in touch?" — it is
+    // a reading with a minute count, never a verdict about the process.
+    const silentMinutes = turnState === 'working' && !retired
+      ? silenceMinutesFor(nowDate, profile.turn_state_at, profile.last_contact_at, silentAfterMinutes)
+      : null
 
     const attention: AttentionFlag[] = []
     if (!retired) {
+      if (silentMinutes !== null) attention.push('silent')
       if (turnState === 'awaiting-commit') attention.push('awaiting-commit')
       if (turnState === 'needs-task') attention.push('needs-task')
       if (turnState === 'blocked') attention.push('blocked')
@@ -466,13 +578,16 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
       turnState,
       turnStateAt: profile.turn_state_at,
       turnSummary: profile.turn_summary,
+      silentMinutes,
       retired,
       unread: Number(unread),
       task: currentTaskOf(db, workspaceId, presence.id),
       leases: leases.filter(lease => lease.agentId === presence.id).map(lease => ({
-        id: lease.id, paths: lease.paths, symbols: lease.symbols, mode: lease.mode, expiresAt: lease.expiresAt,
+        id: lease.id, taskId: lease.taskId, paths: lease.paths, symbols: lease.symbols,
+        mode: lease.mode, createdAt: lease.createdAt, expiresAt: lease.expiresAt,
       })),
       worktrees: parseWorktrees(profile.worktrees).map(path => worktreeState(path, options.gitStatus === true)),
+      runner: runners.get(presence.id) ?? null,
       attention,
     }
   })
@@ -496,5 +611,15 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
     overlaps,
     host,
     admission: (['test', 'build', 'worktree'] as const).map(kind => admitWork(kind, host)),
+    queue: {
+      tasks: listQueue(db, workspaceId).map(task => ({
+        id: task.id, title: task.title, state: task.state, addressedTo: task.addressed_to,
+        priority: task.priority, supersededBy: task.superseded_by, claimedBy: task.claimed_by, updatedAt: task.updated_at,
+      })),
+      recentChanges: listQueueEvents(db, workspaceId, { limit: 50 }).map(event => ({
+        id: event.id, taskId: event.task_id, operation: event.operation, byAgent: event.by_agent,
+        oldValue: event.old_value, newValue: event.new_value, note: event.note, occurredAt: event.occurred_at,
+      })),
+    },
   }
 }

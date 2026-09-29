@@ -3,7 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError, SwarmSnapshot } from '../types'
 
 export type { RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
 export interface GalaxyPlanet {
@@ -273,23 +273,80 @@ export async function fetchMeshTimeline(
   return data.timeline as MeshTimelineEntry[]
 }
 
+export async function fetchSwarmSnapshot(workspaceId: string): Promise<SwarmSnapshot> {
+  const query = `?workspace=${encodeURIComponent(workspaceId)}`
+  const headers = authHeaders()
+  const [board, turns, messages, approvals, queue] = await Promise.all([
+    fetch(`/api/swarm/board${query}`, { headers }),
+    fetch(`/api/swarm/turns${query}`, { headers }),
+    fetch(`/api/swarm/messages${query}`, { headers }),
+    fetch(`/api/swarm/approvals${query}`, { headers }),
+    fetch(`/api/swarm/queue${query}`, { headers }),
+  ])
+  if ([board, turns, messages, approvals, queue].some(response => !response.ok)) {
+    throw new Error('Die Fleet-Zeitleiste ist nicht verfügbar.')
+  }
+  const [boardData, turnData, messageData, approvalData, queueData] = await Promise.all([
+    board.json(), turns.json(), messages.json(), approvals.json(), queue.json(),
+  ])
+  if (!boardData?.ok || !Array.isArray(boardData.board?.agents)
+    || !turnData?.ok || !Array.isArray(turnData.turns)
+    || !messageData?.ok || !Array.isArray(messageData.messages)
+    || !approvalData?.ok || !Array.isArray(approvalData.approvals)
+    || !queueData?.ok || !Array.isArray(queueData.tasks)) {
+    throw new Error('Die Fleet-Antwort ist unvollständig.')
+  }
+  return {
+    board: boardData.board, turns: turnData.turns, historyAvailable: turnData.historyAvailable === true,
+    messages: messageData.messages, approvals: approvalData.approvals, tasks: queueData.tasks,
+  }
+}
+
+export async function sendSwarmMessage(input: { workspace: string; fromAgent: string; toAgent: string; subject: string; body: string }): Promise<void> {
+  const response = await fetch('/api/agent/message', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  if (!response.ok) throw new Error('Nachricht konnte nicht gesendet werden.')
+}
+
+export async function enqueueSwarmTask(input: { workspace: string; requestedBy: string; title: string; body: string }): Promise<void> {
+  const response = await fetch('/api/queue', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  if (!response.ok) throw new Error('Aufgabe konnte nicht eingereiht werden.')
+}
+
 export async function fetchProvenance(workspaceId: string, path: string): Promise<FileProvenance> {
   const res = await fetch(`/api/provenance?workspace=${encodeURIComponent(workspaceId)}&path=${encodeURIComponent(path)}`)
   if (!res.ok) throw new Error(`Provenance HTTP ${res.status}`)
   return res.json()
 }
 
-export async function attachAgent(workspaceId: string, agentId = getStoredAgentId(), name = 'AGY'): Promise<any> {
-  const res = await fetch('/api/agent/attach', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({ workspace: workspaceId, agentId, name }),
-  })
-  if (!res.ok) {
+/** How long an attach waits for a running index run before it gives up. */
+const ATTACH_BUSY_WAIT_MS = 60_000
+
+export async function attachAgent(
+  workspaceId: string,
+  agentId = getStoredAgentId(),
+  name = 'AGY',
+  { maxWaitMs = ATTACH_BUSY_WAIT_MS }: { maxWaitMs?: number } = {},
+): Promise<any> {
+  const deadline = Date.now() + maxWaitMs
+  for (;;) {
+    const res = await fetch('/api/agent/attach', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ workspace: workspaceId, agentId, name }),
+    })
+    if (res.ok) return res.json()
     const err = await res.json().catch(() => null)
-    throw new Error(err?.error ?? `Agent Attach HTTP ${res.status}`)
+    // An index run holds the store's writer lock for its whole length. The
+    // daemon then answers 503 at once and says when to ask again; giving up
+    // here would leave the page's following reads without a registered agent.
+    const remaining = deadline - Date.now()
+    if (res.status === 503 && err?.busy === true && remaining > 0) {
+      const wait = Math.min(Math.max(Number(err.retryAfterMs) || 1000, 5), 5000, remaining)
+      await new Promise(resolve => setTimeout(resolve, wait))
+      continue
+    }
+    throw new Error(err?.error ?? err?.reason ?? `Agent Attach HTTP ${res.status}`)
   }
-  return res.json()
 }
 
 // Reads require a *registered* agent (FO-3): a read must never mint an identity.

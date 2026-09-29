@@ -15,31 +15,24 @@
  * first open; a second open does not rebuild again.
  */
 import { strict as assert } from 'node:assert'
-import { execFileSync } from 'node:child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { test } from 'node:test'
 import { DatabaseSync } from 'node:sqlite'
 import { openStore } from '../src/store/schema.ts'
 
-const HAS_GIT = ((): boolean => {
-  try { execFileSync('git', ['--version'], { stdio: 'ignore' }); return true } catch { return false }
-})()
-
-/** The 0.2.6 schema this repo actually shipped, read from git history rather
- *  than reinvented: the migration has to be tested against the real bytes. */
-const OLD_SCHEMA_COMMIT = '1dc5638'
-const REPO_ROOT = resolve(import.meta.dirname, '..')
+/** The 0.2.6 schema this repo actually shipped (commit 1dc5638,
+ *  src/store/schema.ts, blob f0e626b), kept byte for byte rather than
+ *  reinvented: the migration has to be tested against the real bytes. A file
+ *  and not `git show`, because the public repository starts with a fresh
+ *  history that does not contain that commit. `.txt` keeps tsc away from it. */
+const LEGACY_SCHEMA = join(import.meta.dirname, 'fixtures', 'legacy-schema-1dc5638.ts.txt')
 
 /** Materialize the historical schema module into a temp dir and import it. */
 async function legacySchemaModule(dir: string): Promise<{ openStore: typeof openStore }> {
-  const source = execFileSync('git', ['show', `${OLD_SCHEMA_COMMIT}:src/store/schema.ts`], {
-    encoding: 'utf8',
-    cwd: REPO_ROOT,
-    maxBuffer: 10 * 1024 * 1024,
-  })
+  const source = readFileSync(LEGACY_SCHEMA, 'utf8')
   const file = join(dir, 'legacy-schema.ts')
   writeFileSync(file, source)
   const mod = await import(pathToFileURL(file).href) as { openStore: typeof openStore }
@@ -49,7 +42,7 @@ async function legacySchemaModule(dir: string): Promise<{ openStore: typeof open
   return mod
 }
 
-test('a store that predates search_trigram answers a trigram MATCH on its first open', { skip: !HAS_GIT }, async () => {
+test('a store that predates search_trigram answers a trigram MATCH on its first open', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-tri-'))
   try {
     const legacy = await legacySchemaModule(dir)
