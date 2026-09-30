@@ -259,8 +259,14 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
-    await delay(300)
     db = new DatabaseSync(join(b.home, 'plugbrain.db'))
+    const run = db.prepare("SELECT pid, process_started_at FROM worker_runs WHERE agent_id = 'fake-01'")
+      .get() as { pid: number; process_started_at: string }
+    const exitDeadline = Date.now() + 15_000
+    while (isOwnedProcess(run.pid, run.process_started_at)) {
+      if (Date.now() >= exitDeadline) assert.fail('fake worker did not exit before blocked booking')
+      await delay(50)
+    }
     db.exec(`CREATE TRIGGER fail_blocked_booking BEFORE UPDATE OF turn_state ON agents
       WHEN NEW.turn_state = 'blocked' BEGIN SELECT RAISE(ABORT, 'simulated crash before blocked booking'); END`)
     const failed = b.run('swarm', 'board', '--workspace', b.ws, '--json')

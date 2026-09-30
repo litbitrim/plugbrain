@@ -167,14 +167,26 @@ function readRunOutput(run: { logPath: string } | null): string {
   } catch { return '' }
 }
 
-function releaseTaskForRetry(db: DatabaseSync, taskId: string, agentId: string): boolean {
+function stopSupervisorAfterAttempt(
+  db: DatabaseSync, taskId: string, agentId: string, supervisorId: string,
+  failure: string, releaseTask: boolean,
+  notice: { workspaceId: string; subject: string; body: string },
+): boolean {
   db.exec('BEGIN IMMEDIATE')
   try {
-    const result = db.prepare(`UPDATE queue_tasks SET state = 'pending', claimed_by = NULL, claimed_at = NULL,
-      updated_at = ? WHERE id = ? AND state = 'claimed' AND claimed_by = ?`)
-      .run(new Date().toISOString(), taskId, agentId)
+    if (!supervisorOwns(db, agentId, supervisorId)) {
+      db.exec('ROLLBACK')
+      return false
+    }
+    if (releaseTask) {
+      db.prepare(`UPDATE queue_tasks SET state = 'pending', claimed_by = NULL, claimed_at = NULL,
+        updated_at = ? WHERE id = ? AND state = 'claimed' AND claimed_by = ?`)
+        .run(new Date().toISOString(), taskId, agentId)
+    }
+    setSupervisor(db, agentId, supervisorId, { failure, active: false })
+    notifyLead(db, notice.workspaceId, agentId, notice.subject, notice.body)
     db.exec('COMMIT')
-    return Number(result.changes) === 1
+    return true
   } catch (error) { db.exec('ROLLBACK'); throw error }
 }
 
@@ -265,6 +277,7 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
       db.prepare(`INSERT INTO worker_task_attempts (task_id, agent_id, attempt, attempt_token, run_id, started_at, ended_at, outcome)
         VALUES (?, ?, ?, ?, NULL, ?, NULL, NULL)`)
         .run(task.id, input.agentId, attemptNumber, attemptToken, startedAt)
+      let finalizingDecision = false
       try {
         const run = startWorkerRun(db, { workspaceId: input.workspaceId, agentId: input.agentId,
           task: { id: task.id, title: task.title, body: task.body }, attemptToken })
@@ -297,23 +310,22 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
         if (decision) {
           const detail = `task ${task.id} (${task.title}) stopped after attempt ${attemptNumber}; outcome=${failure}; turn=${endedTurn.turn_state ?? 'unset'}.\n` +
             `Run log: ${current.logPath}. Inspect the local log before deciding whether to retry.`
-          notifyLead(db, input.workspaceId, input.agentId, `swarm run: decision required for ${task.id}`, detail)
-          setSupervisor(db, input.agentId, input.supervisorId, { failure, active: false })
-          if (endedTurn.turn_state !== 'awaiting-commit' && queue?.state === 'claimed' && queue.claimed_by === input.agentId) {
-            releaseTaskForRetry(db, task.id, input.agentId)
-          }
+          finalizingDecision = true
+          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, failure,
+            endedTurn.turn_state !== 'awaiting-commit' && queue?.state === 'claimed' && queue.claimed_by === input.agentId,
+            { workspaceId: input.workspaceId, subject: `swarm run: decision required for ${task.id}`, body: detail })
           return
         }
         if (failure === 'quota') await new Promise(resolve => setTimeout(resolve, quotaBackoffMs(output)))
       } catch (error) {
+        if (finalizingDecision) throw error
         const message = String(error)
         settleQuota(db, { reservationId: reservation.reservation!.id, outcome: 'launch-error' })
         db.prepare('UPDATE worker_task_attempts SET ended_at = ?, outcome = ? WHERE task_id = ? AND attempt = ?')
           .run(new Date().toISOString(), 'launch-error', task.id, attemptNumber)
         if (attemptNumber >= maxAttempts) {
-          notifyLead(db, input.workspaceId, input.agentId, `swarm run: could not start ${task.id}`, message)
-          setSupervisor(db, input.agentId, input.supervisorId, { failure: 'launch-error', active: false })
-          releaseTaskForRetry(db, task.id, input.agentId)
+          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, 'launch-error', true,
+            { workspaceId: input.workspaceId, subject: `swarm run: could not start ${task.id}`, body: message })
           return
         }
         await new Promise(resolve => setTimeout(resolve, pollMs))
