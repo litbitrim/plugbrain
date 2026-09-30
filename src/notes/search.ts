@@ -23,6 +23,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite'
 import { toMatchExpression } from '../store/search.ts'
+import { activePlanetFileScope } from '../planet.ts'
 
 export interface NoteHit {
   path: string
@@ -88,20 +89,24 @@ export function searchNotes(
   const match = toMatchExpression(query)
   if (match === null) return { query, total: 0, returned: 0, hits: [] }
   const limit = Math.min(Math.max(1, options.limit ?? 50), 500)
+  const fileScope = activePlanetFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
 
   const rows = db.prepare(
     `SELECT b.path AS path, b.file_id AS fileId,
             snippet(note_search, 1, ?, ?, ' … ', 18) AS snippet,
             bm25(note_search) AS score
        FROM note_body b JOIN note_search ON note_search.rowid = b.id
-      WHERE note_search MATCH ? AND b.workspace_id = ?
+       JOIN files f ON f.id = b.file_id
+      WHERE note_search MATCH ? AND b.workspace_id = ? AND f.workspace_id = ? AND ${fileScope.sql}
       ORDER BY score, b.path
-      LIMIT ?`).all(SNIPPET_MARK[0], SNIPPET_MARK[1], match, workspaceId, limit) as
+      LIMIT ?`).all(SNIPPET_MARK[0], SNIPPET_MARK[1], match, workspaceId, workspaceId, ...fileScope.params, limit) as
     unknown as Array<{ path: string; fileId: number; snippet: string | null; score: number }>
 
   const total = Number((db.prepare(
     `SELECT COUNT(*) AS n FROM note_body b JOIN note_search ON note_search.rowid = b.id
-      WHERE note_search MATCH ? AND b.workspace_id = ?`).get(match, workspaceId) as { n: number }).n)
+      JOIN files f ON f.id = b.file_id
+      WHERE note_search MATCH ? AND b.workspace_id = ? AND f.workspace_id = ? AND ${fileScope.sql}`)
+    .get(match, workspaceId, workspaceId, ...fileScope.params) as { n: number }).n)
 
   return {
     query,

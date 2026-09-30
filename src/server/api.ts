@@ -20,10 +20,13 @@ import {
   workspaceIdFor,
 } from '../planet.ts'
 import * as notes from '../notes/vault.ts'
+import { deliverTaskWithEvidence } from '../coord/turn-delivery.ts'
 import * as attachments from '../notes/attachments.ts'
 import { hygieneReport } from '../hygiene/index.ts'
 import { machineReport } from '../machine/index.ts'
 import { gitCensusCached } from '../machine/git-census.ts'
+import { diskRecommendations, diskWipeCheck } from '../disk/analysis.ts'
+import { currentDiskScan, diskScanHistory, diskTree, scanDisk } from '../disk/scan.ts'
 import { exportNote, exportVault } from '../notes/export.ts'
 import { cachedOnce, generationCache, publishedGeneration } from '../store/count-cache.ts'
 import { resolveBrainHome } from '../home.ts'
@@ -75,6 +78,7 @@ function withLocalSession(html: string, ctx: Ctx): string {
 }
 import * as missions from '../missions.ts'
 import * as queue from '../queue.ts'
+import { planView } from '../plan.ts'
 import { createAwarenessPort, type TaskAwarenessPack } from '../projections/awareness.ts'
 import { cityDelta, citySnapshot } from '../projections/city.ts'
 import { evaluateClaim } from '../projections/conflicts.ts'
@@ -85,6 +89,7 @@ import { buildContextPack, packStaleness } from '../chronicle.ts'
 import * as intel from '../intel/index.ts'
 import { askQuestion, buildProjectBriefing } from '../ask/index.ts'
 import * as coord from '../coord/index.ts'
+import { swarmApprovals, swarmBoard, swarmMessages, swarmTurns } from '../coord/swarm-read.ts'
 import { homedir } from 'node:os'
 import { backupStore, verifyBackupFile } from '../store/backup.ts'
 import { IndexRunBusy, IndexWorkerUnavailable, startIndexRun } from '../index/runner.ts'
@@ -1062,10 +1067,20 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
       })
+      // A reconnect may carry `Last-Event-ID`; replay what the buffer still has
+      // and never send an id twice (the live listener and the replay can both
+      // carry the same event when it fires while we are catching up).
+      const requested = req.headers['last-event-id']
+      const lastEventId = Array.isArray(requested) ? requested[0] : requested
+      let highestSent = Number.isFinite(Number(lastEventId)) ? Number(lastEventId) : 0
+      const send = (evt: { id: number; type: string; data: unknown }) => {
+        if (evt.id <= highestSent) return
+        highestSent = evt.id
+        res.write(`id: ${evt.id}\nevent: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
+      }
+      const unsubscribe = coord.coordEvents.onLive(send)
+      for (const evt of coord.coordEvents.replaySince(lastEventId)) send(evt)
       res.write(': connected\n\n')
-      const unsubscribe = coord.coordEvents.onLive((evt) => {
-        res.write(`event: ${evt.type}\ndata: ${JSON.stringify(evt.data)}\n\n`)
-      })
       req.on('close', () => {
         unsubscribe()
       })
@@ -1158,9 +1173,59 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       })
     }
 
+    // ── Disk atlas: metadata-only inventory; no file bodies are read ──────
+    if (p === '/api/disk/scan' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const previous = currentDiskScan(db)
+      if (previous?.running) return json(res, { ok: false, error: 'disk scan already running', scan: previous }, 409)
+      const body = await readBody(req)
+      const roots = Array.isArray(body.roots) && body.roots.every(root => typeof root === 'string')
+        ? body.roots as string[] : undefined
+      // scanDisk allocates its own id. Starting it in the background keeps the
+      // request responsive; callers poll the authenticated status route.
+      void scanDisk(db, { roots }).catch(error => {
+        console.error(`disk scan failed: ${error instanceof Error ? error.message : String(error)}`)
+      })
+      return json(res, { ok: true, started: true, scan: currentDiskScan(db) }, 202)
+    }
+    if (p === '/api/disk/scan' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, scan: currentDiskScan(db) })
+    }
+    if (p === '/api/disk/tree' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, directories: diskTree(db, q.get('path')) })
+    }
+    if (p === '/api/disk/recommendations' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskRecommendations(db, gitCensusCached(db)) })
+    }
+    if (p === '/api/disk/wipe-check' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskWipeCheck(db, gitCensusCached(db)) })
+    }
+
     if (p === '/api/agents') {
       access.requireWorkspace(db, ws)
       return json(res, { ok: true, agents: agentsOf(db, ws) })
+    }
+
+    // The fleet coordination ledger is the authoritative source for turns,
+    // messages, claims, worktrees and queue state. These endpoints are read-only
+    // and require the same bearer session used by authenticated UI operations.
+    if (p.startsWith('/api/swarm/')) {
+      if (req.method !== 'GET') return json(res, { ok: false, error: 'method not allowed' }, 405)
+      checkAuth(req, ctx)
+      access.requireWorkspace(db, ws)
+      const limit = clampLimit(q.get('limit'), 1000, 5000)
+      if (p === '/api/swarm/board') return json(res, { ok: true, board: swarmBoard(db, ws) })
+      if (p === '/api/swarm/turns') return json(res, { ok: true, ...swarmTurns(db, ws, limit) })
+      if (p === '/api/swarm/messages') return json(res, { ok: true, messages: swarmMessages(db, ws, limit) })
+      if (p === '/api/swarm/approvals') return json(res, { ok: true, approvals: swarmApprovals(db, ws, limit) })
+      if (p === '/api/swarm/queue') return json(res, {
+        ok: true, depth: queue.queueDepth(db, ws), tasks: queue.listQueue(db, ws),
+      })
+      return json(res, { ok: false, error: 'not found' }, 404)
     }
 
     // ── Agent Mesh: one trace-backed projection, never a registry fallback ──
@@ -2072,6 +2137,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     }
 
     if (p === '/api/resources' && req.method === 'GET') {
+      checkAuth(req, ctx)
       const host = coord.hostSnapshot()
       return json(res, {
         ok: true,
@@ -2079,6 +2145,21 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         quotas: coord.listQuotas(db),
         admission: coord.WORK_KINDS.map(kind => coord.admitWork(kind, host)),
       })
+    }
+    if (p === '/api/disk/history' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      return json(res, { ok: true, ...diskScanHistory(db, clampLimit(q.get('limit'), 10, 50)) })
+    }
+
+    if (p === '/api/plan' && req.method === 'GET') {
+      checkAuth(req, ctx)
+      access.requireWorkspace(db, ws)
+      try {
+        return json(res, { ok: true, plan: planView(db, ws) })
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause)
+        return json(res, { ok: false, error: message }, 503)
+      }
     }
 
     if (p === '/api/resources/quota' && req.method === 'POST') {
@@ -2190,6 +2271,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const channel = (body.channel as string | undefined) ?? q.get('channel') ?? undefined
       const missionId = (body.missionId as string | undefined) ?? q.get('missionId') ?? undefined
       const unreadOnly = body.unreadOnly === true || q.get('unreadOnly') === 'true'
+      const afterCursor = body.afterCursor === true || q.get('afterCursor') === 'true'
       const waitMs = typeof body.waitMs === 'number' ? body.waitMs : Number(q.get('waitMs') ?? 0)
 
       const messages = await coord.readInbox(db, {
@@ -2198,6 +2280,7 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
         channel,
         missionId,
         unreadOnly,
+        afterCursor,
         waitMs: Number.isFinite(waitMs) ? waitMs : 0,
       })
       return json(res, { ok: true, messages })
@@ -2211,6 +2294,16 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
       const acked = coord.confirmDelivery(db, messageId, agentId)
       return json(res, { ok: true, acked })
+    }
+
+    if (p === '/api/agent/inbox/processed' && req.method === 'POST') {
+      checkAuth(req, ctx)
+      const body = await readBody(req)
+      const messageId = String(body.messageId ?? '').trim()
+      const agentId = String(body.agentId ?? '').trim()
+      if (!messageId || !agentId) return json(res, { ok: false, error: 'messageId and agentId required' }, 400)
+      const processed = coord.markMessageProcessed(db, messageId, agentId)
+      return json(res, { ok: true, processed })
     }
 
     // ── Swarm Agent Inspect (M5: Mesh Inspection) ───────────────────────
@@ -2375,13 +2468,19 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
     if (p === '/api/queue/deliver' && req.method === 'POST') {
       checkAuth(req, ctx)
       const body = await readBody(req)
+      const workspaceId = String(body.workspace ?? ws).trim()
       const taskId = String(body.taskId ?? '').trim()
       const agentId = String(body.agentId ?? '').trim()
       const path = String(body.deliveredPath ?? '').trim()
       if (!taskId || !agentId || !path) {
         return json(res, { ok: false, error: 'taskId, agentId and deliveredPath required' }, 400)
       }
-      return json(res, { ok: true, task: queue.deliverTask(db, taskId, agentId, path) })
+      return json(res, { ok: true, task: deliverTaskWithEvidence(db, taskId, agentId, path, undefined, {
+        workspaceId,
+        workspaceRoot: access.requireWorkspace(db, workspaceId).root,
+        repoPath: typeof body.repoPath === 'string' ? body.repoPath : undefined,
+        reviewRequired: body.review === true,
+      }) })
     }
 
     if (p === '/api/workspaces' && req.method === 'POST') {
@@ -2666,7 +2765,8 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
       const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
-      const workspaceId = ((body.workspace as string | undefined) ?? q.get('workspace') ?? undefined)
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? q.get('workspace') ?? ws ?? ''))
+      if (workspaceId === null) return json(res, { ok: false, error: 'workspace is required for context when zero or multiple workspaces are registered' }, 400)
       return json(res, { ok: true, result: intel.getSymbolContext(db, name, { repoId, checkoutId, file, workspaceId }) })
     }
 
@@ -2677,9 +2777,20 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const direction = ((body.direction ?? q.get('direction') ?? 'both') as 'upstream' | 'downstream' | 'both')
       const maxDepth = Number(body.maxDepth ?? q.get('maxDepth') ?? 3)
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
+      const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
       const file = (body.file as string | undefined) ?? q.get('file') ?? undefined
-      const workspaceId = ((body.workspace as string | undefined) ?? q.get('workspace') ?? undefined)
-      return json(res, { ok: true, result: intel.getBlastRadius(db, target, { direction, maxDepth, repoId, file, workspaceId }) })
+      const symbolIdRaw = body.symbolId ?? q.get('symbolId')
+      const symbolId = symbolIdRaw === undefined || symbolIdRaw === null ? undefined : Number(symbolIdRaw)
+      if (symbolId !== undefined && (!Number.isSafeInteger(symbolId) || symbolId < 1)) {
+        return json(res, { ok: false, error: 'symbolId must be a positive integer' }, 400)
+      }
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? q.get('workspace') ?? ws ?? ''))
+      if (workspaceId === null) return json(res, { ok: false, error: 'workspace is required for impact when zero or multiple workspaces are registered' }, 400)
+      const result = intel.getBlastRadius(db, { name: target, file, id: symbolId }, { direction, maxDepth, repoId, checkoutId, file, workspaceId })
+      if (result.status === 'ambiguous') {
+        return json(res, { ok: false, error: 'ambiguous impact target; provide a file or symbol id', candidates: result.candidates }, 409)
+      }
+      return json(res, { ok: true, result })
     }
 
     if (p === '/api/intel/entry-points') {
@@ -2708,10 +2819,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const limit = Number(body.limit ?? q.get('limit') ?? 25)
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutId = (body.checkoutId as string | undefined) ?? q.get('checkout') ?? undefined
-      const workspaceId = ((body.workspace as string | undefined) ?? ws) || undefined
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? q.get('workspace') ?? ws ?? ''))
+      if (workspaceId === null) return json(res, { ok: false, error: 'workspace is required for query when zero or multiple workspaces are registered' }, 400)
       return json(res, {
         ok: true,
-        ...(workspaceId === undefined || workspaceId === '' ? {} : indexStateOf(db, workspaceId)),
+        ...indexStateOf(db, workspaceId),
         result: intel.conceptSearch(db, query, { limit, repoId, checkoutId, workspaceId }),
       })
     }
@@ -2729,11 +2841,15 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const repoId = (body.repoId as string | undefined) ?? q.get('repo') ?? undefined
       const checkoutPath = (body.checkoutPath as string | undefined) ?? q.get('path') ?? undefined
       const diffText = (body.diffText as string | undefined)
-      return json(res, {
-        ok: true,
-        ...indexStateOf(db, workspaceId),
-        result: intel.detectChanges(db, { workspaceId, checkoutId, repoId, checkoutPath, diffText }),
-      })
+      try {
+        return json(res, {
+          ok: true,
+          ...indexStateOf(db, workspaceId),
+          result: intel.detectChanges(db, { workspaceId, checkoutId, repoId, checkoutPath, diffText }),
+        })
+      } catch (error) {
+        return json(res, { ok: false, error: error instanceof Error ? error.message : String(error) }, 400)
+      }
     }
 
     if (p === '/api/intel/cypher' && (req.method === 'POST' || req.method === 'GET')) {
@@ -2741,7 +2857,11 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
       const query = (body.query ?? body.dsl ?? q.get('q') ?? q.get('query')) as string | object
       if (!query) return json(res, { ok: false, error: 'query or dsl required' }, 400)
       const limit = Number(body.limit ?? q.get('limit') ?? 50)
-      return json(res, { ok: true, result: intel.executeCypherQuery(db, query, { limit }) })
+      const workspaceId = requiredIntelWorkspace(db, String(body.workspace ?? q.get('workspace') ?? ws ?? ''))
+      if (workspaceId === null) {
+        return json(res, { ok: false, error: 'workspace is required for Cypher when zero or multiple workspaces are registered' }, 400)
+      }
+      return json(res, { ok: true, result: intel.executeCypherQuery(db, query, { limit, workspaceId }) })
     }
 
     // An unknown API path is a 404 in JSON. Falling through to the UI shell

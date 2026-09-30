@@ -9,6 +9,7 @@ import type { ConceptSearchResult, ExecutionFlow, IntelSymbol } from './types.ts
 import { annotateSymbolVendor } from './vendor.ts'
 import { getSymbolContext } from './context.ts'
 import { searchNotes } from '../notes/search.ts'
+import { activePlanetFileScope } from '../planet.ts'
 
 export interface ConceptSearchOptions {
   limit?: number
@@ -87,6 +88,9 @@ export function conceptSearch(
   const start = performance.now()
   const limit = Math.max(1, Math.min(100, options?.limit ?? 25))
   const cleanQuery = queryText.trim()
+  const fileScope = options?.workspaceId
+    ? activePlanetFileScope(db, options.workspaceId, 'f.checkout_id', 'f.path')
+    : null
 
   if (!cleanQuery) {
     return {
@@ -155,6 +159,7 @@ export function conceptSearch(
     symbolSql += ' AND f.workspace_id = ?'
     params.push(options.workspaceId)
   }
+  if (fileScope !== null) { symbolSql += ` AND ${fileScope.sql}`; params.push(...fileScope.params) }
   if (options?.checkoutId) {
     symbolSql += ' AND f.checkout_id = ?'
     params.push(options.checkoutId)
@@ -197,6 +202,7 @@ export function conceptSearch(
     const exactParams: SQLInputValue[] = [cleanQuery, cleanQuery]
     if (options?.repoId) { exactSql += ' AND f.repo_id = ?'; exactParams.push(options.repoId) }
     if (options?.workspaceId) { exactSql += ' AND f.workspace_id = ?'; exactParams.push(options.workspaceId) }
+    if (fileScope !== null) { exactSql += ` AND ${fileScope.sql}`; exactParams.push(...fileScope.params) }
     if (options?.checkoutId) { exactSql += ' AND f.checkout_id = ?'; exactParams.push(options.checkoutId) }
     exactSql += ' LIMIT 100'
     const exactHits = db.prepare(exactSql).all(...exactParams) as typeof rawSymbols
@@ -229,6 +235,7 @@ export function conceptSearch(
         const triParams: SQLInputValue[] = [safe]
         if (options?.repoId) { triSql += ' AND f.repo_id = ?'; triParams.push(options.repoId) }
         if (options?.workspaceId) { triSql += ' AND f.workspace_id = ?'; triParams.push(options.workspaceId) }
+        if (fileScope !== null) { triSql += ` AND ${fileScope.sql}`; triParams.push(...fileScope.params) }
         if (options?.checkoutId) { triSql += ' AND f.checkout_id = ?'; triParams.push(options.checkoutId) }
         triSql += ' LIMIT 100'
         const triHits = db.prepare(triSql).all(...triParams) as typeof rawSymbols
@@ -252,6 +259,7 @@ export function conceptSearch(
     const fileParams: SQLInputValue[] = [cleanQuery, cleanQuery, cleanQuery]
     if (options?.repoId) { fileSql += ' AND f.repo_id = ?'; fileParams.push(options.repoId) }
     if (options?.workspaceId) { fileSql += ' AND f.workspace_id = ?'; fileParams.push(options.workspaceId) }
+    if (fileScope !== null) { fileSql += ` AND ${fileScope.sql}`; fileParams.push(...fileScope.params) }
     if (options?.checkoutId) { fileSql += ' AND f.checkout_id = ?'; fileParams.push(options.checkoutId) }
     fileSql += ' LIMIT 20'
     const fileHits = db.prepare(fileSql).all(...fileParams) as typeof rawSymbols
@@ -282,10 +290,13 @@ export function conceptSearch(
                s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
           FROM symbols s
           JOIN files f ON s.file_id = f.id
-         WHERE (s.name LIKE ? OR f.path LIKE ?)` + (options?.workspaceId ? ' AND f.workspace_id = ?' : '') + `
-         LIMIT ?
-      `
-      rawSymbols = db.prepare(fallbackSql).all(pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []), limit) as typeof rawSymbols
+          WHERE (s.name LIKE ? OR f.path LIKE ?)` + (options?.workspaceId ? ' AND f.workspace_id = ?' : '')
+          + (fileScope === null ? '' : ` AND ${fileScope.sql}`) + `
+          LIMIT ?
+       `
+      rawSymbols = db.prepare(fallbackSql).all(
+        pattern, pattern, ...(options?.workspaceId ? [options.workspaceId] : []),
+        ...(fileScope?.params ?? []), limit) as typeof rawSymbols
     }
   }
 

@@ -311,7 +311,7 @@ export default function AskModal({
         <footer className="ask-modal__footer">
           <span><kbd>Enter</kbd> Fragen absenden</span>
           <span><kbd>Esc</kbd> Schließen</span>
-          <span><kbd>Strg+K</kbd> Immer verfügbar</span>
+          <span><kbd>/</kbd> Immer verfügbar</span>
         </footer>
       </div>
     </div>

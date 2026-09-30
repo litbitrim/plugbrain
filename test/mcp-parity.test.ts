@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { McpServer } from '../src/mcp/server.ts'
+import { setPlanetIndexSelection } from '../src/planet.ts'
 
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-mcp-parity-'))
@@ -25,6 +26,7 @@ function fixture() {
       (id, planet_id, repo_id, name, path, rel_prefix, branch, head, revision, is_primary, seen_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`)
     .run(checkoutId, planetId, repoId, 'PlugBrain-Core', join(dir, 'brain-corpus'), 'Code/PlugBrain-Core', 'main', 'abc123', 'rev-abc123', now)
+  setPlanetIndexSelection(db, workspaceId, [checkoutId])
   db.prepare(`INSERT INTO workspace_index_state
       (workspace_id, generation, git_head, file_count, symbol_count, edge_count, unresolved_count, ambiguous_count)
       VALUES (?, 7, 'abc123', 2, 2, 1, 0, 0)`)

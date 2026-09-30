@@ -4,6 +4,13 @@ All notable changes to PlugBrain are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0-dev.1] — 2026-09-30 (development candidate)
+
+This branch carries the local PlugBrain 0.5 source candidate onto the public
+repository history for review and cross-platform verification. It is not an
+installed or published release. See `release/RELEASE-NOTES-v0.5.0-dev.1.md`
+for the included work and the open acceptance gates.
+
 ## [0.3.1] — 2026-09-26
 
 The `v0.3.0` tag exists, but no 0.3.0 release was published: its cross-platform

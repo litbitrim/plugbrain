@@ -18,7 +18,7 @@ const readJson = (rel: string): Record<string, unknown> =>
 test('plugin.json is a complete, consistent manifest', () => {
   const manifest = readJson('.claude-plugin/plugin.json')
   assert.equal(manifest.name, 'plugbrain')
-  assert.match(String(manifest.version), /^\d+\.\d+\.\d+$/)
+  assert.match(String(manifest.version), /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/)
   assert.ok(String(manifest.description).length > 10, 'description must say what the plugin does')
   assert.equal(manifest.license, 'MIT')
   assert.ok(manifest.author, 'author is required')

@@ -6,6 +6,7 @@
  */
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import type { CypherQueryResult } from './types.ts'
+import { activePlanetFileScope } from '../planet.ts'
 
 export interface JsonGraphQuery {
   match?: {
@@ -38,6 +39,36 @@ function formatMarkdownTable(columns: string[], rows: Array<Record<string, unkno
   return [header, separator, ...dataRows].join('\n')
 }
 
+function safeWhere(clause: string, columns: Record<string, string>): { sql: string; params: SQLInputValue[] } | null {
+  if (!clause) return { sql: '', params: [] }
+  const predicates: string[] = []
+  const params: SQLInputValue[] = []
+  let rest = clause.trim()
+  while (rest) {
+    const match = rest.match(/^([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*(=|!=|<=|>=|<|>|LIKE)\s*('(?:''|[^'])*'|"(?:""|[^"])*"|-?\d+(?:\.\d+)?)/i)
+    if (!match) return null
+    const column = columns[`${match[1]}.${match[2]}`]
+    if (!column) return null
+    const value = match[4]
+    const quoted = value.startsWith("'") || value.startsWith('"')
+    params.push(quoted ? value.slice(1, -1).replace(value[0] === "'" ? /''/g : /""/g, value[0]) : Number(value))
+    predicates.push(`${column} ${match[3].toUpperCase()} ?`)
+    rest = rest.slice(match[0].length).trim()
+    if (!rest) break
+    const and = rest.match(/^AND\b\s*/i)
+    if (!and) return null
+    rest = rest.slice(and[0].length)
+  }
+  return { sql: predicates.join(' AND '), params }
+}
+
+function queryError(start: number, error: string): CypherQueryResult {
+  return {
+    columns: ['error'], rows: [{ error }], markdown: formatMarkdownTable(['error'], [{ error }]),
+    rowCount: 0, timingMs: Math.round((performance.now() - start) * 10) / 10,
+  }
+}
+
 /**
  * Translates and executes a Cypher or JSON-DSL graph query against the SQLite database.
  */
@@ -47,6 +78,9 @@ export function executeCypherQuery(
   options?: { limit?: number; workspaceId?: string }
 ): CypherQueryResult {
   const start = performance.now()
+  if (options?.limit !== undefined && !validLimit(options.limit)) {
+    return queryError(start, 'limit must be an integer from 1 to 500')
+  }
 
   // Handle JSON-DSL if passed as object or JSON string
   if (typeof queryOrDsl === 'object' || (typeof queryOrDsl === 'string' && queryOrDsl.trim().startsWith('{'))) {
@@ -61,6 +95,10 @@ export function executeCypherQuery(
   return executeCypherString(db, cypher, start, options?.limit, options?.workspaceId)
 }
 
+function validLimit(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 500
+}
+
 function executeCypherString(
   db: DatabaseSync,
   cypher: string,
@@ -71,6 +109,7 @@ function executeCypherString(
   const defaultLimit = overrideLimit ?? 50
   let sql = ''
   let columns: string[] = []
+  let whereColumns: Record<string, string> = {}
 
   // Extract LIMIT if present
   let limit = defaultLimit
@@ -78,6 +117,7 @@ function executeCypherString(
   if (limitMatch) {
     limit = parseInt(limitMatch[1], 10)
   }
+  if (!validLimit(limit)) return queryError(start, 'limit must be an integer from 1 to 500')
 
   // Extract RETURN clause
   const returnMatch = cypher.match(/\bRETURN\s+(.+?)(?:\s+ORDER\s+BY|\s+LIMIT|$)/i)
@@ -112,6 +152,7 @@ function executeCypherString(
           JOIN symbols s ON s.file_id = f.id
       `
       columns = [`${srcAlias}.path`, `${dstAlias}.name`, `${dstAlias}.kind`]
+      whereColumns = { [`${srcAlias}.path`]: 'f.path', [`${dstAlias}.name`]: 's.name', [`${dstAlias}.kind`]: 's.kind' }
     } else if (relType === 'LINKS_TO') {
       sql = `
         SELECT f1.path as "${srcAlias}.path", nl.target as "${dstAlias}.path"
@@ -119,6 +160,7 @@ function executeCypherString(
           JOIN files f1 ON nl.file_id = f1.id
       `
       columns = [`${srcAlias}.path`, `${dstAlias}.path`]
+      whereColumns = { [`${srcAlias}.path`]: 'f1.path' }
     } else {
       // Default: CALLS or REFERENCES
       const kindFilter = relType === 'REFERENCES' ? "('references', 'imports')" : "('calls')"
@@ -132,6 +174,8 @@ function executeCypherString(
          WHERE e.kind IN ${kindFilter}
       `
       columns = [`${srcAlias}.name`, `${dstAlias}.name`]
+      whereColumns = { [`${srcAlias}.name`]: 'src.name', [`${srcAlias}.kind`]: 'src.kind',
+        [`${dstAlias}.name`]: 'dst.name', [`${dstAlias}.kind`]: 'dst.kind' }
     }
   } else {
     // Pattern 2: Single node match (n:Label) or (n:Label {prop: 'val'})
@@ -143,12 +187,15 @@ function executeCypherString(
     if (label === 'file') {
       sql = `SELECT f.path as "${alias}.path", f.size as "${alias}.size", f.loc as "${alias}.loc" FROM files f WHERE 1=1`
       columns = [`${alias}.path`]
+      whereColumns = { [`${alias}.path`]: 'f.path', [`${alias}.size`]: 'f.size', [`${alias}.loc`]: 'f.loc' }
     } else if (label === 'note') {
       sql = `SELECT f.path as "${alias}.path", nb.text as "${alias}.text" FROM files f JOIN note_body nb ON f.id = nb.file_id WHERE 1=1`
       columns = [`${alias}.path`]
+      whereColumns = { [`${alias}.path`]: 'f.path' }
     } else if (label === 'repo') {
       sql = `SELECT r.name as "${alias}.name", r.remote_url as "${alias}.remote_url" FROM repos r WHERE 1=1`
       columns = [`${alias}.name`]
+      whereColumns = { [`${alias}.name`]: 'r.name' }
     } else {
       // Symbol or specific symbol kind (Function, Class, Interface, Method, etc.)
       const kindFilter =
@@ -163,6 +210,9 @@ function executeCypherString(
          WHERE 1=1${kindFilter}
       `
       columns = [`${alias}.name`, `${alias}.kind`, `${alias}.filePath`]
+      whereColumns = { [`${alias}.name`]: 's.name', [`${alias}.kind`]: 's.kind',
+        [`${alias}.filePath`]: 'f.path', [`${alias}.path`]: 'f.path',
+        [`${alias}.line`]: 's.line', [`${alias}.exported`]: 's.exported' }
     }
 
     if (props) {
@@ -178,20 +228,12 @@ function executeCypherString(
     }
   }
 
-  // Apply WHERE conditions if present
-  if (whereClause) {
-    const translatedWhere = whereClause
-      .replace(/\b(\w+)\.filePath\b/g, 'f.path')
-      .replace(/\b(\w+)\.path\b/g, 'f.path')
-      .replace(/\b(\w+)\.name\b/g, 's.name')
-      .replace(/\b(\w+)\.kind\b/g, 's.kind')
-      .replace(/\b(\w+)\.line\b/g, 's.line')
-      .replace(/\b(\w+)\.exported\b/g, 's.exported')
-    sql += ` AND (${translatedWhere})`
-  }
+  const parsedWhere = safeWhere(whereClause, whereColumns)
+  if (parsedWhere === null) return queryError(start, 'unsupported WHERE predicate')
+  if (parsedWhere.sql) sql += ` AND (${parsedWhere.sql})`
 
   // Scope before wrapping a count query: the aliases live inside its subquery.
-  const scoped = scopeSql(sql, workspaceId)
+  const scoped = scopeSql(db, sql, workspaceId)
   sql = scoped.sql
 
   // Handle custom RETURN projection if simple
@@ -206,7 +248,7 @@ function executeCypherString(
 
   let rows: Array<Record<string, unknown>> = []
   try {
-    rows = db.prepare(sql).all(...scoped.params) as Array<Record<string, unknown>>
+    rows = db.prepare(sql).all(...parsedWhere.params, ...scoped.params) as Array<Record<string, unknown>>
     if (rows.length > 0 && columns.length === 0) {
       columns = Object.keys(rows[0])
     }
@@ -239,6 +281,7 @@ function executeJsonDsl(
   workspaceId?: string,
 ): CypherQueryResult {
   const limit = overrideLimit ?? dsl.limit ?? 50
+  if (!validLimit(limit)) return queryError(start, 'limit must be an integer from 1 to 500')
   const match = dsl.match
   let sql = ''
   let columns: string[] = []
@@ -279,7 +322,7 @@ function executeJsonDsl(
     }
   }
 
-  const scoped = scopeSql(sql, workspaceId)
+  const scoped = scopeSql(db, sql, workspaceId)
   sql = scoped.sql + ` LIMIT ${limit}`
 
   let rows: Array<Record<string, unknown>> = []
@@ -309,16 +352,30 @@ function executeJsonDsl(
 }
 
 /** Every generated query anchors its rows in one of these workspace-aware aliases. */
-function scopeSql(sql: string, workspaceId?: string): { sql: string; params: SQLInputValue[] } {
+function scopeSql(db: DatabaseSync, sql: string, workspaceId?: string): { sql: string; params: SQLInputValue[] } {
   if (!workspaceId) return { sql, params: [] }
   if (/\bFROM repos r\b/i.test(sql)) {
-    return { sql: `${sql} AND r.planet_id IN (SELECT id FROM planets WHERE workspace_id = ?)`, params: [workspaceId] }
+    const files = activePlanetFileScope(db, workspaceId, 'rf.checkout_id', 'rf.path')
+    return {
+      sql: `${sql} AND r.planet_id IN (SELECT id FROM planets WHERE workspace_id = ?)
+        AND EXISTS (SELECT 1 FROM files rf WHERE rf.repo_id = r.id AND rf.workspace_id = ? AND ${files.sql})`,
+      params: [workspaceId, workspaceId, ...files.params],
+    }
   }
   if (/\bFROM note_links nl\b/i.test(sql)) {
-    return { sql: `${sql} AND f1.workspace_id = ?`, params: [workspaceId] }
+    const files = activePlanetFileScope(db, workspaceId, 'f1.checkout_id', 'f1.path')
+    return { sql: `${sql} AND f1.workspace_id = ? AND ${files.sql}`, params: [workspaceId, ...files.params] }
   }
   if (/\bFROM edges e\b/i.test(sql)) {
-    return { sql: `${sql} AND e.workspace_id = ?`, params: [workspaceId] }
+    const src = activePlanetFileScope(db, workspaceId, 'sf.checkout_id', 'sf.path')
+    const dst = activePlanetFileScope(db, workspaceId, 'df.checkout_id', 'df.path')
+    return {
+      sql: `${sql} AND e.workspace_id = ?
+        AND EXISTS (SELECT 1 FROM files sf WHERE sf.id = src.file_id AND sf.workspace_id = ? AND ${src.sql})
+        AND EXISTS (SELECT 1 FROM files df WHERE df.id = dst.file_id AND df.workspace_id = ? AND ${dst.sql})`,
+      params: [workspaceId, workspaceId, ...src.params, workspaceId, ...dst.params],
+    }
   }
-  return { sql: `${sql} AND f.workspace_id = ?`, params: [workspaceId] }
+  const files = activePlanetFileScope(db, workspaceId, 'f.checkout_id', 'f.path')
+  return { sql: `${sql} AND f.workspace_id = ? AND ${files.sql}`, params: [workspaceId, ...files.params] }
 }

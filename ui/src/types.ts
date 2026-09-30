@@ -89,7 +89,26 @@ export type BoardTask = {
 }
 
 /** Which of the renderings or tools of the same brain is on screen. */
-export type ViewId = 'briefing' | 'atlas' | 'notes' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue' | 'hygiene'
+export type ViewId = 'briefing' | 'atlas' | 'notes' | 'explorer' | 'search' | 'packs' | 'city' | 'mesh' | 'queue' | 'turns' | 'hygiene' | 'disk' | 'durable' | 'plan'
+
+export type SwarmWorker = {
+  id: string; name: string; color: string; surface: string | null; account: string | null
+  model: string | null; presence: string; lastHeartbeat: string | null; turnState: string | null
+  turnStateAt: string | null; turnSummary: string | null; retired: boolean; unread: number
+  silentMinutes?: number | null; attention?: string[]
+  task: { id: string; title: string; body: string } | null
+  leases: Array<{ id: string; taskId: string; paths: string[]; symbols: string[]; mode: 'write' | 'read'; createdAt: string; expiresAt: string }>
+  worktrees: Array<{ path: string; branch: string | null; head: string | null; dirtyFiles: number | null; error: string | null }>
+}
+export type SwarmTurn = { id: string; agentId: string; taskId: string | null; startedAt: string; endedAt: string | null; state: string | null; summary: string | null }
+export type SwarmMessage = { id: string; fromAgent: string; toAgent: string | null; subject: string; body: string; createdAt: string; deliveredAt: string | null; readAt: string | null }
+export type SwarmApproval = { id: string; byAgent: string; agentId: string | null; subject: string; body: string; approvedAt: string; acknowledgedAt: string | null }
+export type SwarmQueueTask = QueueTask & { body?: string; created_at?: string; claimed_at?: string }
+export type SwarmSnapshot = {
+  board: { agents: SwarmWorker[] }
+  turns: SwarmTurn[]; historyAvailable: boolean; messages: SwarmMessage[]
+  approvals: SwarmApproval[]; tasks: SwarmQueueTask[]
+}
 
 /** A row of the workspace queue, as the Brain reports it. */
 export type QueueTask = {

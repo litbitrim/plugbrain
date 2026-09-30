@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process'
 import { DatabaseSync } from 'node:sqlite'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
+import { McpServer } from '../src/mcp/server.ts'
 import * as intel from '../src/intel/index.ts'
 
 interface IntelFixture {
@@ -120,6 +121,11 @@ test('M3: getSymbolContext returns 360-degree view (callers, callees, execution 
     assert.ok(res.processes.length > 0)
     assert.match(res.processes[0].label, /sendQuery -> handleRequest -> dispatchRequest/)
 
+    fix.db.prepare(`INSERT INTO edges (workspace_id, kind, src_symbol, src_file, raw_target, resolved, line)
+      VALUES (?, 'calls', 12, 2, 'unknownExternal', 0, 18)`).run(fix.workspaceId)
+    const unresolved = intel.getSymbolContext(fix.db, 'handleRequest', { workspaceId: fix.workspaceId })
+    assert.ok(unresolved.outgoing.calls.some(call => call.rawTarget === 'unknownExternal'))
+
     // 2. Negative case: symbol not found
     const missing = intel.getSymbolContext(fix.db, 'nonExistentSymbol')
     assert.equal(missing.status, 'not_found')
@@ -153,6 +159,88 @@ test('M3: getBlastRadius calculates upstream and downstream impact with depth an
     const missing = intel.getBlastRadius(fix.db, 'unknownTarget')
     assert.equal(missing.totalImpacted, 0)
     assert.equal(missing.risk, 'low')
+  } finally {
+    await fix.cleanup()
+  }
+})
+
+test('M3: import fallback reports only the named symbol from its resolved module', async () => {
+  const fix = await createIntelFixture()
+  try {
+    fix.db.prepare(`INSERT INTO files (id, workspace_id, path, repo_id, checkout_id, ext, size, mtime)
+      VALUES (4, ?, 'src/target-user.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (5, ?, 'src/other-user.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (6, ?, 'src/unrelated-user.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (7, ?, 'other/gateway.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (8, ?, 'src/barrel.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (9, ?, 'src/barrel-user.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (10, ?, 'src/shadow-barrel.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z'),
+             (11, ?, 'src/shadow-user.ts', 'repo-engine', 'co-engine', '.ts', 10, '2026-09-17T00:00:00Z')`
+    ).run(...Array(8).fill(fix.workspaceId))
+    fix.db.prepare(`INSERT INTO symbols (id, file_id, name, kind, line, end_line, exported, container)
+      VALUES (14, 1, 'startGateway', 'method', 60, 65, 0, 'PrivateGateway'),
+             (15, 10, 'startGateway', 'function', 1, 1, 1, null)`).run()
+    fix.db.prepare(`INSERT INTO file_imports (workspace_id, file_id, specifier, local_name, imported_name, line)
+      VALUES (?, 4, './gateway', 'start', 'startGateway', 1),
+             (?, 4, './gateway', 'startAgain', 'startGateway', 2),
+             (?, 5, './gateway', 'dispatchRequest', 'dispatchRequest', 1),
+             (?, 6, '../other/gateway', 'startGateway', 'startGateway', 1),
+             (?, 8, './gateway', '*', '*', 1),
+             (?, 9, './barrel', 'startGateway', 'startGateway', 1),
+             (?, 10, './gateway', '*', '*', 1),
+             (?, 11, './shadow-barrel', 'startGateway', 'startGateway', 1)`
+    ).run(...Array(8).fill(fix.workspaceId))
+    fix.db.prepare(`INSERT INTO edges (workspace_id, kind, src_file, dst_file, raw_target, resolved, line)
+      VALUES (?, 'imports', 4, 1, './gateway', 1, 1),
+             (?, 'imports', 5, 1, './gateway', 1, 1),
+             (?, 'imports', 6, 7, '../other/gateway', 1, 1),
+             (?, 'imports', 8, 1, './gateway', 1, 1),
+             (?, 'imports', 9, 8, './barrel', 1, 1),
+             (?, 'imports', 10, 1, './gateway', 1, 1),
+             (?, 'imports', 11, 10, './shadow-barrel', 1, 1)`
+    ).run(...Array(7).fill(fix.workspaceId))
+
+    const result = intel.getBlastRadius(fix.db, { name: 'startGateway', id: 10 }, {
+      workspaceId: fix.workspaceId, direction: 'upstream', maxDepth: 2,
+    })
+    assert.equal(result.status, 'found')
+    const imports = result.nodes[1].filter(node => node.relationType === 'imports')
+    assert.deepEqual(imports.map(node => ({ id: node.id, file: node.file, kind: node.kind })).sort((a, b) => a.id - b.id), [
+      { id: -8, file: 'src/barrel.ts', kind: 'file' },
+      { id: -4, file: 'src/target-user.ts', kind: 'file' },
+    ])
+    assert.deepEqual(result.nodes[2].filter(node => node.relationType === 'imports').map(node => node.file),
+      ['src/barrel-user.ts'])
+
+    const privateMethod = intel.getBlastRadius(fix.db, { name: 'startGateway', id: 14 }, {
+      workspaceId: fix.workspaceId, direction: 'upstream', maxDepth: 1,
+    })
+    assert.deepEqual(privateMethod.nodes[1].filter(node => node.relationType === 'imports'), [])
+
+    fix.db.prepare(`INSERT INTO symbols (id, file_id, name, kind, line, end_line, exported, container)
+      VALUES (16, 9, 'useBarrel', 'function', 2, 3, 1, null)`).run()
+    fix.db.prepare(`INSERT INTO edges (workspace_id, kind, src_symbol, src_file, raw_target, resolved, line)
+      VALUES (?, 'calls', 16, 9, 'startGateway', 0, 2)`).run(fix.workspaceId)
+    const calledThroughBarrel = intel.getBlastRadius(fix.db, { name: 'startGateway', id: 10 }, {
+      workspaceId: fix.workspaceId, direction: 'upstream', maxDepth: 2,
+    })
+    assert.ok(calledThroughBarrel.nodes[1].some(node => node.name === 'useBarrel'))
+    assert.deepEqual(calledThroughBarrel.nodes[2].filter(node => node.relationType === 'imports'), [],
+      'a caller already represents the importing file at a shallower depth')
+
+    fix.db.prepare(`INSERT INTO symbols (id, file_id, name, kind, line, end_line, exported, container)
+      VALUES (17, 4, 'lateCaller', 'function', 3, 4, 1, null),
+             (18, 4, 'downstreamCallee', 'function', 5, 6, 1, null)`).run()
+    fix.db.prepare(`INSERT INTO edges (workspace_id, kind, src_symbol, src_file, dst_symbol, dst_file, resolved, line)
+      VALUES (?, 'calls', 17, 4, 11, 1, 1, 3),
+             (?, 'calls', 10, 1, 18, 4, 1, 5)`).run(fix.workspaceId, fix.workspaceId)
+    const mixed = intel.getBlastRadius(fix.db, { name: 'startGateway', id: 10 }, {
+      workspaceId: fix.workspaceId, direction: 'both', maxDepth: 2,
+    })
+    assert.ok(mixed.nodes[1].some(node => node.id === -4 && node.relationType === 'imports'),
+      'a direct import remains visible beside later upstream and same-depth downstream symbols')
+    assert.ok(mixed.nodes[1].some(node => node.name === 'downstreamCallee'))
+    assert.ok(mixed.nodes[2].some(node => node.name === 'lateCaller'))
   } finally {
     await fix.cleanup()
   }
@@ -315,6 +403,87 @@ test('M3: HTTP API routes /api/intel/* serve real data', async () => {
     // 6. Negative case: missing name parameter on context returns 400
     const badContext = await fetch(`${fix.baseUrl}/api/intel/context`)
     assert.equal(badContext.status, 400)
+  } finally {
+    await fix.cleanup()
+  }
+})
+
+test('HTTP Cypher requires an unambiguous workspace and never reads another workspace', async () => {
+  const fix = await createIntelFixture()
+  try {
+    const second = 'ws-intel-private'
+    fix.db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run(second, 'Private', join(fix.dir, 'private'), new Date().toISOString())
+    fix.db.prepare(`INSERT INTO files (id, workspace_id, path, ext, size, mtime)
+      VALUES (90, ?, 'src/private.ts', '.ts', 30, '2026-09-30T00:00:00Z')`).run(second)
+    fix.db.prepare(`INSERT INTO symbols (id, file_id, name, kind, line, end_line, exported)
+      VALUES (90, 90, 'privateOnly', 'function', 1, 1, 1)`).run()
+
+    const ask = (workspace?: string, query = 'MATCH (n:Function) RETURN n.name') => fetch(`${fix.baseUrl}/api/intel/cypher`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query, ...(workspace ? { workspace } : {}) }),
+    })
+    const missing = await ask()
+    assert.equal(missing.status, 400)
+    const first = await ask(fix.workspaceId)
+    assert.equal(first.status, 200)
+    const firstBody = await first.json() as { result: { rows: Array<Record<string, unknown>> } }
+    assert.equal(JSON.stringify(firstBody.result.rows).includes('privateOnly'), false)
+    const privateResponse = await ask(second)
+    assert.equal(privateResponse.status, 200)
+    const privateBody = await privateResponse.json() as { result: { rows: Array<Record<string, unknown>> } }
+    assert.equal(JSON.stringify(privateBody.result.rows).includes('privateOnly'), true)
+    assert.equal(JSON.stringify(privateBody.result.rows).includes('startGateway'), false)
+    const hostile = "MATCH (n:Function) WHERE n.name = 'x') OR 1=1 OR (1=1 RETURN n.name"
+    const hostileHttp = await ask(fix.workspaceId, hostile)
+    assert.equal(hostileHttp.status, 200)
+    const hostileHttpBody = await hostileHttp.json() as { result: { rowCount: number; rows: Array<Record<string, unknown>> } }
+    assert.equal(hostileHttpBody.result.rowCount, 0)
+    assert.equal(JSON.stringify(hostileHttpBody).includes('privateOnly'), false)
+    const hostileMcp = await new McpServer({ db: fix.db, workspaceId: fix.workspaceId })
+      .executeTool('cypher', { workspaceId: fix.workspaceId, query: hostile })
+    assert.equal((hostileMcp.result as { rowCount: number }).rowCount, 0)
+    assert.equal(JSON.stringify(hostileMcp).includes('privateOnly'), false)
+    const dslInjection = JSON.stringify({ where: { name: 'startGateway' },
+      limit: "(SELECT CASE WHEN EXISTS(SELECT 1 FROM symbols s JOIN files f ON f.id=s.file_id WHERE f.workspace_id='ws-intel-private' AND s.name='privateOnly') THEN 1 ELSE 0 END)" })
+    const dslHttp = await ask(fix.workspaceId, dslInjection)
+    // HTTP supplies an explicit numeric outer limit, which overrides the DSL value.
+    const dslHttpBody = await dslHttp.json() as { result: { rowCount: number; rows: unknown[] } }
+    assert.equal(dslHttpBody.result.rowCount, 1)
+    assert.equal(JSON.stringify(dslHttpBody).includes('privateOnly'), false)
+    const hostileLimitHttp = await fetch(`${fix.baseUrl}/api/intel/cypher`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: dslInjection, workspace: fix.workspaceId, limit: '(SELECT 1)' }),
+    })
+    assert.equal((await hostileLimitHttp.json() as { result: { rowCount: number } }).result.rowCount, 0)
+    const dslMcp = await new McpServer({ db: fix.db, workspaceId: fix.workspaceId })
+      .executeTool('cypher', { workspaceId: fix.workspaceId, query: dslInjection })
+    assert.equal((dslMcp.result as { rowCount: number }).rowCount, 0)
+  } finally {
+    await fix.cleanup()
+  }
+})
+
+test('HTTP impact refuses an ambiguous name and accepts an explicit symbol ID', async () => {
+  const fix = await createIntelFixture()
+  try {
+    fix.db.prepare(`INSERT INTO symbols (id, file_id, name, kind, line, end_line, exported)
+      VALUES (91, 3, 'startGateway', 'function', 60, 61, 1)`).run()
+    const ask = (symbolId?: number) => fetch(`${fix.baseUrl}/api/intel/impact`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ target: 'startGateway', ...(symbolId ? { symbolId } : {}) }),
+    })
+    const ambiguous = await ask()
+    assert.equal(ambiguous.status, 409)
+    const body = await ambiguous.json() as { ok: boolean; candidates: Array<{ id: number }> }
+    assert.equal(body.ok, false)
+    assert.deepEqual(body.candidates.map(row => row.id), [10, 91])
+    const selected = await ask(10)
+    assert.equal(selected.status, 200)
+    const selectedBody = await selected.json() as { result: { target: { id: number }; status: string } }
+    assert.equal(selectedBody.result.target.id, 10)
+    assert.equal(selectedBody.result.status, 'found')
   } finally {
     await fix.cleanup()
   }

@@ -6,12 +6,14 @@
  */
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite'
 import type { BlastRadiusResult, ImpactNode } from './types.ts'
+import { activePlanetFileScope } from '../planet.ts'
 
 export interface BlastRadiusOptions {
   workspaceId?: string
   direction?: 'upstream' | 'downstream' | 'both'
   maxDepth?: number
   repoId?: string
+  checkoutId?: string
   file?: string
 }
 
@@ -29,27 +31,38 @@ export function getBlastRadius(
 
   const direction = options?.direction ?? 'both'
   const maxDepth = Math.max(1, Math.min(5, options?.maxDepth ?? 3))
+  const fileScope = options?.workspaceId
+    ? activePlanetFileScope(db, options.workspaceId, 'f.checkout_id', 'f.path')
+    : null
+  const scopeSql = fileScope === null ? '' : ` AND f.workspace_id = ? AND ${fileScope.sql}`
+  const scopeParams: SQLInputValue[] = options?.workspaceId
+    ? [options.workspaceId, ...fileScope!.params] : []
+  const targetCheckoutSql = options?.checkoutId ? ' AND f.checkout_id = ?' : ''
+  const targetCheckoutParams: SQLInputValue[] = options?.checkoutId ? [options.checkoutId] : []
 
   // Find initial symbol
-  let initialSymbol: { id: number; name: string; file: string } | null = null
+  let initialSymbol: { id: number; name: string; file: string; fileId: number } | null = null
 
   if (targetId !== undefined) {
     const row = db
       .prepare(
-        `SELECT s.id, s.name, f.path as file
+        `SELECT s.id, s.name, f.path as file, f.id as fileId
            FROM symbols s JOIN files f ON s.file_id = f.id
-          WHERE s.id = ?${options?.workspaceId ? ' AND f.workspace_id = ?' : ''}`
+          WHERE s.id = ?${scopeSql}${targetCheckoutSql}${options?.repoId ? ' AND f.repo_id = ?' : ''}`
       )
-      .get(targetId, ...(options?.workspaceId ? [options.workspaceId] : [])) as { id: number; name: string; file: string } | undefined
+      .get(targetId, ...scopeParams, ...targetCheckoutParams, ...(options?.repoId ? [options.repoId] : [])) as { id: number; name: string; file: string; fileId: number } | undefined
     if (row) initialSymbol = row
   }
 
-  if (!initialSymbol) {
-    let sql = `SELECT s.id, s.name, f.path as file
+  if (!initialSymbol && targetId === undefined) {
+    let sql = `SELECT s.id, s.name, f.path as file, f.id as fileId
                  FROM symbols s JOIN files f ON s.file_id = f.id
                 WHERE s.name = ?`
     const params: SQLInputValue[] = [targetName]
-    if (options?.workspaceId) { sql += ' AND f.workspace_id = ?'; params.push(options.workspaceId) }
+    sql += scopeSql
+    params.push(...scopeParams)
+    sql += targetCheckoutSql
+    params.push(...targetCheckoutParams)
     if (targetFile) {
       sql += ' AND f.path LIKE ?'
       params.push(`%${targetFile.replace(/\\/g, '/')}%`)
@@ -58,15 +71,22 @@ export function getBlastRadius(
       sql += ' AND f.repo_id = ?'
       params.push(options.repoId)
     }
-    sql += ' ORDER BY s.id ASC LIMIT 1'
-    const row = db.prepare(sql).get(...params) as
-      | { id: number; name: string; file: string }
-      | undefined
-    if (row) initialSymbol = row
+    sql += ' ORDER BY s.id ASC LIMIT 51'
+    const rows = db.prepare(sql).all(...params) as Array<{ id: number; name: string; file: string; fileId: number }>
+    if (rows.length > 1) {
+      return {
+        status: 'ambiguous',
+        candidates: rows.map(row => ({ id: row.id, file: row.file })),
+        target: { name: targetName }, direction, maxDepth,
+        totalImpacted: 0, nodes: {}, risk: 'low',
+      }
+    }
+    if (rows[0]) initialSymbol = rows[0]
   }
 
   if (!initialSymbol) {
     return {
+      status: 'not_found',
       target: { name: targetName },
       direction,
       maxDepth,
@@ -80,15 +100,28 @@ export function getBlastRadius(
   const nodesByDepth: Record<number, ImpactNode[]> = {}
   let currentLevelIds = [initialSymbol.id]
   const impactedRepos = new Set<string>()
+  const upstreamSymbolFileDepth = new Map<number, number>()
+  const shadowedExport = db.prepare(
+    'SELECT 1 FROM symbols WHERE file_id = ? AND name = ? AND exported = 1 LIMIT 1'
+  )
+  // An import binding proves symbol impact only for a unique exported symbol.
+  const exported = db.prepare(
+    'SELECT id FROM symbols WHERE file_id = ? AND name = ? AND exported = 1 LIMIT 2'
+  ).all(initialSymbol.fileId, initialSymbol.name) as Array<{ id: number }>
+  type ImportTarget = { fileId: number; name: string }
+  let importFrontier: ImportTarget[] = exported.length === 1 && exported[0].id === initialSymbol.id
+    ? [{ fileId: initialSymbol.fileId, name: initialSymbol.name }] : []
+  const seenImportTargets = new Set(importFrontier.map(target => `${target.fileId}:${target.name}`))
 
-  for (let d = 1; d <= maxDepth && currentLevelIds.length > 0; d++) {
+  for (let d = 1; d <= maxDepth && (currentLevelIds.length > 0 || importFrontier.length > 0); d++) {
     const nextLevelNodes: ImpactNode[] = []
-    const placeholders = currentLevelIds.map(() => '?').join(',')
+    const nextImportFrontier: ImportTarget[] = []
+    const placeholders = currentLevelIds.length > 0 ? currentLevelIds.map(() => '?').join(',') : 'NULL'
     const confidence = Math.round(0.9 * Math.pow(0.85, d - 1) * 100) / 100
 
     if (direction === 'upstream' || direction === 'both') {
       const upstreamSql = `
-        SELECT DISTINCT s.id, s.name, s.kind, f.path as file,
+        SELECT DISTINCT s.id, s.name, s.kind, f.id as fileId, f.path as file,
                         f.repo_id as repoId, f.checkout_id as checkoutId,
                         e.kind as relationType
           FROM edges e
@@ -97,11 +130,13 @@ export function getBlastRadius(
          WHERE e.dst_symbol IN (${placeholders})
            AND e.src_symbol IS NOT NULL
            ${options?.workspaceId ? 'AND e.workspace_id = ?' : ''}
+           ${scopeSql}
       `
-      const rows = db.prepare(upstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : [])) as unknown as Array<{
+      const rows = db.prepare(upstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : []), ...scopeParams) as unknown as Array<{
         id: number
         name: string
         kind: string
+        fileId: number
         file: string
         repoId: string | null
         checkoutId: string | null
@@ -111,6 +146,7 @@ export function getBlastRadius(
       for (const r of rows) {
         if (!visited.has(r.id)) {
           visited.add(r.id)
+          if (!upstreamSymbolFileDepth.has(r.fileId)) upstreamSymbolFileDepth.set(r.fileId, d)
           if (r.repoId) impactedRepos.add(r.repoId)
           nextLevelNodes.push({
             depth: d,
@@ -126,11 +162,11 @@ export function getBlastRadius(
         }
       }
 
-      // Fallback on level 1: Check unresolved call edges (raw_target) and import graph
+      // Fallback on level 1: check unresolved call edges by their raw target.
       if (d === 1) {
         try {
           const rawSql = `
-            SELECT DISTINCT s.id, s.name, s.kind, f.path as file,
+            SELECT DISTINCT s.id, s.name, s.kind, f.id as fileId, f.path as file,
                             f.repo_id as repoId, f.checkout_id as checkoutId,
                             e.kind as relationType
               FROM edges e
@@ -139,12 +175,14 @@ export function getBlastRadius(
              WHERE e.raw_target = ?
                AND e.src_symbol IS NOT NULL
                ${options?.workspaceId ? 'AND e.workspace_id = ?' : ''}
+               ${scopeSql}
              LIMIT 50
           `
-          const rawRows = db.prepare(rawSql).all(initialSymbol.name, ...(options?.workspaceId ? [options.workspaceId] : [])) as typeof rows
+          const rawRows = db.prepare(rawSql).all(initialSymbol.name, ...(options?.workspaceId ? [options.workspaceId] : []), ...scopeParams) as typeof rows
           for (const r of rawRows) {
             if (!visited.has(r.id)) {
               visited.add(r.id)
+              if (!upstreamSymbolFileDepth.has(r.fileId)) upstreamSymbolFileDepth.set(r.fileId, d)
               if (r.repoId) impactedRepos.add(r.repoId)
               nextLevelNodes.push({
                 depth: d,
@@ -160,56 +198,68 @@ export function getBlastRadius(
             }
           }
 
-          // Import graph fallback
-          const moduleBase = initialSymbol.file.split('/').pop()?.replace(/\.[^.]+$/, '') ?? ''
-          const importSql = `
-            SELECT DISTINCT COALESCE(s.id, -f.id) as id,
-                            COALESCE(s.name, f.path) as name,
-                            COALESCE(s.kind, 'file') as kind,
-                            f.path as file,
-                            f.repo_id as repoId,
-                            f.checkout_id as checkoutId,
-                            'imports' as relationType
-              FROM file_imports fi
-              JOIN files f ON fi.file_id = f.id
-              LEFT JOIN symbols s ON s.file_id = f.id AND s.exported = 1
-             WHERE (fi.imported_name = ? OR fi.local_name = ?
-                    ${moduleBase ? "OR fi.specifier LIKE '%' || ? OR fi.specifier = ?" : ''})
-               AND f.path != ?
-               ${options?.workspaceId ? 'AND fi.workspace_id = ?' : ''}
-             LIMIT 50
-          `
-          const importParams = [
-            initialSymbol.name, initialSymbol.name,
-            ...(moduleBase ? [moduleBase, moduleBase] : []),
-            initialSymbol.file,
-            ...(options?.workspaceId ? [options.workspaceId] : []),
-          ]
-          const importRows = db.prepare(importSql).all(...importParams) as typeof rows
-          for (const r of importRows) {
-            if (!visited.has(r.id)) {
-              visited.add(r.id)
-              if (r.repoId) impactedRepos.add(r.repoId)
-              nextLevelNodes.push({
-                depth: d,
-                id: r.id,
-                name: r.name,
-                kind: r.kind,
-                file: r.file,
-                repoId: r.repoId,
-                checkoutId: r.checkoutId,
-                relationType: 'imports',
-                confidence: confidence * 0.8,
-              })
+        } catch {}
+      }
+
+      // Follow named bindings and explicit star re-exports through resolved
+      // file edges. Plain namespace/default imports cannot identify a symbol.
+      for (const target of importFrontier) {
+        const importSql = `
+          SELECT DISTINCT -f.id as id, f.id as fileId,
+                          f.path as name, 'file' as kind, f.path as file,
+                          f.repo_id as repoId, f.checkout_id as checkoutId,
+                          fi.local_name as localName, fi.imported_name as importedName
+            FROM file_imports fi
+            JOIN files f ON fi.file_id = f.id
+            JOIN edges e ON e.workspace_id = fi.workspace_id
+                        AND e.kind = 'imports' AND e.resolved = 1
+                        AND e.src_file = fi.file_id AND e.raw_target = fi.specifier
+                        AND e.dst_file = ?
+           WHERE (fi.imported_name = ? OR (fi.local_name = '*' AND fi.imported_name = '*'))
+             AND f.id != ?
+             ${options?.workspaceId ? 'AND fi.workspace_id = ?' : ''}
+             ${scopeSql}
+           LIMIT 50
+        `
+        const importRows = db.prepare(importSql).all(
+          target.fileId, target.name, target.fileId,
+          ...(options?.workspaceId ? [options.workspaceId] : []), ...scopeParams,
+        ) as Array<{
+          id: number; fileId: number; name: string; kind: string; file: string
+          repoId: string | null; checkoutId: string | null
+          localName: string | null; importedName: string | null
+        }>
+        for (const r of importRows) {
+          const starReexport = r.localName === '*' && r.importedName === '*'
+          if (starReexport && shadowedExport.get(r.fileId, target.name)) continue
+          if (starReexport) {
+            const key = `${r.fileId}:${target.name}`
+            if (!seenImportTargets.has(key)) {
+              seenImportTargets.add(key)
+              nextImportFrontier.push({ fileId: r.fileId, name: target.name })
             }
           }
-        } catch {}
+          if (visited.has(r.id)) continue
+          visited.add(r.id)
+          if (r.repoId) impactedRepos.add(r.repoId)
+          nextLevelNodes.push({
+            depth: d,
+            id: r.id,
+            name: r.name,
+            kind: r.kind,
+            file: r.file,
+            repoId: r.repoId,
+            checkoutId: r.checkoutId,
+            relationType: 'imports',
+            confidence: confidence * 0.8,
+          })
+        }
       }
     }
 
     if (direction === 'downstream' || direction === 'both') {
       const downstreamSql = `
-        SELECT DISTINCT s.id, s.name, s.kind, f.path as file,
+        SELECT DISTINCT s.id, s.name, s.kind, f.id as fileId, f.path as file,
                         f.repo_id as repoId, f.checkout_id as checkoutId,
                         e.kind as relationType
           FROM edges e
@@ -218,11 +268,13 @@ export function getBlastRadius(
          WHERE e.src_symbol IN (${placeholders})
            AND e.dst_symbol IS NOT NULL
            ${options?.workspaceId ? 'AND e.workspace_id = ?' : ''}
+           ${scopeSql}
       `
-      const rows = db.prepare(downstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : [])) as unknown as Array<{
+      const rows = db.prepare(downstreamSql).all(...currentLevelIds, ...(options?.workspaceId ? [options.workspaceId] : []), ...scopeParams) as unknown as Array<{
         id: number
         name: string
         kind: string
+        fileId: number
         file: string
         repoId: string | null
         checkoutId: string | null
@@ -249,7 +301,16 @@ export function getBlastRadius(
     }
 
     nodesByDepth[d] = nextLevelNodes
-    currentLevelIds = nextLevelNodes.map(n => n.id)
+    currentLevelIds = nextLevelNodes.filter(node => node.id > 0).map(node => node.id)
+    importFrontier = nextImportFrontier
+  }
+
+  // Prefer a proven upstream caller at the same or earlier depth. Keep an
+  // earlier direct import, and never hide an upstream import for a downstream
+  // callee in the same file.
+  for (const [depth, list] of Object.entries(nodesByDepth)) {
+    nodesByDepth[Number(depth)] = list.filter(node =>
+      node.kind !== 'file' || (upstreamSymbolFileDepth.get(-node.id) ?? Infinity) > node.depth)
   }
 
   let totalImpacted = 0
@@ -265,6 +326,7 @@ export function getBlastRadius(
   }
 
   return {
+    status: 'found',
     target: {
       name: initialSymbol.name,
       file: initialSymbol.file,

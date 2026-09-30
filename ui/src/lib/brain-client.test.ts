@@ -8,6 +8,8 @@ import {
   fetchMachine,
   fetchRepos,
   attachAgent,
+  enqueueSwarmTask,
+  sendSwarmMessage,
 } from './brain-client.ts'
 
 // While an index run holds the store's writer lock, the daemon refuses every
@@ -251,5 +253,58 @@ describe('API error classes: unreachable vs server errors (UX-04)', () => {
     assert.equal('routeMissing' in res501, true)
     assert.equal('unreachable' in res501, false)
     assert.equal('serverError' in res501, false)
+  })
+})
+
+describe('enqueueSwarmTask dispatch contract', () => {
+  const originalFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('sends the stored actor and selected lane and returns the Brain task identity', async () => {
+    let sent: unknown
+    globalThis.fetch = mock.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      sent = JSON.parse(String(init?.body))
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true, task: { id: 'task-abc123', title: 'Fix queue dispatch', state: 'pending', addressed_to: 'cx07' } }),
+      } as unknown as Response
+    }) as unknown as typeof fetch
+
+    const task = await enqueueSwarmTask({ workspace: 'ws-test', requestedBy: 'shell-actor', addressedTo: 'cx07', title: 'Fix queue dispatch', body: 'Details' })
+
+    assert.deepEqual(sent, { workspace: 'ws-test', requestedBy: 'shell-actor', addressedTo: 'cx07', title: 'Fix queue dispatch', body: 'Details' })
+    assert.deepEqual(task, { id: 'task-abc123', title: 'Fix queue dispatch', state: 'pending', addressed_to: 'cx07' })
+  })
+
+  test('reports Brain errors and rejects success envelopes without a real task id or state', async () => {
+    globalThis.fetch = mock.fn(async () => ({
+      ok: false,
+      status: 409,
+      json: async () => ({ ok: false, error: 'Unknown target lane' }),
+    } as unknown as Response)) as unknown as typeof fetch
+    await assert.rejects(enqueueSwarmTask({ workspace: 'ws-test', requestedBy: 'shell-actor', addressedTo: 'missing', title: 'Task', body: '' }), /Unknown target lane/)
+
+    globalThis.fetch = mock.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, task: { title: 'Task' } }),
+    } as unknown as Response)) as unknown as typeof fetch
+    await assert.rejects(enqueueSwarmTask({ workspace: 'ws-test', requestedBy: 'shell-actor', addressedTo: 'cx07', title: 'Task', body: '' }), /Task-ID oder Status fehlt/)
+  })
+
+  test('keeps the existing message action addressed from the Shell profile', async () => {
+    let sent: unknown
+    globalThis.fetch = mock.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      sent = JSON.parse(String(init?.body))
+      return { ok: true, status: 200 } as unknown as Response
+    }) as unknown as typeof fetch
+
+    await sendSwarmMessage({ workspace: 'ws-test', fromAgent: 'shell-actor', toAgent: 'cx07', subject: 'Hello', body: 'Message' })
+
+    assert.deepEqual(sent, { workspace: 'ws-test', fromAgent: 'shell-actor', toAgent: 'cx07', subject: 'Hello', body: 'Message' })
   })
 })

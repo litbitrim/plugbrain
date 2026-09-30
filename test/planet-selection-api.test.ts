@@ -212,11 +212,9 @@ test('Intel status and change detection are scoped to the requested Planet works
       assert.throws(() => detectChanges(db, {} as never), /workspaceId is required/)
 
       const bDiff = 'diff --git a/src/b.ts b/src/b.ts\n@@ -1 +1 @@\n-export const beta = false\n+export const beta = true\n'
-      const crossPlanet = detectChanges(db, {
+      assert.throws(() => detectChanges(db, {
         workspaceId: a.workspaceId, checkoutId: bId, diffText: bDiff,
-      })
-      assert.equal(crossPlanet.changedFiles, 0)
-      assert.equal(crossPlanet.checkoutId, null)
+      }), /checkout is not in the active selection/)
 
       handle = await serve({ db, uiRoot: null }, 0)
       const base = `http://127.0.0.1:${handle.port}`
@@ -237,11 +235,10 @@ test('Intel status and change detection are scoped to the requested Planet works
           body: JSON.stringify({ checkoutId: bId, diffText: bDiff }),
         },
       )
-      assert.equal(crossResponse.status, 200)
-      const crossBody = await crossResponse.json() as { ok: boolean; result: { changedFiles: number; checkoutId: string | null } }
-      assert.equal(crossBody.ok, true)
-      assert.equal(crossBody.result.changedFiles, 0)
-      assert.equal(crossBody.result.checkoutId, null)
+      assert.equal(crossResponse.status, 400)
+      const crossBody = await crossResponse.json() as { ok: boolean; error: string }
+      assert.equal(crossBody.ok, false)
+      assert.match(crossBody.error, /checkout is not in the active selection/)
 
       const ambiguousChanges = await fetch(`${base}/api/intel/detect-changes`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ diffText: bDiff }),

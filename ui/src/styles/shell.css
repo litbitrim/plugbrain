@@ -110,6 +110,15 @@
 .pb-tab[aria-current="page"]::after { transform: scaleX(1) }
 
 .pb-topbar__actions { display: flex; align-items: center; gap: var(--s1); margin-left: auto; flex: none }
+.pb-global-search {
+  display: flex; align-items: center; gap: 7px; width: clamp(190px, 25vw, 360px); height: 32px;
+  padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--faint); background: var(--bg);
+}
+.pb-global-search:focus-within { border-color: var(--accent); color: var(--ink); }
+.pb-global-search .pb-icon { width: 15px; height: 15px; }
+.pb-global-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: var(--fs-sm); }
+.pb-global-search input::placeholder { color: var(--faint); }
+.pb-global-search kbd { flex: none; padding: 2px 4px; border: 1px solid var(--line); border-radius: 4px; color: var(--faint); font: 10px var(--mono); white-space: nowrap; }
 
 .pb-status {
   display: inline-flex; align-items: center; gap: 6px;
@@ -123,6 +132,12 @@
 .pb-status[data-tone="warn"] { color: var(--warn) }
 .pb-status[data-tone="bad"] i { background: var(--neg) }
 .pb-status[data-tone="bad"] { color: var(--neg); border-color: color-mix(in srgb, var(--neg) 40%, var(--line)) }
+
+@media (max-width: 1180px) {
+  .pb-topbar__secondary-action { display: none !important; }
+  .pb-global-search { width: clamp(150px, 25vw, 260px); }
+  .pb-select select { max-width: 150px; }
+}
 
 /* ── Messages under the header ─────────────────────────────────────────── */
 
@@ -150,7 +165,7 @@
 /* ── Main region ───────────────────────────────────────────────────────── */
 
 .pb-main { position: relative; flex: 1; min-height: 0; overflow: hidden }
-.pb-view { position: absolute; inset: 0; min-height: 0; display: flex; flex-direction: column; }
+.pb-view { position: absolute; inset: 0 0 0 62px; min-height: 0; display: flex; flex-direction: column; }
 .pb-view--scroll { overflow: auto; display: block; }
 
 /* Views written for the old fixed header positioned themselves against it.
@@ -161,6 +176,68 @@
 .pb-main .pb-city { flex: 1; min-height: 0; position: relative; }
 .pb-main .pb-mesh { flex: 1; min-height: 0; position: relative; }
 .pb-main .brain-landing { position: absolute; inset: 0; overflow: auto; }
+
+/* Compact activity rail. View destinations continue to use the same view state. */
+.pb-activity {
+  position: absolute; z-index: 12; inset: 0 auto 0 0; width: 62px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 10px 6px; box-sizing: border-box; background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.pb-activity__item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; width: 48px; min-height: 50px; padding: 5px 2px; border: 0; border-radius: 7px;
+  color: var(--muted); background: transparent; font: inherit; font-size: 9px; cursor: pointer;
+  text-decoration: none; list-style: none;
+}
+.pb-activity__item:hover, .pb-activity__item[aria-current="page"] { color: var(--ink); background: var(--hover); }
+.pb-activity__item[aria-current="page"]::before { content: ""; position: absolute; inset: 9px auto 9px -6px; width: 2px; border-radius: 2px; background: var(--accent); }
+.pb-activity__item .pb-icon { width: 18px; height: 18px; }
+.pb-activity__item span { max-width: 48px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-activity__divider { height: 1px; margin: 4px 2px; background: var(--line); }
+.pb-activity__views { position: relative; }
+.pb-activity__views summary { cursor: pointer; }
+.pb-activity__views summary::-webkit-details-marker { display: none; }
+.pb-activity__grid { font-size: 8px; line-height: 6px; letter-spacing: 1px; text-align: center; }
+.pb-activity__menu { position: absolute; z-index: 20; left: 55px; top: 0; width: 190px; max-height: min(70vh, 520px); overflow: auto; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 12px 32px #0005; }
+.pb-activity__menu button { display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 5px; text-align: left; color: var(--muted); background: transparent; font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.pb-activity__menu button:hover, .pb-activity__menu button[aria-current="page"] { color: var(--ink); background: var(--hover); }
+.pb-activity__settings { margin-top: auto; }
+.pb-activity__glyph { width: 18px; height: 18px; display: grid; place-items: center; font-size: 18px; line-height: 1; }
+.pb-activity__system { min-height: 48px; }
+.pb-statusbar { display: flex; align-items: center; gap: 14px; min-height: 25px; padding: 0 12px 0 70px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); font: 10px var(--mono); white-space: nowrap; overflow-x: auto; }
+.pb-domain-view { position: absolute; inset: 0 0 0 62px; overflow: auto; padding: 16px 20px 28px; box-sizing: border-box; }
+.pb-domain-view .pb-view-header { position: sticky; top: -16px; z-index: 2; margin: -16px -20px 14px; padding: 12px 20px; background: var(--bg); }
+.pb-domain-view h2 { margin: 0; font-size: 18px; }
+.pb-domain-view h3 { margin: 0 0 8px; font-size: 14px; }
+.pb-domain-view h4 { margin: 16px 0 6px; font-size: 12px; }
+.pb-domain-card { margin: 0 0 12px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.pb-domain-card p { margin: 6px 0; color: var(--muted); }
+.pb-domain-error { padding: 10px; border: 1px solid var(--neg); border-radius: 6px; color: var(--neg); }
+.pb-domain-note { color: var(--faint); font-size: var(--fs-sm); }
+.pb-domain-list { display: grid; gap: 8px; padding-left: 22px; }
+.pb-domain-list li { padding-left: 3px; }
+.pb-domain-list li code, .pb-domain-list li span { display: block; overflow-wrap: anywhere; }
+.pb-domain-list li span { margin-top: 3px; color: var(--muted); font-size: var(--fs-sm); }
+.pb-drive-grid, .pb-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.pb-drive-grid article, .pb-metric-grid article { display: grid; gap: 5px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; }
+.pb-drive-grid span, .pb-metric-grid span { color: var(--muted); font-size: var(--fs-sm); }
+.pb-table-wrap { overflow: auto; }
+.pb-data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--fs-sm); }
+.pb-data-table th, .pb-data-table td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pb-data-table th { color: var(--muted); font-weight: 600; }
+@media (max-width: 760px) {
+  .pb-view { left: 52px; }
+  .pb-domain-view { left: 52px; padding-inline: 12px; }
+  .pb-domain-view .pb-view-header { margin-inline: -12px; padding-inline: 12px; }
+  .pb-statusbar { padding-left: 58px; }
+  .pb-activity { width: 52px; padding-inline: 2px; }
+  .pb-activity__item { width: 46px; }
+  .pb-activity__menu { left: 49px; }
+  .pb-topbar__workspace { display: none; }
+  .pb-global-search { width: clamp(110px, 28vw, 190px); }
+  .pb-global-search kbd { display: none; }
+}
 
 /* A map control on top of the City canvas: the one place a floating toolbar
    is right, because the canvas is the thing it controls. */
@@ -204,7 +281,7 @@
     gap: 4px !important;
     padding: 0 8px !important;
     max-width: 100vw !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
   .pb-topbar__brand {
     gap: 4px !important;
@@ -233,6 +310,8 @@
     font-size: 11px !important;
   }
 }
+
+@media (max-width: 760px) { .pb-statusbar { gap: 10px; } }
 
 @media (prefers-reduced-motion: reduce) {
   .pb-tab::after, .pb-drawer { transition: none; animation: none }

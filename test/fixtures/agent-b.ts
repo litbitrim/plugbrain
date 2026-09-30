@@ -142,6 +142,7 @@ async function run() {
 
   // 6. Deliver the queue task
   const deliverRes = await post('/api/queue/deliver', {
+    workspace: ws,
     taskId: claimedQueueTask.id,
     agentId: 'agent-b',
     deliveredPath: 'src/x.ts',

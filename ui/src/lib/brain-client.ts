@@ -3,7 +3,7 @@
  * Connects directly to PlugBrain-Core daemon endpoints.
  * Handles bearer token authentication and error states.
  */
-import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
+import type { MeshSnapshot, MeshTimelineEntry, BriefingData, AskResponse, HygieneData, MachineData, ReposData, RouteMissing, ApiNetworkError, ApiServerError, ApiError, SwarmSnapshot } from '../types'
 
 export type { RouteMissing, ApiNetworkError, ApiServerError, ApiError } from '../types'
 export interface GalaxyPlanet {
@@ -69,6 +69,54 @@ export interface ContextPackResult {
   sources: number
   body: string
   error?: string
+}
+
+export interface HostResources {
+  host: { measuredAt: string; drives: Array<{ root: string; freeBytes: number; totalBytes: number }>; memory: { freeBytes: number; totalBytes: number }; cpuBusyFraction: number | null }
+  quotas: Array<{ account: string; remaining: number; unit: string; resetsAt: string | null; reportedAt: string }>
+  admission: Array<{ kind: string; allowed: boolean; reasons: string[] }>
+}
+
+export async function fetchHostResources(): Promise<HostResources> {
+  const res = await fetch('/api/resources', { headers: authHeaders() })
+  if (!res.ok) throw new Error(`Ressourcen HTTP ${res.status}`)
+  const data = await res.json()
+  if (!data?.ok || !data.host || !Array.isArray(data.quotas) || !Array.isArray(data.admission)) throw new Error('Ressourcen-Antwort unvollständig')
+  return { host: data.host, quotas: data.quotas, admission: data.admission }
+}
+
+export async function fetchPlan(workspaceId: string): Promise<Record<string, any>> {
+  const res = await fetch(`/api/plan?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
+  const data = await res.json().catch(() => null)
+  if (!res.ok || !data?.ok || !data.plan) throw new Error(data?.error ?? `Plan HTTP ${res.status}`)
+  return data.plan
+}
+
+export async function fetchDiskProjection(path?: string): Promise<{ scan: any; directories: any[]; history: any[]; largestGrowth: any[]; recommendations: any; wipeCheck: any }> {
+  const headers = authHeaders()
+  const query = path ? `?path=${encodeURIComponent(path)}` : ''
+  const [scanRes, treeRes, historyRes, recRes, wipeRes] = await Promise.all([
+    fetch('/api/disk/scan', { headers }), fetch(`/api/disk/tree${query}`, { headers }), fetch('/api/disk/history', { headers }),
+    fetch('/api/disk/recommendations', { headers }), fetch('/api/disk/wipe-check', { headers }),
+  ])
+  const responses = [scanRes, treeRes, historyRes, recRes, wipeRes]
+  if (responses.some(response => !response.ok)) throw new Error(`Festplatten-Projektion HTTP ${responses.find(response => !response.ok)?.status}`)
+  const [scan, tree, history, recommendations, wipeCheck] = await Promise.all(responses.map(response => response.json()))
+  if (![scan, tree, history, recommendations, wipeCheck].every(data => data?.ok)) throw new Error('Festplatten-Projektion unvollständig')
+  return { scan: scan.scan, directories: Array.isArray(tree.directories) ? tree.directories : [], history: history.scans ?? [], largestGrowth: history.largestGrowth ?? [], recommendations, wipeCheck }
+}
+
+export async function startDiskScan(): Promise<void> {
+  const response = await fetch('/api/disk/scan', { method: 'POST', headers: authHeaders(), body: JSON.stringify({}) })
+  if (!response.ok) throw new Error(`Inventur konnte nicht gestartet werden (HTTP ${response.status})`)
+}
+
+export async function approveAgentCommit(input: { workspaceId: string; agentId: string; by: string }): Promise<void> {
+  const response = await fetch('/api/agent/approve-commit', {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(input),
+  })
+  const data = await response.json().catch(() => null)
+  if (!response.ok || !data?.ok) throw new Error(data?.error ?? `Commit-Freigabe HTTP ${response.status}`)
 }
 
 export interface PackStalenessResult {
@@ -177,7 +225,7 @@ export function setStoredAgentId(agentId: string): void {
   }
 }
 
-function authHeaders(): Record<string, string> {
+export function authHeaders(): Record<string, string> {
   const token = getStoredToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -271,6 +319,68 @@ export async function fetchMeshTimeline(
   const data = await res.json()
   if (!data?.ok || !Array.isArray(data.timeline)) throw new Error('Mesh-Zeitleiste unvollständig')
   return data.timeline as MeshTimelineEntry[]
+}
+
+export async function fetchSwarmSnapshot(workspaceId: string): Promise<SwarmSnapshot> {
+  const query = `?workspace=${encodeURIComponent(workspaceId)}`
+  const headers = authHeaders()
+  const [board, turns, messages, approvals, queue] = await Promise.all([
+    fetch(`/api/swarm/board${query}`, { headers }),
+    fetch(`/api/swarm/turns${query}`, { headers }),
+    fetch(`/api/swarm/messages${query}`, { headers }),
+    fetch(`/api/swarm/approvals${query}`, { headers }),
+    fetch(`/api/swarm/queue${query}`, { headers }),
+  ])
+  if ([board, turns, messages, approvals, queue].some(response => !response.ok)) {
+    throw new Error('Die Fleet-Zeitleiste ist nicht verfügbar.')
+  }
+  const [boardData, turnData, messageData, approvalData, queueData] = await Promise.all([
+    board.json(), turns.json(), messages.json(), approvals.json(), queue.json(),
+  ])
+  if (!boardData?.ok || !Array.isArray(boardData.board?.agents)
+    || !turnData?.ok || !Array.isArray(turnData.turns)
+    || !messageData?.ok || !Array.isArray(messageData.messages)
+    || !approvalData?.ok || !Array.isArray(approvalData.approvals)
+    || !queueData?.ok || !Array.isArray(queueData.tasks)) {
+    throw new Error('Die Fleet-Antwort ist unvollständig.')
+  }
+  return {
+    board: boardData.board, turns: turnData.turns, historyAvailable: turnData.historyAvailable === true,
+    messages: messageData.messages, approvals: approvalData.approvals, tasks: queueData.tasks,
+  }
+}
+
+export async function sendSwarmMessage(input: { workspace: string; fromAgent: string; toAgent: string; subject: string; body: string }): Promise<void> {
+  const response = await fetch('/api/agent/message', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  if (!response.ok) throw new Error('Nachricht konnte nicht gesendet werden.')
+}
+
+export type EnqueuedSwarmTask = {
+  id: string
+  title: string
+  state: 'pending' | 'claimed' | 'delivered' | 'cancelled'
+  addressed_to: string | null
+}
+
+export async function enqueueSwarmTask(input: { workspace: string; requestedBy: string; addressedTo: string; title: string; body: string }): Promise<EnqueuedSwarmTask> {
+  const response = await fetch('/api/queue', { method: 'POST', headers: authHeaders(), body: JSON.stringify(input) })
+  const data = await response.json().catch(() => null)
+  if (!response.ok || data?.ok !== true) {
+    const error = typeof data?.error === 'string' && data.error.trim() ? data.error : `Aufgabe konnte nicht eingereiht werden (HTTP ${response.status}).`
+    throw new Error(error)
+  }
+  const task = data.task
+  if (!task || typeof task.id !== 'string' || !task.id.trim()
+    || !['pending', 'claimed', 'delivered', 'cancelled'].includes(task.state)
+    || typeof task.title !== 'string') {
+    throw new Error('Brain-Antwort unvollständig: Task-ID oder Status fehlt.')
+  }
+  return {
+    id: task.id,
+    title: task.title,
+    state: task.state,
+    addressed_to: typeof task.addressed_to === 'string' ? task.addressed_to : null,
+  }
 }
 
 export async function fetchProvenance(workspaceId: string, path: string): Promise<FileProvenance> {

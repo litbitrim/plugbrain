@@ -162,9 +162,18 @@ try {
   const uiAttached = await post('/api/agent/attach', { workspace: workspace.id, agentId: 'portable-ui', name: 'Portable UI verifier' })
   if (uiAttached.status !== 200) throw new Error(`portable UI actor attach answered ${uiAttached.status}`)
 
+  // All views remain reachable through the current activity rail's view menu.
+  const chooseView = async name => {
+    const views = page.locator('.pb-activity__views')
+    if (!(await views.evaluate(element => element.open))) await views.locator('summary').click()
+    const item = views.getByRole('button', { name }).first()
+    if (await item.count() === 0) throw new Error(`View ${name} is missing from the activity menu`)
+    await item.click()
+  }
+
   // ── Tier 1: Obsidian-Class Notes, Autosave, Backlinks & Wiki-Links ────
   console.log('[Tier 1] Verifying note editing, optimistic autosave, backlinks, and wiki-links...')
-  await page.locator('.pb-tabs').getByRole('button', { name: 'Wissen' }).click()
+  await chooseView('Wissen')
   await page.locator('.notes-workbench').waitFor()
   await page.locator('.notes-search input').fill('Standalone Wissenssuche')
   await page.getByRole('button', { name: 'Suchen' }).click()
@@ -216,8 +225,8 @@ try {
   await page.locator('.source-header__path').filter({ hasText: 'src/mod0.ts' }).waitFor()
 
   // Knowledge Graph navigation: Resilient locator scoped to sidebar head
-  await page.locator('.pb-tabs').getByRole('button', { name: 'Wissen' }).click()
-  await page.locator('.notes-sidebar__head').getByRole('button', { name: 'Graph' }).click()
+  await chooseView('Wissen')
+  await page.locator('.notes-sidebar__head').getByRole('button', { name: 'Graph-Ansicht' }).click()
   await page.locator('.knowledge-graph__inspector').waitFor()
   await page.locator('.knowledge-graph').press('ArrowDown')
   await page.keyboard.press('?')
@@ -228,7 +237,7 @@ try {
 
   // ── Tier 2: Instant Dual Search (Notes & AST Code Symbols) ───────────
   console.log('[Tier 2] Verifying instant search across notes and code symbols...')
-  await page.locator('.pb-tabs').getByRole('button', { name: 'Suche' }).click()
+  await chooseView('Suche')
   await page.locator('.search-view').waitFor()
 
   // 2.1 Code & AST Symbol search (/api/agent/search)
@@ -249,7 +258,7 @@ try {
 
   // ── Tier 3: Explorer File Tree Opening into SourceView with Centered Line ─
   console.log('[Tier 3] Verifying explorer file tree opening into SourceView...')
-  await page.locator('.pb-tabs').getByRole('button', { name: 'Explorer' }).click()
+  await chooseView('Explorer')
   await page.locator('.explorer-view').waitFor()
 
   // 3.1 Explorer file filter
@@ -381,32 +390,14 @@ try {
     { name: /Suche/, label: 'Suche', selector: '.search-view' },
     { name: /Explorer|Dateien/, label: 'Dateien', selector: '.explorer-view' },
     { name: /Hygiene|Aufräumen/, label: 'Aufräumen', selector: '.hygiene-view' },
-    { name: /Kontext-Pakete/, label: 'Kontext-Pakete', selector: '.workbench-split, .context-packs', agent: true },
-    { name: /Aufgaben/, label: 'Aufgaben', selector: '.queue-view, .brain-view-queue, .queue, .brain-empty', agent: true },
-    { name: /Agenten-Netz/, label: 'Agenten-Netz', selector: '.pb-mesh, .mesh-view, .brain-view-mesh', agent: true },
-    { name: /Code-Stadt/, label: 'Code-Stadt', selector: '.pb-city, #city, canvas', agent: true },
+    { name: /Kontext-Pakete/, label: 'Kontext-Pakete', selector: '.workbench-split, .context-packs' },
+    { name: /Aufgaben/, label: 'Aufgaben', selector: '.queue-view, .brain-view-queue, .queue, .brain-empty' },
+    { name: /Agenten-Netz/, label: 'Agenten-Netz', selector: '.pb-mesh, .mesh-view, .brain-view-mesh' },
+    { name: /Code-Stadt/, label: 'Code-Stadt', selector: '.pb-city, #city, canvas' },
   ]
 
   for (const v of viewsToTest) {
-    if (v.agent) {
-      const agentGroup = page.locator('.pb-tab-group')
-      if (await agentGroup.count() > 0) {
-        await agentGroup.hover()
-      }
-      const item = page.locator('.pb-tab-group-menu').getByRole('button', { name: v.name })
-      if (await item.count() > 0) {
-        await item.first().click({ force: true })
-      } else {
-        throw new Error(`Tab for agent view ${v.label} not found in agent menu`)
-      }
-    } else {
-      const tab = page.locator('.pb-tabs').getByRole('button', { name: v.name })
-      if (await tab.count() > 0) {
-        await tab.first().click()
-      } else {
-        throw new Error(`Tab for main view ${v.label} not found`)
-      }
-    }
+    await chooseView(v.name)
     await page.locator(v.selector).first().waitFor({ timeout: 5000 })
     console.log(`[Tier 4 View Transition] View '${v.label}' rendered cleanly.`)
   }

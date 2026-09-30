@@ -56,7 +56,7 @@ plugbrain swarm release codex-1 --task <task-id>
 # The integrator looks, approves, and sends the next hint
 plugbrain swarm board --git
 plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
-plugbrain swarm send codex-1 --subject "Next" --body "Rebase on main after your commit"
+plugbrain swarm send codex-1 --subject "Next" --body "Rebase on main after your commit" --from integrator
 ```
 
 A turn ends in one of four states: `needs-task` (done, give me work),
@@ -127,7 +127,9 @@ plugbrain serve    # the local daemon: web UI and API on http://127.0.0.1:4310
 `plugbrain setup --all` (or `claude`, `codex`, `cursor`, `windsurf`, `hermes`,
 `agy`, `opencode`) adds PlugBrain to an MCP client later. It backs up the
 client's config first; `--undo` restores it. The data directory defaults to
-`~/.plugbrain`; set `PLUGBRAIN_HOME` to choose another one.
+`~/.plugbrain`; set `PLUGBRAIN_HOME` to choose another one. One page per client,
+with the file it writes, how to check it took effect and how to remove it again:
+[docs/agents/](docs/agents/).
 
 ### Claude Code plugin
 

@@ -289,14 +289,11 @@ test('a planet inventories every checkout but indexes only a persisted explicit 
     assert.equal(status.checkouts, 1)
     assert.equal(status.files, 1, 'status excludes stale graph rows from deselected checkouts')
     assert.equal(status.dirtyCheckouts, 0, 'unselected dirt cannot make the active Brain stale')
-    const changes = detectChanges(fx.db, { workspaceId: fx.workspaceId, checkoutPath: historic })
-    assert.equal(changes.checkoutId, null)
-    assert.equal(changes.changedFiles, 0, 'explicit historical path is not a selection bypass')
-    const changesById = detectChanges(fx.db, {
+    assert.throws(() => detectChanges(fx.db, { workspaceId: fx.workspaceId, checkoutPath: historic }),
+      /checkout is not in the active selection/, 'explicit historical path is not a selection bypass')
+    assert.throws(() => detectChanges(fx.db, {
       workspaceId: fx.workspaceId, checkoutId: old!.id, diffText: 'diff --git a/src/x.ts b/src/x.ts',
-    })
-    assert.equal(changesById.checkoutId, null)
-    assert.equal(changesById.changedFiles, 0, 'explicit historical id is not a selection bypass')
+    }), /checkout is not in the active selection/, 'explicit historical id is not a selection bypass')
 
     // A restart reads the same persisted vector. No live daemon or production
     // store is involved: this is a temporary test database only.

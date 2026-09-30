@@ -98,7 +98,7 @@ const deleteLines = [
     .map(directory => `RMDir "$INSTDIR\\${nsiPath(directory)}"`),
 ]
 writeFileSync(ownedFiles, `${deleteLines.join('\n')}\n`, 'utf8')
-execFileSync(makensis, [installer], { cwd: root, stdio: 'inherit' })
+execFileSync(makensis, [`/DPRODUCT_VERSION=${version}`, installer], { cwd: root, stdio: 'inherit' })
 
 if (!existsSync(output)) throw new Error(`NSIS did not produce ${output}`)
 const sha256 = createHash('sha256').update(readFileSync(output)).digest('hex')
