@@ -865,9 +865,7 @@ export class McpServer {
 
         case 'swarm_board': {
           const workspaceId = this.getWorkspaceId(args)
-          const missing = coord.synchronizeMissingWorktrees(this.db, workspaceId)
           const reaper = coord.reapWorktrees(this.db, workspaceId)
-          reaper.missing = missing
           const board = coord.agentsBoard(this.db, workspaceId, { gitStatus: args.git === true })
           return { ok: true, board, reaper: {
             eligible: reaper.candidates.filter(row => row.eligible).length,

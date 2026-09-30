@@ -85,22 +85,25 @@ export function synchronizeMissingWorktrees(db: DatabaseSync, workspaceId: strin
   const rows = db.prepare(`SELECT c.id, c.path FROM checkouts c JOIN planets p ON p.id = c.planet_id
     WHERE p.workspace_id = ? AND c.retired_at IS NULL`).all(workspaceId) as unknown as Array<{ id: string; path: string }>
   const missing: ReapResult['missing'] = []
+  const quarantineMatches = new Map<string, string>()
+  const quarantineRoot = resolve(process.env.PLUGBRAIN_QUARANTINE_ROOT ?? 'C:/PLUG/_quarantaene')
+  if (process.platform === 'win32' && rows.some(row => !existsSync(row.path)) && existsSync(quarantineRoot)) {
+    try {
+      const roots = execFileSync('powershell', ['-NoProfile', '-Command',
+        `Get-ChildItem -LiteralPath '${quarantineRoot.replace(/'/g, "''")}' -Directory -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }`],
+      { encoding: 'utf8', timeout: 5000, windowsHide: true }).split(/\r?\n/)
+      for (const path of roots) {
+        const leaf = basename(path).toLowerCase()
+        if (path && !quarantineMatches.has(leaf)) quarantineMatches.set(leaf, path)
+      }
+    } catch { /* quarantine lookup is informational only */ }
+  }
   for (const row of rows) {
     if (existsSync(row.path)) {
       if (apply) db.prepare("UPDATE checkouts SET disk_state = 'present' WHERE id = ?").run(row.id)
       continue
     }
-    const quarantineRoot = resolve('C:/PLUG/_quarantaene')
-    let quarantinedAt: string | null = null
-    if (existsSync(quarantineRoot)) {
-      try {
-        const roots = execFileSync('powershell', ['-NoProfile', '-Command',
-          `Get-ChildItem -LiteralPath '${quarantineRoot.replace(/'/g, "''")}' -Directory -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }`],
-        { encoding: 'utf8', timeout: 5000, windowsHide: true }).split(/\r?\n/)
-        const leaf = basename(row.path).toLowerCase()
-        quarantinedAt = roots.find(path => basename(path).toLowerCase() === leaf) ?? null
-      } catch { /* quarantine lookup is informational only */ }
-    }
+    const quarantinedAt = quarantineMatches.get(basename(row.path).toLowerCase()) ?? null
     if (apply) db.prepare("UPDATE checkouts SET disk_state = 'fehlt' WHERE id = ?").run(row.id)
     missing.push({ path: row.path, quarantinedAt })
   }

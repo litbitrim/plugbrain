@@ -50,7 +50,7 @@ import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd, deliverTaskWithEviden
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
   configureQuotaPool, getRunnerProfile, hostSnapshot, listQuotaPools, listQuotas, quotaPoolSummary, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
-  reapWorktrees, setReapAuto, synchronizeMissingWorktrees,
+  reapWorktrees, setReapAuto,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
   setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
   assertActiveSupervisorAttempt, runSupervisorLoop, startSupervisor, stopSupervisor,
@@ -419,9 +419,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       return 0
     }
     case 'board': {
-      const missing = synchronizeMissingWorktrees(db, workspaceId)
       const reaper = reapWorktrees(db, workspaceId)
-      reaper.missing = missing
       const settled = reconcileWorkerRuns(db, workspaceId).filter(event => event.reason === 'ended-without-turn-end')
       const board = agentsBoard(db, workspaceId, { gitStatus: rest.includes('--git') })
       const nextActions = getSwarmNextActions(db, workspaceId)
