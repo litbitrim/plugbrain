@@ -78,6 +78,14 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
           searchAgent(workspaceId, q),
           searchNoteText(workspaceId, q),
         ])
+        if (codeResults.status === 'rejected' && noteResults.status === 'rejected') {
+          throw new Error('Code- und Notizsuche sind nicht erreichbar. Bitte Verbindung zum Brain prüfen.')
+        }
+        if (codeResults.status === 'rejected') {
+          setError('Code-Suche nicht erreichbar. Angezeigt werden nur bestätigte Notiztreffer.')
+        } else if (noteResults.status === 'rejected') {
+          setError('Notizsuche nicht erreichbar. Angezeigt werden nur bestätigte Codetreffer.')
+        }
         const list: UnifiedHit[] = []
         if (codeResults.status === 'fulfilled') {
           for (const c of codeResults.value) {
@@ -140,6 +148,7 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
       setError(err?.message || `Fehler bei der Suche (${activeMode})`)
       setUnifiedHits([])
       setNoteHits([])
+      setSearchedQuery('')
     } finally {
       setLoading(false)
     }
@@ -258,7 +267,8 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
                   : `${noteHits.length} Notiz(en) gefunden für "${searchedQuery}":`
               ) : (
                 unifiedHits.length === 0
-                  ? `Keine Treffer für "${searchedQuery}" im Brain-Index`
+                  ? error ? `Keine bestätigten Treffer für "${searchedQuery}"; Suche unvollständig`
+                    : `Keine Treffer für "${searchedQuery}" im Brain-Index`
                   : `${unifiedHits.length} Treffer für "${searchedQuery}":`
               )}
               {elapsedMs !== null && (
@@ -300,12 +310,12 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
         {mode === 'notes' ? (
           <div className="search-hits-list">
             {noteHits.map(note => (
-              <div
+              <button type="button"
                 key={note.path}
                 className="search-hit-card"
                 onClick={() => onSelectHit(note.path)}
               >
-                <div className="search-hit-card__head">
+                <span className="search-hit-card__head">
                   <span className="search-hit-name">{note.title}</span>
                   {note.typ && <span className="search-hit-kind search-hit-kind--class">{note.typ}</span>}
                   {note.stand && (
@@ -313,38 +323,38 @@ export default function SearchView({ workspaceId, onSelectHit }: SearchViewProps
                       {note.stand}
                     </span>
                   )}
-                </div>
-                <div className="search-hit-path mono" title={note.path} style={{ marginTop: '4px' }}>
+                </span>
+                <span className="search-hit-path mono" title={note.path} style={{ marginTop: '4px' }}>
                   {note.path}
-                </div>
+                </span>
                 {(note.inLinks !== undefined || note.outLinks !== undefined) && (
-                  <div style={{ fontSize: '11px', color: 'var(--faint)', marginTop: '4px' }}>
+                  <span style={{ display: 'block', fontSize: '11px', color: 'var(--faint)', marginTop: '4px' }}>
                     Verlinkungen: → {note.outLinks ?? 0} ausgehend · ← {note.inLinks ?? 0} Rückverweise
-                  </div>
+                  </span>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         ) : (
           <div className="search-hits-list">
             {unifiedHits.map(hit => (
-              <div
+              <button type="button"
                 key={hit.id}
                 className="search-hit-card"
                 onClick={() => onSelectHit(hit.path, hit.line)}
               >
-                <div className="search-hit-card__head">
+                <span className="search-hit-card__head">
                   <span className="search-hit-name mono">{hit.name}</span>
                   <span className={`search-hit-kind search-hit-kind--${hit.kind.toLowerCase()}`}>{hit.kind}</span>
                   {hit.line !== null && (
                     <span className="search-hit-line mono">Zeile {hit.line}</span>
                   )}
-                </div>
-                {hit.snippet && <div className="search-hit-snippet">{hit.snippet}</div>}
-                <div className="search-hit-path mono" title={hit.path} style={{ marginTop: '4px' }}>
+                </span>
+                {hit.snippet && <span className="search-hit-snippet">{hit.snippet}</span>}
+                <span className="search-hit-path mono" title={hit.path} style={{ marginTop: '4px' }}>
                   {hit.path}
-                </div>
-              </div>
+                </span>
+              </button>
             ))}
           </div>
         )}

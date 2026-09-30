@@ -13,6 +13,7 @@ import type {
   SymbolContextResult,
 } from './types.ts'
 import { annotateSymbolVendor } from './vendor.ts'
+import { activePlanetFileScope } from '../planet.ts'
 
 export interface SymbolContextOptions {
   workspaceId?: string
@@ -40,6 +41,19 @@ export function getSymbolContext(
   name: string,
   options?: SymbolContextOptions
 ): SymbolContextResult {
+  const fileScope = options?.workspaceId
+    ? activePlanetFileScope(db, options.workspaceId, 'f.checkout_id', 'f.path')
+    : null
+  const relatedScopeSql = options?.workspaceId
+    ? ` AND e.workspace_id = ? AND f.workspace_id = ? AND ${fileScope!.sql}`
+    : ''
+  const relatedScopeParams: SQLInputValue[] = options?.workspaceId
+    ? [options.workspaceId, options.workspaceId, ...fileScope!.params]
+    : []
+  const outgoingScopeSql = options?.workspaceId
+    ? ` AND e.workspace_id = ? AND ((e.dst_symbol IS NULL AND e.dst_file IS NULL)
+         OR (f.workspace_id = ? AND ${fileScope!.sql}))`
+    : ''
   let sql = `
     SELECT s.id, s.name, s.kind, f.path as file, s.line, s.end_line as endLine,
            s.exported, s.container, f.repo_id as repoId, f.checkout_id as checkoutId
@@ -52,6 +66,7 @@ export function getSymbolContext(
     sql += ' AND f.workspace_id = ?'
     params.push(options.workspaceId)
   }
+  if (fileScope !== null) { sql += ` AND ${fileScope.sql}`; params.push(...fileScope.params) }
 
   if (options?.repoId) {
     sql += ' AND f.repo_id = ?'
@@ -106,8 +121,8 @@ export function getSymbolContext(
     })
   )
 
-  // If ambiguous across distinct files without file option
-  if (candidates.length > 1 && !options?.file) {
+  // A partial file hint may still match multiple files.
+  if (candidates.length > 1) {
     const distinctFiles = new Set(candidates.map(c => c.file))
     if (distinctFiles.size > 1) {
       return {
@@ -132,11 +147,11 @@ export function getSymbolContext(
         FROM edges e
         LEFT JOIN symbols s ON e.src_symbol = s.id
         LEFT JOIN files f ON (s.file_id = f.id OR e.src_file = f.id)
-       WHERE e.dst_symbol = ? AND e.kind = 'calls'
+       WHERE e.dst_symbol = ? AND e.kind = 'calls'${relatedScopeSql}
        ORDER BY e.id ASC
     `
     )
-    .all(target.id) as unknown as Array<{
+    .all(target.id, ...relatedScopeParams) as unknown as Array<{
     edge_id: number
     src_symbol: number | null
     src_file: number | null
@@ -165,11 +180,11 @@ export function getSymbolContext(
         FROM edges e
         LEFT JOIN symbols s ON e.src_symbol = s.id
         LEFT JOIN files f ON (s.file_id = f.id OR e.src_file = f.id)
-       WHERE e.dst_symbol = ? AND e.kind IN ('references', 'imports')
+       WHERE e.dst_symbol = ? AND e.kind IN ('references', 'imports')${relatedScopeSql}
        ORDER BY e.id ASC
     `
     )
-    .all(target.id) as unknown as Array<{
+    .all(target.id, ...relatedScopeParams) as unknown as Array<{
     edge_id: number
     src_symbol: number | null
     src_file: number | null
@@ -198,11 +213,11 @@ export function getSymbolContext(
         FROM edges e
         LEFT JOIN symbols s ON e.dst_symbol = s.id
         LEFT JOIN files f ON (s.file_id = f.id OR e.dst_file = f.id)
-       WHERE e.src_symbol = ? AND e.kind = 'calls'
+       WHERE e.src_symbol = ? AND e.kind = 'calls'${outgoingScopeSql}
        ORDER BY e.id ASC
     `
     )
-    .all(target.id) as unknown as Array<{
+    .all(target.id, ...relatedScopeParams) as unknown as Array<{
     edge_id: number
     dst_symbol: number | null
     dst_file: number | null
@@ -231,11 +246,11 @@ export function getSymbolContext(
         FROM edges e
         LEFT JOIN symbols s ON e.dst_symbol = s.id
         LEFT JOIN files f ON (s.file_id = f.id OR e.dst_file = f.id)
-       WHERE e.src_symbol = ? AND e.kind IN ('references', 'imports')
+       WHERE e.src_symbol = ? AND e.kind IN ('references', 'imports')${outgoingScopeSql}
        ORDER BY e.id ASC
     `
     )
-    .all(target.id) as unknown as Array<{
+    .all(target.id, ...relatedScopeParams) as unknown as Array<{
     edge_id: number
     dst_symbol: number | null
     dst_file: number | null

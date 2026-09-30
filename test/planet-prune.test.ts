@@ -25,6 +25,12 @@ import {
 } from '../src/planet.ts'
 import { compactStore, planPrune, prunePlanet } from '../src/index/prune.ts'
 import { readRunState } from '../src/index/runs.ts'
+import { conceptSearch } from '../src/intel/query.ts'
+import { getSymbolContext } from '../src/intel/context.ts'
+import { getBlastRadius } from '../src/intel/impact.ts'
+import { detectChanges } from '../src/intel/changes.ts'
+import { executeCypherQuery } from '../src/intel/cypher.ts'
+import { searchNotes } from '../src/notes/search.ts'
 
 const home = mkdtempSync(join(tmpdir(), 'plugbrain-prune-home-'))
 process.env.PLUGBRAIN_HOME = home
@@ -103,6 +109,51 @@ function fixture(name: string): Fixture {
     cleanup: () => { try { db.close() } catch { /* closed */ } rmSync(dir, { recursive: true, force: true }) },
   }
 }
+
+test('Intel query and context hide deselected checkout rows before a reindex', { skip: skipGit }, () => {
+  const fx = fixture('intel-selection')
+  try {
+    assert.throws(() => detectChanges(fx.db, { workspaceId: fx.ws }), /checkout is ambiguous/)
+    assert.throws(() => detectChanges(fx.db, { workspaceId: fx.ws, checkoutId: 'missing' }), /checkout is not in the active selection/)
+    const betaFile = fx.db.prepare("SELECT id FROM files WHERE checkout_id = ? AND path LIKE '%/src/core.ts'").get(fx.beta) as { id: number }
+    fx.db.prepare('INSERT INTO note_body (workspace_id, file_id, path, text) VALUES (?, ?, ?, ?)')
+      .run(fx.ws, betaFile.id, 'Code/beta/src/core.ts', 'betaHiddenPhrase only in an old code note body')
+    fx.db.prepare(`INSERT INTO files (id, workspace_id, path, ext, size, mtime)
+      VALUES (900, ?, 'Code/legacy/src/secret.md', '.md', 40, '2026-09-30T00:00:00Z')`).run(fx.ws)
+    fx.db.prepare('INSERT INTO note_body (workspace_id, file_id, path, text) VALUES (?, ?, ?, ?)')
+      .run(fx.ws, 900, 'Code/legacy/src/secret.md', 'legacyHiddenPhrase from a pre-Planet index')
+    const betaDiff = 'diff --git a/Code/beta/src/core.ts b/Code/beta/src/core.ts\n@@ -1,1 +1,1 @@\n+changed\n'
+    assert.equal(detectChanges(fx.db, { workspaceId: fx.ws, checkoutId: fx.alpha, diffText: betaDiff }).changedSymbols.length, 0)
+    assert.ok(detectChanges(fx.db, { workspaceId: fx.ws, checkoutId: fx.beta, diffText: betaDiff }).changedSymbols.some(change => change.name === 'betaCore'))
+    assert.ok(conceptSearch(fx.db, 'betaCore', { workspaceId: fx.ws }).symbols.length > 0)
+    assert.equal(getSymbolContext(fx.db, 'betaCore', { workspaceId: fx.ws }).status, 'found')
+    assert.equal(getBlastRadius(fx.db, 'betaCore', { workspaceId: fx.ws, checkoutId: fx.beta }).status, 'found')
+    assert.equal(getBlastRadius(fx.db, 'betaCore', { workspaceId: fx.ws, checkoutId: fx.alpha }).status, 'not_found')
+    assert.equal(executeCypherQuery(fx.db, "MATCH (n:Function) WHERE n.name = 'betaCore' RETURN n.name", { workspaceId: fx.ws }).rowCount, 1)
+    setPlanetIndexSelection(fx.db, fx.ws, [fx.alpha])
+    // The old Beta index rows still exist. Read-time selection must hide them.
+    assert.ok(n(fx.db, 'SELECT COUNT(*) AS n FROM files WHERE checkout_id = ?', fx.beta) > 0)
+    assert.equal(conceptSearch(fx.db, 'betaCore', { workspaceId: fx.ws }).symbols.length, 0)
+    assert.equal(getSymbolContext(fx.db, 'betaCore', { workspaceId: fx.ws }).status, 'not_found')
+    assert.equal(getBlastRadius(fx.db, 'betaCore', { workspaceId: fx.ws }).status, 'not_found')
+    assert.equal(getBlastRadius(fx.db, 'betaCore', { workspaceId: fx.ws, checkoutId: fx.beta }).status, 'not_found')
+    assert.equal(searchNotes(fx.db, fx.ws, 'betaHiddenPhrase').total, 0)
+    assert.equal(searchNotes(fx.db, fx.ws, 'legacyHiddenPhrase').total, 0)
+    assert.equal(conceptSearch(fx.db, 'legacyHiddenPhrase', { workspaceId: fx.ws }).notes.length, 0)
+    assert.ok(searchNotes(fx.db, fx.ws, 'roadmap').total > 0)
+    const staleBeta = fx.db.prepare("SELECT s.id FROM symbols s WHERE s.name = 'betaCore'").get() as { id: number }
+    assert.equal(getBlastRadius(fx.db, { name: 'alphaCore', id: staleBeta.id }, { workspaceId: fx.ws }).status, 'not_found')
+    assert.equal(executeCypherQuery(fx.db, "MATCH (n:Function) WHERE n.name = 'betaCore' RETURN n.name", { workspaceId: fx.ws }).rowCount, 0)
+    assert.equal(executeCypherQuery(fx.db, { where: { name: 'betaCore' } }, { workspaceId: fx.ws }).rowCount, 0)
+    const graph = executeCypherQuery(fx.db, 'MATCH (a:Symbol)-[:CALLS]->(b:Symbol) RETURN a.name, b.name', { workspaceId: fx.ws })
+    assert.ok(graph.rows.every(row => !JSON.stringify(row).includes('beta')))
+    assert.equal(executeCypherQuery(fx.db, 'MATCH (r:Repo) RETURN count(r)', { workspaceId: fx.ws }).rows[0].count, 1)
+    assert.ok(conceptSearch(fx.db, 'alphaCore', { workspaceId: fx.ws }).symbols.length > 0)
+    assert.equal(getBlastRadius(fx.db, 'alphaCore', { workspaceId: fx.ws }).status, 'found')
+  } finally {
+    fx.cleanup()
+  }
+})
 
 /** Every row that belongs to one checkout, table by table. */
 function footprint(db: DatabaseSync, ws: string, checkoutId: string): Record<string, number> {

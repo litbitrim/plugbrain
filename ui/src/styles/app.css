@@ -1086,6 +1086,11 @@
   gap: 8px;
 }
 .search-hit-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: var(--fg);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -1121,6 +1126,8 @@
   margin-left: auto;
 }
 .search-hit-path {
+  display: block;
+  min-width: 0;
   font-size: 11.5px;
   color: var(--faint);
   overflow: hidden;
@@ -1130,6 +1137,7 @@
 /* The sentence that matched. Wraps, because a snippet cut off at the card edge
    is a snippet the reader has to open the file to understand. */
 .search-hit-snippet {
+  display: block;
   font-size: 12px;
   line-height: 1.45;
   color: var(--fg);

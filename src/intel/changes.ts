@@ -8,6 +8,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 import { resolve } from 'node:path'
 import type { DetectChangesResult, DiffSymbolChange } from './types.ts'
+import { canonicalPath } from '../planet.ts'
 import { gitText } from '../indexer/git.ts'
 
 export interface DetectChangesOptions {
@@ -143,17 +144,29 @@ export function detectChanges(
     // A planet without a persisted vector is deliberately not allowed to pick
     // an arbitrary on-disk checkout. An explicit path/id is not an escape
     // hatch: it must name one of the selected rows.
-    if (active.length === 0) return noChanges()
+    if (active.length === 0) {
+      if (checkoutId || checkoutPath || repoId || options.diffText) {
+        throw new Error('no selected code checkout is available for change detection')
+      }
+      return noChanges()
+    }
     const candidates = repoId === undefined
       ? active
       : active.filter(checkout => checkout.repoId === repoId)
-    if (repoId !== undefined && candidates.length === 0) return noChanges()
+    if (repoId !== undefined && candidates.length === 0) {
+      throw new Error(`repository is not in the active checkout selection: ${repoId}`)
+    }
     const selected = checkoutId
       ? candidates.find(checkout => checkout.id === checkoutId)
       : checkoutPath
-        ? candidates.find(checkout => resolve(checkout.path).toLowerCase() === resolve(checkoutPath!).toLowerCase())
-        : undefined
-    if ((checkoutId || checkoutPath) && selected === undefined) return noChanges()
+        ? candidates.find(checkout => canonicalPath(checkout.path) === canonicalPath(checkoutPath!))
+        : candidates.length === 1 ? candidates[0] : undefined
+    if ((checkoutId || checkoutPath) && selected === undefined) {
+      throw new Error('checkout is not in the active selection for this workspace')
+    }
+    if (selected === undefined && candidates.length > 1) {
+      throw new Error('checkout is ambiguous; specify checkoutId or checkoutPath')
+    }
     if (selected !== undefined) {
       checkoutId = selected.id
       repoId = selected.repoId
@@ -162,9 +175,8 @@ export function detectChanges(
   }
 
   if (!checkoutPath && !options.diffText) {
-    // The no-argument route is allowed to pick only the first persisted
-    // selection. Plain workspaces retain their earlier fallback because they
-    // have no Planet checkout inventory at all.
+    // A selected Planet checkout was resolved above. Plain workspaces retain
+    // their earlier fallback because they have no Planet checkout inventory.
     const checkoutRow = active === null
       ? db.prepare(
         `SELECT c.id, c.repo_id AS repoId, c.path
@@ -172,7 +184,7 @@ export function detectChanges(
           WHERE p.workspace_id = ? AND c.retired_at IS NULL
           ORDER BY c.rel_prefix LIMIT 1`)
         .get(workspaceId) as { id: string; repoId: string; path: string } | undefined
-      : (repoId === undefined ? active[0] : active.find(checkout => checkout.repoId === repoId))
+      : active.find(checkout => checkout.id === checkoutId)
     if (checkoutRow !== undefined) {
       checkoutId = checkoutRow.id
       repoId = checkoutRow.repoId
@@ -193,7 +205,9 @@ export function detectChanges(
   if (!diffText || !diffText.trim()) return noChanges(checkoutId ?? null, repoId ?? null)
 
   const parsedHunks = parseDiffHunks(diffText)
-  const selectedIds = active === null ? null : active.map(checkout => checkout.id)
+  // A diff belongs to the one checkout resolved above, even when the Planet
+  // intentionally indexes other checkouts with the same relative file names.
+  const selectedIds = active === null ? null : checkoutId ? [checkoutId] : []
   const fileScope = activeFileScope(selectedIds)
   const callerScope = activeFileScope(selectedIds, 'f.checkout_id')
   const changedSymbols: DiffSymbolChange[] = []

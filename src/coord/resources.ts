@@ -144,6 +144,14 @@ export function assertNotCredential(field: string, value: string): void {
   }
 }
 
+/** Keep historic or imported values safe when they are shown back to a worker. */
+export function redactCredentialText(value: string): string {
+  return CREDENTIAL_PATTERNS.reduce((safe, pattern) => {
+    const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`
+    return safe.replace(new RegExp(pattern.source, flags), '[REDACTED]')
+  }, value)
+}
+
 export type QuotaUnit = 'percent' | 'credits' | 'requests' | 'rpm' | 'tokens'
 const QUOTA_UNITS = new Set<QuotaUnit>(['percent', 'credits', 'requests', 'rpm', 'tokens'])
 

@@ -1,7 +1,9 @@
 Unicode true
 
 !define PRODUCT_NAME "PlugBrain"
-!define PRODUCT_VERSION "0.3.1"
+!ifndef PRODUCT_VERSION
+  !error "PRODUCT_VERSION must be supplied by the packager"
+!endif
 !define PRODUCT_PUBLISHER "PLUG"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"

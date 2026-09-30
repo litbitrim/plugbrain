@@ -69,6 +69,9 @@ export interface ImpactNode {
 }
 
 export interface BlastRadiusResult {
+  /** A name alone is not authority to choose one of several matching symbols. */
+  status?: 'found' | 'not_found' | 'ambiguous'
+  candidates?: Array<{ id: number; file: string }>
   target: {
     name: string
     file?: string

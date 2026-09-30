@@ -1,6 +1,6 @@
 {
   "name": "plugbrain",
-  "version": "0.3.1",
+  "version": "0.5.0-dev.1",
   "description": "Local project and code memory for AI agents: AST code intelligence, Obsidian-style notes and multi-agent coordination, asked through MCP.",
   "author": {
     "name": "litbitrim"

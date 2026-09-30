@@ -260,7 +260,10 @@ test('the HTTP API carries the same contract: profile, turn, board, approval and
     assert.deepEqual(row?.attention, ['awaiting-commit'])
 
     assert.equal((await post('/api/agent/approve-commit', { agentId: 'agy-sonnet', by: 'integrator', workspaceId: WS })).status, 200)
-    const resources = await (await fetch(`${base}/api/resources`)).json() as { admission: unknown[] }
+    assert.equal((await fetch(`${base}/api/resources`)).status, 401)
+    const resources = await (await fetch(`${base}/api/resources`, {
+      headers: { Authorization: `Bearer ${authKey}` },
+    })).json() as { admission: unknown[] }
     assert.equal(resources.admission.length, 6)
   } finally {
     await handle.close()

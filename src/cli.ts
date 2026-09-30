@@ -18,7 +18,7 @@
  *                                             remove the rows of checkouts the selection does not keep
  *   plugbrain compact                         give freed pages back to the disk (VACUUM)
  *
- *   plugbrain plan [status|next|task <M00>|gates]   the master ledger joined with the brain's queue
+ *   plugbrain plan [status|next|task <M00>|gates|decompose <gate-or-requirement>]   inspect or decompose the ledger
  *
  *   plugbrain notes query <filter>            property query, e.g. typ=gate UND stand=offen
  *   plugbrain notes search <text> [--lines]   prose search across the vault, with snippets
@@ -27,7 +27,7 @@
  *   plugbrain notes graph [--focus <path>]    the note graph with type colour groups
  *   plugbrain notes backlinks <path>          who points at this note
  *
- *   plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …
+ *   plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …
  *                                             the fleet's check-in desk (see src/swarm-cli.ts)
  *
  *   plugbrain hygiene [--workspace <id>] [--json]   what git work sits on exactly one disk
@@ -68,9 +68,13 @@ import {
 } from './hygiene/index.ts'
 import { machineReport, type MachineReport } from './machine/index.ts'
 import { gitCensus, type CensusReport } from './machine/git-census.ts'
-import { runSwarmCli } from './swarm-cli.ts'
+import { diskRecommendations, diskWipeCheck } from './disk/analysis.ts'
+import { currentDiskScan, diskTree, largestDiskFiles, scanDisk } from './disk/scan.ts'
+import { runSwarmCli, runSwarmSupervisorChild } from './swarm-cli.ts'
+import { runSwarmWatchCli } from './swarm-watch.ts'
 import { compactStore, planPrune, prunePlanet } from './index/prune.ts'
-import { planTask, planView, type PlanTask } from './plan.ts'
+import { ledgerPath, planTask, planView, type PlanTask } from './plan.ts'
+import { applyDecomposedTask, decomposeLedgerTarget, type DecompositionLedger } from './plan-decompose.ts'
 import { resolveBrainHome } from './home.ts'
 import {
   findGitRoot, planWorkspaceRoot, registerWorkspaceRoot, resolveMcpWorkspace,
@@ -78,6 +82,10 @@ import {
 import {
   buildEntry, CLIENTS, parseClientSelection, setupClients, type ClientSetupResult,
 } from './setup/clients.ts'
+import {
+  doctorAgents, InvalidAgentMarkersError, manageAgentFile, selectAgentFiles,
+  validateAgentFiles, type AgentFileTarget,
+} from './setup/agent-protocol.ts'
 
 const HOME = resolveBrainHome()
 
@@ -103,26 +111,25 @@ const DB_FILE = join(HOME, 'plugbrain.db')
  * does, so a dry run creates no database file at all.
  */
 const DRY_RUN_INIT = process.argv[2] === 'init' && process.argv.includes('--dry-run')
+const READ_ONLY_DOCTOR = process.argv[2] === 'doctor' && process.argv.includes('--agents')
 
-const db = DRY_RUN_INIT
+const db = DRY_RUN_INIT || READ_ONLY_DOCTOR
   ? (existsSync(DB_FILE) ? openStore(DB_FILE, { readOnly: true }) : openStore(':memory:'))
   : openStore(DB_FILE)
 
 function register(path: string, name?: string): void {
-  const root = resolve(path)
-  if (!existsSync(root) || !statSync(root).isDirectory()) {
-    console.error(`not a directory: ${root}`)
+  const given = resolve(path)
+  if (!existsSync(given) || !statSync(given).isDirectory()) {
+    console.error(`not a directory: ${given}`)
     process.exit(2)
   }
-  const id = workspaceIdFor(root)
-  const label = name ?? root.split(/[\\/]/).filter(Boolean).pop() ?? id
-  db.prepare(
-    `INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)
-     ON CONFLICT(root) DO UPDATE SET name = excluded.name`
-  ).run(id, label, root, new Date().toISOString())
+  // Store the canonical root (and update a legacy row in place) so a junction
+  // or 8.3 spelling cannot become a second workspace; the confirmation keeps
+  // the spelling the caller used.
+  const record = registerWorkspaceRoot(db, given, name)
   // Registration mints identity: pin it so a later move cannot take it away.
-  pinWorkspaceId(root, id)
-  console.log(`registered ${label}  ${id}\n  ${root}`)
+  pinWorkspaceId(given, record.id)
+  console.log(`registered ${record.name}  ${record.id}\n  ${given}`)
 }
 
 function reportIndex(name: string, r: IndexResult): void {
@@ -311,6 +318,31 @@ function planCommand(args: string[]): void {
   const [step = 'status', ...rest] = args
   const workspaceId = flagValue(rest, '--workspace') ?? singlePlanetId()
   const json = args.includes('--json')
+  if (step === 'decompose') {
+    const target = rest.find(arg => !arg.startsWith('--'))
+    if (target === undefined) {
+      console.error('usage: plugbrain plan decompose <gate-or-requirement> [--apply] [--json]')
+      process.exit(1)
+    }
+    const path = ledgerPath(db, workspaceId)
+    const ledger = JSON.parse(readFileSync(path, 'utf8')) as DecompositionLedger
+    const result = decomposeLedgerTarget(ledger, target)
+    const task = args.includes('--apply') && result.state === 'executable'
+      ? applyDecomposedTask(db, workspaceId, result)
+      : null
+    if (json) return jsonOut({ ...result, task })
+    console.log(`${result.state}: ${result.spec.id} ${result.spec.title}`)
+    if (result.reason) console.log(`  lead: ${result.reason}`)
+    console.log(`  category: ${result.spec.category ?? '(missing)'}`)
+    console.log(`  brief: ${result.spec.brief || '(missing)'}`)
+    console.log(`  acceptance: ${result.spec.acceptance.join('; ') || '(missing)'}`)
+    console.log(`  reviewer: ${result.spec.reviewerRole ?? '(missing)'}`)
+    console.log(`  dependencies: ${result.spec.dependsOn.join(', ') || '(none)'}`)
+    console.log(`  evidence: ${result.spec.evidence.join(', ') || '(missing)'}`)
+    if (task) console.log(`  queue task: ${task.id}`)
+    else if (args.includes('--apply')) console.log('  no queue mutation: lead review is required')
+    return
+  }
   if (step === 'task') {
     const id = rest.find(arg => !arg.startsWith('--'))
     if (id === undefined) { console.error('usage: plugbrain plan task <M00>'); process.exit(1) }
@@ -666,6 +698,48 @@ function reposCommand(args: string[]): void {
   if (args.includes('--json')) return jsonOut(view)
   renderRepos(view, dirtyOnly)
 }
+
+async function diskCommand(args: string[]): Promise<void> {
+  const [step, ...rest] = args
+  if (step === 'scan') {
+    const paths = rest.filter(value => !value.startsWith('--'))
+    const controller = new AbortController()
+    const interrupt = (): void => { controller.abort(); process.exitCode = 130 }
+    process.once('SIGINT', interrupt)
+    let state: Awaited<ReturnType<typeof scanDisk>>
+    try {
+      state = await scanDisk(db, { roots: paths.length ? paths : undefined, signal: controller.signal, onProgress: progress => {
+        if (progress.directories > 0 && progress.directories % 1024 === 0) {
+          console.error(`disk scan: ${progress.directories} directories, ${progress.files} files`)
+        }
+      } })
+    } finally { process.off('SIGINT', interrupt) }
+    return jsonOut(state)
+  }
+  if (step === 'tree') {
+    const path = rest.find(value => !value.startsWith('--')) ?? null
+    return jsonOut({ scan: currentDiskScan(db), directories: diskTree(db, path) })
+  }
+  if (step === 'recommend') {
+    const report = diskRecommendations(db, gitCensus(db))
+    if (rest.includes('--json')) return jsonOut(report)
+    console.log(`Disk recommendations for scan ${report.scanId ?? 'none'} (GB by risk): recoverable ${report.totalsGb.recoverable}, review ${report.totalsGb.review}, keep ${report.totalsGb.keep}`)
+    for (const item of report.recommendations) console.log(`  ${item.risk.padEnd(11)} ${String(item.gb).padStart(7)} GB  ${item.paths.join(', ')}\n      ${item.reason} Recovery: ${item.recovery}`)
+    return
+  }
+  if (step === 'wipe-check') {
+    const report = diskWipeCheck(db, gitCensus(db))
+    if (rest.includes('--json')) return jsonOut(report)
+    console.log(`Reinstallation checklist: ${report.items.length} item(s), ${report.totalGb} GB`)
+    for (const item of report.items) console.log(`  ${gbText(item.bytes)}  ${item.path}\n      ${item.reason}`)
+    return
+  }
+  if (step === 'largest') return jsonOut({ scan: currentDiskScan(db), files: largestDiskFiles(db, Number(rest[0]) || 20) })
+  console.error('usage: plugbrain disk <scan [path...]|tree [path]|recommend [--json]|wipe-check [--json]|largest [n]>')
+  process.exit(1)
+}
+
+function gbText(bytes: number): string { return `${Math.round(bytes / 1024 ** 3 * 10) / 10} GB` }
 
 function notesSearch(args: string[]): void {
   const asJson = args.includes('--json')
@@ -1164,6 +1238,14 @@ function initCommand(args: string[]): void {
 
   console.log(`\nUI: http://127.0.0.1:${UI_PORT_DEFAULT}/  (start it with: plugbrain serve)`)
 
+  if (!args.includes('--no-agents-file')) {
+    const files = selectAgentFiles(root)
+    validateAgentFiles(files)
+    const results = files.map(file => manageAgentFile(file, { dryRun }))
+    console.log('\nagent instructions:')
+    for (const result of results) console.log(`  ${result.action.padEnd(10)} ${result.path}`)
+  }
+
   if (args.includes('--no-clients')) return
   const home = clientHome()
   const entry = buildEntry(selfCliPath())
@@ -1195,6 +1277,48 @@ function setupCommand(args: string[]): void {
   printClientResults(results, home)
 }
 
+function agentsFileCommand(args: string[]): void {
+  const rawTarget = flagValue(args, '--target')
+  if (rawTarget !== null && !['AGENTS.md', 'CLAUDE.md', 'both'].includes(rawTarget)) {
+    console.error('usage: plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]')
+    process.exit(1)
+  }
+  const target = rawTarget as AgentFileTarget | undefined
+  const root = findGitRoot(process.cwd()) ?? process.cwd()
+  const files = selectAgentFiles(root, target)
+  const undo = args.includes('--undo')
+  validateAgentFiles(files, undo)
+  const results = files.map(file => manageAgentFile(file, {
+    dryRun: args.includes('--dry-run'), undo,
+  }))
+  for (const result of results) {
+    console.log(`${result.action.padEnd(10)} ${result.path}`)
+    if (args.includes('--dry-run') && result.before !== result.after) {
+      console.log('  --- before')
+      if (result.before !== null) console.log(result.before)
+      console.log('  +++ after')
+      if (result.after !== null) console.log(result.after)
+    }
+    if (result.backup) console.log(`  backup: ${result.backup}`)
+  }
+}
+
+async function doctorCommand(args: string[]): Promise<void> {
+  if (!args.includes('--agents')) {
+    console.error('usage: plugbrain doctor --agents [--json]')
+    process.exit(1)
+  }
+  const rows = await doctorAgents({ db, port: Number(process.env.PLUGBRAIN_DOCTOR_PORT ?? UI_PORT_DEFAULT) })
+  if (args.includes('--json')) {
+    console.log(JSON.stringify(rows, null, 2))
+    return
+  }
+  console.log('Client         Installed  MCP   Daemon  Workspace  Agent block  Fix')
+  for (const row of rows) {
+    console.log(`${row.client.padEnd(14)} ${row.installed.padEnd(10)} ${row.mcp.padEnd(5)} ${row.daemon.padEnd(7)} ${row.workspace.padEnd(10)} ${row.agentBlock.padEnd(12)} ${row.fix}`)
+  }
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
 switch (command) {
@@ -1207,7 +1331,19 @@ switch (command) {
   case 'write': agentWrite(args[0], args[1], args[2], args.slice(3).join(' ')); break
   case 'who': who(args[0], args[1]); break
   case 'agents': agents(); break
-  case 'swarm': process.exitCode = runSwarmCli(db, args, singlePlanetId); break
+  case 'swarm':
+    if (args[0] === 'watch') {
+      void runSwarmWatchCli(args.slice(1)).then(code => { process.exitCode = code }).catch(error => {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exitCode = 1
+      })
+    } else if (args[0] === 'run' && args.includes('--supervisor-child')) {
+      void runSwarmSupervisorChild(db, args, singlePlanetId).then(code => { process.exitCode = code }).catch(error => {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exitCode = 1
+      })
+    } else process.exitCode = runSwarmCli(db, args, singlePlanetId)
+    break
   case 'progress': {
     progressReport(args[0])
     break
@@ -1231,6 +1367,7 @@ switch (command) {
   case 'hygiene': hygieneCommand(args); break
   case 'machine': machineCommand(args); break
   case 'repos': reposCommand(args); break
+  case 'disk': await diskCommand(args); break
   case 'notes': {
     const [step, ...rest] = args
     if (step === 'query') notesQuery(rest)
@@ -1315,6 +1452,8 @@ switch (command) {
   }
   case 'init': initCommand(args); break
   case 'setup': setupCommand(args); break
+  case 'agents-file': agentsFileCommand(args); break
+  case 'doctor': await doctorCommand(args); break
   case 'mcp': {
     // No `--workspace` is the normal case now: the client starts the server in
     // the project folder, so the folder states the workspace. `--workspace`
@@ -1368,9 +1507,11 @@ switch (command) {
   }
   default:
     console.log(
-      'usage: plugbrain <init|setup|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
-      '       plugbrain init [path] [--no-clients] [--dry-run]  register + index + enroll clients\n' +
+      'usage: plugbrain <init|setup|agents-file|doctor|register|index|progress|status|search|attach|read|write|who|agents|swarm|serve|planet|notes|disk|query|context|impact|detect-changes|cypher|intel-status|mcp|backup|restore> …\n' +
+      '       plugbrain init [path] [--no-clients] [--no-agents-file] [--dry-run]  register + index + enroll clients\n' +
       '       plugbrain setup [--all|claude|codex|cursor|windsurf|hermes|agy|opencode] [--dry-run] [--undo]\n' +
+      '       plugbrain agents-file [--target AGENTS.md|CLAUDE.md|both] [--dry-run] [--undo]\n' +
+      '       plugbrain doctor --agents [--json]\n' +
       '       plugbrain progress [workspaceId]\n' +
       '       plugbrain planet <register|select|scan|status|history> [path|workspaceId]\n' +
       '       plugbrain planet select [workspaceId] --checkout <checkoutId> [--checkout <checkoutId>]\n' +
@@ -1379,7 +1520,9 @@ switch (command) {
       '       plugbrain hygiene [--workspace <ws>] [--json] [--wip-snapshot] [--repo <path>]\n' +
       '       plugbrain machine [--json]\n' +
       '       plugbrain repos [--dirty] [--refresh] [--json]\n' +
-      '       plugbrain swarm <register|turn|ack|board|send|enqueue|approve|resources|quota|admit> …\n' +
+      '       plugbrain disk <scan [path...]|tree [path]|recommend [--json]|wipe-check [--json]|largest [n]>\n' +
+      '       plugbrain swarm <register|turn|ack|board|chronik|send|enqueue|supersede|reassign|priority|deliver|approve|resources|quota|admit|watchdog|review-pool|reap|runner|run> …\n' +
+      '       plugbrain swarm runner set|show <agent> …  ·  plugbrain swarm run <agent> [--status|--stop]   start and watch a CLI worker\n' +
       '       plugbrain mcp [--workspace <ws>] [--auth-key <key>]   (workspace from cwd when omitted)\n' +
       '       plugbrain backup [target_path]\n' +
       '       plugbrain restore <backup_path>')
@@ -1397,6 +1540,10 @@ switch (command) {
   if (error instanceof access.AccessDenied) {
     console.error(`refused: ${error.message}`)
     process.exit(3)
+  }
+  if (error instanceof InvalidAgentMarkersError) {
+    console.error(`refused: ${error.message}`)
+    process.exit(2)
   }
   // Not a failure of the command: another process is already doing this work.
   // A stack trace would suggest a bug where there is only a busy brain.

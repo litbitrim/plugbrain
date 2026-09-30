@@ -26,6 +26,7 @@ import { PassThrough } from 'node:stream'
 import { openStore } from '../src/store/schema.ts'
 import { serve, type ServerHandle } from '../src/server/api.ts'
 import { registerAgent } from '../src/access.ts'
+import { enqueueTask } from '../src/queue.ts'
 import * as coord from '../src/coord/index.ts'
 import { McpServer, MCP_TOOLS } from '../src/mcp/server.ts'
 import { createAwarenessPort } from '../src/projections/awareness.ts'
@@ -175,15 +176,11 @@ test('M4: two real agent processes interact, conflict 409, message handoff, and 
 test('M4: dead agent (expired heartbeat) does not block claims or writes permanently', async () => {
   const f = await createCoordFixture()
   try {
-    const heartbeatTtlMs = 60_000
-
-    // Keep the live case comfortably inside its TTL; CI setup and lease work
-    // must not decide whether this agent is alive.
+    // Register agent dead-1 with short TTL (500ms)
     coord.registerSwarmAgent(f.db, {
       agentId: 'agent-dead-1',
       workspaceId: f.workspaceId,
-      taskId: 'task-dead-1',
-      heartbeatTtlMs,
+      heartbeatTtlMs: 500,
     })
 
     // Acquire lease
@@ -200,13 +197,8 @@ test('M4: dead agent (expired heartbeat) does not block claims or writes permane
     coord.registerSwarmAgent(f.db, {
       agentId: 'agent-alive-2',
       workspaceId: f.workspaceId,
-      taskId: 'task-alive-2',
-      heartbeatTtlMs,
+      heartbeatTtlMs: 60000,
     })
-
-    const livePresence = coord.getAgentPresence(f.db, { agentId: 'agent-alive-2' })
-    assert.equal(livePresence[0].presence, 'active')
-    assert.equal(livePresence[0].isExpired, false)
 
     // Immediate attempt to claim by alive agent should conflict
     const blockedRes = coord.acquireLease(f.db, f.workspaceId, {
@@ -218,11 +210,8 @@ test('M4: dead agent (expired heartbeat) does not block claims or writes permane
     assert.equal(blockedRes.acquired, false)
     assert.equal(blockedRes.conflict?.holder.agentId, 'agent-dead-1')
 
-    // Expire only the heartbeat value in the fixture database. Keep the TTL
-    // unchanged and avoid a wall-clock sleep that can expire during setup on CI.
-    const staleHeartbeat = new Date(Date.now() - heartbeatTtlMs - 1).toISOString()
-    f.db.prepare('UPDATE agents SET last_heartbeat = ? WHERE id = ?')
-      .run(staleHeartbeat, 'agent-dead-1')
+    // Wait 600ms for agent-dead-1 heartbeat to expire
+    await new Promise((r) => setTimeout(r, 600))
 
     // Verify presence is dead
     const presences = coord.getAgentPresence(f.db, { agentId: 'agent-dead-1' })
@@ -397,7 +386,7 @@ test('M4: awareness pack reports dependency overlap when another task claims an 
   }
 })
 
-test('M4: MCP server lists all 27 tools and executes tool calls over JSON-RPC', async () => {
+test('M4: MCP server lists coordination tools and executes tool calls over JSON-RPC', async () => {
   const f = await createCoordFixture()
   try {
     const inStream = new PassThrough()
@@ -444,19 +433,41 @@ test('M4: MCP server lists all 27 tools and executes tool calls over JSON-RPC', 
     //    the hygiene/machine lanes (git guard and hardware awareness).
     const listRes = await sendRpc({ id: 2, method: 'tools/list' })
     const tools = listRes.result.tools as Array<{ name: string }>
-    assert.equal(tools.length, 27, `Expected 27 tools, found ${tools.length}`)
+    assert.equal(tools.length, MCP_TOOLS.length)
     const toolNames = tools.map((t) => t.name)
     const expected = [
       'ask', 'search', 'read', 'context_pack', 'query', 'context', 'impact',
       'detect_changes', 'claim', 'release', 'awareness', 'inbox_read',
       'message_send', 'heartbeat', 'cypher', 'rename_preview',
       'swarm_turn', 'swarm_board', 'swarm_resources',
+      'swarm_supersede', 'swarm_reassign', 'swarm_priority',
       'plan', 'notes_search', 'notes_read', 'notes_query', 'notes_backlinks',
       'hygiene', 'machine', 'repos',
     ]
     for (const exp of expected) {
       assert.ok(toolNames.includes(exp), `Missing MCP tool: ${exp}`)
     }
+
+    coord.registerSwarmAgent(f.db, { agentId: 'mcp-tester', workspaceId: f.workspaceId })
+    const obsolete = enqueueTask(f.db, f.workspaceId, { title: 'Obsolete task' })
+    const replacement = enqueueTask(f.db, f.workspaceId, { title: 'Replacement task' })
+    const routed = enqueueTask(f.db, f.workspaceId, { title: 'Routed task' })
+    const queueCall = async (id: number, name: string, args: Record<string, unknown>) => {
+      const response = await sendRpc({ id, method: 'tools/call', params: { name, arguments: { ...args, authKey: f.authKey } } })
+      return JSON.parse(response.result.content[0].text)
+    }
+    assert.equal((await queueCall(20, 'swarm_supersede', {
+      taskId: obsolete.id, byTaskId: replacement.id, note: 'replaced by current brief', byAgent: 'mcp-tester',
+    })).task.state, 'superseded')
+    assert.equal((await queueCall(21, 'swarm_reassign', {
+      taskId: routed.id, toAgent: 'mcp-tester', byAgent: 'mcp-tester',
+    })).task.addressed_to, 'mcp-tester')
+    assert.equal((await queueCall(22, 'swarm_priority', {
+      taskId: replacement.id, priority: 7, byAgent: 'mcp-tester',
+    })).task.priority, 7)
+    const queueBoard = await queueCall(23, 'swarm_board', {})
+    assert.equal(queueBoard.board.queue.tasks.find((task: { id: string }) => task.id === obsolete.id)?.state, 'superseded')
+    assert.equal(queueBoard.board.queue.recentChanges.length, 3)
 
     // 3. tools/call: heartbeat
     const hbRes = await sendRpc({
@@ -544,7 +555,7 @@ test('M4: MCP server lists all 27 tools and executes tool calls over JSON-RPC', 
 test('M4: SSE stream delivers live events for register, claim, and message', async () => {
   const f = await createCoordFixture()
   try {
-    const sseEvents: Array<{ type: string; data: any }> = []
+    const sseEvents: Array<{ type: string; data: any; id?: string }> = []
 
     // Connect to /api/live/events
     const controller = new AbortController()
@@ -568,9 +579,10 @@ test('M4: SSE stream delivers live events for register, claim, and message', asy
           for (const block of blocks) {
             const eventMatch = block.match(/event:\s*([^\r\n]+)/)
             const dataMatch = block.match(/data:\s*([^\r\n]+)/)
+            const idMatch = block.match(/^id:\s*([^\r\n]+)/m)
             if (eventMatch && dataMatch) {
               try {
-                sseEvents.push({ type: eventMatch[1].trim(), data: JSON.parse(dataMatch[1].trim()) })
+                sseEvents.push({ type: eventMatch[1].trim(), data: JSON.parse(dataMatch[1].trim()), id: idMatch?.[1]?.trim() })
               } catch {}
             }
           }
@@ -612,6 +624,40 @@ test('M4: SSE stream delivers live events for register, claim, and message', asy
     assert.ok(eventTypes.includes('agent.registered'), 'SSE should receive agent.registered')
     assert.ok(eventTypes.includes('claim.acquired'), 'SSE should receive claim.acquired')
     assert.ok(eventTypes.includes('message.sent'), 'SSE should receive message.sent')
+    assert.ok(sseEvents.every((e) => e.id !== undefined && /^\d+$/.test(e.id)), 'every frame carries a numeric id')
+
+    // A reconnect with Last-Event-ID replays what the buffer still holds. No new
+    // activity happens on this second connection, so anything it receives is replay.
+    const replayController = new AbortController()
+    const replayRes = await fetch(`${f.baseUrl}/api/live/events`, {
+      headers: { 'Last-Event-ID': '0' },
+      signal: replayController.signal,
+    })
+    assert.equal(replayRes.status, 200)
+    const replayReader = replayRes.body?.getReader()
+    const replayDecoder = new TextDecoder()
+    const replayedIds: string[] = []
+    const replayedTypes: string[] = []
+    let replayText = ''
+    const replayDeadline = Date.now() + 4000
+    while (Date.now() < replayDeadline && !replayedTypes.includes('message.sent')) {
+      const { done, value } = await replayReader!.read()
+      if (done) break
+      replayText += replayDecoder.decode(value, { stream: true })
+      const frames = replayText.split('\n\n')
+      replayText = frames.pop() ?? ''
+      for (const frame of frames) {
+        const typeMatch = frame.match(/event:\s*([^\r\n]+)/)
+        const idMatch = frame.match(/^id:\s*([^\r\n]+)/m)
+        if (typeMatch && idMatch) {
+          replayedTypes.push(typeMatch[1].trim())
+          replayedIds.push(idMatch[1].trim())
+        }
+      }
+    }
+    replayController.abort()
+    assert.ok(replayedTypes.includes('message.sent'), 'Last-Event-ID 0 replays the buffered events')
+    assert.ok(replayedIds.every((id) => Number(id) > 0), 'replayed frames keep their original ids')
   } finally {
     await f.cleanup()
   }

@@ -6,17 +6,27 @@ agent follows on every turn. Paste the block below into your project's
 (Claude Code), and give every agent its own id.
 
 Commands are the `plugbrain swarm` CLI, so any agent that can run a shell
-command can take part. See [cli.md](cli.md#swarm) for every option.
+command can take part. See [cli.md](cli.md#swarm) for every option, and
+[agents/](agents/README.md) for teaching a client to reach PlugBrain in the
+first place.
 
 ## Before the first turn
 
 Register each agent once. The account label tells the board which quota the
-agent spends; one key or subscription can carry several agents.
+agent spends. Set `--quota-pool` to the provider project/account limit shared by
+its agents; different keys in that project must use the same pool name.
 
 ```bash
 plugbrain swarm register codex-1 --surface other --account openai --model gpt-6-luna
 plugbrain swarm register claude-1 --surface claude-code --account anthropic
+plugbrain swarm register nv01 --surface freebuff --account nvidia:key-01 --key nvidia-01 --quota-pool nvidia:project-a
+plugbrain swarm register nv02 --surface freebuff --account nvidia:key-02 --key nvidia-02 --quota-pool nvidia:project-a
 ```
+
+Configure the shared pool once with `plugbrain swarm quota-pool set nvidia:project-a
+--max-concurrent 2 --rpm 30`. Supervised runs reserve an attempt atomically and
+settle it after the worker exits. Provider-reported usage is only recorded when
+available; missing usage stays unknown.
 
 Surfaces are `claude-code`, `codex-app`, `freebuff`, `agy`, `native` and `other`.
 
@@ -34,21 +44,29 @@ You are one agent in a team coordinated by PlugBrain. Your agent id is `<id>`.
 2. **Before you write:** claim the paths you will change:
    `plugbrain swarm claim <id> <path>... --task <taskId>`. If the claim is
    refused, another agent owns the path. Message that agent
-   (`plugbrain swarm send <agent> --subject "..." --body "..."`) instead of
-   writing anyway.
+   (`plugbrain swarm send <agent> --subject "..." --body "..." --from <your id>`) instead of
+   writing anyway. Set `PLUGBRAIN_AGENT=<your id>` once in your shell and every
+   message is signed with your id; a message without a sender is refused.
 3. **Before tests, builds, installs or new worktrees:** run
    `plugbrain swarm admit test|build|install|worktree`. Exit code 5 means the
    machine has no room. Do not start the work; end the turn as `blocked`.
-4. **End of every turn,** with exactly one state:
+4. **Hand in completed work:** run
+   `plugbrain swarm deliver <id> <taskId> --path <evidence> [--repo <worktree>]`.
+   The evidence must be a non-empty file inside the workspace. The receipt stores
+   its SHA-256, your agent id, attempt, and source revision when available. Review
+   tasks (title starts with `R-` or `--review`) also need a verdict and reviewed commit hash.
+5. **End of every turn,** with exactly one state:
    `plugbrain swarm turn <id> end --state <state> --summary "<one or two sentences>"`
    - `needs-task`: you are done and need new work
    - `awaiting-commit`: a tested change is ready; wait for approval
    - `blocked`: a real blocker, named in the summary
    - `paused`: you were told to stop
    Then release your claims: `plugbrain swarm release <id> --task <taskId>`.
-5. **Commit only after approval.** Approval arrives as a message with the
+   Ending with `needs-task` without a delivery leaves the task claimed and visible
+   under `plugbrain swarm board --next`.
+6. **Commit only after approval.** Approval arrives as a message with the
    subject "Commit freigegeben". Commit, then end the turn with `needs-task`.
-6. **Report limits, never secrets.** If your tool shows a quota, report the
+7. **Report limits, never secrets.** If your tool shows a quota, report the
    number: `plugbrain swarm quota <account> <remaining> percent|credits|requests|rpm|tokens`.
    Never put keys or tokens into commands, summaries, messages or notes.
 ```
@@ -61,8 +79,10 @@ role.
 | Task | Command |
 | --- | --- |
 | See every agent, its turn, task, claims and worktree | `plugbrain swarm board --git` |
-| Queue work, optionally for one agent | `plugbrain swarm enqueue "<title>" --body "<brief>" [--to <id>]` |
-| Send a message | `plugbrain swarm send <id> --subject "<s>" --body "<b>"` |
+| Queue work, optionally for one agent, optionally after another task | `plugbrain swarm enqueue "<title>" --body "<brief>" [--to <id>] [--after <taskId>]` |
+| Send a message | `plugbrain swarm send <id> --subject "<s>" --body "<b>" --from integrator` |
+| See who is still, and release arrivals | `plugbrain swarm watchdog` |
+| Reviewer list and automatic review routing | `plugbrain swarm review-pool set <id>... && plugbrain swarm review-pool auto on` |
 | Let an agent commit | `plugbrain swarm approve <id> [--note "<n>"]` |
 | Machine room and quotas | `plugbrain swarm resources` |
 | Take an agent off the board | `plugbrain swarm retire <id> --note "<reason>"` |

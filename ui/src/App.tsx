@@ -5,7 +5,7 @@ import {
   workspaceIdForRoot,
 } from './lib/workspaces.js'
 import {
-  fetchMesh, fetchPlanetInventory, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
+  authHeaders, fetchMesh, fetchPlanetInventory, fetchSwarmSnapshot, fetchHostResources, getStoredToken, setStoredToken, getStoredAgentId, setStoredAgentId,
   resetAgentAttachments, setPlanetCheckoutSelection, fetchGitState, type GitState, type PlanetInventory,
 } from './lib/brain-client'
 import CityView from './views/CityView'
@@ -19,10 +19,15 @@ import ContextPackView from './views/ContextPackView'
 import GraphView from './views/GraphView'
 import BriefingView from './views/BriefingView'
 import HygieneView from './views/HygieneView'
+import TurnsView from './views/TurnsView'
+import DiskView from './views/DiskView'
+import DurableView from './views/DurableView'
+import PlanView from './views/PlanView'
 import AskModal from './components/AskModal'
 import { Icon, ICON } from './ui/Icon'
 import { TimelineControl, TIMELINE_STEPS, type Timeline } from './ui/TimelineControl'
-import type { MeshSnapshot, QueueTask, Snapshot, ViewId } from './types'
+import type { MeshSnapshot, QueueTask, Snapshot, SwarmSnapshot, ViewId } from './types'
+import type { HostResources } from './lib/brain-client'
 
 type Planet = { id: string; name: string; root: string; indexedAt: string | null }
 
@@ -39,10 +44,21 @@ const AGENT_VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: 'packs', label: 'Kontext-Pakete', hint: 'Context-Packs für Agenten-Aufgaben zusammenstellen' },
   { id: 'queue', label: 'Aufgaben', hint: 'Wartende Aufgaben; der nächste freie Agent nimmt sie' },
   { id: 'mesh', label: 'Agenten-Netz', hint: 'Nachweisbare Arbeit und Übergaben aus dem Core-Trace' },
+  { id: 'turns', label: 'Turns', hint: 'Worker-Turns, Nachrichten, Claims und Freigaben auf einer Zeitachse' },
   { id: 'city', label: 'Code-Stadt', hint: 'Workspace als Stadt — Repos als Distrikte, Dateien als Gebäude' },
 ]
 
-const VIEWS = [...MAIN_VIEWS, ...AGENT_VIEWS]
+const SYSTEM_VIEWS: { id: ViewId; label: string; hint: string }[] = [
+  { id: 'turns', label: 'Agenten', hint: 'Flottenboard, Nachrichten und Freigaben' },
+  { id: 'durable', label: 'Dauerbetrieb', hint: 'Nachtschicht, Supervisor und Fleet-Lebenszeichen' },
+  { id: 'disk', label: 'Festplatten', hint: 'Laufwerke, Inventur und Löschliste' },
+  { id: 'plan', label: 'Plan', hint: 'Master-Aufgaben, Gates und Fortschritt' },
+]
+const ACTIVITY_GLYPH: Record<ViewId, string> = {
+  briefing: '▧', atlas: '⌘', notes: '▤', explorer: '▱', search: '⌕', packs: '▣', city: '▦',
+  mesh: '◉', queue: '☷', turns: '◎', hygiene: '⌁', durable: '↻', disk: '▤', plan: '☷',
+}
+const VIEWS = [...MAIN_VIEWS, ...AGENT_VIEWS, ...SYSTEM_VIEWS]
 
 const shortLabel = folderName
 const SNAPSHOT_FILE_LIMIT = 2000
@@ -66,6 +82,9 @@ function initialWorkspace(): string {
 export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [mesh, setMesh] = useState<MeshSnapshot | null>(null)
+  const [swarm, setSwarm] = useState<SwarmSnapshot | null>(null)
+  const [hostResources, setHostResources] = useState<HostResources | null>(null)
+  const [hostResourceError, setHostResourceError] = useState('')
   const [queue, setQueue] = useState<{ depth: number; tasks: QueueTask[] }>({ depth: 0, tasks: [] })
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
@@ -100,6 +119,29 @@ export default function App() {
   const [selectedRevision, setSelectedRevision] = useState<string | null>(null)
   const [meshFocusAgent, setMeshFocusAgent] = useState<string | null>(null)
 
+  const refreshSwarm = useCallback(() => {
+    if (!workspaceId) { setSwarm(null); return }
+    void fetchSwarmSnapshot(workspaceId).then(setSwarm).catch(() => setSwarm(null))
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId) return
+    let alive = true
+    const refresh = () => { void fetchSwarmSnapshot(workspaceId).then(data => { if (alive) setSwarm(data) }).catch(() => { if (alive) setSwarm(null) }) }
+    refresh()
+    const timer = window.setInterval(refresh, 15_000)
+    return () => { alive = false; clearInterval(timer) }
+  }, [workspaceId])
+
+  useEffect(() => {
+    if (!workspaceId) { setHostResources(null); return }
+    let alive = true
+    const refresh = () => { void fetchHostResources().then(data => { if (alive) { setHostResources(data); setHostResourceError('') } }).catch(cause => { if (alive) setHostResourceError(cause instanceof Error ? cause.message : String(cause)) }) }
+    refresh()
+    const timer = window.setInterval(refresh, 15_000)
+    return () => { alive = false; clearInterval(timer) }
+  }, [workspaceId])
+
   // Settings & Theme state
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'appearance' | 'vaults' | 'repos' | 'shortcuts' | 'advanced'>('appearance')
@@ -108,7 +150,7 @@ export default function App() {
       const saved = localStorage.getItem('plugbrain.theme')
       if (saved === 'dark' || saved === 'light' || saved === 'system') return saved
     } catch {}
-    return 'system'
+    return 'dark'
   })
 
   useEffect(() => {
@@ -140,25 +182,33 @@ export default function App() {
   const [selectionError, setSelectionError] = useState('')
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [askModalOpen, setAskModalOpen] = useState(false)
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false)
   const [askInitialQuery, setAskInitialQuery] = useState('')
+  const [searchRequest, setSearchRequest] = useState(0)
+  const headerSearchRef = useRef<HTMLInputElement | null>(null)
+  const headerMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setHeaderMenuOpen(false)
+        setShortcutsOpen(false)
+        setSettingsOpen(false)
+        setSelectionModalOpen(false)
+        setAskModalOpen(false)
+        return
+      }
       const target = event.target as HTMLElement | null
       if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
-        setAskModalOpen(true)
+        setView('search')
+        window.setTimeout(() => headerSearchRef.current?.focus(), 0)
       } else if (event.key === '/' && !event.shiftKey) {
         event.preventDefault()
         setAskModalOpen(true)
       } else if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
         event.preventDefault(); setShortcutsOpen(true)
-      } else if (event.key === 'Escape') {
-        setShortcutsOpen(false)
-        setSettingsOpen(false)
-        setSelectionModalOpen(false)
-        setAskModalOpen(false)
       } else if (event.key.toLowerCase() === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault(); setVaultOpen(true)
       }
@@ -166,6 +216,19 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  useEffect(() => {
+    if (!headerMenuOpen) return
+    const closeOutside = (event: Event): void => {
+      if (!headerMenuRef.current?.contains(event.target as Node)) setHeaderMenuOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('focusin', closeOutside)
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('focusin', closeOutside)
+    }
+  }, [headerMenuOpen])
 
   useEffect(() => {
     try { localStorage.setItem('plugbrain.view', view) } catch { /* private mode */ }
@@ -200,7 +263,7 @@ export default function App() {
   useEffect(() => {
     if (!workspaceId) return
     let alive = true
-    fetch(`/api/graph?workspace=${encodeURIComponent(workspaceId)}&limit=5000`)
+    fetch(`/api/graph?workspace=${encodeURIComponent(workspaceId)}&limit=5000`, { headers: authHeaders() })
       .then(r => r.json())
       .then(data => {
         if (!alive || !data?.nodes) return
@@ -313,7 +376,7 @@ export default function App() {
     let timer: ReturnType<typeof setTimeout>
     const poll = async (): Promise<void> => {
       try {
-        const response = await fetch(`/api/index/progress?workspace=${encodeURIComponent(workspaceId)}`)
+        const response = await fetch(`/api/index/progress?workspace=${encodeURIComponent(workspaceId)}`, { headers: authHeaders() })
         if (response.ok) {
           const report = await response.json()
           if (!alive) return
@@ -415,7 +478,7 @@ export default function App() {
 
   useEffect(() => {
     const requested = workspaceId || undefined
-    void fetch('/api/timeline' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''))
+    void fetch('/api/timeline' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''), { headers: authHeaders() })
       .then(r => r.json())
       .then(payload => { if (payload?.bounds?.first) setBounds(payload.bounds) })
       .catch(() => {})
@@ -446,7 +509,7 @@ export default function App() {
         if (requested) params.set('workspace', requested)
         params.set('limit', String(SNAPSHOT_FILE_LIMIT))
         if (untilRef.current) params.set('until', untilRef.current)
-        const response = await fetch('/api/atlas/snapshot' + (params.toString() ? `?${params}` : ''), { signal: controller.signal })
+        const response = await fetch('/api/atlas/snapshot' + (params.toString() ? `?${params}` : ''), { headers: authHeaders(), signal: controller.signal })
         if (!response.ok) throw new Error(`Brain-Verbindung: HTTP ${response.status}`)
         const next: Snapshot = await response.json()
         if (!next.workspace?.canonicalPath || !Array.isArray(next.graph?.nodes) || !Array.isArray(next.graph?.edges)) {
@@ -479,7 +542,7 @@ export default function App() {
       try {
         const response = await fetch(
           '/api/queue' + (requested ? '?workspace=' + encodeURIComponent(requested) : ''),
-          { signal: controller.signal })
+          { headers: authHeaders(), signal: controller.signal })
         if (response.ok) {
           const payload = await response.json()
           if (payload?.ok === true && Array.isArray(payload.tasks)) {
@@ -626,50 +689,28 @@ export default function App() {
 
         <div className="pb-topbar__actions">
           {workspaceId && (
-            <nav className="pb-tabs pb-tabs--desktop" aria-label="Ansicht">
-              {MAIN_VIEWS.map(v => (
-                <button key={v.id} type="button" className="pb-tab" title={v.hint}
-                  aria-label={v.testName ?? v.label}
-                  aria-current={v.id === view ? 'page' : undefined}
-                  onClick={() => setView(v.id)}>
-                  {v.label}
-                </button>
-              ))}
-              <div className="pb-tab-group" data-active={AGENT_VIEWS.some(v => v.id === view) ? "true" : undefined}>
-                <button type="button" className="pb-tab" aria-haspopup="true">
-                  Agenten
-                </button>
-                <div className="pb-tab-group-menu">
-                  {AGENT_VIEWS.map(v => (
-                    <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
-                      aria-current={v.id === view ? 'page' : undefined}
-                      onClick={() => setView(v.id)}>
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </nav>
-          )}
-
-          {workspaceId && (
-            <div className="pb-mobile-nav">
-               <button type="button" className="pb-tool pb-tool--icon" title="Menü" onClick={() => {
-                   const el = document.getElementById('mobile-menu');
-                   if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
-               }}>
+            <div className="pb-mobile-nav" ref={headerMenuRef}>
+               <button type="button" className="pb-tool pb-tool--icon" title="Menü"
+                 aria-label="Menü" aria-controls="mobile-menu" aria-expanded={headerMenuOpen}
+                 onClick={() => setHeaderMenuOpen(open => !open)}>
                  <Icon path={ICON.burger} />
                </button>
-               <div id="mobile-menu" className="pb-mobile-menu" style={{display: 'none'}}>
+               <div id="mobile-menu" className="pb-mobile-menu" hidden={!headerMenuOpen}>
                   {VIEWS.map(v => (
                     <button key={v.id} type="button" className="pb-tab-menu-item" title={v.hint}
                       aria-current={v.id === view ? 'page' : undefined}
-                      onClick={() => { setView(v.id); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
+                      onClick={() => { setView(v.id); setHeaderMenuOpen(false) }}>
                       {v.label}
                     </button>
                   ))}
-                  <button type="button" className="pb-tab-menu-item" onClick={() => { setAskModalOpen(true); document.getElementById('mobile-menu')!.style.display = 'none'; }}>
-                    Frag das Projekt (Strg+K)
+                  <button type="button" className="pb-tab-menu-item" onClick={() => { setView('search'); setHeaderMenuOpen(false) }}>
+                    Suche (Strg+K)
+                  </button>
+                  <button type="button" className="pb-tab-menu-item" onClick={() => { setAskModalOpen(true); setHeaderMenuOpen(false) }}>Fragen</button>
+                  <button type="button" className="pb-tab-menu-item" onClick={() => { setVaultOpen(true); setHeaderMenuOpen(false) }}>Vault öffnen</button>
+                  <button type="button" className="pb-tab-menu-item" disabled={selectionBusy}
+                    onClick={() => { setSettingsTab('repos'); setSettingsOpen(true); void openSelection(); setHeaderMenuOpen(false) }}>
+                    {selectionBusy ? 'Repos laden …' : 'Repos wählen'}
                   </button>
                </div>
             </div>
@@ -681,15 +722,29 @@ export default function App() {
             </span>
           )}
           {workspaceId && (
-            <button type="button" className="pb-tool"
-              onClick={() => setAskModalOpen(true)}
-              title="Frag das Projekt … (Strg+K / /)"
-              aria-label="Frag das Projekt">
-              <Icon path={ICON.search} /><span>Frag das Projekt</span>
+            <form className="pb-global-search" role="search" onSubmit={event => {
+              event.preventDefault()
+              const query = headerSearchRef.current?.value.trim() ?? ''
+              const url = new URL(location.href)
+              url.searchParams.set('view', 'search')
+              if (query) url.searchParams.set('q', query)
+              else url.searchParams.delete('q')
+              history.replaceState(null, '', url.toString())
+              setSearchRequest(value => value + 1)
+              setView('search')
+            }}>
+              <Icon path={ICON.search} />
+              <input ref={headerSearchRef} aria-label="Code und Notizen durchsuchen" placeholder="Code und Notizen durchsuchen …" />
+              <kbd>Ctrl K</kbd>
+            </form>
+          )}
+          {workspaceId && (
+            <button type="button" className="pb-tool pb-topbar__secondary-action" onClick={() => setAskModalOpen(true)} title="Frag das Projekt … (/)" aria-label="Frag das Projekt">
+              <span>Fragen</span>
             </button>
           )}
           {workspaceId && (
-            <button type="button" className="pb-tool"
+            <button type="button" className="pb-tool pb-topbar__secondary-action"
               aria-expanded={vaultOpen}
               onClick={() => { setVaultOpen(v => !v); setVaultError(''); setVaultDone('') }}
               title="Einen Ordner als neuen Vault öffnen (O)">
@@ -697,7 +752,7 @@ export default function App() {
             </button>
           )}
           {workspaceId && (
-            <button type="button" className="pb-tool"
+            <button type="button" className="pb-tool pb-topbar__secondary-action"
               onClick={() => { setSettingsTab('repos'); setSettingsOpen(true); void openSelection() }}
               disabled={selectionBusy}
               title="Aktive Code-Checkouts auswählen (Repos wählen)">
@@ -727,7 +782,39 @@ export default function App() {
 
       {vaultOpen && workspaceId && <div className="pb-drawer">{vaultForm}</div>}
 
-      <main className="pb-main">
+      <main className={`pb-main${workspaceId ? ' pb-main--rail' : ''}`}>
+        {workspaceId && (
+          <aside className="pb-activity" aria-label="Arbeitsbereiche">
+            <button type="button" className="pb-activity__item" aria-current={view === 'atlas' ? 'page' : undefined} onClick={() => setView('atlas')} title="Code-Graph" aria-label="Code">
+              <Icon path={ICON.code} /><span>Code</span>
+            </button>
+            <button type="button" className="pb-activity__item" aria-current={view === 'explorer' ? 'page' : undefined} onClick={() => setView('explorer')} title="Dateien durchsuchen" aria-label="Explorer">
+              <Icon path={ICON.folder} /><span>Dateien</span>
+            </button>
+            <button type="button" className="pb-activity__item" aria-current={view === 'notes' ? 'page' : undefined} onClick={() => setView('notes')} title="Notizen / Wissen" aria-label="Wissen">
+              <Icon path={ICON.notes} /><span>Notizen</span>
+            </button>
+            <div className="pb-activity__divider" />
+            {SYSTEM_VIEWS.map(item => <button key={item.id} type="button" className="pb-activity__item pb-activity__system" aria-current={view === item.id ? 'page' : undefined} onClick={() => setView(item.id)} title={item.hint} aria-label={item.label}>
+              <span className="pb-activity__glyph" aria-hidden="true">{ACTIVITY_GLYPH[item.id]}</span><span>{item.label}</span>
+            </button>)}
+            <div className="pb-activity__divider" />
+            <details className="pb-activity__views" open={false}>
+              <summary className="pb-activity__item" title="Alle vorhandenen Ansichten" aria-label="Ansichten">
+                <span className="pb-activity__grid" aria-hidden="true">•••<br />•••</span><span>Ansichten</span>
+              </summary>
+              <div className="pb-activity__menu" aria-label="Vorhandene Ansichten">
+                {VIEWS.map(v => {
+                  const label = 'testName' in v && typeof v.testName === 'string' ? v.testName : v.label
+                  return <button key={v.id} type="button" aria-current={view === v.id ? 'page' : undefined} onClick={() => setView(v.id)}>{label}</button>
+                })}
+              </div>
+            </details>
+            <button type="button" className="pb-activity__item pb-activity__settings" onClick={() => { setSettingsTab('appearance'); setSettingsOpen(true) }} title="Einstellungen" aria-label="Einstellungen">
+              <Icon path={ICON.gear} /><span>Einstellungen</span>
+            </button>
+          </aside>
+        )}
         {!workspaceId ? (
           <div className="brain-landing">
             <h1 className="brain-landing__title">PlugBrain</h1>
@@ -850,7 +937,7 @@ export default function App() {
               </div>
               <div className="workbench-split">
                 <div className="workbench-pane workbench-pane--side">
-                  <SearchView workspaceId={workspaceId} onSelectHit={(path, line) => handleOpenSource(path, line)} />
+                  <SearchView key={searchRequest} workspaceId={workspaceId} onSelectHit={(path, line) => handleOpenSource(path, line)} />
                 </div>
                 <div className="workbench-pane workbench-pane--main">
                   {sourcePane(
@@ -929,6 +1016,14 @@ export default function App() {
             </div>
           )}
 
+          {view === 'turns' && <TurnsView workspaceId={workspaceId} data={swarm} resources={hostResources} onRefresh={refreshSwarm} />}
+
+          {view === 'durable' && <DurableView data={swarm} onRefresh={refreshSwarm} />}
+
+          {view === 'disk' && <DiskView />}
+
+          {view === 'plan' && <PlanView workspaceId={workspaceId} />}
+
           {view === 'hygiene' && (
             <div className="pb-view">
               <HygieneView workspaceId={workspaceId} />
@@ -938,6 +1033,15 @@ export default function App() {
 
         </>}
       </main>
+
+      {workspaceId && <footer className="pb-statusbar" aria-label="Systemstatus">
+        <span title={snapshot?.coverage ? `${staleFiles} Dateien warten auf den Index` : 'Indexstatus nicht verfügbar'}>Index: {snapshot?.coverage ? indexBehind ? `${staleFiles} warten` : 'aktuell' : 'unbekannt'}</span>
+        <span title={hostResourceError || 'Live-Ressourcenprojektion'}>Brain: {error ? 'Fehler' : snapshot ? 'verbunden' : 'lädt'}</span>
+        <span>Platte: {hostResources?.host.drives.length ? `${(Math.min(...hostResources.host.drives.map(drive => drive.freeBytes)) / (1024 ** 3)).toFixed(1)} GB frei` : hostResourceError ? 'nicht verfügbar' : 'lädt'}</span>
+        <span>RAM: {hostResources ? `${Math.round(hostResources.host.memory.freeBytes / hostResources.host.memory.totalBytes * 100)} % frei` : hostResourceError ? 'nicht verfügbar' : 'lädt'}</span>
+        <span>Lanes: {swarm ? `${swarm.board.agents.filter(worker => worker.turnState === 'working').length} aktiv` : '—'}</span>
+        <span title={hostResourceError || hostResources?.quotas.map(quota => `${quota.account}: ${quota.remaining} ${quota.unit}`).join(' · ') || 'Kontingente'}>Kontingente: {hostResources ? (hostResources.quotas.length ? hostResources.quotas.map(quota => `${quota.account} ${quota.remaining} ${quota.unit}`).join(' · ') : 'keine gemeldet') : hostResourceError ? 'nicht verfügbar' : 'lädt'}</span>
+      </footer>}
 
       {settingsOpen && (
         <div className="brain-modal-backdrop" onClick={() => setSettingsOpen(false)}>
@@ -1179,7 +1283,7 @@ export default function App() {
       {shortcutsOpen && <div className="brain-modal-backdrop" onClick={() => setShortcutsOpen(false)}>
         <section className="brain-modal brain-shortcuts" role="dialog" aria-modal="true" aria-labelledby="shortcut-title" onClick={event => event.stopPropagation()}>
           <div className="brain-modal__header"><h3 id="shortcut-title">Tastenkürzel</h3><button type="button" className="brain-modal__close" onClick={() => setShortcutsOpen(false)} aria-label="Tastenkürzel schließen">✕</button></div>
-          <dl><div><dt><kbd>Strg+K</kbd></dt><dd>Frag das Projekt</dd></div><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Frag das Projekt / Suche</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
+          <dl><div><dt><kbd>Strg+K</kbd></dt><dd>Code und Notizen durchsuchen</dd></div><div><dt><kbd>?</kbd></dt><dd>Diese Übersicht öffnen</dd></div><div><dt><kbd>O</kbd></dt><dd>Ordner als Vault öffnen</dd></div><div><dt><kbd>Esc</kbd></dt><dd>Übersicht oder Dialog schließen</dd></div><div><dt><kbd>/</kbd></dt><dd>Frag das Projekt</dd></div><div><dt><kbd>F</kbd></dt><dd>Graph einpassen</dd></div><div><dt><kbd>+</kbd><kbd>−</kbd></dt><dd>Graph zoomen</dd></div><div><dt><kbd>↑</kbd><kbd>↓</kbd><kbd>Enter</kbd></dt><dd>In der Liste auswählen und zentrieren</dd></div></dl>
           <p>In Eingabefeldern bleiben alle Zeichen Eingabe und lösen keine Kurzbefehle aus.</p>
         </section>
       </div>}

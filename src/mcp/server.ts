@@ -129,6 +129,8 @@ export const MCP_TOOLS = [
         direction: { type: 'string', enum: ['upstream', 'downstream', 'both'], description: 'Analysis direction' },
         maxDepth: { type: 'number', description: 'Depth 1..5 (default 3)' },
         repoId: { type: 'string', description: 'Optional repo ID' },
+        file: { type: 'string', description: 'File hint to distinguish same-name symbols' },
+        symbolId: { type: 'number', description: 'Exact symbol ID returned by an ambiguous result' },
         checkoutId: { type: 'string', description: 'Optional checkout ID' },
         workspaceId: { type: 'string', description: 'Optional workspace ID for an explicit revision vector' },
       },
@@ -269,6 +271,20 @@ export const MCP_TOOLS = [
     },
   },
   {
+    name: 'reap',
+    description: 'Preview or safely remove merged clean Git worktrees and report missing checkout registry entries.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+        repo: { type: 'string', description: 'Repository path (optional; default scans the workspace)' },
+        target: { type: 'string', description: 'Target branch (optional; defaults to the primary checkout branch)' },
+        apply: { type: 'boolean', description: 'Remove eligible worktrees (default false)' },
+        auto: { type: 'boolean', description: 'Enable periodic automatic reaping for this workspace' },
+      },
+    },
+  },
+  {
     name: 'swarm_turn',
     description: 'Check in at a turn boundary. Returns unread messages, the next or claimed task and host admission. '
       + 'Call with phase=start when a turn begins and phase=end with a state when it ends.',
@@ -283,6 +299,49 @@ export const MCP_TOOLS = [
         workspaceId: { type: 'string', description: 'Workspace ID' },
       },
       required: ['agentId', 'phase'],
+    },
+  },
+  {
+    name: 'swarm_supersede',
+    description: 'Mark a pending queue task as superseded so it can never be offered again; record the reason.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to supersede' },
+        byTaskId: { type: 'string', description: 'Optional replacement task ID' },
+        note: { type: 'string', description: 'Reason for superseding the task' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'note', 'byAgent'],
+    },
+  },
+  {
+    name: 'swarm_reassign',
+    description: 'Restrict a pending queue task to a registered worker and record the change.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to reassign' },
+        toAgent: { type: 'string', description: 'Registered worker who may claim the task' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'toAgent', 'byAgent'],
+    },
+  },
+  {
+    name: 'swarm_priority',
+    description: 'Set the priority of a pending queue task; larger values are offered first.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'Pending task to prioritize' },
+        priority: { type: 'number', description: 'Integer from -100000 to 100000' },
+        byAgent: { type: 'string', description: 'Registered actor making the change' },
+        workspaceId: { type: 'string', description: 'Workspace ID' },
+      },
+      required: ['taskId', 'priority', 'byAgent'],
     },
   },
   {
@@ -628,7 +687,16 @@ export class McpServer {
           const direction = (args.direction as 'upstream' | 'downstream' | 'both') ?? 'both'
           const maxDepth = Number(args.maxDepth ?? 3)
           const repoId = args.repoId ? String(args.repoId) : undefined
-          const result = intel.getBlastRadius(this.db, target, { workspaceId, direction, maxDepth, repoId })
+          const file = args.file ? String(args.file) : undefined
+          const checkoutId = args.checkoutId ? String(args.checkoutId) : undefined
+          const symbolId = args.symbolId === undefined ? undefined : Number(args.symbolId)
+          if (symbolId !== undefined && (!Number.isSafeInteger(symbolId) || symbolId < 1)) {
+            return { ok: false, error: 'symbolId must be a positive integer' }
+          }
+          const result = intel.getBlastRadius(this.db, { name: target, file, id: symbolId }, { workspaceId, direction, maxDepth, repoId, checkoutId, file })
+          if (result.status === 'ambiguous') {
+            return { ok: false, error: 'ambiguous impact target; provide a file or symbol id', candidates: result.candidates }
+          }
           return { ok: true, result, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
         }
 
@@ -753,9 +821,58 @@ export class McpServer {
           return { ok: true, ping }
         }
 
+        case 'swarm_supersede': {
+          this.checkAuth(args)
+          const workspaceId = this.getWorkspaceId(args)
+          const byAgent = String(args.byAgent ?? '')
+          const task = coord.supersedeTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent,
+            byTaskId: args.byTaskId ? String(args.byTaskId) : undefined,
+            note: String(args.note ?? ''),
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'swarm_reassign': {
+          this.checkAuth(args)
+          const workspaceId = this.getWorkspaceId(args)
+          const task = coord.reassignTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent: String(args.byAgent ?? ''), addressedTo: String(args.toAgent ?? ''),
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'swarm_priority': {
+          this.checkAuth(args)
+          const priority = Number(args.priority)
+          const workspaceId = this.getWorkspaceId(args)
+          const task = coord.prioritizeTask(this.db, workspaceId, String(args.taskId ?? ''), {
+            byAgent: String(args.byAgent ?? ''), priority,
+          })
+          return { ok: true, task, provenance: mcpProvenance(this.db, name, { ...args, workspaceId }) }
+        }
+
+        case 'reap': {
+          this.checkAuth(args)
+          const ws = this.getWorkspaceId(args)
+          if (typeof args.auto === 'boolean') coord.setReapAuto(this.db, ws, args.auto)
+          const result = args.auto === true || args.auto === false
+            ? { autoEnabled: args.auto }
+            : coord.reapWorktrees(this.db, ws, { repo: args.repo ? String(args.repo) : undefined,
+              target: args.target ? String(args.target) : undefined, apply: args.apply === true })
+          return { ok: true, result }
+        }
+
         case 'swarm_board': {
-          const board = coord.agentsBoard(this.db, this.getWorkspaceId(args), { gitStatus: args.git === true })
-          return { ok: true, board }
+          const workspaceId = this.getWorkspaceId(args)
+          const reaper = coord.reapWorktrees(this.db, workspaceId)
+          const board = coord.agentsBoard(this.db, workspaceId, { gitStatus: args.git === true })
+          return { ok: true, board, reaper: {
+            eligible: reaper.candidates.filter(row => row.eligible).length,
+            retained: reaper.candidates.filter(row => !row.eligible).length,
+            reasons: reaper.candidates.filter(row => !row.eligible).map(row => ({ path: row.path, reason: row.reason })),
+            missing: reaper.missing,
+          } }
         }
 
         case 'swarm_resources': {

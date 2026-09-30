@@ -243,6 +243,30 @@ Inspect hardware metrics across all local drives, pagefile, RAM, and CPU, includ
 
 ---
 
+### 5a. Disk Inventory and Reinstallation Safety
+
+Every disk route requires the usual bearer token or `x-plug-auth-token` header. The inventory stores directory summaries and the largest 1,000 files. It never reads file contents except `package-lock.json`, `pnpm-lock.yaml`, and `yarn.lock`, which are read only for a SHA-256 duplicate fingerprint. Reparse points are counted and skipped.
+
+#### `POST /api/disk/scan`
+Start a metadata-only scan. Omit `roots` to scan all fixed drives, or provide an array of paths for a bounded scan.
+
+```json
+{ "roots": ["C:/Users/me/Projects"] }
+```
+
+Returns `202` with the scan state. `GET /api/disk/scan` reports progress and final totals (`scanId`, roots, directories, files, bytes, inaccessible entries, errors and timestamps).
+
+#### `GET /api/disk/tree?path=<directory>`
+Return the immediate children of a directory from the latest scan. Omit `path` to return the scanned roots. Each entry includes bytes, file count, timestamps, category and reparse-point status.
+
+#### `GET /api/disk/recommendations`
+Return size-ranked recommendations grouped as recoverable, review, or keep, with evidence, paths and a recovery route. Includes sums by risk class.
+
+#### `GET /api/disk/wipe-check`
+Return paths and sizes for Git work that is not safely backed up, recently changed non-repository user folders, configuration and vault locations. No contents are returned.
+
+---
+
 ### 6. Machine-Wide Git Census
 
 #### `GET /api/repos`

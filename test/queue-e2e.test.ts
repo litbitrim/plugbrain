@@ -24,8 +24,9 @@
  */
 import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
+import { createHash } from 'node:crypto'
 import { test } from 'node:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
@@ -57,9 +58,12 @@ async function getInbox(base: string): Promise<Reply> {
 test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver, idempotent double deliver, existing receipt', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-qe2e-'))
   const dbFile = join(dir, 'brain.db')
+  const workspaceRoot = join(dir, 'ws')
+  mkdirSync(join(workspaceRoot, 'out'), { recursive: true })
+  writeFileSync(join(workspaceRoot, 'out', 'result.md'), 'Q-chain delivery proof.\n')
   let db: DatabaseSync = openStore(dbFile)
   db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
-    .run('ws-qe2e', 'Q-chain E2E', join(dir, 'ws'), new Date().toISOString())
+    .run('ws-qe2e', 'Q-chain E2E', workspaceRoot, new Date().toISOString())
   let handle: ServerHandle = await serve({ db, uiRoot: null, authKey: 'qe2e-token' }, 0)
   let base = `http://127.0.0.1:${handle.port}`
 
@@ -113,17 +117,31 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
     assert.strictEqual(restarted.claimed_by, 'worker-b')
 
     // ── 4. Worker liefert ────────────────────────────────────────────────
+    const missingEvidence = await post(base, '/api/queue/deliver', {
+      workspace: 'ws-qe2e', taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/missing.md',
+    })
+    assert.strictEqual(missingEvidence.status, 403)
+    assert.match(String(missingEvidence.data.error), /does not exist/i)
     const deliver = await post(base, '/api/queue/deliver', {
-      taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md',
+      workspace: 'ws-qe2e', taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md', repoPath: process.cwd(),
     })
     assert.strictEqual(deliver.status, 200, `deliver: ${JSON.stringify(deliver.data)}`)
     const delivered = deliver.data.task as { state: string; delivered_path: string | null; updated_at: string }
     assert.strictEqual(delivered.state, 'delivered')
     assert.strictEqual(delivered.delivered_path, 'out/result.md')
+    const deliveryReceipt = db.prepare(`SELECT delivered_by, delivery_attempt, source_revision, delivered_path, delivered_sha256
+      FROM queue_deliveries WHERE task_id = ?`).get(task.id) as {
+        delivered_by: string; delivery_attempt: number; source_revision: string | null; delivered_path: string; delivered_sha256: string
+      }
+    assert.equal(deliveryReceipt.delivered_by, 'worker-b')
+    assert.equal(deliveryReceipt.delivery_attempt, 1)
+    assert.match(deliveryReceipt.source_revision, /^[0-9a-f]{40}$/i)
+    assert.equal(deliveryReceipt.delivered_path, 'out/result.md')
+    assert.equal(deliveryReceipt.delivered_sha256, createHash('sha256').update('Q-chain delivery proof.\n').digest('hex'))
 
     // ── 5. Doppeltes deliver-Event, das idempotent bleiben muss ─────────
     const deliverAgain = await post(base, '/api/queue/deliver', {
-      taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md',
+      workspace: 'ws-qe2e', taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md', repoPath: process.cwd(),
     })
     assert.strictEqual(deliverAgain.status, 403, 'a duplicate deliver must be refused, not silently re-applied')
     assert.strictEqual(deliverAgain.data.ok, false)
