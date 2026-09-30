@@ -39,8 +39,15 @@ export function deliverTaskWithEvidence(
   summary: string | undefined,
   options: { workspaceId: string; workspaceRoot: string; repoPath?: string; reviewRequired?: boolean },
 ): QueueTask {
-  const task = db.prepare('SELECT title FROM queue_tasks WHERE id = ? AND workspace_id = ?').get(taskId, options.workspaceId) as { title: string } | undefined
+  const task = db.prepare('SELECT title, state, claimed_by FROM queue_tasks WHERE id = ? AND workspace_id = ?')
+    .get(taskId, options.workspaceId) as { title: string; state: string; claimed_by: string | null } | undefined
   if (!task) throw new AccessDenied(`unknown task: ${taskId}`)
+  // Check ownership before opening the evidence path supplied by the caller.
+  // deliverTask repeats this check in its transaction to catch a concurrent change.
+  if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
+  if (task.claimed_by !== agentId) {
+    throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)
+  }
   const evidence = inspectDeliveryEvidence(options.workspaceRoot, evidencePath, {
     reviewRequired: options.reviewRequired || /^R-/i.test(task.title),
   })

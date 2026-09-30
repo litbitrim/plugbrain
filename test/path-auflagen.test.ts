@@ -109,7 +109,7 @@ test('A1: a checkout is selected through a junction spelling, not only its raw p
       setPlanetIndexSelection(fx.db, registered.workspaceId, selected)
 
       const checkout = listPlanet(fx.db, registered.workspaceId).checkouts
-        .find(row => row.path === canonicalPath(main))
+        .find(row => canonicalPath(row.path) === canonicalPath(main))
       assert.ok(checkout, 'the checkout must be persisted')
 
       // One and the same directory, reached under a junction name. The raw

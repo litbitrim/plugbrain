@@ -2,9 +2,9 @@ import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { registerSwarmAgent, acquireLease } from '../src/coord/index.ts'
 import { registerWorkerProfile, recordTurn } from '../src/coord/swarm-ops.ts'
@@ -12,6 +12,14 @@ import { isReapAutoEnabled, reapWorktrees, setReapAuto, synchronizeMissingWorktr
 
 function git(cwd: string, ...args: string[]): string {
   return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim()
+}
+
+const samePath = (a: string, b: string): boolean => {
+  const real = (path: string) => {
+    const value = realpathSync.native(path)
+    return process.platform === 'win32' ? value.toLowerCase() : value
+  }
+  return real(a) === real(b)
 }
 
 function fixture() {
@@ -47,7 +55,7 @@ test('dry-run is read only, and apply removes a merged clean tree with a recover
     const preview = reapWorktrees(f.db, f.ws, { repo: f.repo })
     assert.equal(existsSync(path), true)
     assert.equal(preview.removed.length, 0)
-    assert.equal(preview.candidates.find(row => resolve(row.path) === resolve(path))?.eligible, true)
+    assert.equal(preview.candidates.find(row => samePath(row.path, path))?.eligible, true)
     const applied = reapWorktrees(f.db, f.ws, { repo: f.repo, apply: true })
     assert.equal(existsSync(path), false)
     assert.equal(applied.removed.length, 1)
@@ -67,8 +75,8 @@ test('dirty and untracked merged worktrees stay in place with distinct reasons',
     writeFileSync(join(untracked, 'extra.txt'), 'new\n')
     const result = reapWorktrees(f.db, f.ws, { repo: f.repo, apply: true })
     assert.equal(result.removed.length, 0)
-    assert.match(result.candidates.find(row => resolve(row.path) === resolve(dirty))?.reason ?? '', /uncommitted: 1 file/)
-    assert.match(result.candidates.find(row => resolve(row.path) === resolve(untracked))?.reason ?? '', /untracked/)
+    assert.match(result.candidates.find(row => samePath(row.path, dirty))?.reason ?? '', /uncommitted: 1 file/)
+    assert.match(result.candidates.find(row => samePath(row.path, untracked))?.reason ?? '', /untracked/)
   } finally { f.cleanup() }
 })
 
@@ -85,8 +93,8 @@ test('unmerged and locked worktrees remain in place', () => {
     const result = reapWorktrees(f.db, f.ws, { repo: f.repo, apply: true })
     assert.equal(existsSync(path), true)
     assert.equal(existsSync(locked), true)
-    assert.match(result.candidates.find(row => resolve(row.path) === resolve(path))?.reason ?? '', /not merged/)
-    assert.match(result.candidates.find(row => resolve(row.path) === resolve(locked))?.reason ?? '', /locked/)
+    assert.match(result.candidates.find(row => samePath(row.path, path))?.reason ?? '', /not merged/)
+    assert.match(result.candidates.find(row => samePath(row.path, locked))?.reason ?? '', /locked/)
   } finally { f.cleanup() }
 })
 
@@ -100,7 +108,7 @@ test('an active worker lease prevents reaping its bound worktree', () => {
     recordTurn(f.db, { workspaceId: f.ws, agentId: 'worker', phase: 'end', state: 'needs-task' })
     const result = reapWorktrees(f.db, f.ws, { repo: f.repo, apply: true })
     assert.equal(existsSync(path), true)
-    assert.match(result.candidates.find(row => resolve(row.path) === resolve(path))?.reason ?? '', /active lease/)
+    assert.match(result.candidates.find(row => samePath(row.path, path))?.reason ?? '', /active lease/)
   } finally { f.cleanup() }
 })
 

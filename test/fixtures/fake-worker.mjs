@@ -74,6 +74,9 @@ if (mode === 'die') {
   })
   emit({ type: 'item.completed', item: { type: 'agent_message', text: 'about to die without a turn end' } })
   emit({ type: 'item.completed', item: { type: 'command_execution', command: 'node --run build', exit_code: 1 } })
+  // Let the runner record this process's OS identity before simulating a mid-turn crash.
+  // Otherwise a busy Windows host can observe a process that exited before launch finished.
+  await new Promise(resolve => setTimeout(resolve, 500))
   process.exit(3)
 }
 

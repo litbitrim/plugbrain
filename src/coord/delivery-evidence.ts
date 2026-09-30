@@ -20,10 +20,10 @@ export function inspectDeliveryEvidence(
   evidencePath: string,
   options: { reviewRequired?: boolean } = {},
 ): DeliveryEvidence {
-  const root = realpathSync(resolve(workspaceRoot))
+  const root = realpathSync.native(resolve(workspaceRoot))
   const candidate = isAbsolute(evidencePath) ? resolve(evidencePath) : resolve(root, evidencePath)
   let actual: string
-  try { actual = realpathSync(candidate) } catch { throw new AccessDenied(`delivery evidence does not exist: ${evidencePath}`) }
+  try { actual = realpathSync.native(candidate) } catch { throw new AccessDenied(`delivery evidence does not exist: ${evidencePath}`) }
   const rel = relative(root, actual)
   if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new AccessDenied('delivery evidence must be inside the workspace')
