@@ -157,6 +157,86 @@ export function noteQuotaRateLimit(db: DatabaseSync, poolId: string, retryAfterM
   return until
 }
 
+export interface QuotaPoolWorker {
+  agentId: string
+  account: string | null
+  quotaPool: string | null
+  resourceKey: string | null
+  turnState: string | null
+  retired: boolean
+}
+
+export interface QuotaPoolDetail extends QuotaPoolSummary {
+  /** False until a row is configured; the effective defaults are what a run applies. */
+  configured: boolean
+  workers: QuotaPoolWorker[]
+  reservations: QuotaReservation[]
+}
+
+const hasTable = (db: DatabaseSync, name: string): boolean =>
+  db.prepare("SELECT 1 AS present FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined
+
+const hasColumns = (db: DatabaseSync, table: string, columns: string[]): boolean => {
+  const present = new Set((db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(column => column.name))
+  return columns.every(column => present.has(column))
+}
+
+/** Every worker bound to this pool, retired ones included so the history stays visible. */
+export function listQuotaPoolWorkers(db: DatabaseSync, poolId: string): QuotaPoolWorker[] {
+  ensureQuotaPoolSchema(db)
+  if (!hasTable(db, 'agents') || !hasColumns(db, 'agents', ['quota_pool', 'account', 'resource_key', 'turn_state', 'retired_at'])) return []
+  return (db.prepare(`SELECT id, account, quota_pool, resource_key, turn_state, retired_at
+      FROM agents WHERE quota_pool = ? ORDER BY id`).all(poolId) as Array<{
+    id: string; account: string | null; quota_pool: string | null; resource_key: string | null
+    turn_state: string | null; retired_at: string | null
+  }>).map(row => ({ agentId: row.id, account: row.account, quotaPool: row.quota_pool,
+    resourceKey: row.resource_key, turnState: row.turn_state, retired: row.retired_at !== null }))
+}
+
+/** The union of configured pools and pools workers are bound to, so a pool without a policy still shows up. */
+export function listQuotaPoolIds(db: DatabaseSync): string[] {
+  ensureQuotaPoolSchema(db)
+  const ids = new Set<string>((db.prepare('SELECT id FROM quota_pools').all() as Array<{ id: string }>).map(row => row.id))
+  if (hasTable(db, 'agents') && hasColumns(db, 'agents', ['quota_pool'])) {
+    for (const row of db.prepare(
+      "SELECT DISTINCT quota_pool FROM agents WHERE quota_pool IS NOT NULL AND TRIM(quota_pool) <> ''",
+    ).all() as Array<{ quota_pool: string }>) ids.add(row.quota_pool.trim())
+  }
+  return [...ids].sort()
+}
+
+export function listQuotaReservations(db: DatabaseSync, poolId: string): QuotaReservation[] {
+  ensureQuotaPoolSchema(db)
+  return (db.prepare('SELECT * FROM quota_reservations WHERE pool_id = ? ORDER BY reserved_at, attempt_id')
+    .all(poolId) as unknown as ReservationRow[]).map(reservationOf)
+}
+
+/**
+ * The effective policy of one pool plus every worker and reservation that shares it.
+ * A pool with no configured row still reports the concurrency=1 default a run would apply.
+ */
+export function quotaPoolDetail(db: DatabaseSync, id: string): QuotaPoolDetail {
+  ensureQuotaPoolSchema(db)
+  const pool = getQuotaPool(db, id)
+  const counts = db.prepare(`SELECT
+    SUM(CASE WHEN settled_at IS NULL THEN 1 ELSE 0 END) AS active,
+    SUM(CASE WHEN settled_at IS NOT NULL THEN 1 ELSE 0 END) AS settled,
+    SUM(CASE WHEN settled_at IS NOT NULL AND usage IS NULL THEN 1 ELSE 0 END) AS unknown_usage,
+    SUM(COALESCE(usage, 0)) AS reported_usage
+    FROM quota_reservations WHERE pool_id = ?`).get(id) as
+    { active: number | null; settled: number | null; unknown_usage: number | null; reported_usage: number | null }
+  return {
+    ...(pool ?? { id, maxConcurrent: 1, maxRequestsPerMinute: null, blockedUntil: null, updatedAt: '' }),
+    configured: pool !== null,
+    activeReservations: counts.active ?? 0,
+    settledAttempts: counts.settled ?? 0,
+    attemptsWithUnknownUsage: counts.unknown_usage ?? 0,
+    reportedUsage: counts.reported_usage ?? 0,
+    workers: listQuotaPoolWorkers(db, id),
+    reservations: listQuotaReservations(db, id),
+  }
+}
+
 export function noteQuotaAuthFailure(db: DatabaseSync, poolId: string, now = new Date()): void {
   ensureQuotaPoolSchema(db)
   const result = db.prepare('UPDATE quota_pools SET blocked_until = ?, updated_at = ? WHERE id = ?')

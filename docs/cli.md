@@ -680,8 +680,9 @@ Without `--workspace` the single registered workspace is used.
   report how much of an account's quota is left. Numbers only, never keys.
 - `swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]`: configure one shared
   provider/project pool. Reservations for worker attempts count against the same concurrency
-  and optional rolling RPM limit. `swarm quota-pool show [--json]` reports active and settled
-  attempts; unreported usage remains unknown rather than being counted as zero. A provider
+  and optional rolling RPM limit. `swarm quota-pool show [<pool>] [--json]` reports the effective
+  policy (max concurrency and RPM), every worker bound to a pool and every reservation of that
+  pool, defaulting to all pools. Unreported usage remains unknown rather than being counted as zero. A provider
   429 applies a bounded, pool-wide cooldown using `Retry-After` when available.
 - `swarm admit <edit|test|index|build|install|worktree>`: exit 0 means there is
   room on this machine for that kind of work, exit 5 means there is not.

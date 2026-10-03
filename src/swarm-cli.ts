@@ -26,7 +26,7 @@
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
- *   plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show
+ *   plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show [<pool>]
  *   plugbrain swarm admit <edit|test|index|build|install|worktree>   exit 0 = room, 5 = no room
  *   plugbrain swarm watchdog [--json] [--dry-run] | watchdog silent-after <minutes>
  *   plugbrain swarm review-pool set <agent>... | review-pool auto on|off | review-pool show
@@ -49,14 +49,14 @@ import { getSwarmNextActions, type SwarmNextAction } from './coord/next-actions.
 import { currentTaskForTurnDelivery, deliverTaskAtTurnEnd, deliverTaskWithEvidence } from './coord/turn-delivery.ts'
 import {
   acquireLease, admitWork, agentsBoard, approveCommit, confirmDelivery, ensureIntegrator, ensureSwarmOpsSchema,
-  configureQuotaPool, getRunnerProfile, hostSnapshot, listQuotaPools, listQuotas, quotaPoolSummary, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
+  configureQuotaPool, getRunnerProfile, hostSnapshot, listQuotaPoolIds, listQuotaPools, listQuotas, quotaPoolDetail, readReviewPool, reconcileWorkerRuns, recordTurn, releaseLease,
   reapWorktrees, setReapAuto,
   registerSwarmAgent, registerWorkerProfile, reportQuota, retireWorker, scanWatchdog, sendMessage,
   setReviewAuto, setReviewPool, setRunnerProfile, setSilentAfterMinutes, startWorkerRun, stopWorkerRun,
   assertActiveSupervisorAttempt, runSupervisorLoop, startSupervisor, stopSupervisor,
   touchAgentContact, watchdogSettings, workerRunStatus,
   TURN_END_STATES, WORK_KINDS, WORKER_SURFACES,
-  type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
+  type QuotaPoolDetail, type QuotaUnit, type RunnerProfile, type SwarmBoard, type TurnEndState, type TurnPing, type WorkerRun, type WorkKind, type WorkerSurface,
 } from './coord/index.ts'
 
 /** Swarm workers check in at turn boundaries, which can be hours apart. */
@@ -194,6 +194,22 @@ function printRunnerProfile(profile: RunnerProfile): void {
   if (profile.cwd !== null) parts.push(`cwd ${profile.cwd}`)
   console.log(`${profile.agentId}: ${parts.join(' · ')}`)
   if (profile.args.length > 0) console.log(`  args: ${profile.args.join(' ')}`)
+}
+
+function printQuotaPoolDetail(pool: QuotaPoolDetail): void {
+  const policy = pool.configured ? '' : ' (Default, nicht konfiguriert)'
+  console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}${policy}` +
+    `, aktiv=${pool.activeReservations}, abgerechnet=${pool.settledAttempts}, Verbrauch=${pool.reportedUsage}` +
+    `${pool.attemptsWithUnknownUsage > 0 ? ` (${pool.attemptsWithUnknownUsage} ohne Verbrauchsmeldung)` : ''}` +
+    `${pool.blockedUntil ? `, gesperrt bis ${pool.blockedUntil}` : ''}`)
+  const users = pool.workers.map(worker => `${worker.agentId}${worker.retired ? ' (abgemeldet)' : ''}${worker.account ? ` [${worker.account}]` : ''}`)
+  console.log(`  Nutzer (${pool.workers.length}): ${users.length === 0 ? 'keine' : users.join(', ')}`)
+  if (pool.reservations.length === 0) { console.log('  Reservierungen: keine'); return }
+  for (const reservation of pool.reservations) {
+    console.log(`  Reservierung ${reservation.id}: Versuch ${reservation.attemptId}, reserviert ${reservation.reservedAt}` +
+      `${reservation.settledAt ? `, abgerechnet ${reservation.settledAt}` : ', offen'}` +
+      `${reservation.usage !== null ? `, Verbrauch ${reservation.usage}` : ''}${reservation.outcome ? `, ${reservation.outcome}` : ''}`)
+  }
 }
 
 function printRunStatus(db: DatabaseSync, workspaceId: string, agentId: string, asJson: boolean): number {
@@ -689,13 +705,13 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
     case 'quota-pool': {
       const action = pos[0]
       if (action === 'show') {
-        const pools = listQuotaPools(db)
-        const summaries = pools.map(pool => quotaPoolSummary(db, pool.id)!).filter(Boolean)
-        if (asJson) console.log(JSON.stringify(summaries, null, 2))
-        else for (const pool of summaries) console.log(`${pool.id}: concurrency=${pool.maxConcurrent}, rpm=${pool.maxRequestsPerMinute ?? 'unlimited'}, active=${pool.activeReservations}, settled=${pool.settledAttempts}, usage=${pool.reportedUsage} across ${pool.attemptsWithUnknownUsage} unknown${pool.blockedUntil ? `, blocked until ${pool.blockedUntil}` : ''}`)
+        const target = pos[1]
+        const details = (target === undefined ? listQuotaPoolIds(db) : [target]).map(id => quotaPoolDetail(db, id))
+        if (asJson) { console.log(JSON.stringify(target === undefined ? details : details[0], null, 2)); return 0 }
+        for (const detail of details) printQuotaPoolDetail(detail)
         return 0
       }
-      if (action !== 'set') throw new AccessDenied('usage: plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show')
+      if (action !== 'set') throw new AccessDenied('usage: plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>] | quota-pool show [<pool>]')
       const usage = 'plugbrain swarm quota-pool set <pool> --max-concurrent <n> [--rpm <n>]'
       const pool = configureQuotaPool(db, { id: need(pos[1], usage), maxConcurrent: numberFlag(rest, '--max-concurrent') ?? 1,
         maxRequestsPerMinute: numberFlag(rest, '--rpm') ?? null })
