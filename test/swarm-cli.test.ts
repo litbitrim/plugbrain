@@ -14,6 +14,7 @@ import { workspaceIdFor } from '../src/planet.ts'
 import { openStore } from '../src/store/schema.ts'
 import { AGENT_PROTOCOL_BLOCK } from '../src/setup/agent-protocol.ts'
 import { deliverTaskWithEvidence } from '../src/coord/turn-delivery.ts'
+import { reserveQuota } from '../src/coord/quota-pools.ts'
 
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url))
 
@@ -269,6 +270,51 @@ test('waiting tasks, the reviewer pool and the watchdog cycle all work through t
     assert.equal(show.reviewAuto, true)
     assert.equal(show.silentAfterMinutes, 30)
     assert.deepEqual(show.pool.map(entry => entry.agentId), ['nv03', 'nv04'])
+  } finally { b.cleanup() }
+})
+
+test('quota-pool show reports the effective policy, every worker and the reservations of one pool', () => {
+  const b = brain()
+  try {
+    const set = b.run('swarm', 'quota-pool', 'set', 'nvidia:nv01', '--max-concurrent', '2', '--rpm', '30', '--workspace', b.ws)
+    assert.equal(set.code, 0, set.err)
+    for (const [id, key] of [['nv01a', 'nvidia-01a'], ['nv01b', 'nvidia-01b']] as const) {
+      const register = b.run('swarm', 'register', id, '--surface', 'freebuff', '--account', `nvidia:key-${key}`,
+        '--quota-pool', 'nvidia:nv01', '--key', key, '--workspace', b.ws)
+      assert.equal(register.code, 0, register.err)
+    }
+    const db = openStore(join(b.home, 'plugbrain.db'))
+    try {
+      assert.equal(reserveQuota(db, { poolId: 'nvidia:nv01', attemptId: 'task-a:1' }).allowed, true)
+      assert.equal(reserveQuota(db, { poolId: 'nvidia:nv01', attemptId: 'task-b:1' }).allowed, true)
+    } finally { db.close() }
+
+    const show = b.run('swarm', 'quota-pool', 'show', 'nvidia:nv01', '--workspace', b.ws)
+    assert.equal(show.code, 0, show.err)
+    assert.match(show.out, /nvidia:nv01: concurrency=2, rpm=30/)
+    assert.match(show.out, /nv01a/)
+    assert.match(show.out, /nv01b/)
+    assert.match(show.out, /Versuch task-a:1/)
+    assert.match(show.out, /Versuch task-b:1/)
+
+    const listed = b.run('swarm', 'quota-pool', 'show', '--workspace', b.ws)
+    assert.equal(listed.code, 0, listed.err)
+    assert.match(listed.out, /nv01a/)
+    assert.match(listed.out, /nv01b/)
+
+    const detail = JSON.parse(b.run('swarm', 'quota-pool', 'show', 'nvidia:nv01', '--workspace', b.ws, '--json').out) as
+      { configured: boolean; maxConcurrent: number; maxRequestsPerMinute: number; workers: Array<{ agentId: string }>; reservations: Array<{ attemptId: string }> }
+    assert.equal(detail.configured, true)
+    assert.equal(detail.maxConcurrent, 2)
+    assert.equal(detail.maxRequestsPerMinute, 30)
+    assert.deepEqual(detail.workers.map(worker => worker.agentId), ['nv01a', 'nv01b'])
+    assert.deepEqual(detail.reservations.map(reservation => reservation.attemptId), ['task-a:1', 'task-b:1'])
+
+    const unconfigured = JSON.parse(b.run('swarm', 'quota-pool', 'show', 'nvidia:nv02', '--workspace', b.ws, '--json').out) as
+      { configured: boolean; maxConcurrent: number; maxRequestsPerMinute: number | null }
+    assert.equal(unconfigured.configured, false, 'a pool without a policy still reports the effective default')
+    assert.equal(unconfigured.maxConcurrent, 1)
+    assert.equal(unconfigured.maxRequestsPerMinute, null)
   } finally { b.cleanup() }
 })
 
