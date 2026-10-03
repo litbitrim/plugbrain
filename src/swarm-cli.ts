@@ -242,8 +242,8 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   // Every command may be the first one a fresh store sees: `enqueue` used to
   // fail with "no such column: workspace_id" until some `register` had widened
   // the agents table.
-  if (step !== 'chronik') ensureSwarmOpsSchema(db)
-  assertActiveSupervisorAttempt(db)
+  if (step !== 'chronik' && step !== 'wave') ensureSwarmOpsSchema(db)
+  if (step !== 'chronik' && step !== 'wave') assertActiveSupervisorAttempt(db)
   // `wave check` reads a file and needs no planet, so a fresh store without a
   // registered workspace can still validate a wave before anything is set up.
   // The single-planet fallback exits the process when none exists, so it must

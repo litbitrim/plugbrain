@@ -2,6 +2,8 @@ import './helpers/isolated-home.ts'
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { checkWave, workerKey } from '../src/coord/wave.ts'
+import { execFileSync } from 'node:child_process'
+import { join } from 'node:path'
 
 /**
  * Synthetic wave fixtures. They carry no real paths, worker names from the
@@ -119,4 +121,20 @@ test('a non-object wave is refused instead of throwing', () => {
     assert.equal(report.ok, false)
     assert.equal(report.errors[0]?.code, 'wave.not-object')
   }
+})
+
+test('CLI wave check works with temporary PLUGBRAIN_HOME', () => {
+  const wellenFile = join(process.cwd(), '..', '..', 'koordination', 'masterplan', 'inputs', 'NACHT-20261003', 'WELLE-01.json')
+  // Run plugbrain swarm wave check <file> with the isolated home (already set up by isolated-home.ts)
+  const result = execFileSync(process.execPath, [
+    '--experimental-strip-types',
+    join(process.cwd(), 'src', 'cli.ts'),
+    'swarm',
+    'wave',
+    'check',
+    wellenFile
+  ], { encoding: 'utf8' })
+  
+  // The command should succeed (exit code 0) and print success message
+  assert.equal(result.includes('Wellen-Datei ist einreihbar.'), true)
 })
