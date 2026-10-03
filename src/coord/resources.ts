@@ -134,7 +134,7 @@ const CREDENTIAL_PATTERNS: RegExp[] = [
   /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/,
   // A long opaque token mixing cases and digits. Git hashes (lower-case hex)
   // and ordinary words do not match.
-  /(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{32,}/,
+  /^(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*\d)[A-Za-z0-9_-]{32,}$/,
 ]
 
 /** Refuse text that looks like a secret. Labels and notes are names only. */

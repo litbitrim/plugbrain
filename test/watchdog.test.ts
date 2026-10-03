@@ -361,6 +361,52 @@ test('BR-2a: a turn ended with awaiting-commit frees what waits on it — blocke
   }
 })
 
+test('BR-2a: a stale turn end before the claim does not free what waits on it — a fresh one does', () => {
+  const f = createFixture()
+  try {
+    register(f, 'w-holder', 'freebuff:holder')
+    register(f, 'w-waiter', 'gemini:key-02')
+    const cli = (args: string[]): number => runSwarmCli(f.db, [...args, '--workspace', f.workspaceId], () => f.workspaceId)
+    const releasedAt = (taskId: string): string | null =>
+      (f.db.prepare('SELECT released_at FROM task_dependencies WHERE task_id = ?').get(taskId) as { released_at: string | null }).released_at
+
+    assert.equal(cli(['enqueue', 'Vorlauf', '--to', 'w-holder']), 0)
+    const pre = f.db.prepare(`SELECT id FROM queue_tasks WHERE title = 'Vorlauf'`).get() as { id: string }
+    assert.equal(cli(['enqueue', 'Nachlauf', '--to', 'w-waiter', '--after', pre.id]), 0)
+    const after = f.db.prepare(`SELECT id FROM queue_tasks WHERE title = 'Nachlauf'`).get() as { id: string }
+
+    // The holder's latest turn is an unrelated `needs-task` from ten minutes ago;
+    // a supervisor then claims the predecessor without resetting the turn state.
+    // Only the timestamp can tell that turn apart from work on this task.
+    const nowMs = Date.now()
+    f.db.prepare('UPDATE agents SET turn_state = ?, turn_state_at = ? WHERE id = ?')
+      .run('needs-task', new Date(nowMs - 10 * 60_000).toISOString(), 'w-holder')
+    const claimedIso = new Date(nowMs).toISOString()
+    f.db.prepare("UPDATE queue_tasks SET state = 'claimed', claimed_by = 'w-holder', claimed_at = ?, updated_at = ? WHERE id = ?")
+      .run(claimedIso, claimedIso, pre.id)
+
+    assert.deepEqual(coord.syncDependencies(f.db, f.workspaceId), [], 'a stale turn end must not release the dependent')
+    assert.equal(releasedAt(after.id), null)
+
+    // A dependent added after the claim is locked for the same reason.
+    assert.equal(cli(['enqueue', 'Nachzügler', '--to', 'w-waiter', '--after', pre.id]), 0)
+    const late = f.db.prepare(`SELECT id FROM queue_tasks WHERE title = 'Nachzügler'`).get() as { id: string }
+    assert.equal(releasedAt(late.id), null)
+
+    // Nothing is offered to the waiter, and it is not told the task is free.
+    const ping = coord.recordTurn(f.db, { workspaceId: f.workspaceId, agentId: 'w-waiter', phase: 'start', claimNext: true })
+    assert.equal(ping.claimedTask, null)
+    assert.equal(ping.nextTask, null, 'a blocked task must not be offered')
+    assert.equal(messagesTo(f, 'w-waiter').length, 0)
+
+    // Positive control: a real turn end after the claim still releases.
+    coord.recordTurn(f.db, { workspaceId: f.workspaceId, agentId: 'w-holder', phase: 'end', state: 'awaiting-commit', summary: 'ready' })
+    assert.notEqual(releasedAt(after.id), null, 'a fresh turn end after the claim releases the dependent')
+  } finally {
+    f.cleanup()
+  }
+})
+
 test('BR-2a: review routing picks a reviewer with another account, once, and only when on', () => {
   const f = createFixture()
   try {

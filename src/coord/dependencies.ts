@@ -11,7 +11,11 @@
  * It stays out of every offer — the turn ping and the atomic claim — until the
  * predecessor is handed in (`delivered`) or its holder ended a turn with
  * `awaiting-commit` or `needs-task`, the two states in which a worker has done
- * all it can do alone. The release is persisted the first time it is observed,
+ * all it can do alone. That turn must lie *after* the predecessor was claimed:
+ * a holder's turn state is its latest turn, not necessarily one about this
+ * task, and a leftover `needs-task` from unrelated work must never release a
+ * task the holder never touched (03.10.2026, B22-LAUNCHERR-DEPS). The release
+ * is persisted the first time it is observed,
  * so a later turn start by the holder cannot take it back, and the addressee
  * is told once ("Deine Aufgabe … ist jetzt frei"), so a task waiting behind
  * someone else becomes visible at the next turn boundary even when nobody
@@ -61,6 +65,7 @@ interface DependencyRow {
   after_state: string | null
   after_attempt: number | null
   holder_state: string | null
+  holder_state_at: string | null
 }
 
 /**
@@ -245,15 +250,25 @@ export function syncDependencies(
  * columns belong to `ensureSwarmOpsSchema`; a store that only ever ran the
  * queue has none, and nothing in such a store ever ended a turn — so the
  * reading is honestly "no holder state" instead of a missing-column error.
+ *
+ * The turn end counts only when it happened at or after the claim
+ * (`turn_state_at >= COALESCE(claimed_at, created_at)`): the holder's state is
+ * the latest turn, and an old `needs-task` from another task would otherwise
+ * satisfy a predecessor the holder just picked up. `>=` rather than `>` because
+ * claim and turn timestamp can share a millisecond; `COALESCE` because legacy
+ * claimed rows can carry no `claimed_at`.
  */
 function holderStateSql(db: DatabaseSync): { select: string; arrived: string } {
   const columns = db.prepare('PRAGMA table_info(agents)').all() as unknown as Array<{ name: string }>
   return columns.some(column => column.name === 'turn_state')
     ? {
-      select: 'holder.turn_state AS holder_state',
-      arrived: `(p.state = 'delivered' OR holder.turn_state IN ('awaiting-commit', 'needs-task'))`,
+      select: 'holder.turn_state AS holder_state, holder.turn_state_at AS holder_state_at',
+      arrived: `(p.state = 'delivered' OR (
+        holder.turn_state IN ('awaiting-commit', 'needs-task')
+        AND holder.turn_state_at IS NOT NULL
+        AND holder.turn_state_at >= COALESCE(p.claimed_at, p.created_at)))`,
     }
-    : { select: 'NULL AS holder_state', arrived: `p.state = 'delivered'` }
+    : { select: 'NULL AS holder_state, NULL AS holder_state_at', arrived: `p.state = 'delivered'` }
 }
 
 /** One plain-language reason for the release, for the message body. */

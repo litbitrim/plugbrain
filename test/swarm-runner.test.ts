@@ -20,6 +20,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workspaceIdFor } from '../src/planet.ts'
+import { openStore } from '../src/store/schema.ts'
+import { claimNextTask, enqueueTask } from '../src/queue.ts'
+import * as coord from '../src/coord/index.ts'
 import { buildRunnerArgv, discoverProtocolDocs, isOwnedProcess, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
 import { assertActiveSupervisorAttempt, classifySupervisorFailure } from '../src/coord/supervisor.ts'
 
@@ -124,7 +127,8 @@ async function settleBoard(b: Brain, agent: string, ms = 90_000): Promise<BoardJ
 test('a runner profile is stored and read back, and a bad sandbox is refused', () => {
   const b = brain()
   try {
-    assert.equal(b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    const regResult = b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws)
+    assert.equal(regResult.code, 0)
     const set = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'codex', '--model', 'gpt-6-luna',
       '--effort', 'high', '--sandbox', 'bypass', '--search', '--workspace', b.ws, '--json')
     assert.equal(set.code, 0, set.err)
@@ -222,7 +226,7 @@ test('swarm run starts the worker detached, keeps its log, and the board shows p
   } finally { b.cleanup() }
 })
 
-test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', nativeRunnerOnly, async () => {
+test('a process that dies mid-turn without a current task is booked needs-task, no integrator message', nativeRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -230,24 +234,23 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
 
-    const board = await settleBoard(b, 'fake-01')
-    const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
+    // Wait for the run to be settled
+    const status = await settle(b, 'fake-01')
     assert.equal(status.run?.alive, false)
     assert.equal(status.run?.endedReason, 'process-gone')
-    assert.equal(status.turnState, 'blocked')
-    assert.equal(board.settled.length, 1)
-    assert.equal(board.settled[0]!.agentId, 'fake-01')
-    assert.equal(board.settled[0]!.reason, 'ended-without-turn-end')
-    assert.match(board.settled[0]!.messageId ?? '', /^msg-/)
-    assert.match(board.settled[0]!.summary, /without a turn end/)
+    // No current task -> needs-task, not blocked
+    assert.equal(status.turnState, 'needs-task')
 
+    // No blocked booking on the board
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as BoardJson
     const worker = board.agents.find(agent => agent.id === 'fake-01')
-    assert.equal(worker?.turnState, 'blocked')
-    assert.match(worker?.turnSummary ?? '', /about to die without a turn end/)
+    assert.equal(worker?.turnState, 'needs-task')
+    // No settled entry because there was no current task
+    assert.deepEqual(board.settled, [])
 
-    // The integrator was registered on demand and holds the report unread.
+    // The integrator was NOT notified because there was no current task
     const integrator = board.agents.find(agent => agent.id === 'integrator')
-    assert.equal(integrator?.unread, 1)
+    assert.equal(integrator?.unread, 0)
   } finally { b.cleanup() }
 })
 
@@ -255,7 +258,9 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
   const b = brain()
   let db: DatabaseSync | null = null
   try {
+    // Enqueue a task so the worker has a current task when it dies
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'enqueue', 'task for blocked test', '--to', 'fake-01', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
@@ -281,6 +286,7 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
 
     const settled = await settleBoard(b, 'fake-01')
     assert.equal(settled.settled.length, 1)
+    assert.equal(settled.settled[0]!.reason, 'ended-without-turn-end')
     const verify = new DatabaseSync(join(b.home, 'plugbrain.db'))
     try {
       assert.equal(Number((verify.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }).n), 1)
@@ -479,9 +485,24 @@ test('swarm run supervisor claims the next task, runs a fake worker and stops fo
       if (oldAgent === undefined) delete process.env.PLUGBRAIN_SUPERVISED_AGENT
       else process.env.PLUGBRAIN_SUPERVISED_AGENT = oldAgent
     }
-    assert.equal(classifySupervisorFailure({ exitCode: 1, output: 'HTTP 429: rate limit; Retry-After: 2' }), 'quota')
-    assert.equal(classifySupervisorFailure({ exitCode: 1, output: 'authentication failed' }), 'auth')
-    assert.equal(classifySupervisorFailure({ exitCode: 3, output: 'worker exited' }), 'crash')
+    const tmpDir = mkdtempSync(join(tmpdir(), 'classify-test-'))
+    try {
+      const logNoError = join(tmpDir, 'no-error.jsonl')
+      writeFileSync(logNoError, '{"type":"item.completed","item":{"type":"agent_message","text":"HTTP 429: rate limit"}}\n', 'utf8')
+      assert.equal(classifySupervisorFailure({ exitCode: 1, logPath: logNoError }), 'crash')
+
+      const logQuota = join(tmpDir, 'quota-error.jsonl')
+      writeFileSync(logQuota, '{"type":"error","message":"HTTP 429: rate limit; Retry-After: 2"}\n', 'utf8')
+      assert.equal(classifySupervisorFailure({ exitCode: 1, logPath: logQuota }), 'quota')
+
+      const logAuth = join(tmpDir, 'auth-error.jsonl')
+      writeFileSync(logAuth, '{"type":"error","message":"authentication failed: invalid api key"}\n', 'utf8')
+      assert.equal(classifySupervisorFailure({ exitCode: 1, logPath: logAuth }), 'auth')
+
+      const logClean = join(tmpDir, 'clean.jsonl')
+      writeFileSync(logClean, '{"type":"turn.completed","usage":{"input_tokens":1}}\n', 'utf8')
+      assert.equal(classifySupervisorFailure({ exitCode: 0, logPath: logClean }), 'clean')
+    } finally { rmSync(tmpDir, { recursive: true, force: true }) }
     const exitDeadline = Date.now() + 10_000
     for (;;) {
       try { process.kill(supervisor.pid, 0) } catch { break }
@@ -498,5 +519,71 @@ test('swarm run supervisor claims the next task, runs a fake worker and stops fo
     }
     db?.close()
     b.cleanup()
+  }
+})
+
+test('a launch error keeps the task claimed and blocked and never releases its dependents', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-launch-error-'))
+  const db = openStore(join(dir, 'brain.db'))
+  try {
+    const workspaceId = 'ws-launch'
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run(workspaceId, 'Launch Error', dir, new Date().toISOString())
+    coord.registerSwarmAgent(db, { agentId: 'w-sup', workspaceId, heartbeatTtlMs: 6 * 60 * 60_000 })
+    coord.registerSwarmAgent(db, { agentId: 'w-waiter', workspaceId, heartbeatTtlMs: 6 * 60 * 60_000 })
+    coord.registerWorkerProfile(db, { agentId: 'w-sup', surface: 'other', account: 'test:launch' })
+    coord.setRunnerProfile(db, { agentId: 'w-sup', cmd: 'node', args: [] })
+    coord.ensureSupervisorSchema(db)
+    const now = new Date().toISOString()
+    db.prepare(`INSERT INTO worker_supervisors
+      (agent_id, supervisor_id, pid, started_at, active, current_task_id, attempt, last_failure, updated_at)
+      VALUES ('w-sup', 'sup-launch', NULL, ?, 1, NULL, 0, NULL, ?)`).run(now, now)
+
+    // The body trips the credential guard inside `startWorkerRun`, so the run
+    // never starts: exactly the live launch-error path, without a real process.
+    const predecessor = enqueueTask(db, workspaceId, {
+      title: 'never started', body: 'sk-AAAAAAAAAAAAAAAAAA', addressedTo: 'w-sup',
+    })
+    const dependent = enqueueTask(db, workspaceId, { title: 'dependent', addressedTo: 'w-waiter', afterTaskId: predecessor.id })
+
+    await coord.runSupervisorLoop(db, {
+      workspaceId, agentId: 'w-sup', supervisorId: 'sup-launch',
+      maxAttempts: 1, maxIdleChecks: 1, idleMs: 50, pollMs: 50,
+    })
+
+    const attempt = db.prepare('SELECT outcome, run_id FROM worker_task_attempts WHERE task_id = ?')
+      .get(predecessor.id) as { outcome: string | null; run_id: string | null }
+    assert.equal(attempt.outcome, 'launch-error')
+    assert.equal(attempt.run_id, null, 'a launch error never reached a runner')
+
+    const supervisor = db.prepare("SELECT active, last_failure FROM worker_supervisors WHERE agent_id = 'w-sup'")
+      .get() as { active: number; last_failure: string | null }
+    assert.equal(supervisor.active, 0)
+    assert.equal(supervisor.last_failure, 'launch-error')
+
+    // The task that never started must not go back to the pool: that was the
+    // false release which freed every dependent on 03.10.2026.
+    const row = db.prepare('SELECT state, claimed_by FROM queue_tasks WHERE id = ?').get(predecessor.id) as
+      { state: string; claimed_by: string | null }
+    assert.equal(row.state, 'claimed')
+    assert.equal(row.claimed_by, 'w-sup')
+
+    const releasedAt = (taskId: string): string | null =>
+      (db.prepare('SELECT released_at FROM task_dependencies WHERE task_id = ?').get(taskId) as { released_at: string | null }).released_at
+    assert.equal(releasedAt(dependent.id), null, 'the dependent of a failed predecessor stays locked')
+
+    // A dependent attached after the failure is locked for the same reason.
+    const late = enqueueTask(db, workspaceId, { title: 'late dependent', addressedTo: 'w-waiter', afterTaskId: predecessor.id })
+    assert.equal(releasedAt(late.id), null)
+    assert.equal(claimNextTask(db, workspaceId, 'w-waiter'), null, 'neither dependent is offered to the waiter')
+
+    // The worker is visibly blocked, and the lead is told the run could not start.
+    const agent = db.prepare("SELECT turn_state FROM agents WHERE id = 'w-sup'").get() as { turn_state: string | null }
+    assert.equal(agent.turn_state, 'blocked')
+    const lead = db.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }
+    assert.ok(Number(lead.n) >= 1, 'the lead is alerted to the failed start')
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
   }
 })

@@ -19,16 +19,22 @@ cloud, no telemetry. MIT licensed.
 
 ## Status
 
-- 0.3.1 is the first published release. It is developed on Windows; macOS and
-  Linux run the same tests and packaging checks in CI.
-- PlugBrain's own development runs on it. On 26 September 2026 one board
-  coordinated Claude Code, three Codex CLI workers and four Freebuff workers on
-  this repository.
+- **0.6.0-rc.1** is the current release candidate (continuous mode: report,
+  wave check, lead tick, owner stop, idempotent and artifact-bound delivery).
+  See the [changelog](CHANGELOG.md) and the
+  [release notes](release/RELEASE-NOTES-v0.6.0-rc.1.md). The latest published
+  build is 0.3.1; newer builds follow once the candidate passes CI on all
+  three platforms.
+- It is developed on Windows; macOS and Linux run the same tests and packaging
+  checks in CI.
+- PlugBrain's own development runs on it: on 3 October 2026 one board drove
+  eight headless NVIDIA-hosted workers and several Freebuff workers through
+  waves of prepared tasks overnight.
 - The web UI and the output of `plugbrain swarm` are in German for now. The
-  other commands, the MCP tools and all documentation are in English.
-- Not there yet: the store keeps only each agent's latest turn, so there is no
-  turn history to replay, and worktrees of merged branches are not removed
-  automatically. Both are being built.
+  other commands, the MCP tools and the documentation are in English.
+- Not there yet: dependents are still released when a predecessor's holder
+  reports `needs-task` (a strict, delivery-only rule is in review), and the
+  supervisor exits after 24 empty polls instead of idling.
 
 ## How agents work together
 

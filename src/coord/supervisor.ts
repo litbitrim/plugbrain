@@ -15,7 +15,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { claimNextTask } from '../queue.ts'
 import { ensureIntegrator, sendMessage } from './inbox.ts'
-import { getRunnerProfile, getWorkerRun, reconcileWorkerRuns, startWorkerRun } from './runner.ts'
+import { ensureRunnerSchema, getRunnerProfile, getWorkerRun, reconcileWorkerRuns, startWorkerRun } from './runner.ts'
 import { configureQuotaPool, ensureQuotaPoolSchema, getQuotaPool, noteQuotaRateLimit, reserveQuota, settleQuota } from './quota-pools.ts'
 
 const DEFAULT_IDLE_MS = 5 * 60_000
@@ -28,20 +28,50 @@ const MAX_QUOTA_BACKOFF_MS = 30 * 60_000
 export type SupervisorFailure = 'clean' | 'quota' | 'auth' | 'crash'
 
 /** Classify only explicit CLI errors. Quiet logs and arbitrary nonzero exits are crashes. */
-export function classifySupervisorFailure(input: { exitCode: number | null; output: string }): SupervisorFailure {
-  const text = input.output.toLowerCase()
-  if (/usage limit|hit your .*limit|insufficient_quota|rate.?limit|retry-after|too many requests|\b429\b/.test(text)) return 'quota'
-  if (/unauthorized|authentication failed|invalid api key|token expired|login required|http 401|http 403|\b401\b/.test(text)) return 'auth'
+export function classifySupervisorFailure(input: { exitCode: number | null; logPath: string }): SupervisorFailure {
+  const errorMessages = extractProviderErrorMessages(input.logPath)
+  for (const msg of errorMessages) {
+    const text = msg.toLowerCase()
+    if (/usage limit|hit your .*limit|insufficient_quota|rate.?limit|retry-after|too many requests|\b429\b/.test(text)) return 'quota'
+    if (/unauthorized|authentication failed|invalid api key|token expired|login required|http 401|http 403|\b401\b/.test(text)) return 'auth'
+  }
   return input.exitCode === 0 ? 'clean' : 'crash'
 }
 
-function quotaBackoffMs(output: string, now = Date.now()): number {
-  const value = /retry-after\s*:\s*([^\r\n]+)/i.exec(output)?.[1]?.trim()
-  if (value === undefined) return DEFAULT_QUOTA_BACKOFF_MS
-  const seconds = Number(value)
-  const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : Date.parse(value) - now
-  if (!Number.isFinite(delay)) return DEFAULT_QUOTA_BACKOFF_MS
-  return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, delay))
+function extractProviderErrorMessages(logPath: string): string[] {
+  try {
+    const content = readFileSync(logPath, 'utf8')
+    const messages: string[] = []
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed === null || typeof parsed !== 'object') continue
+        const event = parsed as Record<string, unknown>
+        const item = (event.item !== null && typeof event.item === 'object' ? event.item : {}) as Record<string, unknown>
+        const kind = (typeof item.type === 'string' ? item.type : typeof event.type === 'string' ? event.type : '').toLowerCase()
+        if (kind === 'error') {
+          const msg = (typeof item.message === 'string' ? item.message : typeof event.message === 'string' ? event.message : '').trim()
+          if (msg) messages.push(msg)
+        }
+      } catch { /* ignore non-JSON lines */ }
+    }
+    return messages
+  } catch { return [] }
+}
+
+function quotaBackoffMs(logPath: string, now = Date.now()): number {
+  const errorMessages = extractProviderErrorMessages(logPath)
+  for (const msg of errorMessages) {
+    const value = /retry-after\s*:\s*([^\r\n]+)/i.exec(msg)?.[1]?.trim()
+    if (value === undefined) continue
+    const seconds = Number(value)
+    const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : Date.parse(value) - now
+    if (!Number.isFinite(delay)) continue
+    return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, delay))
+  }
+  return DEFAULT_QUOTA_BACKOFF_MS
 }
 
 export function ensureSupervisorSchema(db: DatabaseSync): void {
@@ -167,6 +197,24 @@ function readRunOutput(run: { logPath: string } | null): string {
   } catch { return '' }
 }
 
+/**
+ * Write a worker's turn state without going through `recordTurn`: the
+ * supervisor claims for a worker that never ran a turn command itself, and a
+ * launch error ends no turn either. `working` on claim closes the stale-state
+ * source at the root; `blocked` on a launch error leaves the worker visibly
+ * stuck so its leftover state cannot free tasks that wait on it
+ * (B22-LAUNCHERR-DEPS). The turn columns belong to `ensureSwarmOpsSchema`; a
+ * store without them has no board to show, and the update is skipped rather
+ * than turned into a missing-column error.
+ */
+function setAgentTurnState(db: DatabaseSync, agentId: string, state: string): void {
+  const columns = db.prepare('PRAGMA table_info(agents)').all() as unknown as Array<{ name: string }>
+  if (!columns.some(column => column.name === 'turn_state')) return
+  const now = new Date().toISOString()
+  db.prepare('UPDATE agents SET turn_state = ?, turn_state_at = ? WHERE id = ?')
+    .run(state, now, agentId)
+}
+
 function stopSupervisorAfterAttempt(
   db: DatabaseSync, taskId: string, agentId: string, supervisorId: string,
   failure: string, releaseTask: boolean,
@@ -183,6 +231,7 @@ function stopSupervisorAfterAttempt(
         updated_at = ? WHERE id = ? AND state = 'claimed' AND claimed_by = ?`)
         .run(new Date().toISOString(), taskId, agentId)
     }
+    if (failure === 'launch-error') setAgentTurnState(db, agentId, 'blocked')
     setSupervisor(db, agentId, supervisorId, { failure, active: false })
     notifyLead(db, notice.workspaceId, agentId, notice.subject, notice.body)
     db.exec('COMMIT')
@@ -201,6 +250,7 @@ export function assertActiveSupervisorAttempt(db: DatabaseSync): void {
   const agentId = process.env.PLUGBRAIN_SUPERVISED_AGENT
   if (!attemptToken || !agentId) return
   ensureSupervisorSchema(db)
+  ensureRunnerSchema(db)
   const active = db.prepare('SELECT run_id, ended_at, task_id, attempt_token FROM worker_runs WHERE agent_id = ?').get(agentId) as
     { run_id: string; ended_at: string | null; task_id: string | null; attempt_token: string | null } | undefined
   const attempt = db.prepare('SELECT run_id, ended_at FROM worker_task_attempts WHERE agent_id = ? AND attempt_token = ?')
@@ -252,6 +302,10 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
       continue
     }
     idleChecks = 0
+    // The supervisor claims for the worker, so nothing set `turn_state` to
+    // `working`. Do it here: a stale `needs-task` from an earlier, unrelated
+    // turn must not satisfy this task for anything waiting on it.
+    setAgentTurnState(db, input.agentId, 'working')
     let attemptNumber = Number((db.prepare('SELECT COALESCE(MAX(attempt), 0) AS n FROM worker_task_attempts WHERE task_id = ?')
       .get(task.id) as { n: number }).n)
     let finished = false
@@ -289,10 +343,9 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
           reconcileWorkerRuns(db, input.workspaceId, { notify: false })
           current = getWorkerRun(db, input.agentId)!
         }
-        const output = readRunOutput(current)
-        const failure = classifySupervisorFailure({ exitCode: current.endedReason === 'turn-end' ? 0 : 1, output })
+        const failure = classifySupervisorFailure({ exitCode: current.endedReason === 'turn-end' ? 0 : 1, logPath: current.logPath })
         if (failure === 'quota') {
-          noteQuotaRateLimit(db, poolId, quotaBackoffMs(output))
+          noteQuotaRateLimit(db, poolId, quotaBackoffMs(current.logPath))
         }
         settleQuota(db, { reservationId: reservation.reservation!.id, outcome: failure })
         const queue = db.prepare('SELECT state, claimed_by FROM queue_tasks WHERE id = ?').get(task.id) as
@@ -324,7 +377,12 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
         db.prepare('UPDATE worker_task_attempts SET ended_at = ?, outcome = ? WHERE task_id = ? AND attempt = ?')
           .run(new Date().toISOString(), 'launch-error', task.id, attemptNumber)
         if (attemptNumber >= maxAttempts) {
-          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, 'launch-error', true,
+          // Never return a task that could not be started to the pool: that is a
+          // release, and a release frees every task waiting on it although no
+          // work was done (B22-LAUNCHERR-DEPS). Leave it claimed and blocked, so
+          // a later supervisor still retries the same task while its dependents
+          // stay locked, and alert the lead.
+          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, 'launch-error', false,
             { workspaceId: input.workspaceId, subject: `swarm run: could not start ${task.id}`, body: message })
           return
         }

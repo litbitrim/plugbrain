@@ -17,6 +17,9 @@ import { join } from 'node:path'
 
 export const isolatedHome = mkdtempSync(join(tmpdir(), 'plugbrain-test-home-'))
 process.env.PLUGBRAIN_HOME = isolatedHome
+delete process.env.PLUGBRAIN_ATTEMPT_TOKEN
+delete process.env.PLUGBRAIN_SUPERVISED_AGENT
+delete process.env.PLUGBRAIN_SUPERVISOR_ID
 process.on('exit', () => {
   try { rmSync(isolatedHome, { recursive: true, force: true }) } catch { /* a locked temp dir is left to the OS */ }
 })

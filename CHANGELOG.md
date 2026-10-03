@@ -4,6 +4,25 @@ All notable changes to PlugBrain are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0-rc.1] — 2026-10-03 (release candidate)
+
+Continuous mode: the parts of the overnight loop that are built and tested.
+Full notes: `release/RELEASE-NOTES-v0.6.0-rc.1.md`.
+
+### Added
+
+- `plugbrain swarm report`, `plugbrain swarm wave check`, `plugbrain swarm lead-tick` and `plugbrain swarm quota-pool show`.
+- Owner stop that survives restarts and is never lifted by the watchdog.
+- Opt-in mandate scheduling and single-claim mode for `claimNextTask`; the default is unchanged.
+- Continuous-mode guide, GitNexus / Brain MCP reference slice and `bench/m09-parity.mjs`.
+
+### Fixed
+
+- Idempotent delivery; launch errors no longer release dependents; a worker without a current task is set to `needs-task` instead of `blocked`.
+- Deliveries are bound to task, attempt, worktree and full commit hash.
+- Supervisor failures are classified from structured signals, not log words.
+- NVIDIA-hosted model families are recognised for review independence.
+
 ## [0.5.0-dev.1] — 2026-09-30 (development candidate)
 
 This branch carries the local PlugBrain 0.5 source candidate onto the public

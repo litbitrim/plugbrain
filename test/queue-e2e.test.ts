@@ -61,6 +61,22 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
   const workspaceRoot = join(dir, 'ws')
   mkdirSync(join(workspaceRoot, 'out'), { recursive: true })
   writeFileSync(join(workspaceRoot, 'out', 'result.md'), 'Q-chain delivery proof.\n')
+
+  // Create a minimal ledger with M01 so unaddressed tasks with planRef are claimable
+  const ledgerDir = join(workspaceRoot, 'koordination', 'roadmap')
+  mkdirSync(ledgerDir, { recursive: true })
+  const ledger = {
+    updated: new Date().toISOString(),
+    masterTasks: {
+      source: 'test',
+      tasks: [
+        { id: 'M01', title: 'Master Task 1', status: 'IN_PROGRESS', priority: 'MUST', dependsOn: [], requirementIds: [], ownerRole: 'dev', packageGate: null, ledgerGates: [], evidence: [] },
+      ],
+    },
+    gates: [],
+  } as any
+  writeFileSync(join(ledgerDir, 'PROGRESS-STATE.json'), JSON.stringify(ledger, null, 2))
+
   let db: DatabaseSync = openStore(dbFile)
   db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
     .run('ws-qe2e', 'Q-chain E2E', workspaceRoot, new Date().toISOString())
@@ -143,9 +159,12 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
     const deliverAgain = await post(base, '/api/queue/deliver', {
       workspace: 'ws-qe2e', taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md', repoPath: process.cwd(),
     })
-    assert.strictEqual(deliverAgain.status, 403, 'a duplicate deliver must be refused, not silently re-applied')
-    assert.strictEqual(deliverAgain.data.ok, false)
-    assert.match(String(deliverAgain.data.error), /delivered, not claimed/)
+    assert.strictEqual(deliverAgain.status, 200, `duplicate deliver must be idempotent: ${JSON.stringify(deliverAgain.data)}`)
+    const deliveredAgain = deliverAgain.data.task as { state: string; delivered_path: string | null; updated_at: string }
+    assert.strictEqual(deliveredAgain.state, 'delivered')
+    assert.strictEqual(deliveredAgain.delivered_path, 'out/result.md')
+    // delivered_path and updated_at must remain from first delivery (no overwrite)
+    assert.strictEqual(deliveredAgain.updated_at, delivered.updated_at)
 
     // Idempotent in effect: no state regression, no path overwrite, no
     // second row, and the delivered timestamp is the first deliver's.
@@ -165,7 +184,7 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
     // The turn-side receipt: `swarm turn <agent> end --state awaiting-commit`
     // then `swarm approve` (approveCommit) → `commit-approved`. The chain
     // ends HERE: no "integriert" state exists (see the header note).
-    const second = await post(base, '/api/queue', { workspace: 'ws-qe2e', title: 'Zweite Aufgabe' })
+    const second = await post(base, '/api/queue', { workspace: 'ws-qe2e', title: 'Zweite Aufgabe', planRef: 'M01' })
     assert.strictEqual(second.status, 200)
     const secondTask = second.data.task as { id: string }
 

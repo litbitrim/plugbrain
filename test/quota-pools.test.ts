@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
-import { configureQuotaPool, noteQuotaRateLimit, reserveQuota, settleQuota } from '../src/coord/quota-pools.ts'
+import { configureQuotaPool, noteQuotaRateLimit, quotaPoolDetail, reserveQuota, settleQuota } from '../src/coord/quota-pools.ts'
 
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-quota-pool-'))
@@ -27,6 +27,25 @@ test('pool reservations share concurrency and rpm limits and usage settlement re
     assert.equal(second.allowed, true, 'separate key aliases configured to this project share the same pool')
     settleQuota(f.db, { reservationId: second.reservation!.id, outcome: 'quota' })
     assert.equal(reserveQuota(f.db, { poolId: 'nvidia:project-a', attemptId: 'task-c:1' }).reason, 'rpm')
+  } finally { f.cleanup() }
+})
+
+test('pool detail reports the effective policy, its workers and every reservation of the same pool', () => {
+  const f = fixture()
+  try {
+    configureQuotaPool(f.db, { id: 'nvidia:nv01', maxConcurrent: 2, maxRequestsPerMinute: 30 })
+    reserveQuota(f.db, { poolId: 'nvidia:nv01', attemptId: 'task-a:1' })
+    const detail = quotaPoolDetail(f.db, 'nvidia:nv01')
+    assert.equal(detail.configured, true)
+    assert.equal(detail.maxConcurrent, 2)
+    assert.equal(detail.maxRequestsPerMinute, 30)
+    assert.deepEqual(detail.reservations.map(reservation => reservation.attemptId), ['task-a:1'])
+    assert.deepEqual(detail.workers, [], 'a store without a fleet lists no workers')
+
+    const fallback = quotaPoolDetail(f.db, 'nvidia:no-policy')
+    assert.equal(fallback.configured, false, 'a pool without a row still reports the effective default')
+    assert.equal(fallback.maxConcurrent, 1)
+    assert.equal(fallback.maxRequestsPerMinute, null)
   } finally { f.cleanup() }
 })
 

@@ -45,7 +45,7 @@ export type TurnState =
 export type TurnEndState = 'needs-task' | 'awaiting-commit' | 'blocked' | 'paused'
 export const TURN_END_STATES: readonly TurnEndState[] = ['needs-task', 'awaiting-commit', 'blocked', 'paused']
 
-export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn' | 'silent'
+export type AttentionFlag = 'awaiting-commit' | 'needs-task' | 'blocked' | 'quota-exhausted' | 'stale-turn' | 'silent' | 'owner-stopped'
 
 const DEFAULT_STALE_TURN_MS = 30 * 60_000
 const MAX_SUMMARY = 2000
@@ -64,6 +64,9 @@ export function ensureSwarmOpsSchema(db: DatabaseSync): void {
   if (!has('turn_summary')) db.exec('ALTER TABLE agents ADD COLUMN turn_summary TEXT')
   if (!has('worktrees')) db.exec('ALTER TABLE agents ADD COLUMN worktrees TEXT')
   if (!has('retired_at')) db.exec('ALTER TABLE agents ADD COLUMN retired_at TEXT')
+  if (!has('owner_stopped_at')) db.exec('ALTER TABLE agents ADD COLUMN owner_stopped_at TEXT')
+  if (!has('owner_stopped_by')) db.exec('ALTER TABLE agents ADD COLUMN owner_stopped_by TEXT')
+  if (!has('owner_stop_note')) db.exec('ALTER TABLE agents ADD COLUMN owner_stop_note TEXT')
   ensureInboxSchema(db)
   ensureQueueSchema(db)
 }
@@ -95,6 +98,9 @@ interface ProfileRow {
   worktrees: string | null
   retired_at: string | null
   last_contact_at: string | null
+  owner_stopped_at: string | null
+  owner_stopped_by: string | null
+  owner_stop_note: string | null
 }
 
 export interface WorkerProfile {
@@ -130,7 +136,8 @@ const profileOf = (row: ProfileRow): WorkerProfile => ({
 })
 
 const loadProfile = (db: DatabaseSync, agentId: string): ProfileRow =>
-  db.prepare(`SELECT id, model, surface, account, quota_pool, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at
+  db.prepare(`SELECT id, model, surface, account, quota_pool, resource_key, turn_state, turn_state_at, turn_summary, worktrees, retired_at, last_contact_at,
+                owner_stopped_at, owner_stopped_by, owner_stop_note
                 FROM agents WHERE id = ?`).get(agentId) as unknown as ProfileRow
 
 export interface RegisterWorkerInput {
@@ -218,6 +225,176 @@ export function retireWorker(db: DatabaseSync, input: { agentId: string; reason:
   `).run(now, now, `retired: ${reason}`, input.agentId)
   coordEvents.emitLive('agent.retired', { agentId: input.agentId, reason })
   return profileOf(loadProfile(db, input.agentId))
+}
+
+// ---------------------------------------------------------------------------
+// Owner stop / resume
+// ---------------------------------------------------------------------------
+
+export interface OwnerStopInput {
+  workspaceId: string
+  agentId: string
+  by: string
+  note: string
+}
+
+export interface OwnerStopGlobalInput {
+  workspaceId: string
+  by: string
+  note: string
+}
+
+export interface OwnerResumeInput {
+  workspaceId: string
+  agentId: string
+  by: string
+}
+
+export interface OwnerResumeGlobalInput {
+  workspaceId: string
+  by: string
+}
+
+export function ownerStopAgent(db: DatabaseSync, input: OwnerStopInput): WorkerProfile {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, input.workspaceId)
+  requireAgent(db, input.agentId)
+  requireAgent(db, input.by)
+  const note = input.note.trim().slice(0, MAX_SUMMARY)
+  if (note === '') throw new AccessDenied('owner stop needs a note')
+  assertNotCredential('note', note)
+  const now = new Date().toISOString()
+  db.prepare(`
+    UPDATE agents
+       SET owner_stopped_at = ?, owner_stopped_by = ?, owner_stop_note = ?,
+           turn_state = 'paused', turn_state_at = ?, turn_summary = ?
+     WHERE id = ? AND workspace_id = ?
+  `).run(now, input.by, note, now, `owner-stopped: ${note}`, input.agentId, input.workspaceId)
+  coordEvents.emitLive('agent.owner-stopped', { agentId: input.agentId, by: input.by, note, at: now })
+  return profileOf(loadProfile(db, input.agentId))
+}
+
+export function ownerStopGlobal(db: DatabaseSync, input: OwnerStopGlobalInput): number {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, input.workspaceId)
+  requireAgent(db, input.by)
+  const note = input.note.trim().slice(0, MAX_SUMMARY)
+  if (note === '') throw new AccessDenied('owner stop global needs a note')
+  assertNotCredential('note', note)
+  const now = new Date().toISOString()
+  const settings = watchdogSettings(db, input.workspaceId)
+  db.prepare(`
+    INSERT INTO watchdog_settings (workspace_id, silent_after_minutes, review_auto, owner_stop_global, owner_stop_note, owner_stopped_by, owner_stopped_at, updated_at)
+    VALUES (?, ?, ?, 1, ?, ?, ?, ?)
+    ON CONFLICT(workspace_id) DO UPDATE SET
+      owner_stop_global = 1,
+      owner_stop_note = excluded.owner_stop_note,
+      owner_stopped_by = excluded.owner_stopped_by,
+      owner_stopped_at = excluded.owner_stopped_at,
+      updated_at = excluded.updated_at
+  `).run(input.workspaceId, settings.silentAfterMinutes, settings.reviewAuto ? 1 : 0, note, input.by, now, now)
+  coordEvents.emitLive('owner-stop-global', { workspaceId: input.workspaceId, by: input.by, note, at: now })
+  // Also pause all non-retired agents in this workspace
+  const agents = getAgentPresence(db, { workspaceId: input.workspaceId })
+  for (const agent of agents) {
+    if (!agent.presence.includes('dead') && !agent.presence.includes('unproven')) {
+      db.prepare(`
+        UPDATE agents
+           SET owner_stopped_at = ?, owner_stopped_by = ?, owner_stop_note = ?,
+               turn_state = 'paused', turn_state_at = ?, turn_summary = ?
+         WHERE id = ? AND workspace_id = ? AND retired_at IS NULL
+      `).run(now, input.by, note, now, `owner-stopped: ${note}`, agent.id, input.workspaceId)
+      coordEvents.emitLive('agent.owner-stopped', { agentId: agent.id, by: input.by, note, at: now })
+    }
+  }
+  return agents.filter(a => a.presence !== 'dead' && a.presence !== 'unproven').length
+}
+
+export function ownerResumeAgent(db: DatabaseSync, input: OwnerResumeInput): WorkerProfile {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, input.workspaceId)
+  requireAgent(db, input.agentId)
+  requireAgent(db, input.by)
+  const now = new Date().toISOString()
+  db.prepare(`
+    UPDATE agents
+       SET owner_stopped_at = NULL, owner_stopped_by = NULL, owner_stop_note = NULL,
+           turn_state = 'needs-task', turn_state_at = ?, turn_summary = 'owner-resumed'
+     WHERE id = ? AND workspace_id = ?
+  `).run(now, input.agentId, input.workspaceId)
+  coordEvents.emitLive('agent.owner-resumed', { agentId: input.agentId, by: input.by, at: now })
+  return profileOf(loadProfile(db, input.agentId))
+}
+
+export function ownerResumeGlobal(db: DatabaseSync, input: OwnerResumeGlobalInput): number {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, input.workspaceId)
+  requireAgent(db, input.by)
+  const now = new Date().toISOString()
+  const settings = watchdogSettings(db, input.workspaceId)
+  db.prepare(`
+    INSERT INTO watchdog_settings (workspace_id, silent_after_minutes, review_auto, owner_stop_global, owner_stop_note, owner_stopped_by, owner_stopped_at, updated_at)
+    VALUES (?, ?, ?, 0, NULL, ?, ?, ?)
+    ON CONFLICT(workspace_id) DO UPDATE SET
+      owner_stop_global = 0,
+      owner_stop_note = NULL,
+      owner_stopped_by = excluded.owner_stopped_by,
+      owner_stopped_at = excluded.owner_stopped_at,
+      updated_at = excluded.updated_at
+  `).run(input.workspaceId, settings.silentAfterMinutes, settings.reviewAuto ? 1 : 0, input.by, now, now)
+  coordEvents.emitLive('owner-resume-global', { workspaceId: input.workspaceId, by: input.by, at: now })
+  // Resume all owner-stopped agents in this workspace
+  const agents = getAgentPresence(db, { workspaceId: input.workspaceId })
+  let count = 0
+  for (const agent of agents) {
+    if (agent.presence !== 'dead' && agent.presence !== 'unproven') {
+      const profile = loadProfile(db, agent.id)
+      if (profile.owner_stopped_at !== null) {
+        db.prepare(`
+          UPDATE agents
+             SET owner_stopped_at = NULL, owner_stopped_by = NULL, owner_stop_note = NULL,
+                 turn_state = 'needs-task', turn_state_at = ?, turn_summary = 'owner-resumed'
+           WHERE id = ? AND workspace_id = ?
+        `).run(now, agent.id, input.workspaceId)
+        coordEvents.emitLive('agent.owner-resumed', { agentId: agent.id, by: input.by, at: now })
+        count += 1
+      }
+    }
+  }
+  return count
+}
+
+export function isAgentOwnerStopped(db: DatabaseSync, workspaceId: string, agentId: string): boolean {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, workspaceId)
+  requireAgent(db, agentId)
+  const profile = loadProfile(db, agentId)
+  if (profile.owner_stopped_at !== null) return true
+  // Check global stop flag
+  const settings = watchdogSettings(db, workspaceId)
+  return (settings as WatchdogSettingsWithOwnerStop).ownerStopGlobal === true
+}
+
+export function getAgentOwnerStopInfo(db: DatabaseSync, workspaceId: string, agentId: string): { stopped: boolean; stoppedAt: string | null; stoppedBy: string | null; note: string | null; global: boolean } {
+  ensureSwarmOpsSchema(db)
+  requireWorkspace(db, workspaceId)
+  requireAgent(db, agentId)
+  const profile = loadProfile(db, agentId)
+  const settings = watchdogSettings(db, workspaceId) as WatchdogSettingsWithOwnerStop
+  return {
+    stopped: profile.owner_stopped_at !== null || settings.ownerStopGlobal === true,
+    stoppedAt: profile.owner_stopped_at ?? settings.ownerStoppedAt ?? null,
+    stoppedBy: profile.owner_stopped_by ?? settings.ownerStoppedBy ?? null,
+    note: profile.owner_stop_note ?? settings.ownerStopNote ?? null,
+    global: settings.ownerStopGlobal === true,
+  }
+}
+
+export interface WatchdogSettingsWithOwnerStop extends WatchdogSettings {
+  ownerStopGlobal: boolean
+  ownerStopNote: string | null
+  ownerStoppedBy: string | null
+  ownerStoppedAt: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -321,6 +498,17 @@ export function recordTurn(db: DatabaseSync, input: TurnInput, options: { host?:
   requireAgent(db, input.agentId)
   const profile = loadProfile(db, input.agentId)
   if (profile.retired_at !== null) throw new AccessDenied(`${input.agentId} is retired; register it again to resume`)
+
+  // Block turn start when agent is owner-stopped (per-agent or global)
+  if (input.phase === 'start') {
+    const ownerStopInfo = getAgentOwnerStopInfo(db, input.workspaceId, input.agentId)
+    if (ownerStopInfo.stopped) {
+      const reason = ownerStopInfo.global
+        ? `global owner stop by ${ownerStopInfo.stoppedBy}: ${ownerStopInfo.note}`
+        : `owner stop by ${ownerStopInfo.stoppedBy}: ${ownerStopInfo.note}`
+      throw new AccessDenied(`${input.agentId} is owner-stopped: ${reason}`)
+    }
+  }
 
   let state: TurnState
   let endState: TurnEndState | null = null
@@ -563,6 +751,9 @@ export function agentsBoard(db: DatabaseSync, workspaceId: string, options: Boar
       if (profile.account !== null && exhausted.has(profile.account)) attention.push('quota-exhausted')
       const at = profile.turn_state_at === null ? Number.NaN : Date.parse(profile.turn_state_at)
       if (turnState === 'working' && Number.isFinite(at) && now - at > staleTurnMs) attention.push('stale-turn')
+      // Owner-stopped flag
+      const ownerStopInfo = getAgentOwnerStopInfo(db, workspaceId, presence.id)
+      if (ownerStopInfo.stopped) attention.push('owner-stopped')
     }
 
     return {

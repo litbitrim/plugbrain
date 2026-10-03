@@ -30,6 +30,7 @@ import { addTaskDependency, ensureDependencySchema, syncDependencies, UNBLOCKED_
 import { assertNotCredential } from './coord/resources.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
 import { coordEvents } from './coord/events.ts'
+import { planView } from './plan.ts'
 
 export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled' | 'superseded'
 export type QueueOperation = 'supersede' | 'reassign' | 'priority'
@@ -50,6 +51,7 @@ export interface QueueTask {
   decomposition_key?: string | null
   priority: number
   superseded_by: string | null
+  plan_ref: string | null
   created_at: string
   updated_at: string
 }
@@ -77,19 +79,23 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
   updated_at     TEXT NOT NULL
   ,priority      INTEGER NOT NULL DEFAULT 0
   ,superseded_by TEXT
+  ,plan_ref      TEXT
 );
 -- The claim query filters on exactly this, and it runs on every idle agent.
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
 CREATE TABLE IF NOT EXISTS queue_deliveries (
-  task_id TEXT PRIMARY KEY REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  task_id TEXT NOT NULL REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  delivery_attempt INTEGER NOT NULL DEFAULT 1,
   delivered_by TEXT NOT NULL,
-  delivery_attempt INTEGER NOT NULL,
+  worktree TEXT NOT NULL DEFAULT '',
+  commit_hash TEXT NOT NULL DEFAULT '',
   source_revision TEXT,
   delivered_path TEXT NOT NULL,
   delivered_sha256 TEXT NOT NULL,
   review_judgment TEXT,
   reviewed_commit TEXT,
-  delivered_at TEXT NOT NULL
+  delivered_at TEXT NOT NULL,
+  PRIMARY KEY (task_id, delivery_attempt)
 );
 CREATE TABLE IF NOT EXISTS queue_task_events (
   id TEXT PRIMARY KEY,
@@ -110,6 +116,64 @@ CREATE INDEX IF NOT EXISTS idx_queue_task_events_workspace ON queue_task_events(
 // still be able to answer "who is next" without a missing-table error.
 export function ensureQueueSchema(db: DatabaseSync): void {
   db.exec(SCHEMA)
+
+  // Migrate queue_deliveries table if needed (add worktree, commit_hash, change PK to composite)
+  const tableInfo = db.prepare('PRAGMA table_info(queue_deliveries)').all() as unknown as Array<{ name: string }>;
+  if (tableInfo.length > 0) {
+    const hasWorktree = tableInfo.some(col => col.name === 'worktree');
+    const hasCommitHash = tableInfo.some(col => col.name === 'commit_hash');
+    if (!hasWorktree || !hasCommitHash) {
+      // Need to migrate: recreate table with new schema
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        // Create new table with target schema
+        db.exec(`
+          CREATE TABLE queue_deliveries_new (
+            task_id TEXT NOT NULL REFERENCES queue_tasks(id) ON DELETE CASCADE,
+            delivery_attempt INTEGER NOT NULL DEFAULT 1,
+            delivered_by TEXT NOT NULL,
+            worktree TEXT NOT NULL DEFAULT '',
+            commit_hash TEXT NOT NULL DEFAULT '',
+            source_revision TEXT,
+            delivered_path TEXT NOT NULL,
+            delivered_sha256 TEXT NOT NULL,
+            review_judgment TEXT,
+            reviewed_commit TEXT,
+            delivered_at TEXT NOT NULL,
+            PRIMARY KEY (task_id, delivery_attempt)
+          )
+        `);
+        // Copy data from old table, setting defaults for new columns
+        db.exec(`
+          INSERT INTO queue_deliveries_new
+            (task_id, delivery_attempt, delivered_by, worktree, commit_hash, source_revision,
+             delivered_path, delivered_sha256, review_judgment, reviewed_commit, delivered_at)
+          SELECT
+            task_id,
+            delivery_attempt,
+            delivered_by,
+            '' AS worktree, -- default empty string
+            COALESCE(source_revision, '') AS commit_hash, -- fallback to source_revision or empty
+            source_revision,
+            delivered_path,
+            delivered_sha256,
+            review_judgment,
+            reviewed_commit,
+            delivered_at
+          FROM queue_deliveries
+        `);
+        // Drop old table
+        db.exec('DROP TABLE queue_deliveries');
+        // Rename new table to original name
+        db.exec('ALTER TABLE queue_deliveries_new RENAME TO queue_deliveries');
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    }
+  }
+
   const columns = db.prepare('PRAGMA table_info(queue_tasks)').all() as unknown as Array<{ name: string }>
   if (!columns.some(column => column.name === 'delivered_summary')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN delivered_summary TEXT')
@@ -122,6 +186,9 @@ export function ensureQueueSchema(db: DatabaseSync): void {
   }
   if (!columns.some(column => column.name === 'superseded_by')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN superseded_by TEXT')
+  }
+  if (!columns.some(column => column.name === 'plan_ref')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN plan_ref TEXT')
   }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_decomposition_key ON queue_tasks(decomposition_key) WHERE decomposition_key IS NOT NULL')
   ensureDependencySchema(db)
@@ -144,7 +211,7 @@ const load = (db: DatabaseSync, id: string): QueueTask => {
 export function enqueueTask(
   db: DatabaseSync,
   workspaceId: string,
-  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string; decompositionKey?: string },
+  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string; decompositionKey?: string; planRef?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
@@ -153,17 +220,20 @@ export function enqueueTask(
   if (title === '') throw new AccessDenied('a task needs a title')
   if (input.addressedTo !== undefined) requireAgent(db, input.addressedTo)
   if (input.requestedBy !== undefined) requireAgent(db, input.requestedBy)
+  if (input.planRef !== undefined && !/^M\d{2}$/.test(input.planRef)) {
+    throw new AccessDenied(`not a master task id: ${input.planRef} (expected M00..M99)`)
+  }
 
   const now = new Date().toISOString()
   const id = `task-${randomUUID().slice(0, 12)}`
   db.prepare(
     `INSERT INTO queue_tasks
        (id, workspace_id, title, body, addressed_to, requested_by, state,
-        claimed_by, claimed_at, delivered_path, created_at, updated_at, decomposition_key)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?, ?)`,
+        claimed_by, claimed_at, delivered_path, created_at, updated_at, decomposition_key, plan_ref)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?, ?, ?)`,
   ).run(
     id, workspaceId, title, input.body ?? '',
-    input.addressedTo ?? null, input.requestedBy ?? null, now, now, input.decompositionKey ?? null,
+    input.addressedTo ?? null, input.requestedBy ?? null, now, now, input.decompositionKey ?? null, input.planRef ?? null,
   )
   if (input.afterTaskId !== undefined) addTaskDependency(db, id, input.afterTaskId)
   const task = load(db, id)
@@ -178,6 +248,26 @@ export function enqueueTask(
 }
 
 /**
+ * Get the set of valid master task IDs (plan refs) from the ledger.
+ * These are the tasks that are "im Mandat" (in the mandate).
+ */
+function getValidPlanRefs(db: DatabaseSync, workspaceId: string): Set<string> {
+  try {
+    const view = planView(db, workspaceId)
+    return new Set(view.tasks.map(task => task.id))
+  } catch {
+    return new Set()
+  }
+}
+
+export interface ClaimNextTaskOptions {
+  /** If true, only allow unaddressed tasks with a valid plan_ref from the ledger. Default: false (pre-B15 behavior). */
+  requireMandate?: boolean
+  /** If true, an agent with an existing claim gets no second task. Default: false (pre-B15 behavior). */
+  singleClaim?: boolean
+}
+
+/**
  * Claim the next task this agent is allowed to take, or null.
  *
  * The compare-and-set is the entire point. Selecting a candidate and then
@@ -186,28 +276,55 @@ export function enqueueTask(
  * who each believed they owned the work. The UPDATE therefore re-asserts
  * `state = 'pending'` and the claim counts only if it changed exactly one row,
  * all inside one immediate transaction so no other writer interleaves.
+ *
+ * By default (pre-B15 behavior), any pending unaddressed task is claimable.
+ * When `requireMandate: true`, only unaddressed tasks with a plan_ref that
+ * exists in the ledger (mandat) are claimable. Explicitly addressed tasks
+ * (addressed_to = agentId) are always claimable by their addressee.
+ *
+ * By default, an agent may hold multiple claims. When `singleClaim: true`,
+ * an agent with an existing claim gets no second task.
  */
 export function claimNextTask(
   db: DatabaseSync,
   workspaceId: string,
   agentId: string,
+  options: ClaimNextTaskOptions = {},
 ): QueueTask | null {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
   requireAgent(db, agentId)
 
+  const { requireMandate = false, singleClaim = false } = options
+
   db.exec('BEGIN IMMEDIATE')
   try {
+    // Check if agent already has a claimed task (only enforced when singleClaim: true)
+    if (singleClaim) {
+      const existingClaim = db.prepare(
+        `SELECT id FROM queue_tasks WHERE workspace_id = ? AND state = 'claimed' AND claimed_by = ? LIMIT 1`
+      ).get(workspaceId, agentId) as { id: string } | undefined
+      if (existingClaim !== undefined) { db.exec('COMMIT'); return null }
+    }
+
+    const validPlanRefs = requireMandate ? getValidPlanRefs(db, workspaceId) : new Set<string>()
+
     const candidate = db.prepare(
-      `SELECT id FROM queue_tasks
+      `SELECT id, plan_ref, addressed_to FROM queue_tasks
         WHERE workspace_id = ? AND state = 'pending'
           AND (addressed_to IS NULL OR addressed_to = ?)
           AND ${UNBLOCKED_TASK_SQL}
         ORDER BY priority DESC, created_at ASC, rowid ASC
         LIMIT 1`,
-    ).get(workspaceId, agentId) as { id: string } | undefined
+    ).get(workspaceId, agentId) as { id: string; plan_ref: string | null; addressed_to: string | null } | undefined
 
     if (candidate === undefined) { db.exec('COMMIT'); return null }
+
+    // For unaddressed tasks (addressed_to IS NULL), only allow if plan_ref is valid in ledger (when requireMandate: true)
+    if (requireMandate && candidate.addressed_to === null && (candidate.plan_ref === null || !validPlanRefs.has(candidate.plan_ref))) {
+      db.exec('COMMIT')
+      return null
+    }
 
     const now = new Date().toISOString()
     const result = db.prepare(
@@ -425,6 +542,11 @@ export function listQueueEvents(
  * Only the holder may deliver: accepting a delivery from anyone else would
  * attribute work to an agent that did not do it, which is the same falsehood
  * the write gate exists to prevent one level down.
+ *
+ * Idempotency: if the task is already delivered with the same evidence (sha256),
+ * the call succeeds as a no-op — no second queue_deliveries row, no double
+ * syncDependencies invocation. Different evidence on an already-delivered task
+ * is rejected. Invalid/missing evidence is validated before this call.
  */
 export function deliverTask(
   db: DatabaseSync,
@@ -432,7 +554,7 @@ export function deliverTask(
   agentId: string,
   deliveredPath: string,
   deliveredSummary?: string,
-  receipt?: { workspaceId: string; deliveredBy: string; sourceRevision: string | null; sha256: string; reviewJudgment: string | null; reviewedCommit: string | null },
+  receipt?: { workspaceId: string; deliveredBy: string; sourceRevision: string | null; sha256: string; reviewJudgment: string | null; reviewedCommit: string | null; attempt?: number; worktree?: string; commitHash?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   const summary = deliveredSummary === undefined ? null : deliveredSummary.slice(0, 2000)
@@ -444,6 +566,25 @@ export function deliverTask(
     if (receipt && task.workspace_id !== receipt.workspaceId) {
       throw new AccessDenied(`task ${taskId} belongs to another workspace`)
     }
+
+    // Idempotent delivery: if already delivered with same evidence, return as-is
+    if (task.state === 'delivered') {
+      if (!receipt || !receipt.sha256) {
+        throw new AccessDenied(`task ${taskId} already delivered; receipt with sha256 required for idempotency check`)
+      }
+      const existing = db.prepare('SELECT delivered_sha256 FROM queue_deliveries WHERE task_id = ?').get(taskId) as
+        { delivered_sha256: string } | undefined
+      if (!existing) {
+        throw new AccessDenied(`task ${taskId} marked delivered but no delivery record found`)
+      }
+      if (existing.delivered_sha256 !== receipt.sha256) {
+        throw new AccessDenied(`task ${taskId} already delivered with different evidence`)
+      }
+      // Same evidence — idempotent no-op
+      db.exec('COMMIT')
+      return task
+    }
+
     if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
     if (task.claimed_by !== agentId) {
       throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)
@@ -454,11 +595,15 @@ export function deliverTask(
     ).run(deliveredPath, summary, now, taskId, agentId, receipt?.workspaceId ?? null, receipt?.workspaceId ?? null)
     if (Number(changed.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before delivery`)
     if (receipt) {
+      // Use the provided attempt, worktree, and commitHash; fallback to defaults if not provided (should not happen if called from turn-delivery)
+      const attempt = receipt.attempt ?? 1
+      const worktree = receipt.worktree ?? '.'
+      const commitHash = receipt.commitHash ?? ''
       db.prepare(`INSERT INTO queue_deliveries
-        (task_id, delivered_by, delivery_attempt, source_revision, delivered_path, delivered_sha256,
+        (task_id, delivered_by, delivery_attempt, worktree, commit_hash, source_revision, delivered_path, delivered_sha256,
          review_judgment, reviewed_commit, delivered_at)
-        VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`)
-        .run(taskId, receipt.deliveredBy, receipt.sourceRevision, deliveredPath, receipt.sha256,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(taskId, receipt.deliveredBy, attempt, worktree, commitHash, receipt.sourceRevision, deliveredPath, receipt.sha256,
           receipt.reviewJudgment, receipt.reviewedCommit, now)
     }
     // The delivery may be exactly the event another task was waiting for.
