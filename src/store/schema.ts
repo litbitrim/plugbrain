@@ -322,7 +322,8 @@ CREATE TABLE IF NOT EXISTS agents (
   color      TEXT NOT NULL,
   hue        INTEGER NOT NULL,
   first_seen TEXT NOT NULL,
-  last_seen  TEXT NOT NULL
+  last_seen  TEXT NOT NULL,
+  worktrees  TEXT DEFAULT '[]'
 );
 
 -- The attribution ledger: who did what to which file, when. This is append
