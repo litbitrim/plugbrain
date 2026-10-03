@@ -225,7 +225,7 @@ test('swarm run starts the worker detached, keeps its log, and the board shows p
   } finally { b.cleanup() }
 })
 
-test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', nativeRunnerOnly, async () => {
+test('a process that dies mid-turn without a current task is booked needs-task, no integrator message', nativeRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -233,24 +233,23 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
 
-    const board = await settleBoard(b, 'fake-01')
-    const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
+    // Wait for the run to be settled
+    const status = await settle(b, 'fake-01')
     assert.equal(status.run?.alive, false)
     assert.equal(status.run?.endedReason, 'process-gone')
-    assert.equal(status.turnState, 'blocked')
-    assert.equal(board.settled.length, 1)
-    assert.equal(board.settled[0]!.agentId, 'fake-01')
-    assert.equal(board.settled[0]!.reason, 'ended-without-turn-end')
-    assert.match(board.settled[0]!.messageId ?? '', /^msg-/)
-    assert.match(board.settled[0]!.summary, /without a turn end/)
+    // No current task -> needs-task, not blocked
+    assert.equal(status.turnState, 'needs-task')
 
+    // No blocked booking on the board
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as BoardJson
     const worker = board.agents.find(agent => agent.id === 'fake-01')
-    assert.equal(worker?.turnState, 'blocked')
-    assert.match(worker?.turnSummary ?? '', /about to die without a turn end/)
+    assert.equal(worker?.turnState, 'needs-task')
+    // No settled entry because there was no current task
+    assert.deepEqual(board.settled, [])
 
-    // The integrator was registered on demand and holds the report unread.
+    // The integrator was NOT notified because there was no current task
     const integrator = board.agents.find(agent => agent.id === 'integrator')
-    assert.equal(integrator?.unread, 1)
+    assert.equal(integrator?.unread, 0)
   } finally { b.cleanup() }
 })
 
@@ -258,7 +257,9 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
   const b = brain()
   let db: DatabaseSync | null = null
   try {
+    // Enqueue a task so the worker has a current task when it dies
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'enqueue', 'task for blocked test', '--to', 'fake-01', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
@@ -284,6 +285,7 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
 
     const settled = await settleBoard(b, 'fake-01')
     assert.equal(settled.settled.length, 1)
+    assert.equal(settled.settled[0]!.reason, 'ended-without-turn-end')
     const verify = new DatabaseSync(join(b.home, 'plugbrain.db'))
     try {
       assert.equal(Number((verify.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }).n), 1)
