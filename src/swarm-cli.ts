@@ -22,6 +22,7 @@
  *   plugbrain swarm reassign <task> --to <agent>
  *   plugbrain swarm priority <task> <n>
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
+ *   plugbrain swarm report [--since <iso>] [--json]            the fleet state, model-free, one read
  *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
  *   plugbrain swarm lead-tick [--dry-run] [--json] [--wave <file>] [--next <n>]   one read-only lead cycle
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
@@ -41,6 +42,7 @@ import { readFileSync } from 'node:fs'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
 import { computeLeadTick, type LeadTickReport, type LeadTickWave } from './coord/lead-tick.ts'
+import { buildSwarmReport, type SwarmReport } from './coord/report.ts'
 import { enqueueTask, prioritizeTask, reassignTask, supersedeTask } from './queue.ts'
 import {
   ensureWaveDoneSchema, recordWaveDone,
@@ -263,6 +265,52 @@ function printRunStatus(db: DatabaseSync, workspaceId: string, agentId: string, 
     for (const line of status.tail) console.log(`    ${line}`)
   }
   return 0
+}
+
+const MAX_REPORT_ROWS = 10
+
+const ageLabel = (minutes: number | null): string => {
+  if (minutes === null) return '-'
+  if (minutes < 60) return `${minutes}m`
+  return `${(minutes / 60).toFixed(1)}h`
+}
+
+function printSwarmReport(report: SwarmReport): void {
+  console.log(`Bericht ${report.workspaceId} · ${report.generatedAt} · Fenster seit ${report.since}`)
+  if (report.lastDelivery === null) console.log('Letzte Lieferung: keine')
+  else {
+    const delivery = report.lastDelivery
+    console.log(`Letzte Lieferung: ${delivery.taskId} ${delivery.title} — ${delivery.deliveredBy}` +
+      ` ${delivery.deliveredAt} (Urteil ${delivery.reviewJudgment ?? 'offen'})`)
+  }
+  console.log(report.nextTask === null
+    ? 'Nächste Aufgabe: keine ausführbare'
+    : `Nächste Aufgabe: ${report.nextTask.id} ${report.nextTask.title}` +
+      `${report.nextTask.addressedTo === null ? ' (frei)' : ` → ${report.nextTask.addressedTo}`}`)
+
+  console.log(`Offene Reviews: ${report.counts.openReviews}`)
+  for (const review of report.openReviews.slice(0, MAX_REPORT_ROWS)) {
+    console.log(`- ${review.taskId} ${review.title} (von ${review.deliveredBy}, ${review.deliveredAt})`)
+  }
+  console.log(`Integrationsrückstand: ${report.counts.integrationBacklog} geliefert, nicht integriert`)
+  for (const task of report.integrationBacklog.slice(0, MAX_REPORT_ROWS)) {
+    console.log(`- ${task.id} ${task.title}${task.waitingOn.length > 0 ? ` (wartet auf ${task.waitingOn.join(', ')})` : ''}`)
+  }
+  console.log(`Automatische Wiederanläufe: ${report.counts.automaticReruns}`)
+  for (const rerun of report.automaticReruns.slice(0, MAX_REPORT_ROWS)) {
+    console.log(`- ${rerun.taskId} ${rerun.agentId} Versuch ${rerun.attempt}` +
+      `${rerun.outcome === null ? '' : ` (${rerun.outcome})`} seit ${rerun.startedAt}`)
+  }
+
+  console.log(`Lanes: ${report.lanes.length}`)
+  for (const lane of report.lanes) {
+    console.log(`- ${lane.agentId} ${lane.turnState ?? 'unbekannt'}${lane.waiting ? ' (wartend)' : ''}: ${lane.reason}`)
+  }
+
+  const manual = report.lastManualInput
+  console.log(manual.at === null
+    ? 'Letzter manueller Eingriff: keiner erfasst'
+    : `Letzter manueller Eingriff: vor ${ageLabel(manual.ageMinutes)} (${manual.operation} ${manual.taskId ?? ''} von ${manual.byAgent ?? '?'} um ${manual.at})`)
 }
 
 export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: () => string): number {
@@ -638,6 +686,13 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0
     }
+    case 'report': {
+      const usage = 'plugbrain swarm report [--since <iso>] [--json]'
+      const report = buildSwarmReport(db, workspaceId, { since: flag(rest, '--since') ?? undefined })
+      if (asJson) console.log(JSON.stringify(report, null, 2))
+      else printSwarmReport(report)
+      return 0
+    }
     case 'wave-done': {
       const usage = 'plugbrain swarm wave-done <waveId> [--json]'
       const waveId = need(pos[0], usage)
@@ -856,7 +911,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave-done|lead-tick|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|report|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
 }
 
