@@ -81,15 +81,18 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
 -- The claim query filters on exactly this, and it runs on every idle agent.
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
 CREATE TABLE IF NOT EXISTS queue_deliveries (
-  task_id TEXT PRIMARY KEY REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  task_id TEXT NOT NULL REFERENCES queue_tasks(id) ON DELETE CASCADE,
+  delivery_attempt INTEGER NOT NULL DEFAULT 1,
   delivered_by TEXT NOT NULL,
-  delivery_attempt INTEGER NOT NULL,
+  worktree TEXT NOT NULL DEFAULT '',
+  commit_hash TEXT NOT NULL DEFAULT '',
   source_revision TEXT,
   delivered_path TEXT NOT NULL,
   delivered_sha256 TEXT NOT NULL,
   review_judgment TEXT,
   reviewed_commit TEXT,
-  delivered_at TEXT NOT NULL
+  delivered_at TEXT NOT NULL,
+  PRIMARY KEY (task_id, delivery_attempt)
 );
 CREATE TABLE IF NOT EXISTS queue_task_events (
   id TEXT PRIMARY KEY,
@@ -110,6 +113,64 @@ CREATE INDEX IF NOT EXISTS idx_queue_task_events_workspace ON queue_task_events(
 // still be able to answer "who is next" without a missing-table error.
 export function ensureQueueSchema(db: DatabaseSync): void {
   db.exec(SCHEMA)
+
+  // Migrate queue_deliveries table if needed (add worktree, commit_hash, change PK to composite)
+  const tableInfo = db.prepare('PRAGMA table_info(queue_deliveries)').all() as unknown as Array<{ name: string }>;
+  if (tableInfo.length > 0) {
+    const hasWorktree = tableInfo.some(col => col.name === 'worktree');
+    const hasCommitHash = tableInfo.some(col => col.name === 'commit_hash');
+    if (!hasWorktree || !hasCommitHash) {
+      // Need to migrate: recreate table with new schema
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        // Create new table with target schema
+        db.exec(`
+          CREATE TABLE queue_deliveries_new (
+            task_id TEXT NOT NULL REFERENCES queue_tasks(id) ON DELETE CASCADE,
+            delivery_attempt INTEGER NOT NULL DEFAULT 1,
+            delivered_by TEXT NOT NULL,
+            worktree TEXT NOT NULL DEFAULT '',
+            commit_hash TEXT NOT NULL DEFAULT '',
+            source_revision TEXT,
+            delivered_path TEXT NOT NULL,
+            delivered_sha256 TEXT NOT NULL,
+            review_judgment TEXT,
+            reviewed_commit TEXT,
+            delivered_at TEXT NOT NULL,
+            PRIMARY KEY (task_id, delivery_attempt)
+          )
+        `);
+        // Copy data from old table, setting defaults for new columns
+        db.exec(`
+          INSERT INTO queue_deliveries_new
+            (task_id, delivery_attempt, delivered_by, worktree, commit_hash, source_revision,
+             delivered_path, delivered_sha256, review_judgment, reviewed_commit, delivered_at)
+          SELECT
+            task_id,
+            delivery_attempt,
+            delivered_by,
+            '' AS worktree, -- default empty string
+            COALESCE(source_revision, '') AS commit_hash, -- fallback to source_revision or empty
+            source_revision,
+            delivered_path,
+            delivered_sha256,
+            review_judgment,
+            reviewed_commit,
+            delivered_at
+          FROM queue_deliveries
+        `);
+        // Drop old table
+        db.exec('DROP TABLE queue_deliveries');
+        // Rename new table to original name
+        db.exec('ALTER TABLE queue_deliveries_new RENAME TO queue_deliveries');
+        db.exec('COMMIT');
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    }
+  }
+
   const columns = db.prepare('PRAGMA table_info(queue_tasks)').all() as unknown as Array<{ name: string }>
   if (!columns.some(column => column.name === 'delivered_summary')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN delivered_summary TEXT')
@@ -437,7 +498,7 @@ export function deliverTask(
   agentId: string,
   deliveredPath: string,
   deliveredSummary?: string,
-  receipt?: { workspaceId: string; deliveredBy: string; sourceRevision: string | null; sha256: string; reviewJudgment: string | null; reviewedCommit: string | null },
+  receipt?: { workspaceId: string; deliveredBy: string; sourceRevision: string | null; sha256: string; reviewJudgment: string | null; reviewedCommit: string | null; attempt?: number; worktree?: string; commitHash?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   const summary = deliveredSummary === undefined ? null : deliveredSummary.slice(0, 2000)
@@ -478,11 +539,15 @@ export function deliverTask(
     ).run(deliveredPath, summary, now, taskId, agentId, receipt?.workspaceId ?? null, receipt?.workspaceId ?? null)
     if (Number(changed.changes) !== 1) throw new AccessDenied(`task ${taskId} changed before delivery`)
     if (receipt) {
+      // Use the provided attempt, worktree, and commitHash; fallback to defaults if not provided (should not happen if called from turn-delivery)
+      const attempt = receipt.attempt ?? 1
+      const worktree = receipt.worktree ?? '.'
+      const commitHash = receipt.commitHash ?? ''
       db.prepare(`INSERT INTO queue_deliveries
-        (task_id, delivered_by, delivery_attempt, source_revision, delivered_path, delivered_sha256,
+        (task_id, delivered_by, delivery_attempt, worktree, commit_hash, source_revision, delivered_path, delivered_sha256,
          review_judgment, reviewed_commit, delivered_at)
-        VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)`)
-        .run(taskId, receipt.deliveredBy, receipt.sourceRevision, deliveredPath, receipt.sha256,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run(taskId, receipt.deliveredBy, attempt, worktree, commitHash, receipt.sourceRevision, deliveredPath, receipt.sha256,
           receipt.reviewJudgment, receipt.reviewedCommit, now)
     }
     // The delivery may be exactly the event another task was waiting for.
