@@ -425,6 +425,11 @@ export function listQueueEvents(
  * Only the holder may deliver: accepting a delivery from anyone else would
  * attribute work to an agent that did not do it, which is the same falsehood
  * the write gate exists to prevent one level down.
+ *
+ * Idempotency: if the task is already delivered with the same evidence (sha256),
+ * the call succeeds as a no-op — no second queue_deliveries row, no double
+ * syncDependencies invocation. Different evidence on an already-delivered task
+ * is rejected. Invalid/missing evidence is validated before this call.
  */
 export function deliverTask(
   db: DatabaseSync,
@@ -444,6 +449,25 @@ export function deliverTask(
     if (receipt && task.workspace_id !== receipt.workspaceId) {
       throw new AccessDenied(`task ${taskId} belongs to another workspace`)
     }
+
+    // Idempotent delivery: if already delivered with same evidence, return as-is
+    if (task.state === 'delivered') {
+      if (!receipt || !receipt.sha256) {
+        throw new AccessDenied(`task ${taskId} already delivered; receipt with sha256 required for idempotency check`)
+      }
+      const existing = db.prepare('SELECT delivered_sha256 FROM queue_deliveries WHERE task_id = ?').get(taskId) as
+        { delivered_sha256: string } | undefined
+      if (!existing) {
+        throw new AccessDenied(`task ${taskId} marked delivered but no delivery record found`)
+      }
+      if (existing.delivered_sha256 !== receipt.sha256) {
+        throw new AccessDenied(`task ${taskId} already delivered with different evidence`)
+      }
+      // Same evidence — idempotent no-op
+      db.exec('COMMIT')
+      return task
+    }
+
     if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
     if (task.claimed_by !== agentId) {
       throw new AccessDenied(`task ${taskId} is held by ${task.claimed_by ?? 'nobody'}, not ${agentId}`)

@@ -143,9 +143,12 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
     const deliverAgain = await post(base, '/api/queue/deliver', {
       workspace: 'ws-qe2e', taskId: task.id, agentId: 'worker-b', deliveredPath: 'out/result.md', repoPath: process.cwd(),
     })
-    assert.strictEqual(deliverAgain.status, 403, 'a duplicate deliver must be refused, not silently re-applied')
-    assert.strictEqual(deliverAgain.data.ok, false)
-    assert.match(String(deliverAgain.data.error), /delivered, not claimed/)
+    assert.strictEqual(deliverAgain.status, 200, `duplicate deliver must be idempotent: ${JSON.stringify(deliverAgain.data)}`)
+    const deliveredAgain = deliverAgain.data.task as { state: string; delivered_path: string | null; updated_at: string }
+    assert.strictEqual(deliveredAgain.state, 'delivered')
+    assert.strictEqual(deliveredAgain.delivered_path, 'out/result.md')
+    // delivered_path and updated_at must remain from first delivery (no overwrite)
+    assert.strictEqual(deliveredAgain.updated_at, delivered.updated_at)
 
     // Idempotent in effect: no state regression, no path overwrite, no
     // second row, and the delivered timestamp is the first deliver's.

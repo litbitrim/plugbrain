@@ -211,6 +211,94 @@ test('only the holder may deliver a task', () => {
   } finally { f.cleanup() }
 })
 
+test('duplicate delivery with same evidence is idempotent (no second queue_deliveries row, no double syncDependencies)', () => {
+  const f = fixture()
+  try {
+    enqueueTask(f.db, WS, { title: 'idempotent work' })
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(claimed)
+
+    const sha256 = 'a'.repeat(64)
+    const receipt = { workspaceId: WS, deliveredBy: 'agent-nvidia', sourceRevision: 'rev1', sha256, reviewJudgment: null, reviewedCommit: null }
+
+    // First delivery
+    const first = deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work.md', 'first summary', receipt)
+    assert.equal(first.state, 'delivered')
+    assert.equal(first.delivered_path, 'deliveries/work.md')
+    assert.equal(first.delivered_summary, 'first summary')
+
+    // Verify one queue_deliveries row
+    const deliveries1 = f.db.prepare('SELECT * FROM queue_deliveries WHERE task_id = ?').all(claimed.id)
+    assert.equal(deliveries1.length, 1)
+    assert.equal(deliveries1[0].delivered_sha256, sha256)
+
+    // Second delivery with SAME evidence (same sha256) — should be idempotent no-op
+    const second = deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work.md', 'second summary', receipt)
+    assert.equal(second.state, 'delivered')
+    assert.equal(second.id, first.id)
+    // delivered_path should remain the first one (no overwrite)
+    assert.equal(second.delivered_path, 'deliveries/work.md')
+    // delivered_summary should remain the first one (no overwrite)
+    assert.equal(second.delivered_summary, 'first summary')
+
+    // Still only ONE queue_deliveries row
+    const deliveries2 = f.db.prepare('SELECT * FROM queue_deliveries WHERE task_id = ?').all(claimed.id)
+    assert.equal(deliveries2.length, 1, 'duplicate delivery with same evidence must not create second queue_deliveries row')
+    assert.equal(deliveries2[0].delivered_sha256, sha256)
+    assert.equal(deliveries2[0].delivery_attempt, 1, 'delivery_attempt must remain 1')
+  } finally { f.cleanup() }
+})
+
+test('delivery with different evidence on already-delivered task is rejected', () => {
+  const f = fixture()
+  try {
+    enqueueTask(f.db, WS, { title: 'different evidence' })
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(claimed)
+
+    const sha256a = 'a'.repeat(64)
+    const sha256b = 'b'.repeat(64)
+    const receiptA = { workspaceId: WS, deliveredBy: 'agent-nvidia', sourceRevision: 'rev1', sha256: sha256a, reviewJudgment: null, reviewedCommit: null }
+    const receiptB = { workspaceId: WS, deliveredBy: 'agent-nvidia', sourceRevision: 'rev2', sha256: sha256b, reviewJudgment: null, reviewedCommit: null }
+
+    // First delivery
+    deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work.md', 'first', receiptA)
+
+    // Second delivery with DIFFERENT evidence — should fail
+    assert.throws(() => deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work2.md', 'second', receiptB), /already delivered with different evidence/i)
+  } finally { f.cleanup() }
+})
+
+test('delivery without receipt sha256 on already-delivered task is rejected', () => {
+  const f = fixture()
+  try {
+    enqueueTask(f.db, WS, { title: 'no sha256' })
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(claimed)
+
+    // First delivery without receipt
+    deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work.md')
+
+    // Second delivery without receipt sha256 — should fail because we can't verify idempotency
+    assert.throws(() => deliverTask(f.db, claimed.id, 'agent-nvidia', 'deliveries/work.md'), /receipt with sha256 required/i)
+  } finally { f.cleanup() }
+})
+
+test('delivery of non-claimed task is rejected (invalid/missing result -> blocked)', () => {
+  const f = fixture()
+  try {
+    enqueueTask(f.db, WS, { title: 'pending task' })
+    const task = enqueueTask(f.db, WS, { title: 'claimed task' })
+    claimNextTask(f.db, WS, 'agent-nvidia')
+
+    // Cannot deliver a pending task
+    assert.throws(() => deliverTask(f.db, task.id, 'agent-nvidia', 'deliveries/work.md'), /not claimed/i)
+
+    // Cannot deliver a non-existent task
+    assert.throws(() => deliverTask(f.db, 'task-nonexistent', 'agent-nvidia', 'x.md'), /unknown task/i)
+  } finally { f.cleanup() }
+})
+
 test('a stale claim is reported, never reaped', () => {
   const f = fixture()
   try {

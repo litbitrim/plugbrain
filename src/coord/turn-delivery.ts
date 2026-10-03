@@ -42,6 +42,23 @@ export function deliverTaskWithEvidence(
   const task = db.prepare('SELECT title, state, claimed_by FROM queue_tasks WHERE id = ? AND workspace_id = ?')
     .get(taskId, options.workspaceId) as { title: string; state: string; claimed_by: string | null } | undefined
   if (!task) throw new AccessDenied(`unknown task: ${taskId}`)
+  
+  // Idempotent delivery: if already delivered, verify evidence matches and return as-is
+  if (task.state === 'delivered') {
+    const evidence = inspectDeliveryEvidence(options.workspaceRoot, evidencePath, {
+      reviewRequired: options.reviewRequired || /^R-/i.test(task.title),    })
+    const existing = db.prepare('SELECT delivered_sha256 FROM queue_deliveries WHERE task_id = ?').get(taskId) as
+      { delivered_sha256: string } | undefined
+    if (!existing) {
+      throw new AccessDenied(`task ${taskId} marked delivered but no delivery record found`)
+    }
+    if (existing.delivered_sha256 !== evidence.sha256) {
+      throw new AccessDenied(`task ${taskId} already delivered with different evidence`)
+    }
+    // Same evidence — idempotent no-op, return current task state
+    return db.prepare('SELECT * FROM queue_tasks WHERE id = ?').get(taskId) as QueueTask
+  }
+  
   // Check ownership before opening the evidence path supplied by the caller.
   // deliverTask repeats this check in its transaction to catch a concurrent change.
   if (task.state !== 'claimed') throw new AccessDenied(`task ${taskId} is ${task.state}, not claimed`)
