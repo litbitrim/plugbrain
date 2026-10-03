@@ -233,6 +233,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
+  const byAgent = (process.env.PLUGBRAIN_AGENT ?? '').trim()
 
   switch (step) {
     case 'register': {
@@ -372,6 +373,41 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
         printPing(ping)
         if (delivery) console.log(`  GELIEFERT ${delivery.taskId}: ${delivery.evidence}`)
       }
+      return 0
+    }
+    case 'stop': {
+      const usage = 'plugbrain swarm stop <agent|--all> [--owner] [--note <reason>] [--global]'
+      const target = need(pos[0], usage)
+      const owner = rest.includes('--owner')
+      const global = rest.includes('--global')
+      const note = need(flag(rest, '--note'), usage)
+      if (byAgent === '') { console.error('refused: no sender — set PLUGBRAIN_AGENT'); return 2 }
+      if (!owner) throw new AccessDenied('stop requires --owner for this card')
+      if (target === '--all' || global) {
+        const count = ownerStopGlobal(db, { workspaceId, by: byAgent, note })
+        console.log(`global stop: ${count} agents paused`)
+        if (asJson) console.log(JSON.stringify({ type: 'global', count, by: byAgent, note }, null, 2))
+        return 0
+      }
+      const profile = ownerStopAgent(db, { workspaceId, agentId: target, by: byAgent, note })
+      console.log(`owner-stopped: ${profile.agentId}`)
+      if (asJson) console.log(JSON.stringify({ type: 'agent', agentId: profile.agentId, by: byAgent, note }, null, 2))
+      return 0
+    }
+    case 'resume': {
+      const usage = 'plugbrain swarm resume <agent|--all> [--global]'
+      const target = need(pos[0], usage)
+      const global = rest.includes('--global')
+      if (byAgent === '') { console.error('refused: no sender — set PLUGBRAIN_AGENT'); return 2 }
+      if (target === '--all' || global) {
+        const count = ownerResumeGlobal(db, { workspaceId, by: byAgent })
+        console.log(`global resume: ${count} agents resumed`)
+        if (asJson) console.log(JSON.stringify({ type: 'global', count, by: byAgent }, null, 2))
+        return 0
+      }
+      const profile = ownerResumeAgent(db, { workspaceId, agentId: target, by: byAgent })
+      console.log(`owner-resumed: ${profile.agentId}`)
+      if (asJson) console.log(JSON.stringify({ type: 'agent', agentId: profile.agentId, by: byAgent }, null, 2))
       return 0
     }
     case 'retire': {

@@ -38,6 +38,10 @@ CREATE TABLE IF NOT EXISTS watchdog_settings (
   workspace_id         TEXT PRIMARY KEY,
   silent_after_minutes INTEGER NOT NULL DEFAULT ${DEFAULT_SILENT_AFTER_MINUTES},
   review_auto          INTEGER NOT NULL DEFAULT 0,
+  owner_stop_global    INTEGER NOT NULL DEFAULT 0,
+  owner_stop_note      TEXT,
+  owner_stopped_by     TEXT,
+  owner_stopped_at     TEXT,
   updated_at           TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS review_pool (
@@ -64,6 +68,9 @@ export function ensureWatchdogSchema(db: DatabaseSync): void {
   const has = (name: string) => columns.some(column => column.name === name)
   if (!has('last_contact_at')) db.exec('ALTER TABLE agents ADD COLUMN last_contact_at TEXT')
   if (!has('silence_alerted_at')) db.exec('ALTER TABLE agents ADD COLUMN silence_alerted_at TEXT')
+  if (!has('owner_stopped_at')) db.exec('ALTER TABLE agents ADD COLUMN owner_stopped_at TEXT')
+  if (!has('owner_stopped_by')) db.exec('ALTER TABLE agents ADD COLUMN owner_stopped_by TEXT')
+  if (!has('owner_stop_note')) db.exec('ALTER TABLE agents ADD COLUMN owner_stop_note TEXT')
 }
 
 /**
@@ -90,16 +97,24 @@ export function touchAgentContact(db: DatabaseSync, agentId: string, at: Date = 
 // ---------------------------------------------------------------------------
 
 export interface WatchdogSettings {
-  workspaceId: string
-  silentAfterMinutes: number
-  reviewAuto: boolean
+  workspaceId: string;
+  silentAfterMinutes: number;
+  reviewAuto: boolean;
+  ownerStopGlobal: boolean;
+  ownerStopNote: string | null;
+  ownerStoppedBy: string | null;
+  ownerStoppedAt: string | null;
 }
 
 interface SettingsRow {
-  workspace_id: string
-  silent_after_minutes: number
-  review_auto: number
-  updated_at: string
+  workspace_id: string;
+  silent_after_minutes: number;
+  review_auto: number;
+  owner_stop_global: number;
+  owner_stop_note: string | null;
+  owner_stopped_by: string | null;
+  owner_stopped_at: string | null;
+  updated_at: string;
 }
 
 export function watchdogSettings(db: DatabaseSync, workspaceId: string): WatchdogSettings {
@@ -110,21 +125,33 @@ export function watchdogSettings(db: DatabaseSync, workspaceId: string): Watchdo
     workspaceId,
     silentAfterMinutes: row?.silent_after_minutes ?? DEFAULT_SILENT_AFTER_MINUTES,
     reviewAuto: (row?.review_auto ?? 0) !== 0,
+    ownerStopGlobal: (row?.owner_stop_global ?? 0) !== 0,
+    ownerStopNote: row?.owner_stop_note ?? null,
+    ownerStoppedBy: row?.owner_stopped_by ?? null,
+    ownerStoppedAt: row?.owner_stopped_at ?? null,
   }
 }
 
-function writeSettings(db: DatabaseSync, workspaceId: string, patch: { silentAfterMinutes?: number; reviewAuto?: boolean }): WatchdogSettings {
+function writeSettings(db: DatabaseSync, workspaceId: string, patch: { silentAfterMinutes?: number; reviewAuto?: boolean; ownerStopGlobal?: boolean; ownerStopNote?: string | null; ownerStoppedBy?: string | null; ownerStoppedAt?: string | null }): WatchdogSettings {
   const current = watchdogSettings(db, workspaceId)
   const silentAfterMinutes = patch.silentAfterMinutes ?? current.silentAfterMinutes
   const reviewAuto = patch.reviewAuto ?? current.reviewAuto
-  db.prepare(`INSERT INTO watchdog_settings (workspace_id, silent_after_minutes, review_auto, updated_at)
-              VALUES (?, ?, ?, ?)
+  const ownerStopGlobal = patch.ownerStopGlobal ?? current.ownerStopGlobal
+  const ownerStopNote = patch.ownerStopNote ?? current.ownerStopNote
+  const ownerStoppedBy = patch.ownerStoppedBy ?? current.ownerStoppedBy
+  const ownerStoppedAt = patch.ownerStoppedAt ?? current.ownerStoppedAt
+  db.prepare(`INSERT INTO watchdog_settings (workspace_id, silent_after_minutes, review_auto, owner_stop_global, owner_stop_note, owner_stopped_by, owner_stopped_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(workspace_id) DO UPDATE SET
                 silent_after_minutes = excluded.silent_after_minutes,
                 review_auto = excluded.review_auto,
+                owner_stop_global = excluded.owner_stop_global,
+                owner_stop_note = excluded.owner_stop_note,
+                owner_stopped_by = excluded.owner_stopped_by,
+                owner_stopped_at = excluded.owner_stopped_at,
                 updated_at = excluded.updated_at`)
-    .run(workspaceId, silentAfterMinutes, reviewAuto ? 1 : 0, new Date().toISOString())
-  return { workspaceId, silentAfterMinutes, reviewAuto }
+    .run(workspaceId, silentAfterMinutes, reviewAuto ? 1 : 0, ownerStopGlobal ? 1 : 0, ownerStopNote, ownerStoppedBy, ownerStoppedAt, new Date().toISOString())
+  return { workspaceId, silentAfterMinutes, reviewAuto, ownerStopGlobal, ownerStopNote, ownerStoppedBy, ownerStoppedAt }
 }
 
 /** How long a `working` worker may go without Brain contact before it is called still. */
@@ -180,26 +207,94 @@ export function setReviewAuto(db: DatabaseSync, workspaceId: string, on: boolean
 }
 
 // ---------------------------------------------------------------------------
+// Owner stop: global and per-agent
+// ---------------------------------------------------------------------------
+
+/** Check if an agent is owner-stopped (per-agent or global). */
+export function isOwnerStopped(db: DatabaseSync, workspaceId: string, agentId: string): { stopped: boolean; reason: string | null } {
+  ensureWatchdogSchema(db)
+  requireWorkspace(db, workspaceId)
+  const settings = watchdogSettings(db, workspaceId)
+  if (settings.ownerStopGlobal) {
+    return { stopped: true, reason: settings.ownerStopNote ?? 'global owner stop' }
+  }
+  const agent = db.prepare('SELECT owner_stopped_at, owner_stop_note, owner_stopped_by FROM agents WHERE id = ?').get(agentId) as
+    { owner_stopped_at: string | null; owner_stop_note: string | null; owner_stopped_by: string | null } | undefined
+  if (agent?.owner_stopped_at) {
+    return { stopped: true, reason: agent.owner_stop_note ?? `stopped by ${agent.owner_stopped_by ?? 'owner'}` }
+  }
+  return { stopped: false, reason: null }
+}
+
+/** Stop an agent (or globally) with a note from the owner. */
+export function setOwnerStop(
+  db: DatabaseSync,
+  workspaceId: string,
+  options: { agentId?: string; stoppedBy: string; note?: string }
+): void {
+  ensureWatchdogSchema(db)
+  requireWorkspace(db, workspaceId)
+  const now = new Date().toISOString()
+  if (options.agentId) {
+    requireAgent(db, options.agentId)
+    db.prepare(`UPDATE agents SET owner_stopped_at = ?, owner_stopped_by = ?, owner_stop_note = ? WHERE id = ?`)
+      .run(now, options.stoppedBy, options.note ?? '', options.agentId)
+  } else {
+    // Global stop
+    writeSettings(db, workspaceId, {
+      ownerStopGlobal: true,
+      ownerStopNote: options.note ?? '',
+      ownerStoppedBy: options.stoppedBy,
+      ownerStoppedAt: now,
+    })
+  }
+}
+
+/** Resume an agent (or globally) from owner stop. */
+export function clearOwnerStop(
+  db: DatabaseSync,
+  workspaceId: string,
+  options: { agentId?: string }
+): void {
+  ensureWatchdogSchema(db)
+  requireWorkspace(db, workspaceId)
+  if (options.agentId) {
+    requireAgent(db, options.agentId)
+    db.prepare(`UPDATE agents SET owner_stopped_at = NULL, owner_stopped_by = NULL, owner_stop_note = NULL WHERE id = ?`)
+      .run(options.agentId)
+  } else {
+    // Global resume
+    writeSettings(db, workspaceId, {
+      ownerStopGlobal: false,
+      ownerStopNote: null,
+      ownerStoppedBy: null,
+      ownerStoppedAt: null,
+    })
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Still-Erkennung (the silence reading)
 // ---------------------------------------------------------------------------
 
 export interface SilenceReading {
-  agentId: string
-  account: string | null
+  agentId: string;
+  account: string | null;
   /** Whole minutes since the last observed Brain contact in this working turn. */
-  minutes: number
-  workingSince: string
-  lastContactAt: string | null
+  minutes: number;
+  workingSince: string;
+  lastContactAt: string | null;
   /** When the integrator was last told about this case, if ever. */
-  alertedAt: string | null
+  alertedAt: string | null;
 }
 
 interface SilenceRow {
-  id: string
-  account: string | null
-  turn_state_at: string | null
-  last_contact_at: string | null
-  silence_alerted_at: string | null
+  id: string;
+  account: string | null;
+  turn_state_at: string | null;
+  last_contact_at: string | null;
+  silence_alerted_at: string | null;
+  owner_stopped_at: string | null;
 }
 
 /**
@@ -234,16 +329,21 @@ export function silentWorkers(
   ensureWatchdogSchema(db)
   requireWorkspace(db, workspaceId)
   const now = options.now ?? new Date()
-  const threshold = options.silentAfterMinutes ?? watchdogSettings(db, workspaceId).silentAfterMinutes
+  const settings = watchdogSettings(db, workspaceId)
+  const threshold = options.silentAfterMinutes ?? settings.silentAfterMinutes
+  // Exclude owner-stopped agents (both per-agent and global)
   const rows = db.prepare(`
-    SELECT id, account, turn_state_at, last_contact_at, silence_alerted_at
+    SELECT id, account, turn_state_at, last_contact_at, silence_alerted_at, owner_stopped_at
       FROM agents
      WHERE workspace_id = ? AND retired_at IS NULL AND turn_state = 'working' AND turn_state_at IS NOT NULL
+        AND (owner_stopped_at IS NULL OR owner_stopped_at = '')
      ORDER BY turn_state_at ASC
-  `).all(workspaceId) as unknown as SilenceRow[]
+  `).all(workspaceId) as unknown as (SilenceRow & { owner_stopped_at: string | null })[]
 
   const readings: SilenceReading[] = []
   for (const row of rows) {
+    // Skip if global owner stop is active
+    if (settings.ownerStopGlobal) continue
     const minutes = silenceMinutesFor(now, row.turn_state_at, row.last_contact_at, threshold)
     if (minutes === null) continue
     readings.push({
@@ -277,14 +377,14 @@ function caseIsUnannounced(reading: SilenceReading): boolean {
 }
 
 export interface WatchdogReport {
-  workspaceId: string
-  measuredAt: string
-  silentAfterMinutes: number
-  silent: Array<SilenceReading & { alerted: boolean }>
+  workspaceId: string;
+  measuredAt: string;
+  silentAfterMinutes: number;
+  silent: Array<SilenceReading & { alerted: boolean }>;
   /** Agents the integrator was told about in this scan. */
-  alerted: string[]
+  alerted: string[];
   /** Waiting tasks this scan released because their predecessor had arrived. */
-  released: string[]
+  released: string[];
 }
 
 /**
@@ -348,17 +448,17 @@ export function scanWatchdog(
 // ---------------------------------------------------------------------------
 
 export interface ReviewRoute {
-  routed: boolean
-  reason: string
-  reviewer?: string
-  taskId?: string
+  routed: boolean;
+  reason: string;
+  reviewer?: string;
+  taskId?: string;
 }
 
 interface AuthorTaskRow {
-  id: string
-  title: string
-  state: string
-  delivered_path: string | null
+  id: string;
+  title: string;
+  state: string;
+  delivered_path: string | null;
 }
 
 /**
@@ -464,4 +564,4 @@ export function watchTurnEnd(
   const released = syncDependencies(db, workspaceId)
   const review = state === 'awaiting-commit' ? routeReviewForAuthor(db, workspaceId, agentId) : null
   return { released, review }
-}
+}
