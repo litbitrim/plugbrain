@@ -20,6 +20,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { workspaceIdFor } from '../src/planet.ts'
+import { openStore } from '../src/store/schema.ts'
+import { claimNextTask, enqueueTask } from '../src/queue.ts'
+import * as coord from '../src/coord/index.ts'
 import { buildRunnerArgv, discoverProtocolDocs, isOwnedProcess, renderRunnerPrompt, summarizeLogEvent, type RunnerProfile } from '../src/coord/runner.ts'
 import { assertActiveSupervisorAttempt, classifySupervisorFailure } from '../src/coord/supervisor.ts'
 
@@ -498,5 +501,71 @@ test('swarm run supervisor claims the next task, runs a fake worker and stops fo
     }
     db?.close()
     b.cleanup()
+  }
+})
+
+test('a launch error keeps the task claimed and blocked and never releases its dependents', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-launch-error-'))
+  const db = openStore(join(dir, 'brain.db'))
+  try {
+    const workspaceId = 'ws-launch'
+    db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+      .run(workspaceId, 'Launch Error', dir, new Date().toISOString())
+    coord.registerSwarmAgent(db, { agentId: 'w-sup', workspaceId, heartbeatTtlMs: 6 * 60 * 60_000 })
+    coord.registerSwarmAgent(db, { agentId: 'w-waiter', workspaceId, heartbeatTtlMs: 6 * 60 * 60_000 })
+    coord.registerWorkerProfile(db, { agentId: 'w-sup', surface: 'other', account: 'test:launch' })
+    coord.setRunnerProfile(db, { agentId: 'w-sup', cmd: 'node', args: [] })
+    coord.ensureSupervisorSchema(db)
+    const now = new Date().toISOString()
+    db.prepare(`INSERT INTO worker_supervisors
+      (agent_id, supervisor_id, pid, started_at, active, current_task_id, attempt, last_failure, updated_at)
+      VALUES ('w-sup', 'sup-launch', NULL, ?, 1, NULL, 0, NULL, ?)`).run(now, now)
+
+    // The body trips the credential guard inside `startWorkerRun`, so the run
+    // never starts: exactly the live launch-error path, without a real process.
+    const predecessor = enqueueTask(db, workspaceId, {
+      title: 'never started', body: 'sk-AAAAAAAAAAAAAAAAAA', addressedTo: 'w-sup',
+    })
+    const dependent = enqueueTask(db, workspaceId, { title: 'dependent', addressedTo: 'w-waiter', afterTaskId: predecessor.id })
+
+    await coord.runSupervisorLoop(db, {
+      workspaceId, agentId: 'w-sup', supervisorId: 'sup-launch',
+      maxAttempts: 1, maxIdleChecks: 1, idleMs: 50, pollMs: 50,
+    })
+
+    const attempt = db.prepare('SELECT outcome, run_id FROM worker_task_attempts WHERE task_id = ?')
+      .get(predecessor.id) as { outcome: string | null; run_id: string | null }
+    assert.equal(attempt.outcome, 'launch-error')
+    assert.equal(attempt.run_id, null, 'a launch error never reached a runner')
+
+    const supervisor = db.prepare("SELECT active, last_failure FROM worker_supervisors WHERE agent_id = 'w-sup'")
+      .get() as { active: number; last_failure: string | null }
+    assert.equal(supervisor.active, 0)
+    assert.equal(supervisor.last_failure, 'launch-error')
+
+    // The task that never started must not go back to the pool: that was the
+    // false release which freed every dependent on 03.10.2026.
+    const row = db.prepare('SELECT state, claimed_by FROM queue_tasks WHERE id = ?').get(predecessor.id) as
+      { state: string; claimed_by: string | null }
+    assert.equal(row.state, 'claimed')
+    assert.equal(row.claimed_by, 'w-sup')
+
+    const releasedAt = (taskId: string): string | null =>
+      (db.prepare('SELECT released_at FROM task_dependencies WHERE task_id = ?').get(taskId) as { released_at: string | null }).released_at
+    assert.equal(releasedAt(dependent.id), null, 'the dependent of a failed predecessor stays locked')
+
+    // A dependent attached after the failure is locked for the same reason.
+    const late = enqueueTask(db, workspaceId, { title: 'late dependent', addressedTo: 'w-waiter', afterTaskId: predecessor.id })
+    assert.equal(releasedAt(late.id), null)
+    assert.equal(claimNextTask(db, workspaceId, 'w-waiter'), null, 'neither dependent is offered to the waiter')
+
+    // The worker is visibly blocked, and the lead is told the run could not start.
+    const agent = db.prepare("SELECT turn_state FROM agents WHERE id = 'w-sup'").get() as { turn_state: string | null }
+    assert.equal(agent.turn_state, 'blocked')
+    const lead = db.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }
+    assert.ok(Number(lead.n) >= 1, 'the lead is alerted to the failed start')
+  } finally {
+    db.close()
+    rmSync(dir, { recursive: true, force: true })
   }
 })
