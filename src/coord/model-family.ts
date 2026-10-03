@@ -11,6 +11,7 @@ export type ModelFamily =
   | 'meta'
   | 'xai'
   | 'mistral'
+  | 'nvidia'
 
 export type ModelFamilyResolution =
   | { family: ModelFamily; modelId: string }
@@ -34,6 +35,7 @@ const FAMILY_PREFIXES: ReadonlyArray<readonly [ModelFamily, readonly string[]]> 
   ['meta', ['llama-']],
   ['xai', ['grok-']],
   ['mistral', ['mistral-']],
+  ['nvidia', ['nemotron-', 'nvidia/']],
 ]
 
 /** Resolve only recognizable model IDs; account, surface, and provider labels are not inputs. */
