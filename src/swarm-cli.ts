@@ -22,6 +22,7 @@
  *   plugbrain swarm reassign <task> --to <agent>
  *   plugbrain swarm priority <task> <n>
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
+ *   plugbrain swarm wave check <datei> [--json]               validate a wave file before enqueueing
  *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
@@ -36,8 +37,10 @@
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
+import { readFileSync } from 'node:fs'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
+import { checkWave, type WaveCheckReport } from './coord/wave.ts'
 import { enqueueTask, prioritizeTask, reassignTask, supersedeTask } from './queue.ts'
 import {
   ensureWaveDoneSchema, recordWaveDone,
@@ -223,6 +226,17 @@ function printRunStatus(db: DatabaseSync, workspaceId: string, agentId: string, 
   return 0
 }
 
+function printWaveCheck(file: string, report: WaveCheckReport): void {
+  const name = report.wave ?? file
+  console.log(`${name}: ${report.cardCount} Karten, ${report.errorCount} Fehler, ${report.warningCount} Warnungen`)
+  for (const issue of report.issues) {
+    if (issue.level === 'info') continue
+    const where = issue.cardId === null ? '' : ` [${issue.cardId}]`
+    console.log(`- ${issue.level}${where} ${issue.code}: ${issue.message}`)
+  }
+  if (report.warningCount === 0 && report.errorCount === 0) console.log('Wellen-Datei ist einreihbar.')
+}
+
 export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: () => string): number {
   const [step, ...rest] = args
   // Every command may be the first one a fresh store sees: `enqueue` used to
@@ -230,7 +244,12 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
   // the agents table.
   if (step !== 'chronik') ensureSwarmOpsSchema(db)
   assertActiveSupervisorAttempt(db)
-  const workspaceId = flag(rest, '--workspace') ?? defaultWorkspace()
+  // `wave check` reads a file and needs no planet, so a fresh store without a
+  // registered workspace can still validate a wave before anything is set up.
+  // The single-planet fallback exits the process when none exists, so it must
+  // not be reached for a command that does not need it.
+  const requestedWorkspace = flag(rest, '--workspace')
+  const workspaceId = requestedWorkspace ?? (step === 'wave' ? '' : defaultWorkspace())
   const asJson = rest.includes('--json')
   const pos = positionals(rest, VALUED)
 
@@ -560,6 +579,23 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       console.log(`geliefert ${task.id}: ${task.title} → ${task.delivered_path}`)
       return 0
     }
+    case 'wave': {
+      const usage = 'plugbrain swarm wave check <datei> [--json]'
+      const action = need(pos[0], usage)
+      if (action !== 'check') throw new AccessDenied(`usage: ${usage}`)
+      const file = need(pos[1], usage)
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(readFileSync(file, 'utf8'))
+      } catch (error) {
+        console.error(`Wellen-Datei nicht lesbar: ${file}: ${error instanceof Error ? error.message : String(error)}`)
+        return 2
+      }
+      const report = checkWave(parsed)
+      if (asJson) console.log(JSON.stringify(report, null, 2))
+      else printWaveCheck(file, report)
+      return report.ok ? 0 : 1
+    }
     case 'wave-done': {
       const usage = 'plugbrain swarm wave-done <waveId> [--json]'
       const waveId = need(pos[0], usage)
@@ -754,7 +790,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
 }
 
