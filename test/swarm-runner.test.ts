@@ -125,11 +125,18 @@ async function settleBoard(b: Brain, agent: string, ms = 90_000): Promise<BoardJ
 }
 
 test('a runner profile is stored and read back, and a bad sandbox is refused', () => {
+  console.log('[TEST] Starting test: runner profile stored')
   const b = brain()
+  console.log('[TEST] brain() returned, ws:', b.ws)
   try {
-    assert.equal(b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    console.log('[TEST] Calling swarm register...')
+    const regResult = b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws)
+    console.log('[TEST] swarm register result:', regResult.code, regResult.err)
+    assert.equal(regResult.code, 0)
+    console.log('[TEST] Calling swarm runner set...')
     const set = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'codex', '--model', 'gpt-6-luna',
       '--effort', 'high', '--sandbox', 'bypass', '--search', '--workspace', b.ws, '--json')
+    console.log('[TEST] swarm runner set result:', set.code, set.err)
     assert.equal(set.code, 0, set.err)
     const profile = JSON.parse(set.out) as RunnerProfile
     assert.equal(profile.cmd, 'codex')
