@@ -30,6 +30,7 @@ import { addTaskDependency, ensureDependencySchema, syncDependencies, UNBLOCKED_
 import { assertNotCredential } from './coord/resources.ts'
 import { rowAs, rowsAs } from './store/rows.ts'
 import { coordEvents } from './coord/events.ts'
+import { planView } from './plan.ts'
 
 export type QueueState = 'pending' | 'claimed' | 'delivered' | 'cancelled' | 'superseded'
 export type QueueOperation = 'supersede' | 'reassign' | 'priority'
@@ -50,6 +51,7 @@ export interface QueueTask {
   decomposition_key?: string | null
   priority: number
   superseded_by: string | null
+  plan_ref: string | null
   created_at: string
   updated_at: string
 }
@@ -77,6 +79,7 @@ CREATE TABLE IF NOT EXISTS queue_tasks (
   updated_at     TEXT NOT NULL
   ,priority      INTEGER NOT NULL DEFAULT 0
   ,superseded_by TEXT
+  ,plan_ref      TEXT
 );
 -- The claim query filters on exactly this, and it runs on every idle agent.
 CREATE INDEX IF NOT EXISTS idx_queue_ws_state ON queue_tasks(workspace_id, state, created_at);
@@ -184,6 +187,9 @@ export function ensureQueueSchema(db: DatabaseSync): void {
   if (!columns.some(column => column.name === 'superseded_by')) {
     db.exec('ALTER TABLE queue_tasks ADD COLUMN superseded_by TEXT')
   }
+  if (!columns.some(column => column.name === 'plan_ref')) {
+    db.exec('ALTER TABLE queue_tasks ADD COLUMN plan_ref TEXT')
+  }
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_decomposition_key ON queue_tasks(decomposition_key) WHERE decomposition_key IS NOT NULL')
   ensureDependencySchema(db)
 }
@@ -205,7 +211,7 @@ const load = (db: DatabaseSync, id: string): QueueTask => {
 export function enqueueTask(
   db: DatabaseSync,
   workspaceId: string,
-  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string; decompositionKey?: string },
+  input: { title: string; body?: string; addressedTo?: string; requestedBy?: string; afterTaskId?: string; decompositionKey?: string; planRef?: string },
 ): QueueTask {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
@@ -214,17 +220,20 @@ export function enqueueTask(
   if (title === '') throw new AccessDenied('a task needs a title')
   if (input.addressedTo !== undefined) requireAgent(db, input.addressedTo)
   if (input.requestedBy !== undefined) requireAgent(db, input.requestedBy)
+  if (input.planRef !== undefined && !/^M\d{2}$/.test(input.planRef)) {
+    throw new AccessDenied(`not a master task id: ${input.planRef} (expected M00..M99)`)
+  }
 
   const now = new Date().toISOString()
   const id = `task-${randomUUID().slice(0, 12)}`
   db.prepare(
     `INSERT INTO queue_tasks
        (id, workspace_id, title, body, addressed_to, requested_by, state,
-        claimed_by, claimed_at, delivered_path, created_at, updated_at, decomposition_key)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?, ?)`,
+        claimed_by, claimed_at, delivered_path, created_at, updated_at, decomposition_key, plan_ref)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', NULL, NULL, NULL, ?, ?, ?, ?)`,
   ).run(
     id, workspaceId, title, input.body ?? '',
-    input.addressedTo ?? null, input.requestedBy ?? null, now, now, input.decompositionKey ?? null,
+    input.addressedTo ?? null, input.requestedBy ?? null, now, now, input.decompositionKey ?? null, input.planRef ?? null,
   )
   if (input.afterTaskId !== undefined) addTaskDependency(db, id, input.afterTaskId)
   const task = load(db, id)
@@ -239,6 +248,26 @@ export function enqueueTask(
 }
 
 /**
+ * Get the set of valid master task IDs (plan refs) from the ledger.
+ * These are the tasks that are "im Mandat" (in the mandate).
+ */
+function getValidPlanRefs(db: DatabaseSync, workspaceId: string): Set<string> {
+  try {
+    const view = planView(db, workspaceId)
+    return new Set(view.tasks.map(task => task.id))
+  } catch {
+    return new Set()
+  }
+}
+
+export interface ClaimNextTaskOptions {
+  /** If true, only allow unaddressed tasks with a valid plan_ref from the ledger. Default: false (pre-B15 behavior). */
+  requireMandate?: boolean
+  /** If true, an agent with an existing claim gets no second task. Default: false (pre-B15 behavior). */
+  singleClaim?: boolean
+}
+
+/**
  * Claim the next task this agent is allowed to take, or null.
  *
  * The compare-and-set is the entire point. Selecting a candidate and then
@@ -247,28 +276,55 @@ export function enqueueTask(
  * who each believed they owned the work. The UPDATE therefore re-asserts
  * `state = 'pending'` and the claim counts only if it changed exactly one row,
  * all inside one immediate transaction so no other writer interleaves.
+ *
+ * By default (pre-B15 behavior), any pending unaddressed task is claimable.
+ * When `requireMandate: true`, only unaddressed tasks with a plan_ref that
+ * exists in the ledger (mandat) are claimable. Explicitly addressed tasks
+ * (addressed_to = agentId) are always claimable by their addressee.
+ *
+ * By default, an agent may hold multiple claims. When `singleClaim: true`,
+ * an agent with an existing claim gets no second task.
  */
 export function claimNextTask(
   db: DatabaseSync,
   workspaceId: string,
   agentId: string,
+  options: ClaimNextTaskOptions = {},
 ): QueueTask | null {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
   requireAgent(db, agentId)
 
+  const { requireMandate = false, singleClaim = false } = options
+
   db.exec('BEGIN IMMEDIATE')
   try {
+    // Check if agent already has a claimed task (only enforced when singleClaim: true)
+    if (singleClaim) {
+      const existingClaim = db.prepare(
+        `SELECT id FROM queue_tasks WHERE workspace_id = ? AND state = 'claimed' AND claimed_by = ? LIMIT 1`
+      ).get(workspaceId, agentId) as { id: string } | undefined
+      if (existingClaim !== undefined) { db.exec('COMMIT'); return null }
+    }
+
+    const validPlanRefs = requireMandate ? getValidPlanRefs(db, workspaceId) : new Set<string>()
+
     const candidate = db.prepare(
-      `SELECT id FROM queue_tasks
+      `SELECT id, plan_ref, addressed_to FROM queue_tasks
         WHERE workspace_id = ? AND state = 'pending'
           AND (addressed_to IS NULL OR addressed_to = ?)
           AND ${UNBLOCKED_TASK_SQL}
         ORDER BY priority DESC, created_at ASC, rowid ASC
         LIMIT 1`,
-    ).get(workspaceId, agentId) as { id: string } | undefined
+    ).get(workspaceId, agentId) as { id: string; plan_ref: string | null; addressed_to: string | null } | undefined
 
     if (candidate === undefined) { db.exec('COMMIT'); return null }
+
+    // For unaddressed tasks (addressed_to IS NULL), only allow if plan_ref is valid in ledger (when requireMandate: true)
+    if (requireMandate && candidate.addressed_to === null && (candidate.plan_ref === null || !validPlanRefs.has(candidate.plan_ref))) {
+      db.exec('COMMIT')
+      return null
+    }
 
     const now = new Date().toISOString()
     const result = db.prepare(
