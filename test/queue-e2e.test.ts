@@ -61,22 +61,6 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
   const workspaceRoot = join(dir, 'ws')
   mkdirSync(join(workspaceRoot, 'out'), { recursive: true })
   writeFileSync(join(workspaceRoot, 'out', 'result.md'), 'Q-chain delivery proof.\n')
-
-  // Create a minimal ledger with M01 so unaddressed tasks with planRef are claimable
-  const ledgerDir = join(workspaceRoot, 'koordination', 'roadmap')
-  mkdirSync(ledgerDir, { recursive: true })
-  const ledger = {
-    updated: new Date().toISOString(),
-    masterTasks: {
-      source: 'test',
-      tasks: [
-        { id: 'M01', title: 'Master Task 1', status: 'IN_PROGRESS', priority: 'MUST', dependsOn: [], requirementIds: [], ownerRole: 'dev', packageGate: null, ledgerGates: [], evidence: [] },
-      ],
-    },
-    gates: [],
-  } as any
-  writeFileSync(join(ledgerDir, 'PROGRESS-STATE.json'), JSON.stringify(ledger, null, 2))
-
   let db: DatabaseSync = openStore(dbFile)
   db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
     .run('ws-qe2e', 'Q-chain E2E', workspaceRoot, new Date().toISOString())
@@ -184,7 +168,7 @@ test('B4: Q-chain E2E — enqueue, claim (HTTP + turn --claim), restart, deliver
     // The turn-side receipt: `swarm turn <agent> end --state awaiting-commit`
     // then `swarm approve` (approveCommit) → `commit-approved`. The chain
     // ends HERE: no "integriert" state exists (see the header note).
-    const second = await post(base, '/api/queue', { workspace: 'ws-qe2e', title: 'Zweite Aufgabe', planRef: 'M01' })
+    const second = await post(base, '/api/queue', { workspace: 'ws-qe2e', title: 'Zweite Aufgabe' })
     assert.strictEqual(second.status, 200)
     const secondTask = second.data.task as { id: string }
 

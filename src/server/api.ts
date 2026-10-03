@@ -2449,7 +2449,6 @@ export function serve(ctx: Ctx, port = 0): Promise<ServerHandle> {
           ...(body.body === undefined ? {} : { body: String(body.body) }),
           ...(body.addressedTo === undefined ? {} : { addressedTo: String(body.addressedTo) }),
           ...(body.requestedBy === undefined ? {} : { requestedBy: String(body.requestedBy) }),
-          ...(body.planRef === undefined ? {} : { planRef: String(body.planRef) }),
         }),
       })
     }
