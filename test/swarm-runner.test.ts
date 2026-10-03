@@ -125,11 +125,18 @@ async function settleBoard(b: Brain, agent: string, ms = 90_000): Promise<BoardJ
 }
 
 test('a runner profile is stored and read back, and a bad sandbox is refused', () => {
+  console.log('[TEST] Starting test: runner profile stored')
   const b = brain()
+  console.log('[TEST] brain() returned, ws:', b.ws)
   try {
-    assert.equal(b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws).code, 0)
+    console.log('[TEST] Calling swarm register...')
+    const regResult = b.run('swarm', 'register', 'cx01', '--surface', 'other', '--account', 'owner:chatgpt', '--workspace', b.ws)
+    console.log('[TEST] swarm register result:', regResult.code, regResult.err)
+    assert.equal(regResult.code, 0)
+    console.log('[TEST] Calling swarm runner set...')
     const set = b.run('swarm', 'runner', 'set', 'cx01', '--cmd', 'codex', '--model', 'gpt-6-luna',
       '--effort', 'high', '--sandbox', 'bypass', '--search', '--workspace', b.ws, '--json')
+    console.log('[TEST] swarm runner set result:', set.code, set.err)
     assert.equal(set.code, 0, set.err)
     const profile = JSON.parse(set.out) as RunnerProfile
     assert.equal(profile.cmd, 'codex')
@@ -225,7 +232,7 @@ test('swarm run starts the worker detached, keeps its log, and the board shows p
   } finally { b.cleanup() }
 })
 
-test('a process that dies mid-turn is booked blocked, with the log tail and a message to the integrator', nativeRunnerOnly, async () => {
+test('a process that dies mid-turn without a current task is booked needs-task, no integrator message', nativeRunnerOnly, async () => {
   const b = brain()
   try {
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
@@ -233,24 +240,23 @@ test('a process that dies mid-turn is booked blocked, with the log tail and a me
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
 
-    const board = await settleBoard(b, 'fake-01')
-    const status = JSON.parse(b.run('swarm', 'run', 'fake-01', '--status', '--workspace', b.ws, '--json').out) as StatusJson
+    // Wait for the run to be settled
+    const status = await settle(b, 'fake-01')
     assert.equal(status.run?.alive, false)
     assert.equal(status.run?.endedReason, 'process-gone')
-    assert.equal(status.turnState, 'blocked')
-    assert.equal(board.settled.length, 1)
-    assert.equal(board.settled[0]!.agentId, 'fake-01')
-    assert.equal(board.settled[0]!.reason, 'ended-without-turn-end')
-    assert.match(board.settled[0]!.messageId ?? '', /^msg-/)
-    assert.match(board.settled[0]!.summary, /without a turn end/)
+    // No current task -> needs-task, not blocked
+    assert.equal(status.turnState, 'needs-task')
 
+    // No blocked booking on the board
+    const board = JSON.parse(b.run('swarm', 'board', '--workspace', b.ws, '--json').out) as BoardJson
     const worker = board.agents.find(agent => agent.id === 'fake-01')
-    assert.equal(worker?.turnState, 'blocked')
-    assert.match(worker?.turnSummary ?? '', /about to die without a turn end/)
+    assert.equal(worker?.turnState, 'needs-task')
+    // No settled entry because there was no current task
+    assert.deepEqual(board.settled, [])
 
-    // The integrator was registered on demand and holds the report unread.
+    // The integrator was NOT notified because there was no current task
     const integrator = board.agents.find(agent => agent.id === 'integrator')
-    assert.equal(integrator?.unread, 1)
+    assert.equal(integrator?.unread, 0)
   } finally { b.cleanup() }
 })
 
@@ -258,7 +264,9 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
   const b = brain()
   let db: DatabaseSync | null = null
   try {
+    // Enqueue a task so the worker has a current task when it dies
     assert.equal(b.run('swarm', 'register', 'fake-01', '--surface', 'other', '--account', 'test:fake', '--workspace', b.ws).code, 0)
+    assert.equal(b.run('swarm', 'enqueue', 'task for blocked test', '--to', 'fake-01', '--workspace', b.ws).code, 0)
     assert.equal(b.run('swarm', 'runner', 'set', 'fake-01', '--cmd', 'node', '--args', fakeArgs(b, 'die'), '--workspace', b.ws).code, 0)
     const started = b.run('swarm', 'run', 'fake-01', '--once', '--workspace', b.ws)
     assert.equal(started.code, 0, started.err)
@@ -284,6 +292,7 @@ test('blocked booking, run latch, and notification reconcile atomically and retr
 
     const settled = await settleBoard(b, 'fake-01')
     assert.equal(settled.settled.length, 1)
+    assert.equal(settled.settled[0]!.reason, 'ended-without-turn-end')
     const verify = new DatabaseSync(join(b.home, 'plugbrain.db'))
     try {
       assert.equal(Number((verify.prepare("SELECT COUNT(*) AS n FROM inbox_messages WHERE to_agent = 'integrator'").get() as { n: number }).n), 1)
