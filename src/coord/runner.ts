@@ -895,6 +895,24 @@ export function reconcileWorkerRuns(db: DatabaseSync, workspaceId: string, optio
         })
         continue
       }
+      // Check if the agent has a current task
+      const agentTask = db.prepare('SELECT task_id FROM agents WHERE id = ?').get(row.agent_id) as { task_id: string | null } | undefined
+      const hasCurrentTask = agentTask?.task_id !== null && agentTask?.task_id !== ''
+      
+      if (!hasCurrentTask) {
+        // No current task: mark as needs-task, no blocked booking, no integrator notification
+        db.prepare(`
+          UPDATE agents SET turn_state = 'needs-task', turn_state_at = ?, turn_summary = ?,
+                              last_heartbeat = ?, last_seen = ?
+         WHERE id = ?
+        `).run(nowIso, summary.slice(0, 2000), nowIso, nowIso, row.agent_id)
+        db.prepare('UPDATE worker_runs SET ended_at = ?, ended_reason = ? WHERE agent_id = ? AND ended_at IS NULL')
+          .run(nowIso, 'process-gone', row.agent_id)
+        db.exec('COMMIT')
+        events.push({ agentId: row.agent_id, runId: row.run_id, reason: 'ended-without-turn-end', summary, messageId: null })
+        continue
+      }
+      // Has a current task: mark as blocked and notify integrator
       db.prepare(`
         UPDATE agents SET turn_state = 'blocked', turn_state_at = ?, turn_summary = ?,
                           last_heartbeat = ?, last_seen = ?
