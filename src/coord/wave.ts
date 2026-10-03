@@ -10,8 +10,8 @@
  * coder makes the review worthless. This module checks the file *before*
  * enqueueing so those failures surface where a human can still fix them.
  *
- * The format follows `C:/PLUG/plugpt/Code/tools/wave-plan/enqueue-wave.mjs`
- * (`WELLE-01.json` is the reference): required card fields, `steps` drawn from
+ * The format follows the wave enqueuer used to drive the fleet (a JSON file
+ * with a `cards` array): required card fields, `steps` drawn from
  * `S`/`C`/`A`/`R`, `after` as a card id, `hold` cards that are never enqueued.
  * The key pool of a worker follows the enqueuer's `keyOf` rule — an agent id
  * such as `n-nv01b` shares its key with `n-nv01a` (`n-nv01`) — and can be

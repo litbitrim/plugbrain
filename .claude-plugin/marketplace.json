@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "PlugBrain — local project and code memory for AI agents",
-    "version": "0.5.0-dev.1"
+    "version": "0.6.0-rc.1"
   },
   "plugins": [
     {
       "name": "plugbrain",
       "source": "./",
       "description": "Ask the brain first: AST code intelligence, Obsidian-style notes and agent coordination for this repository, served locally over MCP.",
-      "version": "0.5.0-dev.1",
+      "version": "0.6.0-rc.1",
       "license": "MIT",
       "category": "productivity",
       "keywords": [
