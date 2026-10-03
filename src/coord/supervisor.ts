@@ -167,6 +167,24 @@ function readRunOutput(run: { logPath: string } | null): string {
   } catch { return '' }
 }
 
+/**
+ * Write a worker's turn state without going through `recordTurn`: the
+ * supervisor claims for a worker that never ran a turn command itself, and a
+ * launch error ends no turn either. `working` on claim closes the stale-state
+ * source at the root; `blocked` on a launch error leaves the worker visibly
+ * stuck so its leftover state cannot free tasks that wait on it
+ * (B22-LAUNCHERR-DEPS). The turn columns belong to `ensureSwarmOpsSchema`; a
+ * store without them has no board to show, and the update is skipped rather
+ * than turned into a missing-column error.
+ */
+function setAgentTurnState(db: DatabaseSync, agentId: string, state: string): void {
+  const columns = db.prepare('PRAGMA table_info(agents)').all() as unknown as Array<{ name: string }>
+  if (!columns.some(column => column.name === 'turn_state')) return
+  const now = new Date().toISOString()
+  db.prepare('UPDATE agents SET turn_state = ?, turn_state_at = ? WHERE id = ?')
+    .run(state, now, agentId)
+}
+
 function stopSupervisorAfterAttempt(
   db: DatabaseSync, taskId: string, agentId: string, supervisorId: string,
   failure: string, releaseTask: boolean,
@@ -183,6 +201,7 @@ function stopSupervisorAfterAttempt(
         updated_at = ? WHERE id = ? AND state = 'claimed' AND claimed_by = ?`)
         .run(new Date().toISOString(), taskId, agentId)
     }
+    if (failure === 'launch-error') setAgentTurnState(db, agentId, 'blocked')
     setSupervisor(db, agentId, supervisorId, { failure, active: false })
     notifyLead(db, notice.workspaceId, agentId, notice.subject, notice.body)
     db.exec('COMMIT')
@@ -252,6 +271,10 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
       continue
     }
     idleChecks = 0
+    // The supervisor claims for the worker, so nothing set `turn_state` to
+    // `working`. Do it here: a stale `needs-task` from an earlier, unrelated
+    // turn must not satisfy this task for anything waiting on it.
+    setAgentTurnState(db, input.agentId, 'working')
     let attemptNumber = Number((db.prepare('SELECT COALESCE(MAX(attempt), 0) AS n FROM worker_task_attempts WHERE task_id = ?')
       .get(task.id) as { n: number }).n)
     let finished = false
@@ -324,7 +347,12 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
         db.prepare('UPDATE worker_task_attempts SET ended_at = ?, outcome = ? WHERE task_id = ? AND attempt = ?')
           .run(new Date().toISOString(), 'launch-error', task.id, attemptNumber)
         if (attemptNumber >= maxAttempts) {
-          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, 'launch-error', true,
+          // Never return a task that could not be started to the pool: that is a
+          // release, and a release frees every task waiting on it although no
+          // work was done (B22-LAUNCHERR-DEPS). Leave it claimed and blocked, so
+          // a later supervisor still retries the same task while its dependents
+          // stay locked, and alert the lead.
+          stopSupervisorAfterAttempt(db, task.id, input.agentId, input.supervisorId, 'launch-error', false,
             { workspaceId: input.workspaceId, subject: `swarm run: could not start ${task.id}`, body: message })
           return
         }
