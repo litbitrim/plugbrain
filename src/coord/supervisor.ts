@@ -15,7 +15,7 @@ import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireAgent, requireWorkspace } from '../access.ts'
 import { claimNextTask } from '../queue.ts'
 import { ensureIntegrator, sendMessage } from './inbox.ts'
-import { getRunnerProfile, getWorkerRun, reconcileWorkerRuns, startWorkerRun } from './runner.ts'
+import { ensureRunnerSchema, getRunnerProfile, getWorkerRun, reconcileWorkerRuns, startWorkerRun } from './runner.ts'
 import { configureQuotaPool, ensureQuotaPoolSchema, getQuotaPool, noteQuotaRateLimit, reserveQuota, settleQuota } from './quota-pools.ts'
 
 const DEFAULT_IDLE_MS = 5 * 60_000
@@ -201,6 +201,7 @@ export function assertActiveSupervisorAttempt(db: DatabaseSync): void {
   const agentId = process.env.PLUGBRAIN_SUPERVISED_AGENT
   if (!attemptToken || !agentId) return
   ensureSupervisorSchema(db)
+  ensureRunnerSchema(db)
   const active = db.prepare('SELECT run_id, ended_at, task_id, attempt_token FROM worker_runs WHERE agent_id = ?').get(agentId) as
     { run_id: string; ended_at: string | null; task_id: string | null; attempt_token: string | null } | undefined
   const attempt = db.prepare('SELECT run_id, ended_at FROM worker_task_attempts WHERE agent_id = ? AND attempt_token = ?')

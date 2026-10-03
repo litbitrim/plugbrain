@@ -901,6 +901,7 @@ export function reconcileWorkerRuns(db: DatabaseSync, workspaceId: string, optio
       
       if (!hasCurrentTask) {
         // No current task: mark as needs-task, no blocked booking, no integrator notification
+        ensureIntegrator(db, workspaceId)
         db.prepare(`
           UPDATE agents SET turn_state = 'needs-task', turn_state_at = ?, turn_summary = ?,
                               last_heartbeat = ?, last_seen = ?
