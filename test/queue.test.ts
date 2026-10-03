@@ -12,12 +12,13 @@
  */
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { openStore } from '../src/store/schema.ts'
 import { registerAgent } from '../src/access.ts'
 import { ensureLeaseSchema } from '../src/coord/leases.ts'
+import { ensureQueueSchema } from '../src/queue.ts'
 import {
   claimNextTask, deliverTask, enqueueTask, listQueue, queueDepth,
   listQueueEvents, prioritizeTask, reassignTask, supersedeTask,
@@ -28,17 +29,35 @@ const WS = 'ws-queue-test'
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), 'plugbrain-queue-'))
   const db = openStore(join(dir, 'brain.db'))
+  const workspaceRoot = join(dir, 'root')
+  mkdirSync(workspaceRoot, { recursive: true })
   db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
-    .run(WS, 'queue-demo', join(dir, 'root'), new Date().toISOString())
+    .run(WS, 'queue-demo', workspaceRoot, new Date().toISOString())
   registerAgent(db, 'agent-nvidia', 'nvidia')
   registerAgent(db, 'agent-gemini', 'gemini')
-  return { dir, db, cleanup: () => { db.close(); rmSync(dir, { recursive: true, force: true }) } }
+
+  // Create a minimal ledger with M01 so unaddressed tasks with planRef: 'M01' are claimable
+  const ledgerDir = join(workspaceRoot, 'koordination', 'roadmap')
+  mkdirSync(ledgerDir, { recursive: true })
+  const ledger = {
+    updated: new Date().toISOString(),
+    masterTasks: {
+      source: 'test',
+      tasks: [
+        { id: 'M01', title: 'Master Task 1', status: 'IN_PROGRESS', priority: 'MUST', dependsOn: [], requirementIds: [], ownerRole: 'dev', packageGate: null, ledgerGates: [], evidence: [] },
+      ],
+    },
+    gates: [],
+  } as any
+  writeFileSync(join(ledgerDir, 'PROGRESS-STATE.json'), JSON.stringify(ledger, null, 2))
+
+  return { dir, db, workspaceRoot, cleanup: () => { db.close(); rmSync(dir, { recursive: true, force: true }) } }
 }
 
 test('an enqueued task is pending and belongs to nobody', () => {
   const f = fixture()
   try {
-    const task = enqueueTask(f.db, WS, { title: 'Build the parser', body: '# Goal\nParse it.' })
+    const task = enqueueTask(f.db, WS, { title: 'Build the parser', body: '# Goal\nParse it.', planRef: 'M01' })
     assert.equal(task.state, 'pending')
     assert.equal(task.claimed_by, null)
     assert.equal(task.addressed_to, null)
@@ -49,7 +68,7 @@ test('an enqueued task is pending and belongs to nobody', () => {
 test('the first free agent grabs the task, and the second gets nothing', () => {
   const f = fixture()
   try {
-    enqueueTask(f.db, WS, { title: 'only one' })
+    enqueueTask(f.db, WS, { title: 'only one', planRef: 'M01' })
 
     const first = claimNextTask(f.db, WS, 'agent-nvidia')
     const second = claimNextTask(f.db, WS, 'agent-gemini')
@@ -67,8 +86,8 @@ test('the first free agent grabs the task, and the second gets nothing', () => {
 test('claiming is first-in-first-out, so nothing starves', () => {
   const f = fixture()
   try {
-    const a = enqueueTask(f.db, WS, { title: 'first' })
-    enqueueTask(f.db, WS, { title: 'second' })
+    const a = enqueueTask(f.db, WS, { title: 'first', planRef: 'M01' })
+    enqueueTask(f.db, WS, { title: 'second', planRef: 'M01' })
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.equal(claimed?.id, a.id)
   } finally { f.cleanup() }
@@ -77,9 +96,9 @@ test('claiming is first-in-first-out, so nothing starves', () => {
 test('queue operations are audited, visible, and affect future offers', () => {
   const f = fixture()
   try {
-    const replaced = enqueueTask(f.db, WS, { title: 'old task' })
-    const ordinary = enqueueTask(f.db, WS, { title: 'ordinary task' })
-    const urgent = enqueueTask(f.db, WS, { title: 'urgent task' })
+    const replaced = enqueueTask(f.db, WS, { title: 'old task', planRef: 'M01' })
+    const ordinary = enqueueTask(f.db, WS, { title: 'ordinary task', planRef: 'M01' })
+    const urgent = enqueueTask(f.db, WS, { title: 'urgent task', planRef: 'M01' })
 
     const superseded = supersedeTask(f.db, WS, replaced.id, {
       byAgent: 'agent-nvidia', byTaskId: urgent.id, note: 'replaced by the current brief',
@@ -107,7 +126,7 @@ test('queue operations are audited, visible, and affect future offers', () => {
 test('a stale claim can be atomically rerouted, but an active lease blocks queue mutation', () => {
   const f = fixture()
   try {
-    const claimed = enqueueTask(f.db, WS, { title: 'claimed task' })
+    const claimed = enqueueTask(f.db, WS, { title: 'claimed task', planRef: 'M01' })
     assert.ok(claimNextTask(f.db, WS, 'agent-nvidia'))
     const rerouted = reassignTask(f.db, WS, claimed.id, { byAgent: 'agent-gemini', addressedTo: 'agent-gemini' })
     assert.equal(rerouted.state, 'pending')
@@ -123,7 +142,7 @@ test('a stale claim can be atomically rerouted, but an active lease blocks queue
     assert.equal(superseded.claimed_by, null)
     assert.equal(listQueueEvents(f.db, WS, { taskId: claimed.id })[0]?.old_value, 'claimed:agent-gemini')
 
-    const leased = enqueueTask(f.db, WS, { title: 'leased task' })
+    const leased = enqueueTask(f.db, WS, { title: 'leased task', planRef: 'M01' })
     assert.ok(claimNextTask(f.db, WS, 'agent-nvidia'))
     ensureLeaseSchema(f.db)
     f.db.prepare(`INSERT INTO leases
@@ -138,7 +157,7 @@ test('a stale claim can be atomically rerouted, but an active lease blocks queue
 test('queue mutations reject invalid addressees, bad priorities, and cross-workspace tasks', () => {
   const f = fixture()
   try {
-    const pending = enqueueTask(f.db, WS, { title: 'pending task' })
+    const pending = enqueueTask(f.db, WS, { title: 'pending task', planRef: 'M01' })
     f.db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
       .run('ws-other', 'other', join(f.dir, 'other'), new Date().toISOString())
     assert.throws(() => reassignTask(f.db, WS, pending.id, { byAgent: 'agent-gemini', addressedTo: 'missing-agent' }), /agent/i)
@@ -166,7 +185,7 @@ test('an addressed task does not block the unaddressed one behind it', () => {
   const f = fixture()
   try {
     enqueueTask(f.db, WS, { title: 'for gemini', addressedTo: 'agent-gemini' })
-    const open = enqueueTask(f.db, WS, { title: 'for anyone' })
+    const open = enqueueTask(f.db, WS, { title: 'for anyone', planRef: 'M01' })
 
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.equal(claimed?.id, open.id)
@@ -183,7 +202,7 @@ test('an empty queue is an honest null, never a fabricated task', () => {
 test('an unregistered agent cannot claim', () => {
   const f = fixture()
   try {
-    enqueueTask(f.db, WS, { title: 'work' })
+    enqueueTask(f.db, WS, { title: 'work', planRef: 'M01' })
     assert.throws(() => claimNextTask(f.db, WS, 'agent-invented'), /agent/i)
   } finally { f.cleanup() }
 })
@@ -191,7 +210,7 @@ test('an unregistered agent cannot claim', () => {
 test('delivery records where the output landed and by whom', () => {
   const f = fixture()
   try {
-    enqueueTask(f.db, WS, { title: 'work' })
+    enqueueTask(f.db, WS, { title: 'work', planRef: 'M01' })
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.ok(claimed)
 
@@ -204,7 +223,7 @@ test('delivery records where the output landed and by whom', () => {
 test('only the holder may deliver a task', () => {
   const f = fixture()
   try {
-    enqueueTask(f.db, WS, { title: 'work' })
+    enqueueTask(f.db, WS, { title: 'work', planRef: 'M01' })
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.ok(claimed)
     assert.throws(() => deliverTask(f.db, claimed.id, 'agent-gemini', 'x.md'), /held by/i)
@@ -302,7 +321,7 @@ test('delivery of non-claimed task is rejected (invalid/missing result -> blocke
 test('a stale claim is reported, never reaped', () => {
   const f = fixture()
   try {
-    enqueueTask(f.db, WS, { title: 'work' })
+    enqueueTask(f.db, WS, { title: 'work', planRef: 'M01' })
     const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
     assert.ok(claimed)
 
@@ -331,5 +350,116 @@ test('the queue is scoped to its workspace', () => {
     enqueueTask(f.db, 'ws-other', { title: 'not ours' })
     assert.equal(queueDepth(f.db, WS), 0)
     assert.equal(claimNextTask(f.db, WS, 'agent-nvidia'), null)
+  } finally { f.cleanup() }
+})
+
+function fixtureWithLedger() {
+  const dir = mkdtempSync(join(tmpdir(), 'plugbrain-queue-ledger-'))
+  const db = openStore(join(dir, 'brain.db'))
+  const workspaceRoot = join(dir, 'root')
+  mkdirSync(workspaceRoot, { recursive: true })
+  db.prepare('INSERT INTO workspaces (id, name, root, created_at) VALUES (?, ?, ?, ?)')
+    .run(WS, 'queue-demo', workspaceRoot, new Date().toISOString())
+  registerAgent(db, 'agent-nvidia', 'nvidia')
+  registerAgent(db, 'agent-gemini', 'gemini')
+
+  // Ensure queue schema is created
+  ensureQueueSchema(db)
+
+  // Create a ledger with master tasks M01 and M02
+  const ledgerDir = join(workspaceRoot, 'koordination', 'roadmap')
+  mkdirSync(ledgerDir, { recursive: true })
+  const ledger = {
+    updated: new Date().toISOString(),
+    masterTasks: {
+      source: 'test',
+      tasks: [
+        { id: 'M01', title: 'Master Task 1', status: 'IN_PROGRESS', priority: 'MUST', dependsOn: [], requirementIds: [], ownerRole: 'dev', packageGate: null, ledgerGates: [], evidence: [] },
+        { id: 'M02', title: 'Master Task 2', status: 'TODO', priority: 'OPTIONAL', dependsOn: ['M01'], requirementIds: [], ownerRole: 'dev', packageGate: null, ledgerGates: [], evidence: [] },
+      ],
+    },
+    gates: [],
+  } as any
+  writeFileSync(join(ledgerDir, 'PROGRESS-STATE.json'), JSON.stringify(ledger, null, 2))
+
+  return { dir, db, cleanup: () => { db.close(); rmSync(dir, { recursive: true, force: true }) } }
+}
+
+test('T1: worker without addressed task claims pending task with valid plan_ref in ledger', () => {
+  const f = fixtureWithLedger()
+  try {
+    // Task with plan_ref M01 (exists in ledger)
+    enqueueTask(f.db, WS, { title: 'Task for M01', planRef: 'M01' })
+
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(claimed, 'worker should claim task with valid plan_ref')
+    assert.equal(claimed.plan_ref, 'M01')
+    assert.equal(claimed.claimed_by, 'agent-nvidia')
+  } finally { f.cleanup() }
+})
+
+test('T2: worker without addressed task gets null for pending task without plan_ref', () => {
+  const f = fixtureWithLedger()
+  try {
+    // Task without plan_ref
+    enqueueTask(f.db, WS, { title: 'Task without plan_ref' })
+
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.equal(claimed, null, 'worker should not claim task without plan_ref')
+  } finally { f.cleanup() }
+})
+
+test('T3: worker without addressed task gets null for pending task with plan_ref not in ledger', () => {
+  const f = fixtureWithLedger()
+  try {
+    // Task with plan_ref M99 (not in ledger)
+    enqueueTask(f.db, WS, { title: 'Task for M99', planRef: 'M99' })
+
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.equal(claimed, null, 'worker should not claim task with invalid plan_ref')
+  } finally { f.cleanup() }
+})
+
+test('T4: worker claims explicitly addressed task regardless of plan_ref', () => {
+  const f = fixtureWithLedger()
+  try {
+    // Task addressed to agent-nvidia, no plan_ref (or invalid plan_ref)
+    enqueueTask(f.db, WS, { title: 'Addressed task', addressedTo: 'agent-nvidia' })
+
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(claimed, 'worker should claim explicitly addressed task')
+    assert.equal(claimed.addressed_to, 'agent-nvidia')
+    assert.equal(claimed.claimed_by, 'agent-nvidia')
+  } finally { f.cleanup() }
+})
+
+test('T5: worker with existing claim gets no second claim', () => {
+  const f = fixtureWithLedger()
+  try {
+    enqueueTask(f.db, WS, { title: 'Task 1', planRef: 'M01' })
+    enqueueTask(f.db, WS, { title: 'Task 2', planRef: 'M02' })
+
+    const first = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.ok(first, 'first claim should succeed')
+
+    const second = claimNextTask(f.db, WS, 'agent-nvidia')
+    assert.equal(second, null, 'worker with existing claim should not get second task')
+  } finally { f.cleanup() }
+})
+
+test('T6: no second queue table introduced - only queue_tasks used', () => {
+  const f = fixtureWithLedger()
+  try {
+    // Verify only queue_tasks table exists for queue operations
+    const tables = f.db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all() as Array<{ name: string }>
+    const queueTables = tables.map(t => t.name).filter(name => name.startsWith('queue')).sort()
+    // Should have queue_tasks, queue_deliveries, queue_task_events - no second queue table
+    assert.ok(queueTables.includes('queue_tasks'), `queue_tables found: ${queueTables.join(', ')}`)
+    assert.ok(queueTables.includes('queue_deliveries'))
+    assert.ok(queueTables.includes('queue_task_events'))
+    // No other queue_* tables
+    const expectedTables = ['queue_deliveries', 'queue_task_events', 'queue_tasks']
+    const extraQueueTables = queueTables.filter(name => !expectedTables.includes(name))
+    assert.equal(extraQueueTables.length, 0, `Unexpected queue tables: ${extraQueueTables.join(', ')}`)
   } finally { f.cleanup() }
 })
