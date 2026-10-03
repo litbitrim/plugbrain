@@ -199,6 +199,13 @@ function getValidPlanRefs(db: DatabaseSync, workspaceId: string): Set<string> {
   }
 }
 
+export interface ClaimNextTaskOptions {
+  /** If true, only allow unaddressed tasks with a valid plan_ref from the ledger. Default: false (pre-B15 behavior). */
+  requireMandate?: boolean
+  /** If true, an agent with an existing claim gets no second task. Default: false (pre-B15 behavior). */
+  singleClaim?: boolean
+}
+
 /**
  * Claim the next task this agent is allowed to take, or null.
  *
@@ -209,28 +216,37 @@ function getValidPlanRefs(db: DatabaseSync, workspaceId: string): Set<string> {
  * `state = 'pending'` and the claim counts only if it changed exactly one row,
  * all inside one immediate transaction so no other writer interleaves.
  *
- * For unaddressed tasks (addressed_to IS NULL), only tasks with a plan_ref
- * that exists in the ledger (mandat) are claimable. Explicitly addressed
- * tasks (addressed_to = agentId) are always claimable by their addressee.
+ * By default (pre-B15 behavior), any pending unaddressed task is claimable.
+ * When `requireMandate: true`, only unaddressed tasks with a plan_ref that
+ * exists in the ledger (mandat) are claimable. Explicitly addressed tasks
+ * (addressed_to = agentId) are always claimable by their addressee.
+ *
+ * By default, an agent may hold multiple claims. When `singleClaim: true`,
+ * an agent with an existing claim gets no second task.
  */
 export function claimNextTask(
   db: DatabaseSync,
   workspaceId: string,
   agentId: string,
+  options: ClaimNextTaskOptions = {},
 ): QueueTask | null {
   ensureQueueSchema(db)
   requireWorkspace(db, workspaceId)
   requireAgent(db, agentId)
 
-  const validPlanRefs = getValidPlanRefs(db, workspaceId)
+  const { requireMandate = false, singleClaim = false } = options
 
   db.exec('BEGIN IMMEDIATE')
   try {
-    // Check if agent already has a claimed task
-    const existingClaim = db.prepare(
-      `SELECT id FROM queue_tasks WHERE workspace_id = ? AND state = 'claimed' AND claimed_by = ? LIMIT 1`
-    ).get(workspaceId, agentId) as { id: string } | undefined
-    if (existingClaim !== undefined) { db.exec('COMMIT'); return null }
+    // Check if agent already has a claimed task (only enforced when singleClaim: true)
+    if (singleClaim) {
+      const existingClaim = db.prepare(
+        `SELECT id FROM queue_tasks WHERE workspace_id = ? AND state = 'claimed' AND claimed_by = ? LIMIT 1`
+      ).get(workspaceId, agentId) as { id: string } | undefined
+      if (existingClaim !== undefined) { db.exec('COMMIT'); return null }
+    }
+
+    const validPlanRefs = requireMandate ? getValidPlanRefs(db, workspaceId) : new Set<string>()
 
     const candidate = db.prepare(
       `SELECT id, plan_ref, addressed_to FROM queue_tasks
@@ -243,8 +259,8 @@ export function claimNextTask(
 
     if (candidate === undefined) { db.exec('COMMIT'); return null }
 
-    // For unaddressed tasks (addressed_to IS NULL), only allow if plan_ref is valid in ledger
-    if (candidate.addressed_to === null && (candidate.plan_ref === null || !validPlanRefs.has(candidate.plan_ref))) {
+    // For unaddressed tasks (addressed_to IS NULL), only allow if plan_ref is valid in ledger (when requireMandate: true)
+    if (requireMandate && candidate.addressed_to === null && (candidate.plan_ref === null || !validPlanRefs.has(candidate.plan_ref))) {
       db.exec('COMMIT')
       return null
     }

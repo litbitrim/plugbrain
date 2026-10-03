@@ -22,6 +22,7 @@ import { ensureQueueSchema } from '../src/queue.ts'
 import {
   claimNextTask, deliverTask, enqueueTask, listQueue, queueDepth,
   listQueueEvents, prioritizeTask, reassignTask, supersedeTask,
+  type ClaimNextTaskOptions,
 } from '../src/queue.ts'
 
 const WS = 'ws-queue-test'
@@ -391,7 +392,8 @@ test('T1: worker without addressed task claims pending task with valid plan_ref 
     // Task with plan_ref M01 (exists in ledger)
     enqueueTask(f.db, WS, { title: 'Task for M01', planRef: 'M01' })
 
-    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    const opts: ClaimNextTaskOptions = { requireMandate: true, singleClaim: true }
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.ok(claimed, 'worker should claim task with valid plan_ref')
     assert.equal(claimed.plan_ref, 'M01')
     assert.equal(claimed.claimed_by, 'agent-nvidia')
@@ -404,7 +406,8 @@ test('T2: worker without addressed task gets null for pending task without plan_
     // Task without plan_ref
     enqueueTask(f.db, WS, { title: 'Task without plan_ref' })
 
-    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    const opts: ClaimNextTaskOptions = { requireMandate: true, singleClaim: true }
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.equal(claimed, null, 'worker should not claim task without plan_ref')
   } finally { f.cleanup() }
 })
@@ -415,7 +418,8 @@ test('T3: worker without addressed task gets null for pending task with plan_ref
     // Task with plan_ref M99 (not in ledger)
     enqueueTask(f.db, WS, { title: 'Task for M99', planRef: 'M99' })
 
-    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    const opts: ClaimNextTaskOptions = { requireMandate: true, singleClaim: true }
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.equal(claimed, null, 'worker should not claim task with invalid plan_ref')
   } finally { f.cleanup() }
 })
@@ -426,7 +430,8 @@ test('T4: worker claims explicitly addressed task regardless of plan_ref', () =>
     // Task addressed to agent-nvidia, no plan_ref (or invalid plan_ref)
     enqueueTask(f.db, WS, { title: 'Addressed task', addressedTo: 'agent-nvidia' })
 
-    const claimed = claimNextTask(f.db, WS, 'agent-nvidia')
+    const opts: ClaimNextTaskOptions = { requireMandate: true, singleClaim: true }
+    const claimed = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.ok(claimed, 'worker should claim explicitly addressed task')
     assert.equal(claimed.addressed_to, 'agent-nvidia')
     assert.equal(claimed.claimed_by, 'agent-nvidia')
@@ -439,10 +444,11 @@ test('T5: worker with existing claim gets no second claim', () => {
     enqueueTask(f.db, WS, { title: 'Task 1', planRef: 'M01' })
     enqueueTask(f.db, WS, { title: 'Task 2', planRef: 'M02' })
 
-    const first = claimNextTask(f.db, WS, 'agent-nvidia')
+    const opts: ClaimNextTaskOptions = { requireMandate: true, singleClaim: true }
+    const first = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.ok(first, 'first claim should succeed')
 
-    const second = claimNextTask(f.db, WS, 'agent-nvidia')
+    const second = claimNextTask(f.db, WS, 'agent-nvidia', opts)
     assert.equal(second, null, 'worker with existing claim should not get second task')
   } finally { f.cleanup() }
 })
