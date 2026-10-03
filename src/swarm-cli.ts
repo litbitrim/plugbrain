@@ -23,6 +23,7 @@
  *   plugbrain swarm priority <task> <n>
  *   plugbrain swarm deliver <agent> <taskId> --path <evidence>   hand in a claimed task's candidate
  *   plugbrain swarm wave-done <waveId>                         record a wave only when evidence is complete
+ *   plugbrain swarm lead-tick [--dry-run] [--json] [--wave <file>] [--next <n>]   one read-only lead cycle
  *   plugbrain swarm approve <agent> [--note <n>] [--by <agent>]
  *   plugbrain swarm resources [--json]
  *   plugbrain swarm quota <account> <remaining> <percent|credits|requests|rpm|tokens> [--resets <iso>] [--note <n>]
@@ -36,8 +37,10 @@
  *
  * Every command takes `--workspace <id>`; without it the single planet is used.
  */
+import { readFileSync } from 'node:fs'
 import type { DatabaseSync } from 'node:sqlite'
 import { AccessDenied, requireWorkspace } from './access.ts'
+import { computeLeadTick, type LeadTickReport, type LeadTickWave } from './coord/lead-tick.ts'
 import { enqueueTask, prioritizeTask, reassignTask, supersedeTask } from './queue.ts'
 import {
   ensureWaveDoneSchema, recordWaveDone,
@@ -105,6 +108,7 @@ const VALUED = [
   '--subject', '--body', '--from', '--to', '--by', '--note', '--resets', '--task', '--ttl-min', '--plan', '--path',
   '--repo', '--target', '--auto', '--after',
   '--cmd', '--args', '--effort', '--sandbox', '--cwd', '--max-concurrent', '--rpm',
+  '--wave', '--next',
 ]
 
 function need(value: string | null | undefined, usage: string): string {
@@ -134,6 +138,28 @@ function printNextActions(actions: SwarmNextAction[]): void {
   for (const action of actions) {
     console.log(`- [${action.priority}] ${action.title}: ${action.reason}`)
     console.log(`  ${action.command}`)
+  }
+}
+
+function printLeadTick(report: LeadTickReport): void {
+  console.log(`Lead-Takt ${report.workspaceId} (dry-run) · ${report.generatedAt}` +
+    `${report.waveId === null ? '' : ` · Welle ${report.waveId}`}`)
+  if (report.decisions.length === 0) console.log('  keine Entscheidungen')
+  for (const decision of report.decisions) {
+    console.log(`- [${decision.priority}] ${decision.kind}: ${decision.summary}`)
+  }
+  if (report.starvingWorkers.length > 0) {
+    console.log(`Ohne bereite Aufgabe: ${report.starvingWorkers.map(row => row.agentId).join(', ')}`)
+  }
+  for (const row of report.blockedWorkers) console.log(`Blockiert ${row.agentId}: ${row.reason}`)
+  for (const row of report.quarantineProposals) {
+    console.log(`Quarantaene ${row.sourceTaskId}: ${row.reason} (Autor ${row.authorId})`)
+  }
+  for (const row of report.mergeCandidates) {
+    console.log(`Merge ${row.taskId}: ${row.branch ?? '?'} @ ${row.commit ?? '?'} (${row.commitSource})`)
+  }
+  for (const row of report.nextCards.filter(card => card.ready)) {
+    console.log(`Naechste Karte ${row.cardId}${row.plan ? ` [${row.plan}]` : ''}`)
   }
 }
 
@@ -650,6 +676,30 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       }
       return report.status === 'DONE' ? 0 : 1
     }
+    case 'lead-tick': {
+      // Pure reading: the lead lane renders the decisions and applies them
+      // itself, so this command never mutates the store.
+      const waveFile = flag(rest, '--wave')
+      let wave: LeadTickWave | null = null
+      if (waveFile !== null) {
+        let parsed: unknown
+        try { parsed = JSON.parse(readFileSync(waveFile, 'utf8')) } catch {
+          throw new AccessDenied(`Wellen-Datei nicht lesbar oder kein JSON: ${waveFile}`)
+        }
+        if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as { cards?: unknown }).cards)) {
+          throw new AccessDenied(`Wellen-Datei hat keine Kartenliste: ${waveFile}`)
+        }
+        wave = parsed as LeadTickWave
+      }
+      const report = computeLeadTick(db, workspaceId, {
+        wave,
+        waveNext: numberFlag(rest, '--next'),
+        workspaceRoot: requireWorkspace(db, workspaceId).root,
+      })
+      if (asJson) console.log(JSON.stringify(report, null, 2))
+      else printLeadTick(report)
+      return 0
+    }
     case 'approve': {
       const usage = 'plugbrain swarm approve <agent> [--note <n>] [--by <agent>]'
       const by = flag(rest, '--by') ?? INTEGRATOR
@@ -754,7 +804,7 @@ export function runSwarmCli(db: DatabaseSync, args: string[], defaultWorkspace: 
       throw new AccessDenied(`usage: ${usage}`)
     }
     default:
-      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave-done|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
+      throw new AccessDenied('usage: plugbrain swarm <register|turn|ack|retire|claim|release|board|reap|chronik|send|enqueue|supersede|reassign|priority|deliver|wave-done|lead-tick|approve|resources|quota|admit|watchdog|review-pool|runner|run> …')
   }
 }
 
