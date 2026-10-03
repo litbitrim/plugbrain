@@ -28,20 +28,50 @@ const MAX_QUOTA_BACKOFF_MS = 30 * 60_000
 export type SupervisorFailure = 'clean' | 'quota' | 'auth' | 'crash'
 
 /** Classify only explicit CLI errors. Quiet logs and arbitrary nonzero exits are crashes. */
-export function classifySupervisorFailure(input: { exitCode: number | null; output: string }): SupervisorFailure {
-  const text = input.output.toLowerCase()
-  if (/usage limit|hit your .*limit|insufficient_quota|rate.?limit|retry-after|too many requests|\b429\b/.test(text)) return 'quota'
-  if (/unauthorized|authentication failed|invalid api key|token expired|login required|http 401|http 403|\b401\b/.test(text)) return 'auth'
+export function classifySupervisorFailure(input: { exitCode: number | null; logPath: string }): SupervisorFailure {
+  const errorMessages = extractProviderErrorMessages(input.logPath)
+  for (const msg of errorMessages) {
+    const text = msg.toLowerCase()
+    if (/usage limit|hit your .*limit|insufficient_quota|rate.?limit|retry-after|too many requests|\b429\b/.test(text)) return 'quota'
+    if (/unauthorized|authentication failed|invalid api key|token expired|login required|http 401|http 403|\b401\b/.test(text)) return 'auth'
+  }
   return input.exitCode === 0 ? 'clean' : 'crash'
 }
 
-function quotaBackoffMs(output: string, now = Date.now()): number {
-  const value = /retry-after\s*:\s*([^\r\n]+)/i.exec(output)?.[1]?.trim()
-  if (value === undefined) return DEFAULT_QUOTA_BACKOFF_MS
-  const seconds = Number(value)
-  const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : Date.parse(value) - now
-  if (!Number.isFinite(delay)) return DEFAULT_QUOTA_BACKOFF_MS
-  return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, delay))
+function extractProviderErrorMessages(logPath: string): string[] {
+  try {
+    const content = readFileSync(logPath, 'utf8')
+    const messages: string[] = []
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed === null || typeof parsed !== 'object') continue
+        const event = parsed as Record<string, unknown>
+        const item = (event.item !== null && typeof event.item === 'object' ? event.item : {}) as Record<string, unknown>
+        const kind = (typeof item.type === 'string' ? item.type : typeof event.type === 'string' ? event.type : '').toLowerCase()
+        if (kind === 'error') {
+          const msg = (typeof item.message === 'string' ? item.message : typeof event.message === 'string' ? event.message : '').trim()
+          if (msg) messages.push(msg)
+        }
+      } catch { /* ignore non-JSON lines */ }
+    }
+    return messages
+  } catch { return [] }
+}
+
+function quotaBackoffMs(logPath: string, now = Date.now()): number {
+  const errorMessages = extractProviderErrorMessages(logPath)
+  for (const msg of errorMessages) {
+    const value = /retry-after\s*:\s*([^\r\n]+)/i.exec(msg)?.[1]?.trim()
+    if (value === undefined) continue
+    const seconds = Number(value)
+    const delay = Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : Date.parse(value) - now
+    if (!Number.isFinite(delay)) continue
+    return Math.max(1000, Math.min(MAX_QUOTA_BACKOFF_MS, delay))
+  }
+  return DEFAULT_QUOTA_BACKOFF_MS
 }
 
 export function ensureSupervisorSchema(db: DatabaseSync): void {
@@ -312,10 +342,9 @@ export async function runSupervisorLoop(db: DatabaseSync, input: StartSupervisor
           reconcileWorkerRuns(db, input.workspaceId, { notify: false })
           current = getWorkerRun(db, input.agentId)!
         }
-        const output = readRunOutput(current)
-        const failure = classifySupervisorFailure({ exitCode: current.endedReason === 'turn-end' ? 0 : 1, output })
+        const failure = classifySupervisorFailure({ exitCode: current.endedReason === 'turn-end' ? 0 : 1, logPath: current.logPath })
         if (failure === 'quota') {
-          noteQuotaRateLimit(db, poolId, quotaBackoffMs(output))
+          noteQuotaRateLimit(db, poolId, quotaBackoffMs(current.logPath))
         }
         settleQuota(db, { reservationId: reservation.reservation!.id, outcome: failure })
         const queue = db.prepare('SELECT state, claimed_by FROM queue_tasks WHERE id = ?').get(task.id) as
