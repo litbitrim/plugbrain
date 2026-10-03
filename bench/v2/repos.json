@@ -19,6 +19,11 @@
       "name": "plugengine",
       "commit": "c6c5d98b57cbe2b2560ebc0acfbc3a9f7c80253f",
       "description": "PlugEngine - large-scale core engine and runtime services"
+    },
+    {
+      "name": "plugharness",
+      "commit": "main",
+      "description": "PlugHarness - multi-agent runtime, documents, brain, config, supervisor, and plugboard"
     }
   ],
   "createdAt": "2026-09-26T02:07:00.000Z"

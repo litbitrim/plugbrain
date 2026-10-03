@@ -1,0 +1,122 @@
+[
+  {
+    "id": "plugharness-01",
+    "type": "definition",
+    "question": "Where is the DocumentManifest interface defined for document ingestion?",
+    "query_param": "DocumentManifest",
+    "expected": {
+      "path": "packages/plug/documents/src/index.ts",
+      "symbol": "DocumentManifest",
+      "kind": "symbol",
+      "details": "DocumentManifest tracks documentId, title, pages, chunks, and ingestion metadata."
+    }
+  },
+  {
+    "id": "plugharness-02",
+    "type": "definition",
+    "question": "Where is the ingestDocument function implemented for document processing?",
+    "query_param": "ingestDocument",
+    "expected": {
+      "path": "packages/plug/documents/src/index.ts",
+      "symbol": "ingestDocument",
+      "kind": "symbol",
+      "details": "Async function that ingests a document into the brain, returning IngestResult with manifest and factIds."
+    }
+  },
+  {
+    "id": "plugharness-03",
+    "type": "definition",
+    "question": "Where is the BrainRegistry interface defined for PlugBrain graph queries?",
+    "query_param": "BrainRegistry",
+    "expected": {
+      "path": "packages/plug/brain/src/index.ts",
+      "symbol": "BrainRegistry",
+      "kind": "symbol",
+      "details": "BrainRegistry provides query, evidence, and status methods for the brain graph provider."
+    }
+  },
+  {
+    "id": "plugharness-04",
+    "type": "definition",
+    "question": "Where is the GitNexusProvider class implemented as a BrainGraphProvider?",
+    "query_param": "GitNexusProvider",
+    "expected": {
+      "path": "packages/plug/brain/src/gitnexus-provider.ts",
+      "symbol": "GitNexusProvider",
+      "kind": "symbol",
+      "details": "GitNexusProvider implements BrainGraphProvider using GitNexus as the backing index."
+    }
+  },
+  {
+    "id": "plugharness-05",
+    "type": "definition",
+    "question": "Where is the ProjectionProvider class implemented for brain activity projection?",
+    "query_param": "ProjectionProvider",
+    "expected": {
+      "path": "packages/plug/brain/src/projection-provider.ts",
+      "symbol": "ProjectionProvider",
+      "kind": "symbol",
+      "details": "ProjectionProvider implements BrainGraphProvider using local projection index."
+    }
+  },
+  {
+    "id": "plugharness-06",
+    "type": "definition",
+    "question": "Where is the McpStdioClient class implemented for MCP server communication?",
+    "query_param": "McpStdioClient",
+    "expected": {
+      "path": "packages/plug/brain/src/mcp-client.ts",
+      "symbol": "McpStdioClient",
+      "kind": "symbol",
+      "details": "McpStdioClient communicates with MCP servers over stdio for tool calls and resource access."
+    }
+  },
+  {
+    "id": "plugharness-07",
+    "type": "definition",
+    "question": "Where is the RuntimeSupervisor class implemented for service lifecycle management?",
+    "query_param": "RuntimeSupervisor",
+    "expected": {
+      "path": "packages/plug/supervisor/src/supervisor.ts",
+      "symbol": "RuntimeSupervisor",
+      "kind": "symbol",
+      "details": "RuntimeSupervisor manages service startup, health checks, and ordered shutdown."
+    }
+  },
+  {
+    "id": "plugharness-08",
+    "type": "definition",
+    "question": "Where is the validateMcpProfileDocument function defined for MCP profile validation?",
+    "query_param": "validateMcpProfileDocument",
+    "expected": {
+      "path": "packages/plug/config/src/mcp-profile.ts",
+      "symbol": "validateMcpProfileDocument",
+      "kind": "symbol",
+      "details": "Validates MCP profile document structure, returning McpValidationProblem array."
+    }
+  },
+  {
+    "id": "plugharness-09",
+    "type": "definition",
+    "question": "Where is the registerConnector function defined for MCP connector registration?",
+    "query_param": "registerConnector",
+    "expected": {
+      "path": "packages/plug/config/src/mcp-profile.ts",
+      "symbol": "registerConnector",
+      "kind": "symbol",
+      "details": "Registers an MCP connector (stdio/http) into the agent profile with capability allowlist."
+    }
+  },
+  {
+    "id": "plugharness-10",
+    "type": "definition",
+    "question": "Where is the loadMcpProfile function defined for loading MCP profiles?",
+    "query_param": "loadMcpProfile",
+    "expected": {
+      "path": "packages/plug/config/src/mcp-profile.ts",
+      "symbol": "loadMcpProfile",
+      "kind": "symbol",
+      "details": "Loads and parses MCP profile JSON from the standard config location."
+    }
+  }
+]
