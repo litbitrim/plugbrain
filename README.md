@@ -1,169 +1,70 @@
 # PlugBrain
 
-[![CI](https://github.com/litbitrim/plugbrain/actions/workflows/ci.yml/badge.svg)](https://github.com/litbitrim/plugbrain/actions/workflows/ci.yml)
+![PlugBrain — one local project brain](docs/images/plugbrain-wordmark.svg)
 
-**One local brain for all the coding agents working on your project.**
+**Shared code knowledge, project notes and accountable agent coordination on your machine.**
 
-Claude Code, Codex, Gemini, GLM, a local model, several of each: any agent that
-can run a shell command can join the same PlugBrain. Agents take tasks from a
-shared queue, claim the files they are about to change, check in at the start
-and end of every turn, message each other and wait for a commit approval.
-Underneath sits one index of the project's code and notes, so every agent starts
-from the same knowledge instead of re-reading the repository.
+PlugBrain indexes your project into one SQLite store. Use it to find definitions and callers, navigate linked Markdown notes, and coordinate coding agents through tasks, path claims, messages and delivery evidence. It runs without PlugPT, Freebuff, an API key or a cloud account. Your coding client chooses its own model; PlugBrain does not host an LLM.
 
-The aim is simple: more agents should mean more work done, not overwritten
-files, duplicated tasks or an agent silently stuck for an hour.
+[Start from source](docs/quickstart.md) · [Documentation](docs/index.md) · [Agent integration](docs/agents/README.md) · [Channels and downloads](docs/channels.md) · [Deutsch](README.de.md)
 
-Everything runs on your machine: one SQLite file, a daemon on `127.0.0.1`, no
-cloud, no telemetry. MIT licensed.
+![Real PlugBrain knowledge view: Checkout note with Testing backlink, isolated demonstration data](docs/images/knowledge-demo.png)
 
-## Status
+*Actual local Windows candidate 0.7.0-rc.2, using isolated example data. This screenshot is not a claim that this branch contains the candidate or that an installer is publicly available. Image provenance: [capture record](docs/images/showcase.json).*
 
-- 0.3.1 is the first published release. It is developed on Windows; macOS and
-  Linux run the same tests and packaging checks in CI.
-- PlugBrain's own development runs on it. On 26 September 2026 one board
-  coordinated Claude Code, three Codex CLI workers and four Freebuff workers on
-  this repository.
-- The web UI and the output of `plugbrain swarm` are in German for now. The
-  other commands, the MCP tools and all documentation are in English.
-- Not there yet: the store keeps only each agent's latest turn, so there is no
-  turn history to replay, and worktrees of merged branches are not removed
-  automatically. Both are being built.
+## Choose a channel
 
-## How agents work together
+| Channel | What exists | How to use it |
+| --- | --- | --- |
+| Public source, main | Package version 0.5.0-dev.1; development source | Node.js 24+, npm, Git; see the candidate [source quickstart](docs/quickstart.md) |
+| Published tag 0.3.1 | GitHub source archives; **zero installer assets** when checked on 4 October 2026 | Browse the [release](https://github.com/litbitrim/plugbrain/releases/tag/0.3.1); source archives are not an app installer |
+| Public candidate 0.6.0-rc.1 | Open [PR 6](https://github.com/litbitrim/plugbrain/pull/6), not merged | Review its pinned source and CI; it is not the main channel |
+| Local candidate 0.7.0-rc.2 | Local source and unsigned Windows QA artifact, shown above | Publication, independent review, exact CI and signed installation remain pending |
 
-```bash
-# Once per agent: who it is and which account it spends
-plugbrain swarm register codex-1 --surface other --account openai --model gpt-6-luna
-plugbrain swarm register claude-1 --surface claude-code --account anthropic
+There is currently no verified public Windows installer or macOS/Linux app archive in Releases. Do not look for a missing download button. [Channels](docs/channels.md) separates source, local preview and installed release.
 
-# Whoever plans, a person or an agent, queues work, optionally for one agent
-plugbrain swarm enqueue "Fix the flaky login test" --body "Repro in issue #12" --to codex-1
+## Start with one project
 
-# Every agent, at the start of every turn: read messages, take the offered task
-plugbrain swarm turn codex-1 start --claim
+Install Node.js 24 or newer, npm and Git. These commands select the reviewed-entry candidate branch, which includes the explicit-folder and standalone-notes fixes. It is a draft candidate, not merged main:
 
-# Before writing: claim the paths. A path another agent holds is refused.
-plugbrain swarm claim codex-1 src/auth/login.ts --task <task-id>
-
-# Before tests, builds or new worktrees: is there room? Exit 5 means no.
-plugbrain swarm admit test
-
-# At the end of every turn: exactly one state and a short summary
-plugbrain swarm turn codex-1 end --state awaiting-commit --summary "Fixed the race, login tests pass"
-plugbrain swarm release codex-1 --task <task-id>
-
-# The integrator looks, approves, and sends the next hint
-plugbrain swarm board --git
-plugbrain swarm approve codex-1 --note "Reviewed. Commit it."
-plugbrain swarm send codex-1 --subject "Next" --body "Rebase on main after your commit" --from integrator
-```
-
-A turn ends in one of four states: `needs-task` (done, give me work),
-`awaiting-commit` (a tested change is ready), `blocked` (a real blocker, named in
-the summary) or `paused`. `plugbrain swarm board` lists every agent once with its
-account, turn state, unread messages, task, claims and worktree; with `--git` it
-adds branch, head and uncommitted files, and it flags two agents writing in the
-same worktree.
-
-Agents that speak MCP find the board, turns, claims and messages as tools
-(`swarm_board`, `swarm_turn`, `claim`, `release`, `message_send`, `inbox_read`,
-`heartbeat`, `awareness`). Queueing, approving and admission are CLI-only today.
-
-The per-turn rules for agents are written down so you can paste them into your
-project's `AGENTS.md` or `CLAUDE.md`: [docs/agent-protocol.md](docs/agent-protocol.md).
-All `swarm` commands: [docs/cli.md](docs/cli.md#swarm).
-
-## The index underneath
-
-The index answers the questions agents ask all day: where is this defined, who
-calls it, what breaks if I change it, and what did we decide about it. The goal
-is to match or beat GitNexus and CodeGraph on code questions and Obsidian on
-project notes, in one index every agent shares.
-
-**Code.** Symbols, callers and callees, impact of a change, changed files since a
-revision, graph queries in Cypher, and `ask` for plain-language questions with
-cited sources.
-
-We compared PlugBrain with CodeGraph and GitNexus on 120 questions (definitions,
-callers, impact, config keys, docs) across four of the author's own projects;
-PlugBrain itself is not one of them. We wrote the questions ourselves. 40 were
-frozen before any tuning and serve as the holdout. Every tool was driven through
-its documented command-line interface, and every raw answer is stored with the
-results.
-
-| Tool | Holdout (40) | All questions (120) | Latency p50 | Latency p95 |
-| :--- | :---: | :---: | :---: | :---: |
-| PlugBrain | 38 / 40 | 106 / 120 | 265 ms (33 ms with the daemon running) | 478 ms |
-| CodeGraph | 38 / 40 | 103 / 120 | 280 ms | 311 ms |
-| GitNexus | 36 / 40 | 90 / 120 | 1,134 ms | 3,465 ms |
-
-PlugBrain ties CodeGraph on the holdout and answers three more of all 120
-questions. CodeGraph's call edges are still more complete on deeply polymorphic
-class hierarchies. Method, raw answers, hand-checked misses and how to rerun it:
-[bench/v2/RESULTS.md](bench/v2/RESULTS.md).
-
-**Notes.** A Markdown vault with wiki-links, backlinks, tags, properties and
-full-text search, in the same index as the code. A note can point at a file
-(`code:`), a revision (`revision:`) and an agent run (`agentenlauf:`). Compared
-with Obsidian there is no canvas, no mobile app and no plugin ecosystem.
-
-## Quickstart
-
-**Windows:** download `PlugBrain-<version>-win-x64.exe` from
-[Releases](https://github.com/litbitrim/plugbrain/releases) and run it. The
-installer brings its own Node.js runtime.
-
-**macOS / Linux:** download `plugbrain-<version>-<os>-<arch>.tar.gz` from the same
-page, unpack it and put `bin/plugbrain` on your `PATH`.
-
-Then, inside your project folder:
-
-```bash
-plugbrain init     # register this folder, index it, add PlugBrain to your MCP clients
-plugbrain serve    # the local daemon: web UI and API on http://127.0.0.1:4310
-```
-
-`plugbrain setup --all` (or `claude`, `codex`, `cursor`, `windsurf`, `hermes`,
-`agy`, `opencode`) adds PlugBrain to an MCP client later. It backs up the
-client's config first; `--undo` restores it. The data directory defaults to
-`~/.plugbrain`; set `PLUGBRAIN_HOME` to choose another one. One page per client,
-with the file it writes, how to check it took effect and how to remove it again:
-[docs/agents/](docs/agents/).
-
-### Claude Code plugin
-
-```
-/plugin marketplace add litbitrim/plugbrain
-/plugin install plugbrain@plugbrain
-```
-
-The plugin starts the brain when a session needs it and gives Claude a skill that
-asks the brain first: context before edits, impact before renames, notes before
-re-deriving a decision.
-
-## Privacy
-
-- The store is one SQLite database under `PLUGBRAIN_HOME`. Indexing runs locally
-  and the UI is served locally.
-- No telemetry, no analytics, no phone-home. The only network listener is the
-  local HTTP server on `127.0.0.1`.
-- The HTTP API requires a bearer token that is generated on first start and kept
-  in `<PLUGBRAIN_HOME>/auth.token`. The `swarm` commands work on the local store
-  directly and need no token.
-
-## Development
-
-```bash
-git clone https://github.com/litbitrim/plugbrain
+```sh
+git clone --branch codex/brain-public-entry-20261004 --single-branch https://github.com/litbitrim/plugbrain.git
 cd plugbrain
-npm install
-npm test          # unit and integration tests (node:test)
-npm run serve     # start the brain against the current folder
+npm ci
+node --experimental-strip-types src/cli.ts init ../my-project --no-clients --no-agents-file
+node --experimental-strip-types src/cli.ts serve
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Replace `../my-project` with your own folder. Open the loopback URL printed by `serve`; the default is http://127.0.0.1:4310. The first command indexes only the chosen project and leaves client configuration and agent instruction files alone. All data stays in `~/.plugbrain` unless you explicitly choose another `PLUGBRAIN_HOME`. For a safe trial, use a separate home as described in the [quickstart](docs/quickstart.md).
 
-## License
+### Knowledge without an agent
 
-[MIT](LICENSE) — Copyright (c) 2026 litbitrim
+Open **Notizen** for Markdown documents, tags and wiki links, or **Code** for definitions and callers. Files remain ordinary project files; the index is a local projection. Notes and code can be explored without buying tokens or logging into another product.
+
+### Give one agent project context
+
+Use an existing MCP client or the CLI. Review a client setup with `node --experimental-strip-types src/cli.ts setup codex --dry-run` before applying it; setup backs up edited configuration. The [client guides](docs/agents/README.md) name each file, verification step and undo path. Ask the client to find the code for your task, inspect callers and cite the source it used. MCP supplies context and controls; it does not automatically create or execute workers.
+
+### Coordinate a team
+
+Register distinct worker identities, queue bounded work, claim paths before edits, and retain the resulting commit and delivery evidence. The [agent protocol](docs/agent-protocol.md) defines turn and message discipline; the [CLI reference](docs/cli.md#swarm) describes the commands. A board state or successful message does not prove a worker edited, tested, delivered or integrated anything. Claims coordinate cooperating agents; they are not an OS sandbox.
+
+![Real PlugBrain queued review task assigned to demo-builder; zero running or delivered workers](docs/images/task-demo.png)
+
+*The review task is queued and assigned to a registered demonstration agent. No provider call or coding worker was started for this capture.*
+
+## Capabilities and limits
+
+- Code intelligence: AST-derived symbols, callers, context, impact, changed files and graph queries. Accuracy depends on the parser, language and indexed revision.
+- Project knowledge: Markdown notes, wiki links, backlinks, tags, attachments and cited context packs.
+- Coordination: shared tasks, turn states, messages, path claims, resource admission and commit approval. Delivery, independent review and integration are separate facts.
+- Local operation: loopback HTTP UI/API, SQLite data, MCP and CLI. The UI is primarily German; documentation is primarily English.
+- Windows is the locally exercised host. macOS/Linux CI and packaging are separate evidence; a local Windows success is not platform parity.
+
+The public source and local candidate have different implementation states. Historical benchmark numbers do not establish current technical superiority. Compare pinned versions, raw answers and the actual acceptance criteria before adopting a result. [Development](CONTRIBUTING.md), [security](SECURITY.md) and [HTTP API](docs/http-api.md) explain the operating details.
+
+## Privacy and licensing
+
+PlugBrain performs indexing and stores project data locally. The HTTP service binds to 127.0.0.1, uses a generated authentication token and does not offer a public cloud endpoint. Never publish the data home, private notes, tokens or provider credentials. External AI clients have their own data policies.
+
+[MIT](LICENSE) · [Changelog](CHANGELOG.md) · [Issues](https://github.com/litbitrim/plugbrain/issues)

@@ -508,11 +508,11 @@ const flagValue = (args: string[], name: string): string | null => {
   return at === -1 ? null : args[at + 1] ?? null
 }
 
-function notesQuery(args: string[]): void {
+function notesQuery(args: string[], workspaceId: string): void {
   const asJson = args.includes('--json')
   const text = args.filter(arg => !arg.startsWith('--') && !/^\d+$/.test(arg)).join(' ')
   const limit = Number(flagValue(args, '--limit') ?? 200)
-  const result = queryNotes(db, singlePlanetId(), text, { limit })
+  const result = queryNotes(db, workspaceId, text, { limit })
   if (asJson) return jsonOut(result)
   console.log(`${result.total} note(s) match  ${result.parsed}`)
   for (const note of result.notes) {
@@ -741,7 +741,7 @@ async function diskCommand(args: string[]): Promise<void> {
 
 function gbText(bytes: number): string { return `${Math.round(bytes / 1024 ** 3 * 10) / 10} GB` }
 
-function notesSearch(args: string[]): void {
+function notesSearch(args: string[], workspaceId: string): void {
   const asJson = args.includes('--json')
   const text = args.filter(arg => !arg.startsWith('--') && !/^\d+$/.test(arg)).join(' ')
   if (text.trim() === '') {
@@ -752,7 +752,7 @@ function notesSearch(args: string[]): void {
   // just to the file: that is the difference between a search and a search you
   // can act on.
   const withLines = args.includes('--lines')
-  const result = searchNotesWithLines(db, singlePlanetId(), notesAgent(), text, {
+  const result = searchNotesWithLines(db, workspaceId, notesAgent(), text, {
     limit: Number(flagValue(args, '--limit') ?? 50),
     lines: withLines,
   })
@@ -764,10 +764,10 @@ function notesSearch(args: string[]): void {
   }
 }
 
-function notesRead(args: string[]): void {
+function notesRead(args: string[], workspaceId: string): void {
   const relPath = args.find(arg => !arg.startsWith('--'))
   if (!relPath) { console.error('usage: plugbrain notes read <path> [--json]'); process.exit(1) }
-  const note = readNote(db, singlePlanetId(), notesAgent(), relPath)
+  const note = readNote(db, workspaceId, notesAgent(), relPath)
   if (args.includes('--json')) return jsonOut(note)
   console.log(`${note.title}  (${note.path})`)
   console.log(`  version ${note.hash}  ${note.bytes} bytes  ${note.indexStale ? 'STALE in index' : 'indexed'}`)
@@ -785,17 +785,17 @@ function notesRead(args: string[]): void {
   }
 }
 
-function notesBacklinks(args: string[]): void {
+function notesBacklinks(args: string[], workspaceId: string): void {
   const relPath = args.find(arg => !arg.startsWith('--'))
   if (!relPath) { console.error('usage: plugbrain notes backlinks <path>'); process.exit(1) }
-  const rows = backlinksOf(db, singlePlanetId(), relPath)
+  const rows = backlinksOf(db, workspaceId, relPath)
   if (args.includes('--json')) return jsonOut(rows)
   if (rows.length === 0) { console.log('nobody links here'); return }
   for (const row of rows) console.log(`  ${row.path}:${row.line}${row.alias ? ` (${row.alias})` : ''}`)
 }
 
-function notesGraph(args: string[]): void {
-  const graph = noteGraph(db, singlePlanetId(), {
+function notesGraph(args: string[], workspaceId: string): void {
+  const graph = noteGraph(db, workspaceId, {
     focus: flagValue(args, '--focus'),
     depth: Number(flagValue(args, '--depth') ?? 1),
     filter: flagValue(args, '--filter'),
@@ -810,7 +810,7 @@ function notesGraph(args: string[]): void {
   if (graph.coverage.truncated) console.log(`  TRUNCATED at ${graph.nodes.length}`)
 }
 
-function notesWrite(args: string[]): void {
+function notesWrite(args: string[], workspaceId: string): void {
   const relPath = args.find(arg => !arg.startsWith('--'))
   if (!relPath) {
     console.error('usage: plugbrain notes write <path> --from <file>|--content <text> [--expect <hash>] [--allow-generated]')
@@ -824,7 +824,7 @@ function notesWrite(args: string[]): void {
   }
   const content = from === null ? String(inline) : readFileSync(from, 'utf8')
   const expected = flagValue(args, '--expect')
-  const result = writeNote(db, singlePlanetId(), notesAgent(), relPath, content, {
+  const result = writeNote(db, workspaceId, notesAgent(), relPath, content, {
     ...(expected === null ? {} : { expectedHash: expected }),
     allowGenerated: args.includes('--allow-generated'),
   })
@@ -1220,7 +1220,7 @@ function initCommand(args: string[]): void {
     console.error(`not a directory: ${dir}`)
     process.exit(2)
   }
-  const root = findGitRoot(dir) ?? dir
+  const root = given === undefined ? findGitRoot(dir) ?? dir : dir
   if (dryRun) console.log('dry run (nothing is written):')
   const record = dryRun ? planWorkspaceRoot(db, root) : registerWorkspaceRoot(db, root)
   const state = record.created
@@ -1369,15 +1369,37 @@ switch (command) {
   case 'repos': reposCommand(args); break
   case 'disk': await diskCommand(args); break
   case 'notes': {
-    const [step, ...rest] = args
-    if (step === 'query') notesQuery(rest)
-    else if (step === 'search') notesSearch(rest)
-    else if (step === 'read') notesRead(rest)
-    else if (step === 'write') notesWrite(rest)
-    else if (step === 'graph') notesGraph(rest)
-    else if (step === 'backlinks') notesBacklinks(rest)
+    const [step, ...input] = args
+    if (!['query', 'search', 'read', 'write', 'graph', 'backlinks', 'list'].includes(step ?? '')) {
+      console.error('usage: plugbrain notes <list|query|search|read|write|graph|backlinks> … [--workspace <id>]')
+      process.exit(1)
+    }
+    let requested: string | undefined
+    const rest: string[] = []
+    for (let index = 0; index < input.length; index += 1) {
+      const arg = input[index]!
+      if (arg === '--workspace' || arg.startsWith('--workspace=')) {
+        const value = arg === '--workspace' ? input[++index] : arg.slice('--workspace='.length)
+        if (requested !== undefined || !value?.trim() || value.startsWith('--')) {
+          console.error('pass exactly one --workspace <registered workspace id>')
+          process.exit(2)
+        }
+        requested = value
+      } else rest.push(arg)
+    }
+    const workspaceId = requested ?? singleWorkspaceId()
+    if (!db.prepare('SELECT id FROM workspaces WHERE id = ?').get(workspaceId)) {
+      console.error('workspace is not registered')
+      process.exit(2)
+    }
+    if (step === 'query') notesQuery(rest, workspaceId)
+    else if (step === 'search') notesSearch(rest, workspaceId)
+    else if (step === 'read') notesRead(rest, workspaceId)
+    else if (step === 'write') notesWrite(rest, workspaceId)
+    else if (step === 'graph') notesGraph(rest, workspaceId)
+    else if (step === 'backlinks') notesBacklinks(rest, workspaceId)
     else if (step === 'list') {
-      const result = listNotes(db, singlePlanetId(), { limit: Number(flagValue(rest, '--limit') ?? 200) })
+      const result = listNotes(db, workspaceId, { limit: Number(flagValue(rest, '--limit') ?? 200) })
       if (rest.includes('--json')) jsonOut(result)
       else {
         console.log(`${result.total} note(s)`)

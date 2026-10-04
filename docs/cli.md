@@ -13,7 +13,7 @@ usage: plugbrain <command> [options]
 ### `init`
 Initialize PlugBrain in the current directory or specified path with a single command.
 
-Discovers the git repository root (or uses the directory path), registers the workspace, executes initial code indexing with a live progress report, prints the local web UI URL, detects installed AI coding assistants (Claude Code, Codex, Cursor, Windsurf, Hermes, AGY, OpenCode) to enroll PlugBrain into their MCP client configurations, and adds the PlugBrain agent-protocol block to `AGENTS.md` (plus `CLAUDE.md` when present and not already referencing `AGENTS.md`). Running `init` multiple times is idempotent.
+An explicit path is used as the exact indexing root. Without a path, PlugBrain discovers the current directory's Git repository root, or uses the current directory when none exists. It registers the workspace, indexes with progress, prints the local web UI URL, enrolls detected MCP clients and adds managed agent instructions unless those actions are disabled. Repeating initialization preserves workspace identity. See the [scope decision](agent-notes/explicit-init-root.md).
 
 ```bash
 plugbrain init [path] [--no-clients] [--no-agents-file] [--dry-run]
@@ -464,6 +464,8 @@ Manage Obsidian-compatible markdown notes and knowledge graphs.
 ```bash
 plugbrain notes <subcommand> [args]
 ```
+
+Every subcommand accepts `--workspace <id>` (also `--workspace=<id>`). With one registered workspace the selector is optional; with several it is required. Missing, unknown or repeated selectors fail before reading or writing. Notes initialized with `init <folder>` work directly; Planet registration is optional. The selector does not change the note access policy. See [workspace selection](agent-notes/notes-workspace-authority.md).
 
 **Subcommands:**
 - `notes list [--limit <n>] [--json]`: List notes with title, type, and link counts.

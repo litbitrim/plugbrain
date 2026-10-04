@@ -100,6 +100,27 @@ test('S2: init registers once, indexes, and enrolls a detected client', () => {
   }
 })
 
+test('an explicit nested folder is indexed without expanding into its parent Git repository', () => {
+  const f = makeFixture()
+  const nested = join(f.repo, 'example')
+  mkdirSync(nested)
+  writeFileSync(join(nested, 'selected.ts'), 'export function selectedOnly() { return 1 }\n')
+  try {
+    const output = runCli(['init', nested, '--no-clients', '--no-agents-file'], tempEnv(f.home), f.repo)
+    assert.match(output, /generation/)
+    const db = openStore(join(f.home, 'plugbrain.db'))
+    try {
+      const rows = db.prepare('SELECT root FROM workspaces').all() as Array<{ root: string }>
+      assert.deepEqual(rows.map(row => row.root), [nested])
+      const files = db.prepare('SELECT path FROM files').all() as Array<{ path: string }>
+      assert.equal(files.length, 1)
+      assert.match(files[0]!.path, /selected\.ts$/)
+      assert.equal(existsSync(join(f.repo, 'AGENTS.md')), false)
+      assert.equal(existsSync(join(nested, 'AGENTS.md')), false)
+    } finally { db.close() }
+  } finally { f.cleanup() }
+})
+
 /** A line-oriented JSON-RPC client over a child's stdio. */
 function rpc(child: ChildProcess) {
   const pending = new Map<number | string, (message: Record<string, unknown>) => void>()

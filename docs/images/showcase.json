@@ -1,0 +1,17 @@
+{
+  "captured": "2026-10-04",
+  "version": "0.7.0-rc.2",
+  "source": "86b6b2a0a82dde8305e3382ccf6fd2b22c0c9edb",
+  "distribution": "Local unsigned QA candidate; not delivered by this documentation branch",
+  "project": "Shop demo",
+  "files": 3,
+  "notes": 2,
+  "registeredAgents": 1,
+  "executedWorkers": 0,
+  "providerCalls": 0,
+  "images": [
+    "knowledge-demo.png",
+    "task-demo.png"
+  ],
+  "privateData": "Isolated example notes and source; no owner project, credential, private path or fleet"
+}
