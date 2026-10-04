@@ -9,7 +9,7 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { execFileSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { ChildProcess } from 'node:child_process'
@@ -111,7 +111,7 @@ test('an explicit nested folder is indexed without expanding into its parent Git
     const db = openStore(join(f.home, 'plugbrain.db'))
     try {
       const rows = db.prepare('SELECT root FROM workspaces').all() as Array<{ root: string }>
-      assert.deepEqual(rows.map(row => row.root), [nested])
+      assert.deepEqual(rows.map(row => row.root), [realpathSync.native(nested)])
       const files = db.prepare('SELECT path FROM files').all() as Array<{ path: string }>
       assert.equal(files.length, 1)
       assert.match(files[0]!.path, /selected\.ts$/)
