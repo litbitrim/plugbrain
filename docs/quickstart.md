@@ -5,8 +5,23 @@ standing in. You type **one** command inside your project folder, and from then
 on Claude Code, Codex, Cursor and friends know that project through PlugBrain —
 no workspace id, no token, no copy-pasting paths between config files.
 
-PlugBrain needs **Node.js 22+** and nothing else: the graph lives in a single
-SQLite file, no database server.
+The current source requires **Node.js 24+, npm and Git**. The graph lives in a single SQLite file, with no database server. Public release 0.3.1 has no installer assets; use the source path below. [Channels](channels.md) distinguishes source and local candidates.
+
+## Source checkout
+
+The source commands select the entry candidate branch, including the initialization and standalone-notes fixes. Main remains a separate development channel until review and integration. Install the dependencies in a fresh checkout:
+
+```sh
+git clone --branch codex/brain-public-entry-20261004 --single-branch https://github.com/litbitrim/plugbrain.git
+cd plugbrain
+npm ci
+node --experimental-strip-types src/cli.ts init ../my-project --no-clients --no-agents-file
+node --experimental-strip-types src/cli.ts serve
+```
+
+Replace `../my-project` with a real project folder. Open the printed loopback URL. For an isolated trial, set `PLUGBRAIN_HOME` to a new local directory before these commands: PowerShell uses `$env:PLUGBRAIN_HOME = "$env:TEMP/plugbrain-trial"`; a POSIX shell uses `export PLUGBRAIN_HOME="$HOME/.plugbrain-trial"`. Keep that choice consistent for the whole trial.
+
+The examples below use the short name `plugbrain` for an installed CLI. In this source checkout, replace it with `node --experimental-strip-types src/cli.ts`. Run commands from the checkout and pass the intended project path explicitly. Installing dependencies does not put a global `plugbrain` command on PATH. Client setup is optional and can be previewed before it changes config files.
 
 ## 1. One command
 
